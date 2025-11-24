@@ -15,18 +15,20 @@
 from __future__ import annotations
 from typing import Dict, Any, cast
 
-import atexit, argparse, sys
+import atexit, argparse, sys, platform, os, signal, platform
 from threading import Lock
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Constants import Constants as C, RuntimeConstants as RC
 from ..etc.DateUtils import waitFor
 from ..etc.Utils import runsInIPython
-from ..etc.Types import CSEStatus, CSEType, ContentSerializationType, LogLevel
+from ..etc.Types import CSEStatus, LogLevel
+from ..etc.Constants import RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import ResponseException
 from ..services.ActionManager import ActionManager
 from ..runtime.Configuration import Configuration
 from ..runtime.Console import Console
+
 
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
@@ -175,40 +177,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
 
-	# Initialize configurable constants
-	# cseType					 = Configuration.cse_type
-	RC.supportedReleaseVersions = Configuration.cse_supportedReleaseVersions
-	RC.cseType = cast(CSEType, Configuration.cse_type)
-	RC.cseCsi = Configuration.cse_cseID
-	RC.cseRn = Configuration.cse_resourceName
-	RC.cseRi = Configuration.cse_resourceID
-	RC.cseCsiSlash = f'{RC.cseCsi}/'
-	RC.cseCsiSlashLen = len(RC.cseCsiSlash)
-	RC.cseCsiSlashLess = RC.cseCsi[1:]
-	RC.cseSpid = Configuration.cse_serviceProviderID
-	RC.cseSPRelative = f'{RC.cseCsi}/{RC.cseRn}'
-	RC.cseAbsolute = f'//{RC.cseSpid}{RC.cseSPRelative}'
-	RC.cseAbsoluteSlash = f'{RC.cseAbsolute}/'
-	RC.cseOriginator = Configuration.cse_originator
-	RC.slashCseOriginator = f'/{RC.cseOriginator}'
-
-
-	RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
-	RC.releaseVersion = Configuration.cse_releaseVersion
-	RC.isHeadless = Configuration.console_headless
-
-	# Set the CSE's point-of-access
-	RC.csePOA = [ Configuration.http_address ]
-	if Configuration.mqtt_enable:
-		RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
-	if Configuration.websocket_enable:
-		RC.csePOA.append(Configuration.websocket_address)
-	if Configuration.coap_enable:
-		RC.csePOA.append(Configuration.coap_address)
-	
-	# Other configuration values
-	RC.idLength = Configuration.cse_idLength
-
 	#
 	# init Logging
 	#
@@ -239,7 +207,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		dispatcher = Dispatcher()				# Initialize the resource dispatcher
 		request = RequestManager()				# Initialize the request manager
 		security = SecurityManager()			# Initialize the security manager
-		httpServer = HttpServer()				# Initialize the HTTP server
+		httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
 		coapServer = CoAPServer()				# Initialize the CoAP server
 		mqttClient = MQTTClient()				# Initialize the MQTT client
 		webSocketServer = WebSocketServer()		# Initialize the WebSocket server
@@ -333,12 +301,13 @@ def shutdown() -> None:
 
 		The actual shutdown happens in the _shutdown() method.
 	"""
-	if RC.cseStatus in [ CSEStatus.STOPPING, CSEStatus.STOPPED ]:
+	if RC.cseStatus in [ CSEStatus.SHUTTINGDOWN, CSEStatus.STOPPED ]:
 		return
 	
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here
-	RC.cseStatus = CSEStatus.STOPPING
+	if RC.cseStatus != CSEStatus.SHUTTINGDOWNRESTART:	# only set this if we are not restarting
+		RC.cseStatus = CSEStatus.SHUTTINGDOWN
 	if console:
 		console.stop()				# This will end the main run loop.
 	
@@ -350,10 +319,14 @@ def shutdown() -> None:
 def _shutdown() -> None:
 	"""	Shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
-	if RC.cseStatus != CSEStatus.RUNNING:
+	if RC.cseStatus not in [CSEStatus.RUNNING, CSEStatus.SHUTTINGDOWNRESTART]:
 		return
-		
-	RC.cseStatus = CSEStatus.STOPPING
+	
+	# The status STOPPINGRESTART is used to indicate that the CSE is shutting down to restart.
+	# This is a normal shutdown but in the end the CSE process will return with a special exit code
+	# to indicate that the CSE is restarting. This code is 82 (ASCII code for 'R').
+	_cseStatus = RC.cseStatus	
+	RC.cseStatus = CSEStatus.SHUTTINGDOWN
 	L.queueOff()
 	L.isInfo and L.log('CSE shutting down')
 	if event:	# send shutdown event
@@ -389,6 +362,36 @@ def _shutdown() -> None:
 
 	L.finit()
 	RC.cseStatus = CSEStatus.STOPPED
+
+	# If the CSE is stopping to restart, we exit with a special exit code
+	if _cseStatus == CSEStatus.SHUTTINGDOWNRESTART:
+		os._exit(82) 
+
+def forceShutdown() -> None:
+	"""	Force shutdown the CSE. 
+	
+		This is different for different platforms. On Windows, we send a SIGINT to the process,
+		while on other platforms we raise a SIGINT signal. This is to ensure that the CSE can
+		shutdown gracefully, even if the main thread is blocked or busy.
+
+		This function might not return, e.g. when running under Windows, where the process is killed.
+	"""	
+	_platform = platform.system()
+	L.isDebug and L.logDebug(f'Forcing CSE shutdown (Platform: {_platform})')
+
+	if textUI and textUI.tuiApp:	# Shutdown the TextUI first
+		textUI.shutdown()	
+		import time as _time
+		_time.sleep(1)	 			# Give the TextUI a moment to shutdown
+
+	# Platform specific shutdown
+	# On Windows, we send a SIGINT to the process, which will be caught by the main thread
+	match _platform:
+		case 'Windows':
+			_shutdown()
+			os.kill(os.getpid(), signal.SIGINT)
+		case _:
+			signal.raise_signal(signal.SIGINT)	# raise SIGINT to shutdown the CSE
 
 
 def resetCSE() -> None:
@@ -433,10 +436,25 @@ def resetCSE() -> None:
 		L.isWarn and L.logWarn('Resetting CSE finished')
 
 
+def restartCSE() -> None:
+	"""	Restart the CSE. This is a convenience function that calls the shutdown() function.
+	"""
+	if RC.cseStatus != CSEStatus.RUNNING:
+		L.logErr('CSE is not running, cannot restart')
+		return
+	L.isWarn and L._log(LogLevel.WARNING, 'Restarting CSE', immediate=True)
+	console.stop()
+	_shutdown()
+	RC.cseStatus = CSEStatus.SHUTTINGDOWNRESTART
+
+
 def run() -> None:
 	"""	Run the CSE.
+
+		Raises:
+			TimeoutError: If the CSE does not start within the specified time.
 	"""
-	if waitFor(C.cseStartupDelay * 3, lambda: RC.cseStatus == CSEStatus.RUNNING):
+	if waitFor(C.cseStartupDelay * 3, lambda: RC.cseStatus==CSEStatus.RUNNING):
 		console.run()
 	else:
 		raise TimeoutError(L.logErr(f'CSE did not start within {C.cseStartupDelay * 3} seconds'))

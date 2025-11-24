@@ -11,7 +11,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, cast
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, JSON, CSERequest
 from ..etc.Constants import Constants
@@ -74,7 +74,7 @@ class CNT_LA(VirtualResource):
 		# This might create a new CIN
 		if (li := self.getLCPLink()) is not None:
 			if (result := self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest = False)) is not None:
-				CSE.location.handleLatestRetrieve(result.resource, li)
+				CSE.location.handleLatestRetrieve(cast(CIN, result.resource), li)
 
 		return self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest = False)
 

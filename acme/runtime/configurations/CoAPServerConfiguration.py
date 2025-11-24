@@ -21,45 +21,28 @@ class CoAPServerConfiguration(ModuleConfiguration):
 	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		""" Read the CoAP configuration from the configuration file.
-
-			Args:
-				parser: The configuration parser.
-				config: The configuration object.
-		"""
-
 		# override configuration with command line arguments
 		if Configuration._args_coapEnabled is not None:
 			Configuration.websocket_enable = Configuration._args_wsEnabled
 
 		# CoAP configs
-		config.coap_enable = parser.getboolean('coap', 'enable', fallback = False)
-		config.coap_listenIF = parser.get('coap', 'listenIF', fallback = '0.0.0.0')
-		config.coap_port = parser.getint('coap', 'port', fallback = None) 	# Default will be determined later (s.b.)
-		config.coap_address = parser.get('coap', 'address', fallback = 'coap://127.0.0.1:5683') 	# Default will be determined later (s.b.)
-		config.coap_timeout = parser.getfloat('coap', 'timeout', fallback = 10.0)
-		config.coap_clientConnectionCacheSize = parser.getint('coap', 'clientConnectionCacheSize', fallback = 100)
+		config.coap_enable = parser.getboolean('coap', 'enable', fallback=False)
+		config.coap_listenIF = parser.get('coap', 'listenIF', fallback='0.0.0.0')
+		config.coap_port = parser.getint('coap', 'port', fallback=None) 	# Default will be determined later (s.b.)
+		config.coap_address = parser.get('coap', 'address', fallback='coap://127.0.0.1:5683') 	# Default will be determined later (s.b.)
+		config.coap_timeout = parser.getfloat('coap', 'timeout', fallback=10.0)
+		config.coap_clientConnectionCacheSize = parser.getint('coap', 'clientConnectionCacheSize', fallback=100)
 
 		#	CoAP Client Security
 
-		config.coap_security_caCertificateFile = parser.get('coap.security', 'caCertificateFile', fallback = None)
-		config.coap_security_caPrivateKeyFile = parser.get('coap.security', 'caPrivateKeyFile', fallback = None)
-		config.coap_security_dtlsVersion = parser.get('coap.security', 'dtlsVersion', fallback = 'auto')
-		config.coap_security_useDTLS = parser.getboolean('coap.security', 'useDTLS', fallback = False)
-		config.coap_security_verifyCertificate = parser.getboolean('coap.security', 'verifyCertificate', fallback = False)
+		config.coap_security_caCertificateFile = parser.get('coap.security', 'caCertificateFile', fallback=None)
+		config.coap_security_caPrivateKeyFile = parser.get('coap.security', 'caPrivateKeyFile', fallback=None)
+		config.coap_security_dtlsVersion = parser.get('coap.security', 'dtlsVersion', fallback='auto')
+		config.coap_security_useDTLS = parser.getboolean('coap.security', 'useDTLS', fallback=False)
+		config.coap_security_verifyCertificate = parser.getboolean('coap.security', 'verifyCertificate', fallback=False)
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		"""	Validate the CoAP configuration.
-
-			Args:
-				config: The configuration object.
-				initial: If True, this is the initial validation.
-
-			Raises:
-				ConfigurationError if the configuration is invalid.
-		"""
-
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# override configuration with command line arguments
 		if Configuration._args_coapEnabled is not None:
 			Configuration.coap_enable = Configuration._args_coapEnabled

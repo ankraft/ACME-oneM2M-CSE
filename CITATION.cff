@@ -1,10 +1,23 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+title: ACME oneM2M CSE
+message: 'If you use this software, please cite it as below.'
+type: software
 authors:
-- family-names: "Kraft"
-  given-names: "Andreas"
-  orcid: "https://orcid.org/0009-0007-5592-7195"
-title: "ACME oneM2M CSE"
-version: "2025.03.2"
-date-released: 2025-03-16
-url: "https://acmecse.net"
+  - family-names: Kraft
+    given-names: Andreas
+    orcid: 'https://orcid.org/0009-0007-5592-7195'
+repository-code: 'https://github.com/ankraft/ACME-oneM2M-CSE'
+url: 'https://acmecse.net'
+abstract: >-
+  The ACME oneM2M CSE (ACME CSE for short) is an
+  implementation of a Common Service Entity that supports a
+  subset of the oneM2M IoT standard. It provides a useful
+  and rich implementation for educational purposes and small
+  trials.
+keywords:
+  - oneM2M
+  - ioT
+  - standard
+license: BSD-3-Clause
+version: 2025.11
+date-released: '2025-11-23'

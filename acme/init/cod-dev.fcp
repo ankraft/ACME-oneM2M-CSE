@@ -1,5 +1,6 @@
+
 // Created by SDTTool
-// oneM2M Release: 4.12.0
+// oneM2M Release: 5.6.0
 // Domain:         org.onem2m.common
 [
 
@@ -844,7 +845,8 @@
         ],
         "children"  : [
             "cod:tempe", 
-            "cod:bat"
+            "cod:bat", 
+            "cod:temAm"
             ,"cod:devTrInst"
         ]
     },        
@@ -865,7 +867,9 @@
             "cod:tempe", 
             "cod:tempeAnnc", 
             "cod:bat", 
-            "cod:batAnnc"
+            "cod:batAnnc", 
+            "cod:temAm", 
+            "cod:temAmAnnc"
         ]
     },
     // DeviceClass Instance: deviceThermometerInst

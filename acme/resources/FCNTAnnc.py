@@ -9,6 +9,7 @@
 from __future__ import annotations
 from typing import Optional
 
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 
@@ -66,3 +67,6 @@ class FCNTAnnc(AnnouncedResource):
 	"""	List of universal, common, and resource specific attributes """
 
 
+	def __init__(self, dct:Optional[JSON]=None, typeShortname:Optional[str]=None, create:Optional[bool]=False) -> None:
+		self.typeShortname = typeShortname
+		super().__init__(dct, create=create)

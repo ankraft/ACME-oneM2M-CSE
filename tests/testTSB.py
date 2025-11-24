@@ -33,8 +33,6 @@ class TestTSB(unittest.TestCase):
 					'api' : APPID,
 			 		'rr'  : True,
 			 		'srv' : [ RELEASEVERSION ],
-			 		#'poa' : [ NOTIFICATIONSERVER ]
-			 		'poa' : [ ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.CREATED, 'cannot create parent AE'

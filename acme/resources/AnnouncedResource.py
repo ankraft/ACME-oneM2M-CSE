@@ -4,8 +4,8 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Base class for all announced resources
-#
+""" This module implements the base class for all announced resources.
+"""
 
 from typing import Optional
 from ..etc.Types import AnnounceSyncType, ResourceTypes, JSON, CSERequest, Operation
@@ -17,7 +17,8 @@ from ..runtime.Logging import Logging as L
 
 
 class AnnouncedResource(Resource):
-
+	"""	Base class for all announced resources.
+	"""
 
 	def updated(self, dct:Optional[JSON] = None, originator:Optional[str] = None) -> None:
 		"""	Check whether we need to update the original resource.

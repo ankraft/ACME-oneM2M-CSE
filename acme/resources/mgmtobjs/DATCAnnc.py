@@ -52,7 +52,6 @@ class DATCAnnc(MgmtObjAnnc):
 		'cntp': None,
 		'rpsc': None,
 		'mesc': None,
-		'rpil': None,
 		'meil': None,
 		'cmlk': None,
 	}

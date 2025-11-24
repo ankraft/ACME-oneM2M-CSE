@@ -20,7 +20,7 @@ from ..runtime import CSE
 from ..runtime.ScriptManager import PContext
 from ..helpers.ResourceSemaphore import CriticalSection
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ..helpers.Interpreter import SSymbol
+from ..helpers.interpreter.Interpreter import SSymbol, SBooleanSymbol
 from ..textui.ACMEFieldOriginator import ACMEInputField
 
 # TODO Add editing of configuration values
@@ -281,15 +281,14 @@ class ACMEContainerTools(Horizontal):
 		"""	The application. """
 
 		self._toolsTree = ACMEToolsTree(f'[{self._app.objectColor}]Tools & Commands[/]', 
-								 		id = 'tools-tree-view',
-										parentContainer = self)
-		"""	The tree view for the tools. """
+								 		id='tools-tree-view',
+										parentContainer=self)
 
 		yield self._toolsTree
 		with Vertical():
 			with self._toolsTopView:
 				yield self._toolsHeader
-				with Container(id = 'tools-arguments-view'):
+				with Container(id='tools-arguments-view'):
 					with Center():
 						yield self._toolsArgument
 					with Center():
@@ -525,7 +524,7 @@ def _executeScript(name:str, autoRun:Optional[bool] = False, argument:Optional[s
 		return CSE.script.runScript(ctx,
 			      					arguments = argument,
 			      					background = True,
-									environment = { 'tui.autorun': SSymbol(boolean = autoRun),
+									environment = { 'tui.autorun': SBooleanSymbol(autoRun),
 												  }
 									)
 	return False

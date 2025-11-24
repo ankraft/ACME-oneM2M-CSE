@@ -65,35 +65,38 @@ class TestRemote_GRP(unittest.TestCase):
 	# Create an AE with AT, but no AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createGrp(self) -> None:
-		""" Create <GRP> with local and remote CSE """
+		""" Create <GRP> with local CSEBase and remote CSR """
 		dct = 	{ 'm2m:grp' : { 
 					'rn' : grpRN,
-					'mt' : T.CSEBase,
+					'mt' : T.MIXED,
 					'mnm': 10,
-					'mid': [ f'{CSEID}/{CSERN}', f'{REMOTECSEID}/{REMOTECSERN}' ]
+					'mid': [ f'{CSEID}/{CSERN}', f'{REMOTECSEID}{CSEID}' ]
 				}}
-		r, rsc = CREATE(aeURL, ORIGINATOR, T.GRP, dct)
+		r, rsc = CREATE(aeURL, CSEID, T.GRP, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mid'))
 		self.assertIsInstance(findXPath(r, 'm2m:grp/mid'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:grp/mid')), 2)
+		self.assertEqual(len(findXPath(r, 'm2m:grp/mid')), 2, r)
 		self.assertIn(CSERI, findXPath(r, 'm2m:grp/mid'))
-		self.assertIn(f'{REMOTECSEID}/{REMOTECSERN}', findXPath(r, 'm2m:grp/mid'))
+		self.assertIn(f'{REMOTECSEID}{CSEID}', findXPath(r, 'm2m:grp/mid'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFOPT(self) -> None:
 		"""	Retrieve <GRP>/fopt """
 		# Retrieve via fopt
-		r, rsc = RETRIEVE(f'{grpURL}/fopt', ORIGINATOR)
-		self.assertEqual(rsc, RC.OK)
-		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
+		r, rsc = RETRIEVE(f'{grpURL}/fopt', CSEID)
+		self.assertEqual(rsc, RC.OK, r)
+		rsp = findXPath(r, 'm2m:agr/m2m:rsp',r)
 		self.assertIsNotNone(rsp)
 		self.assertIsInstance(rsp, list)
 		self.assertEqual(len(rsp), 2)
 		# Look for both csi
-		self.assertIn(findXPath(r, 'm2m:agr/m2m:rsp/{0}/pc/m2m:cb/csi'), [ CSEID, REMOTECSEID ] )
-		self.assertIn(findXPath(r, 'm2m:agr/m2m:rsp/{1}/pc/m2m:cb/csi'), [ CSEID, REMOTECSEID ] )
+		for res in rsp:
+			if (_csi := findXPath(res, 'pc/m2m:cb/csi')):
+				self.assertEqual(_csi, CSEID, r)
+			elif (_csi := findXPath(res, 'pc/m2m:csr/csi')):
+				self.assertEqual(_csi, CSEID, r)
 
 
 def run(testFailFast:bool) -> TestResult:
@@ -102,6 +105,10 @@ def run(testFailFast:bool) -> TestResult:
 	suite = unittest.TestSuite()
 	addTests(suite, TestRemote_GRP, [
 	
+		# Note, that the following tests are run with the CSE-ID as originator, so the CSE-ID is used
+		# as originator for the requests. This is necessary to create the group with the CSE and the remote CSE as members.
+		# This is to avoid complicated setup with ACPs and so on.
+
 		# create a group with the CSE and the remote CSE as members
 		'test_createGrp',
 		'test_retrieveFOPT',

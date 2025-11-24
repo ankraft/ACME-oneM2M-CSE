@@ -7,7 +7,7 @@
 #	ResourceType: CrossResourceSubscription
 #
 
-"""	<crossResourceSubscription> submodule. """
+"""	<crossResourceSubscription> resource type """
 
 from __future__ import annotations
 from typing import Optional
@@ -44,7 +44,11 @@ class CRS(Resource):
 
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH ]
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.NTSR,
+												   	   ResourceTypes.NTPR,
+													   ResourceTypes.SCH,
+													]
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -78,6 +82,7 @@ class CRS(Resource):
 		'nse': None,
 		'nsi': None,
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def initialize(self, pi:str, originator:str) -> None:
@@ -415,6 +420,12 @@ class CRS(Resource):
 
 
 	def _deleteSubscriptionForRrat(self, subRI:str, originator:str) -> None:
+		"""	Delete a single subscription for a rrat (regularResourceAsTarget).
+
+			Args:
+				subRI: The subscription resource's SP-relative resource ID.
+				originator: The originator of the request.
+		"""
 		if subRI is not None:
 			L.isDebug and L.logDebug(f'Deleting <sub>: {subRI}')
 			try:
@@ -431,6 +442,12 @@ class CRS(Resource):
 
 
 	def _deleteFromSubscriptionsForSrat(self, srat:str, originator:str) -> None:
+		"""	Delete a single subscription for a srat (subscriptionResourceAsTarget).
+
+			Args:
+				srat: The subscription resource's SP-relative resource ID.
+				originator: The originator of the request.
+		"""
 		_subRIs = self.attribute(Constants.attrSubSratRIs)
 		if (subRI := _subRIs.get(srat)) is not None:
 			try:

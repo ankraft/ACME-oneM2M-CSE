@@ -6,6 +6,7 @@
 #
 #	CSR : Announceable variant
 #
+""" CSR announced (CSRA) resource type. """
 
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class CSRAnnc(AnnouncedResource):
+	""" CSR announced (CSRA) resource type. """
 
 	resourceType = ResourceTypes.CSRAnnc
 	""" The resource type """
@@ -46,6 +48,7 @@ class CSRAnnc(AnnouncedResource):
 									ResourceTypes.TSAnnc, 
 									ResourceTypes.TSB, 
 									ResourceTypes.TSBAnnc ]
+	""" The allowed child-resource types. """
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -82,6 +85,5 @@ class CSRAnnc(AnnouncedResource):
 		'ape': None,
 		'srv': None
 	}
-		
-	
+	""" Attributes and `AttributePolicy` for this resource type. """
 

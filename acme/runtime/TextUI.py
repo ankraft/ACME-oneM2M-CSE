@@ -52,6 +52,8 @@ class TextUI(object):
 							  CSE.event.registreeCSEHasRegistered,							# type:ignore[attr-defined]
 							  CSE.event.registreeCSEHasDeregistered,						# type:ignore[attr-defined]
 							  CSE.event.registreeCSEUpdate,  								# type:ignore[attr-defined]
+							  CSE.event.registeredToRegistrarCSE, 							# type:ignore[attr-defined]
+							  CSE.event.deregisteredFromRegistrarCSE, 						# type:ignore[attr-defined]
 							  CSE.event.registeredToRemoteCSE], self.registrationUpdate)	# type:ignore[attr-defined]
 
 		_textUI = self
@@ -73,7 +75,9 @@ class TextUI(object):
 		L.logDebug('TextUI restarted')
 
 
-	def registrationUpdate(self, name:str, resource:Resource, dct:dict = None) -> None:
+	# TODO the following parameters do not match the event signatures, but we ignore this for now until
+	# the arguments are used.
+	def registrationUpdate(self, name:str, resource:Resource, dct:dict=None, anotherResource:Resource=None) -> None:
 		if self.tuiApp and self.tuiApp.containerRegistrations:
 			self.tuiApp.containerRegistrations.registrationsUpdate()
 
@@ -174,6 +178,26 @@ class TextUI(object):
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptClearConsole(scriptName)
+	
+
+	def scriptShowConfirmation(self, msg:str, 
+									 title:str, 
+									 confirmButtonText:Optional[str]='Confirm', 
+									 cancelButtonText:Optional[str]='Cancel') -> Optional[bool]:
+		"""	Show a confirmation dialog.
+
+			Args:
+				msg: Message to show.
+				title: Title of the dialog.
+				confirmButtonText: Text for the confirm button.
+				cancelButtonText: Text for the cancel button.
+
+			Returns:
+				True if the user confirmed, False if the user cancelled, None if TUI is not available.
+		"""
+		if self.tuiApp:
+			return self.tuiApp.showConfirmation(msg, title, confirmButtonText, cancelButtonText)
+		return None
 	
 
 	def scriptShowNotification(self, msg:str, title:str, severity:Literal['information', 'warning', 'error'], timeout:float) -> None:

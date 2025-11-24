@@ -971,8 +971,8 @@ class TestMgmtObj(unittest.TestCase):
 						'enct': 8,
 						'unm': 'user',
 						'pwd': 'pwd',
-
-					}
+					},
+					'scan': False,
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
@@ -1149,27 +1149,6 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(rsc, RC.UPDATED, r)
 		self.assertIsNotNone(findXPath(r, 'dcfg:datc/rpsc'), r)
 		self.assertIsInstance(findXPath(r, 'dcfg:datc/rpsc'), list, r)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDATCrpilWhileRpscFail(self) -> None:
-		"""	UPDATE [dataCollection] rpil while rpsc is alread set -> FAIL"""
-		dct =  { 'dcfg:datc' : {
-					'rpil':	10000,
-				}}
-		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST, r)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDATCrpscRpilFail(self) -> None:
-		"""	UPDATE [dataCollection] rpsc and rpil together -> FAIL"""
-		dct =  { 'dcfg:datc' : {
-					'rpsc':	[ { 'sce': '10 * * * * * *' } ],
-					'rpil': 10000,
-				}}
-		r, rsc = UPDATE(self.datcURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1585,8 +1564,6 @@ def run(testFailFast:bool) -> TestResult:
 		'test_updateDATCrpscInvalidSchedule1Fail',
 		'test_updateDATCrpscInvalidSchedule2Fail',
 		'test_updateDATCrpscValidSchedule',
-		'test_updateDATCrpilWhileRpscFail',
-		'test_updateDATCrpscRpilFail',
 		'test_updateDATCmescInvalidSchedule1Fail',
 		'test_updateDATCmescInvalidSchedule2Fail',
 		'test_updateDATCmescValidSchedule',

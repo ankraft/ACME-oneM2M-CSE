@@ -14,13 +14,18 @@ from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional, cast, Set
 
 import configparser, argparse, os, os.path, pathlib
+from copy import deepcopy
 from inspect import getmembers
+from dotenv import load_dotenv, find_dotenv
+
 from rich.console import Console
 
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode
+from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode, CSERegistrar
 from ..helpers.NetworkTools import getIPAddress
+from ..helpers.Zookeeper import Zookeeper
+from ..helpers.ACMEConfiguration import ACMEConfiguration
 
 
 
@@ -196,60 +201,8 @@ class Configuration(object):
 	"""	The size of the operation requests. """
 
 
-	cse_registrar_address:str
-	"""	The address of the registrar. """
-
-	cse_registrar_checkInterval:int
-	"""	The interval to check the registrar. """
-
-	cse_registrar_cseID:str
-	"""	The CSE-ID of the registrar. """
-
-	cse_registrar_excludeCSRAttributes:list[str]
-	"""	Attributes to exclude from CSR. """
-
-	cse_registrar_resourceName:str
-	"""	The resource name of the registrar. """
-
-	cse_registrar_root:str
-	"""	The root of the registrar. """
-
-	cse_registrar_serialization:str|ContentSerializationType
-	"""	The serialization for the registrar. """
-
-	cse_registrar_INCSEcseID:str
-	"""	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
-
-
-	cse_registrar_security_httpUsername:str
-	"""	The username for HTTP basic security when registering to a http server with basic auth. """
-
-	cse_registrar_security_httpPassword:str
-	"""	The password for HTTP basic security when registering to a http server with basic auth. """
-
-	cse_registrar_security_httpBearerToken:str
-	"""	The token for HTTP bearer token security when registering to a http server with bearer token auth. """
-
-	cse_registrar_security_wsUsername:str
-	"""	The username for HTTP basic security when registering to a WebSocket server with basic auth. """
-
-	cse_registrar_security_wsPassword:str
-	"""	The password for HTTP basic security when registering to a WebSocket server with basic auth. """
-
-	cse_registrar_security_wsBearerToken:str
-	"""	The token for HTTP bearer token security when registering to a WebSocket server with bearer token auth. """
-
-	cse_registrar_security_selfHttpUsername:str
-	"""	The username for HTTP basic security to be used by the registrar CSE when connecting via http to this CSE. """
-
-	cse_registrar_security_selfHttpPassword:str
-	"""	The password for HTTP basic security to be used by the registrar CSE when connecting via http to this CSE. """
-
-	cse_registrar_security_selfWsUsername:str
-	"""	The username for HTTP basic security to be used by the registrar CSE when connecting via WebSocket to this CSE. """
-
-	cse_registrar_security_selfWsPassword:str
-	"""	The password for HTTP basic security to be used by the registrar CSE when connecting via WebSocjet to this CSE. """
+	cse_registrars:dict[str, CSERegistrar] = {}
+	"""	A dictionary of CSE or service provider CSEs registrars. The keys are the CSE IDs, the values are dictionaries with the registrar information. """
 
 
 	cse_registration_allowedAEOriginators:list[str]
@@ -261,6 +214,8 @@ class Configuration(object):
 	cse_registration_checkLiveliness:bool
 	"""	Check liveliness for registration. """
 
+	cse_registration_checkInterval:int
+	"""	Time interval to check liveliness of registration(s). """
 
 
 	cse_security_secret:str
@@ -323,6 +278,9 @@ class Configuration(object):
 
 	http_enableUpperTesterEndpoint:bool
 	"""	Enable the upper tester endpoint. """
+
+	http_enableManagementEndpoint:bool
+	"""	Enable the management endpoint. """
 
 	http_listenIF:str
 	"""	The network interface to listen on for HTTP. """
@@ -440,7 +398,6 @@ class Configuration(object):
 	mqtt_topicPrefix:str
 	"""	The topic prefix for MQTT. """
 
-
 	mqtt_security_allowedCredentialIDs:list[str]
 	"""	The allowed credential IDs for MQTT. """
 
@@ -459,6 +416,14 @@ class Configuration(object):
 	mqtt_security_verifyCertificate:bool
 	"""	Enable or disable certificate verification for MQTT. """
 
+	mqtt_websocket_enable:bool
+	"""	Enable or disable the MQTT over WebSocket. """
+
+	mqtt_websocket_port:int
+	"""	The WebSocket port for MQTT. """
+
+	mqtt_websocket_path:str
+	"""	The WebSocket path for MQTT. """
 
 	resource_acp_selfPermission:int
 	"""	The self permission for ACP. """
@@ -687,19 +652,62 @@ class Configuration(object):
 	_args_statisticsEnabled:bool = None
 	""" The statistics enabled flag passed as argument. This overrides the respective value in the configuration file. """
 	_args_textUI:bool = None
-	""" The text UI flag passed as argument. This overrides the respective value in the configuration file. """			
+	""" The text UI flag passed as argument. This overrides the respective value in the configuration file. """
+	_args_zkHost:str = None
+	""" The Zookeeper host passed as argument. **There is no equivalent in the configuration file.** """
+	_args_zkPort:int = None
+	""" The Zookeeper port passed as argument. **There is no equivalent in the configuration file.** """
+	_args_zkRoot:str = None
+	""" The Zookeeper root node passed as argument. **There is no equivalent in the configuration file.** """
 
 
 	# Internal print function that takes the headless setting into account
 	@staticmethod
-	def _print(msg:str) -> None:
+	def _print(msg:str, markup:Optional[bool]=True) -> None:
 		"""	Print a message to the console. If the CSE is running in headless mode, then the message is not printed.
 		
 			Args:
-				msg: The message to print.	
+				msg: The message to print.
+				markup: If True, then the message is printed with markup. If False, then the message is printed without markup.
 		"""
 		if not Configuration._args_headless:
-			Console().print(msg)	# Print error message to console
+			Console().print(msg, markup=markup)	# Print error message to console
+
+
+	@staticmethod
+	def initDirectories() -> bool:
+		"""	Initialize the directories for the configuration. This method must be called before accessing any configuration value.
+
+			Returns:
+				True on success, False otherwise.
+		"""
+
+		# The path to the ACME module directory
+		Configuration.moduleDirectory = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
+		
+		# Test that the config filename is just a filename without a path. If it is then throw an error
+		if Configuration._args_configfile and os.path.dirname(Configuration._args_configfile):
+			Configuration._print(f'[red]Configuration file must be a filename without a path: {Configuration._args_configfile}')
+			return False
+
+		# Find out the path to the init directory
+		Configuration.initDirectory = Configuration.moduleDirectory / 'init'
+		if Configuration._args_initDirectory:	# Use the init directory if given as argument
+			Configuration.initDirectory = pathlib.Path(Configuration._args_initDirectory)
+
+		# Get the path to the runtime data directory
+		Configuration.baseDirectory = pathlib.Path(os.getcwd())
+		if Configuration._args_baseDirectory:	# Use the runtime data directory if given as argument
+			Configuration.baseDirectory = pathlib.Path(Configuration._args_baseDirectory)
+
+		# Set the default ini file and check if it exists and is readable
+		Configuration._defaultConfigFilePath = Configuration.initDirectory / C.defaultConfigFile
+		Configuration._defaultConfigFile = str(Configuration._defaultConfigFilePath)
+		if not os.access(Configuration._defaultConfigFile, os.R_OK):
+			Configuration._print(f'[red]Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
+			return False
+
+		return True
 
 
 	@staticmethod
@@ -712,6 +720,42 @@ class Configuration(object):
 			Returns:
 				True on success, False otherwise.
 		"""
+
+		def runOnboarding(withZookeeper: bool=False) -> bool:
+			"""	Run the onboarding process to create a user configuration file if it does not exist.
+
+				Args:
+					withZookeeper: If True, then the onboarding process will use Zookeeper for configuration management. If False, then the onboarding process will create a local configuration file.
+				Returns:
+					True if the onboarding was successful, False otherwise.
+
+				Raises:
+					Exception: If an error occurs during the onboarding process.
+			"""
+			try:
+				if Configuration._args_headless:
+					Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
+					return False
+				
+				# load onboarding module and create user config file.
+				# After that, remove the module from the modules list, because it is not needed anymore
+				from ..runtime import Onboarding
+				result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile if not withZookeeper else None,
+																					 (Configuration._args_zkHost, Configuration._args_zkPort, Configuration._args_zkRoot))	
+				import sys
+				del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
+				del Onboarding
+
+				if not result:
+					return False
+				if _configFile:
+					Configuration._args_configfile = str(pathlib.Path(_configFile))
+				if _baseDirectory:
+					Configuration.baseDirectory = pathlib.Path(_baseDirectory)
+			except Exception as e:
+				Console().print(e)
+				raise e
+			return True
 
 		# resolve the args and set them as attributes
 		Configuration._args_configfile			= args.configfile if args and 'configfile' in args and args.configfile else C.defaultUserConfigFile
@@ -734,70 +778,65 @@ class Configuration(object):
 		Configuration._args_textUI				= args.textui if args and 'textui' in args else None
 		Configuration._args_coapEnabled			= args.coapenabled if args and 'coapenabled' in args else None
 		Configuration._args_wsEnabled			= args.wsenabled if args and 'wsenabled' in args else None
+		Configuration._args_zkHost				= args.zkHost if args and 'zkHost' in args else None
+		Configuration._args_zkPort				= args.zkPort if args and 'zkPort' in args else None
+		Configuration._args_zkRoot				= args.zkRoot if args and 'zkRoot' in args else None
 
-		# The path to the ACME module directory
-		Configuration.moduleDirectory = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
-		
-		# Test that the config filename is just a filename without a path. If it is then throw an error
-		if os.path.dirname(Configuration._args_configfile):
-			Configuration._print(f'[red]Configuration file must be a filename without a path: {Configuration._args_configfile}')
+
+		if not Configuration.initDirectories():
 			return False
 
-		# Find out the path to the init directory
-		Configuration.initDirectory = Configuration.moduleDirectory / 'init'
-		if Configuration._args_initDirectory:	# Use the init directory if given as argument
-			Configuration.initDirectory = pathlib.Path(Configuration._args_initDirectory)
+		# The list of configuration files to read (significantly, the default config file is always the first one)
+		# The list of configuration strings contain optional extra strings in ini format. They are interpolated
+		# after the configuration files are read.
+		configurationFiles = [Configuration._defaultConfigFile]
+		configurationStrings:list[str] = []
 
-		# Get the path to the runtime data directory
-		Configuration.baseDirectory = pathlib.Path(os.getcwd())
-		if Configuration._args_baseDirectory:	# Use the runtime data directory if given as argument
-			Configuration.baseDirectory = pathlib.Path(Configuration._args_baseDirectory)
+		# Check if there are no arguments given for the Zookeeper host and root node. Then use the
+		# normal file-based configuration
+		if not (Configuration._args_zkHost and Configuration._args_zkRoot):
 
-		# Check and re-set the configuration file's path if the runtime data directory is given AND
-		# the configuration file is not given as argument
-		if Configuration._args_baseDirectory and not args.configfile:
-			Configuration._args_configfile = f'{Configuration._args_baseDirectory}/{C.defaultUserConfigFile}'
+			# Check and re-set the configuration file's path if the runtime data directory is given AND
+			# the configuration file is not given as argument
+			if Configuration._args_baseDirectory and not args.configfile:
+				Configuration._args_configfile = f'{Configuration._args_baseDirectory}/{C.defaultUserConfigFile}'
 
-		# Adapt configuration file path to the runtime data directory
-		Configuration._args_configfile = f'{Configuration.baseDirectory}{os.sep}{os.path.basename(Configuration._args_configfile)}'
+			# Adapt configuration file path to the runtime data directory
+			Configuration._args_configfile = f'{Configuration.baseDirectory}{os.sep}{os.path.basename(Configuration._args_configfile)}'
 
-		# Create user config file if doesn't exist
-		if not os.path.exists(Configuration._args_configfile):
+			# Create user config file if doesn't exist
+			if not os.path.exists(Configuration._args_configfile):
+				if not runOnboarding():
+					return False
+			Configuration.configfile = Configuration._args_configfile
+			configurationFiles.append(Configuration.configfile)	
+
+		# Read the configuration from a Zookeeper server
+		else:
 			try:
-				if Configuration._args_headless:
-					Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
-					return False
-				
-				# load onboarding module and create user config file.
-				# After that, remove the module from the modules list, because it is not needed anymore
-				from ..runtime import Onboarding
-				result, _configFile, _baseDirectory = Onboarding.buildUserConfigFile(Configuration._args_configfile)
-				import sys
-				del sys.modules[Onboarding.__name__]	# Remove the module again to save some memory
-				del Onboarding
-
-				if not result:
-					return False
-				Configuration._args_configfile = str(pathlib.Path(_configFile))
-				Configuration.baseDirectory = pathlib.Path(_baseDirectory)
+				zk = Zookeeper(host=Configuration._args_zkHost, 
+				   			   port=Configuration._args_zkPort, 
+							   rootNode=Configuration._args_zkRoot, 
+							   logger=lambda x: Configuration._print(x),
+							   caseSensitive=False,	# switch off case sensitivity for ini files
+							   ).connect(createRoot=False)
+				if not zk.exists():
+					if not runOnboarding(withZookeeper=True):
+						return False
+					# try again to connect to read the configuration
+					if not zk.exists():
+						raise Exception(f'Root node "{Configuration._args_zkRoot}" does not exist.')
+				configurationStrings.append(zk.retrieveIniConfig())
 			except Exception as e:
-				Console().print(e)
-				raise e
-		Configuration.configfile = Configuration._args_configfile
-
-		# Set the default ini file and check if it exists and is readable
-		Configuration._defaultConfigFilePath = Configuration.initDirectory / C.defaultConfigFile
-		Configuration._defaultConfigFile = str(Configuration._defaultConfigFilePath)
-		if not os.access(Configuration._defaultConfigFile, os.R_OK):
-			Configuration._print(f'[red]Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
-			return False
-
+				import traceback
+				traceback.print_exc()
+				Configuration._print(f'[red]Error connecting to Zookeeper server: {e}')
+				return False
+			finally:
+				zk.disconnect()
 
 		# Read and parse the configuration file
-		config = configparser.ConfigParser(	interpolation = configparser.ExtendedInterpolation(),
-											# Convert csv to list, ignore empty elements
-											converters = {'list': lambda x: [i.strip() for i in x.split(',') if i]}
-										  )
+		config = ACMEConfiguration()
 	
 		# Construct the default values that are used for interpolation
 		_defaults = {	'basic.config': {	
@@ -805,27 +844,41 @@ class Configuration(object):
 							'moduleDirectory' 		: Configuration.moduleDirectory,				# points to the acme module's directory
 							'initDirectory' 		: Configuration.initDirectory,					# points to the acme/init directory		
 							'hostIPAddress'			: getIPAddress(),								# provide the IP address of the host
-
-							'registrarCseHost'		: '127.0.0.1',									# The IP address of the registrar CSE
+							'networkInterface'		: '0.0.0.0',									# The network interface to listen on for HTTP, CoAP, MQTT and WebSocket.
+							
+							'serviceProviderID'		: '//acme.example.com',							# The service provider ID of the CSE.
+							'registrarCseHost'		: getIPAddress(),								# The IP address of the registrar CSE
 							'registrarCsePort'		: 8080,											# The TCP port of the registrar CSE
 							'registrarCseID'		: '',											# The CSE-ID of the registrar CSE
 							'registrarCseName'		: '',											# The resource name of the registrar CSE's CSEBase
 
+							'logLevel'				: 'debug',										# The main secret key for the CSE. 
+							'consoleTheme'			: 'dark',										# The theme for the console.
 							'secret'				: os.getenv('ACME_SECURITY_SECRET', 'acme'),	# The main secret key for the CSE. 
 						}
 					}
+		# Load environment variables from .env file from the base directory, if it exists
+		load_dotenv(dotenv_path=f'{Configuration.baseDirectory}{os.path.sep}.env')
+
 		# Add environment variables to the defaults
 		_defaults.update({ 'DEFAULT': {k: v.replace('$', '$$') for k,v in os.environ.items()} })
 
 		# Add (empty) default for supported environment variables to the defaults dictionary for the interpolation during reading the configuration file
 		_envVariables = { e: os.getenv(e, '') if e not in _defaults else _defaults[e]
 			for e in (
-					'ACME_MQTT_SECURITY_PASSWORD', 'ACME_MQTT_SECURITY_USERNAME',
+					'ACME_MQTT_SECURITY_PASSWORD', 
+					'ACME_MQTT_SECURITY_USERNAME',
 					'ACME_DATABASE_POSTGRESQL_PASSWORD',
-					'ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD', 'ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN',
-					'ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD', 'ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN',
-					'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD',
-					'ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME', 'ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD',
+					'ACME_CSE_REGISTRAR_SECURITY_HTTPUSERNAME', 
+					'ACME_CSE_REGISTRAR_SECURITY_HTTPPASSWORD', 
+					'ACME_CSE_REGISTRAR_SECURITY_HTTPBEARERTOKEN',
+					'ACME_CSE_REGISTRAR_SECURITY_WSUSERNAME', 
+					'ACME_CSE_REGISTRAR_SECURITY_WSPASSWORD', 
+					'ACME_CSE_REGISTRAR_SECURITY_WSBEARERTOKEN',
+					'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPUSERNAME', 
+					'ACME_CSE_REGISTRAR_SECURITY_SELFHTTPPASSWORD',
+					'ACME_CSE_REGISTRAR_SECURITY_SELFWSUSERNAME', 
+					'ACME_CSE_REGISTRAR_SECURITY_SELFWSPASSWORD',
 				)
 		}
 		_defaults['DEFAULT'].update(_envVariables)
@@ -833,11 +886,17 @@ class Configuration(object):
 		# Set the defaults
 		config.read_dict(_defaults)
 		
-
 		try:
-			if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow 
+			# Read the configuration files
+			# if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
+			if len(config.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
 				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._args_configfile}')
 				return False
+			
+			# Read the extra configuration strings (e.g. from Zookeeper)
+			for cs in configurationStrings:
+				config.read_string(cs)
+
 		except configparser.Error as e:
 			Configuration._print('[red]Error in configuration file')
 			Configuration._print(str(e))
@@ -905,7 +964,25 @@ class Configuration(object):
 			return not callable(v)
 		
 		attributeNames = [ k for k,v in getmembers(Configuration, isprop) if not k.startswith('_') ]
-		return { k.replace('_', '.'): getattr(Configuration, k) for k in attributeNames }
+		result = {}
+		for k in attributeNames:
+			attr = getattr(Configuration, k)
+			match attr:
+				case pathlib.Path():
+					# Convert pathlib.Path to string
+					attr = str(attr)
+				case dict():
+					# Don't change the original dict, so make a copy
+					attr = deepcopy(attr)
+					# Convert dict elements to instances dict, if necessary
+					for k2,v2 in attr.items():
+						if isinstance(v2, CSERegistrar):
+							# Convert the CSERegistrar to a dict
+							attr[k2] = v2.toDict()
+
+			# Replace underscores with dots in the key names
+			result[k.replace('_', '.')] = attr
+		return deepcopy(result) # make sure that the result is a deep copy of the configuration
 
 
 	@staticmethod
@@ -1047,7 +1124,7 @@ from ..runtime.configurations.TSResourceConfiguration import TSResourceConfigura
 from ..runtime.configurations.WebSocketConfiguration import WebSocketConfiguration
 
 
-# Instantiate all configuration modules here
+# Instantiate all configuration modules here, in a specfic order.
 
 _moduleConfigs:list[ModuleConfiguration] = [
 

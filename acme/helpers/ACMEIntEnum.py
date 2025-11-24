@@ -61,8 +61,6 @@ class ACMEIntEnum(IntEnum):
 				A valid enum value, a list of enum values if *name* is a tupple of strings (according to the order in the tuple), or *None* in case of an error.
 
 		"""
-		# TODO docu
-		
 		def _to(name:str) -> Any:
 			try:
 				if insensitive:

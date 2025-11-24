@@ -4,8 +4,8 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Base class for all announceable resources
-#
+""" This module implements the base class for all announceable resources.
+"""
 
 from __future__ import annotations
 from typing import Optional, Tuple, Any
@@ -15,9 +15,9 @@ from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolic
 from ..etc.Types import Announced
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
+from ..etc.IDUtils import isAbsolute, toAbsolute, toSPRelative
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..etc.ACMEUtils import toSPRelative
 from .Resource import Resource, addToInternalAttributes
 
 # Add to internal attributes
@@ -25,12 +25,14 @@ addToInternalAttributes(Constants.attrAnnouncedTo) # add announcedTo to internal
 
 
 class AnnounceableResource(Resource):
+	"""	Base class for all announceable resources.
+	"""
 
-	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
-		super().__init__(dct, create = create)
+	def __init__(self, dct:Optional[JSON]=None, create:Optional[bool]=False) -> None:
+		super().__init__(dct, create=create)
 		
 		self._origAA = None	# hold original announceableAttributes when doing an update
-		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite = False)
+		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite=False)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -50,12 +52,20 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator, parentResource)
 
 
-	def update(self, dct:JSON = None, 
-					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+	def update(self, dct:JSON=None, 
+					 originator:Optional[str]=None, 
+					 doValidateAttributes:Optional[bool]=True) -> None:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
+		""" Store the original announceableAttributes for later use in the update
+			so that we can check whether they are removed.
+		"""
+
 		self._origAT = self.at
+		""" Store the original at attribute for later use in the update
+			so that we can check whether it is removed.
+		"""
+		
 		super().update(dct, originator, doValidateAttributes)
 
 		# TODO handle update from announced resource. Check originator???
@@ -77,8 +87,9 @@ class AnnounceableResource(Resource):
 		announceableAttributes = []
 		if self.aa:
 			# Check whether all the attributes in announcedAttributes are actually resource attributes
+			# For FCNT and FCI also check the customAttributes
 			for aa in self.aa:
-				if not aa in self._attributes:
+				if not (aa in self._attributes or (self.ty in (ResourceTypes.FCNT, ResourceTypes.FCI) and aa in self.customAttributes)):
 					raise BAD_REQUEST(L.logDebug(f'Non-resource attribute in aa: {aa}'))
 
 			# deep-copy the announcedAttributes
@@ -99,16 +110,17 @@ class AnnounceableResource(Resource):
 			self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
 
 
-	def createAnnouncedResourceDict(self, isCreate:Optional[bool] = False) -> JSON:
+	def createAnnouncedResourceDict(self, isCreate:Optional[bool]=False, announceTo:Optional[str]=None) -> JSON:
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
 		if (additionalAttributes := CSE.validator.getFlexContainerAttributesFor(self.typeShortname)):
 			attributes:AttributePolicyDict = deepcopy(self._attributes)
 			attributes.update(additionalAttributes)
-			return self._createAnnouncedDict(attributes, isCreate = isCreate)
+			return self._createAnnouncedDict(attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo))
 		# Normal behaviour for other resources
-		return self.validateAnnouncedDict( self._createAnnouncedDict(self._attributes, isCreate = isCreate) )
+		# L.inspect(self._createAnnouncedDict(self._attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo)) )
+		return self.validateAnnouncedDict( self._createAnnouncedDict(self._attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo)) )
 
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
@@ -118,7 +130,7 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:Optional[bool] = False) -> JSON:
+	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:bool, isRemoteSP:bool) -> JSON:
 		"""	Actually create the resource dict.
 		"""
 
@@ -143,11 +155,13 @@ class AnnounceableResource(Resource):
 			if value is None:
 				return None
 			
-			# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to SP-relative form.')
+			# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
 			match typ:
 				case BasicType.ID:
-					return toSPRelative(value)
+					# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
+					return toAbsolute(value, spId=RC.cseSPid) if isRemoteSP else toSPRelative(value)
 				case BasicType.list | BasicType.listNE:
+					# L.inspect([ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value])
 					return [ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value]
 				case BasicType.complex:
 					_r = {}
@@ -162,61 +176,71 @@ class AnnounceableResource(Resource):
 
 
 		# Stub
-		typeShortname = ResourceTypes(self.ty).announced(self.mgd).typeShortname()	# Hack, bc management objects do it a bit differently
+		if self.ty in (ResourceTypes.FCNT, ResourceTypes.FCI):
+			typeShortname = f'{self.typeShortname}Annc'
+		else:
+			typeShortname = ResourceTypes(self.ty).announced(self.mgd).typeShortname()	# Hack, bc management objects do it a bit differently
 
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(attributes)
 
-		if isCreate:
-			dct:JSON = { typeShortname : {  # with the announced variant of the typeShortname
-							'et'	: self.et,
-							'lnk'	: f'{RC.cseCsi}/{self.ri}',
-						}
-				}
-			# Add more  attributes
-			body = dct[typeShortname]
+		match isCreate:
+			case True:
+				dct:JSON = { typeShortname : {  # with the announced variant of the typeShortname
+								'et'	: self.et,
+								'lnk'	: f'{RC.cseSPCsi}/{self.ri}' if isRemoteSP else f'{RC.cseCsi}/{self.ri}',
+							}
+					}
+				# Add more  attributes
+				body = dct[typeShortname]
 
-			# Conditional announced
-			if lbl := self.lbl:
-				body['lbl'] = deepcopy(lbl)
+				# Conditional announced
+				if lbl := self.lbl:
+					body['lbl'] = deepcopy(lbl)
 
-			# copy mandatoy and optional attributes
-			for attr in announcedAttributes:
-				policy = CSE.validator.getAttributePolicy(self.ty, attr)
-				body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
-				# body[attr] = self[attr]
+				# copy mandatoy and optional attributes
+				ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
+				for attr in announcedAttributes:
+					policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
+					body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
+					# body[attr] = self[attr]
 
-			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
-				acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi for acpi in self.acpi]	# set to local CSE.csi
-				body['acpi'] = acpi
+				if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
+					# acpi = [ f'{RC.cseCsi}/{acpi}' if not acpi.startswith(RC.cseCsi) else acpi 
+					# 		 for acpi in self.acpi]	# set to local CSE.csi
+					acpi = [ toAbsolute(acpi, spId=RC.cseSPid) if isRemoteSP else toSPRelative(acpi) for acpi in acpi ]
+					body['acpi'] = acpi
+				
+				# Set the resourceName explicitly for the CSEBase
+				if self.ty == int(ResourceTypes.CSEBase):
+					body['rn'] = f'{RC.cseSPIDSlashLess}_{self.rn}'
+
+			case False: # update. Works a bit different
+				if not (modifiedAttributes := self[Constants.attrModified]):
+					return None
+				dct = { typeShortname : { } } # with the announced variant of the typeShortname
+				body = dct[typeShortname]
 
 
-		else: # update. Works a bit different
-
-			if not (modifiedAttributes := self[Constants.attrModified]):
-				return None
-			dct = { typeShortname : { } } # with the announced variant of the typeShortname
-			body = dct[typeShortname]
-
-
-			# copy only the updated attributes
-			for attr in modifiedAttributes:
-				attributePolicy = attributes.get(attr)
-				if attr in announcedAttributes or (attributePolicy is not None and attributePolicy.announcement == Announced.MA):	# either announced or an MA attribute
-				# if attr in announcedAttributes or (attr in policies and policies[attr][5] == Announced.MA):	# either announced or an MA attribute
-					body[attr] = self[attr]
-
-			# if aa was modified check also those attributes even when they are not modified
-			if 'aa' in modifiedAttributes and modifiedAttributes['aa']:
-				for attr in modifiedAttributes['aa']:
-					if attr not in body:
+				# copy only the modified  attributes
+				for attr in modifiedAttributes:
+					attributePolicy = attributes.get(attr)
+					if attr in announcedAttributes or (attributePolicy is not None and attributePolicy.announcement == Announced.MA):	# either announced or an MA attribute
+					# if attr in announcedAttributes or (attr in policies and policies[attr][5] == Announced.MA):	# either announced or an MA attribute
 						body[attr] = self[attr]
 
-			# now add the to-be-removed attributes with null in case they are removed from the aa or aa is None
-			if self._origAA:
-				for attr in self._origAA:
-					if attr not in announcedAttributes:
-						body[attr] = None
+				# if aa was modified check also those attributes even when they are not modified
+				if 'aa' in modifiedAttributes and modifiedAttributes['aa']:
+					for attr in modifiedAttributes['aa']:
+						L.logWarn(attr)
+						if attr not in body:
+							body[attr] = self[attr]
+
+				# now add the to-be-removed attributes with null in case they are removed from the aa or aa is None
+				if self._origAA:
+					for attr in self._origAA:
+						if attr not in announcedAttributes:
+							body[attr] = None
 
 		return dct
 
@@ -279,9 +303,10 @@ class AnnounceableResource(Resource):
 		"""
 		mandatory = []
 		optional = []
-		announceableAttributes = []
-		if self.aa is not None:
-			announceableAttributes = self.aa
+		# announceableAttributes:Optional[list[str]] = None
+		# if self.aa is not None:
+		# 	announceableAttributes = self.aa
+		_aa = self.aa
 		for attr in attributes.keys():
 			if self.hasAttribute(attr):
 				if not (policy := attributes.get(attr)):
@@ -290,8 +315,8 @@ class AnnounceableResource(Resource):
 				match policy.announcement:
 					case Announced.MA:
 						mandatory.append(attr)
-					case Announced.OA if attr in announceableAttributes: # only add optional attributes that are also in aa
-						optional.append(attr)
+					case Announced.OA if _aa is not None and attr in _aa: # only add optional attributes that are also in aa
+						optional.append(attr)			
 					case Announced.NA:
 						# just ignore Announced.NA
 						pass

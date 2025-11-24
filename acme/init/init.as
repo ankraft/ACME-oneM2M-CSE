@@ -25,41 +25,48 @@
 ;;	Create the CSEBase
 ;;
 
-(setq cb 
-	{ "m2m:cb": {
-		"ri":   "${get-config \"cse.resourceID\"}",
-		"rn":   "${get-config \"cse.resourceName\"}",
-		"csi":  "${get-config \"cse.cseID\"}",
-		"csz":  [ "application/json", "application/cbor" ],
-		"acpi": [ "${get-config \"cse.cseID\"}/acpCreateACPs" ]
-	}})
-(setq cb (set-json-attribute cb "m2m:cb/poa" (get-config "cse.poa")))
+(import-raw 
+	cse-originator
+	;; The input must be a valid JSON object. We can late-execute inline expressions in strings,
+	;; but not in the object itself.
+	;; So we have to use set-json-attribute to set the poa attribute afterwards.
+	(set-json-attribute 
+		{ "m2m:cb": {
+			"ri":   "${get-config \"cse.resourceID\"}",
+			"rn":   "${get-config \"cse.resourceName\"}",
+			"csi":  "${get-config \"cse.cseID\"}",
+			"csz":  [ "application/json", "application/cbor" ],
+			"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources" ]
+		}}
+		"m2m:cb/poa" 
+		(get-config "cse.poa")))
 
-(import-raw cse-originator cb)
 
 
 ;;
-;;	Allow all originators to create (only) <ACP> under the CSEBase
+;;	Allow all originators to create (only) <ACP> and <NTP> under the CSEBase
 ;;
 
 (import-raw 
 	cse-originator
 	{ "m2m:acp": {
-		"rn": "acpCreateACPs",
-		"ri": "acpCreateACPs",
+		"rn": "acpCreateRootResources",
+		"ri": "acpCreateRootResources",
 		"pi": "${get-config \"cse.resourceID\"}",
 		"pv": {
-			"acr": [ {
-				"acor": [ "all"	],
-				"acod": [ {	"chty": [ 1 ] }	],
-				"acop": 1
-			} ]
+			"acr": [ 
+				{	"acor": [ "all"	],
+					"acod": [ {	"chty": [ 1, 26 ] }	],	;; Allow  NTP and ACP
+					"acop": 1
+				}
+			]
 		},
 		"pvs": {
-			"acr": [ {
-				"acor": [ "${cse-originator}" ],
-				"acop": 63
-			} ]
+			"acr": [ 
+				{	"acor": [ "${cse-originator}" ],
+					"acop": 63
+				}
+			]
 		}
 	}})
 
@@ -79,4 +86,17 @@
 		"csz": [ "application/json", "application/cbor" ]
 	}})
 
+
+;;
+;;	Default <NotificationTargetPolicy> resource
+;;
+(import-raw 
+	cse-originator
+	{ "m2m:ntp": {
+		"ri":  "defaultNTP",
+		"rn":  "defaultNTP",
+		"pi":  "${get-config \"cse.resourceID\"}",
+		"acn": 2,	;; reject as a default
+		"plbl": "Default"
+	}})
 

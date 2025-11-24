@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Any, Tuple
+from typing import Optional, Any, Tuple, cast
 import logging, uuid, base64
 
 from websockets.sync.connection import Connection as WSConnection
@@ -354,7 +354,7 @@ class WebSocketServer(object):
 				# Run the message handling in a separate thread
 				BackgroundWorkerPool.runJob(lambda: self._handleReceivedMessage(websocket, message, wsOriginator, ct, authResult), name = f'ws_{uniqueID()}')
 		except ConnectionClosedError as e:
-			L.isWarn and L.logWarn('Connection closed: {e}')
+			L.isWarn and L.logWarn(f'Connection closed: {e}')
 		except ConnectionClosedOK:
 			L.isDebug and L.logDebug('Connection closed by client')
 		
@@ -506,7 +506,7 @@ class WebSocketServer(object):
 			# Associate the connection with the originator, if not yet done.
 			# wsOriginator is None if the connection is not yet associated with an originator, and this
 			# can only be the case when the request is an AE registration
-			if wsOriginator is None and (res := responseResult.resource) is not None and res.ty == ResourceTypes.AE:
+			if wsOriginator is None and (res := cast(Resource, responseResult.resource)) is not None and res.ty == ResourceTypes.AE:
 				self.associateConnectionWithOriginator(websocket, res.aei)
 				wsOriginator = res.aei
 
@@ -647,7 +647,7 @@ class WebSocketServer(object):
 					additionalHeaders['Authorization'] = request.credentials.getWsBearerToken()
 					authResult = AuthorizationResult.AUTHORIZED # Assume success. Otherwise, the connection would not be established anyway
 				else:
-					L.logWarn('No credentials for WS request found')
+					L.isDebug and L.logDebug('No credentials for WS request found')
 
 
 			# Else connect to the target WS server using the URL

@@ -22,11 +22,13 @@
 ; CSE type. Allowed values: IN, MN, ASN. 
 ; Default: IN
 type=${basic.config:cseType}
-; The CSE's service provider ID. 
-; Default: acme.example.com
-serviceProviderID=acme.example.com
+; The CSE's service provider ID.
+; The service provider ID must start with "//" and must not contain a further "/" or white space.
+; Default: //acme.example.com
+serviceProviderID=${basic.config:serviceProviderID}
 ; The CSE ID. Can be overwritten in imported CSE definition. 
-; Default: /id-in
+; The CSE ID must start with a "/" and must not contain a further "/" or white space.
+; Default: Basic config value "cseID"
 cseID=/${basic.config:cseID}
 ; The CSE's resource ID. Can be overwritten in imported CSE definition. 
 ; Default: id-in
@@ -65,8 +67,8 @@ flexBlockingPreference=blocking
 ; Default: 2a,3,4,5
 supportedReleaseVersions=2a,3,4,5
 ; The release version indicator for requests. Allowed values: 2a,3,4,5.
-; Default: 4
-releaseVersion=4
+; Default: 5
+releaseVersion=5
 ; Indicate the serialization format if none was given in a request and cannot be determined otherwise.
 ; Allowed values: json, cbor. Default: json
 defaultSerialization=json
@@ -165,6 +167,11 @@ enableStructureEndpoint=false
 ; ATTENTION: Enabling this feature may lead to a total loss of data.
 ; Default: False
 enableUpperTesterEndpoint=false
+; Enable an endpoint for management commands to the CSE.
+; This is to support certain management systems.
+; ATTENTION: Enabling this feature may lead to a total loss of data.
+; Default: False
+enableManagementEndpoint=false
 ; Allow the http PATCH method to be used as a replacement for the DELETE
 ; method. This is useful for constraint devices that only support http/1.0,
 ; which doesn't specify the DELETE method.
@@ -263,6 +270,21 @@ topicPrefix=
 ; Default: see cse.requestExpirationDelta
 timeout=${cse:requestExpirationDelta}
 
+
+;
+;	MQTT WebSocket settings
+;
+
+[mqtt.websocket]
+; Enable the MQTT WebSocket binding.
+; Default: false
+enable=false
+; The port for the MQTT WebSocket server.
+; Default: 8080
+port=8080
+; Path it is the endpoint where the mqtt broker is accepting connections
+; Default is "" empty string (root path)
+path=
 
 ;
 ;	MQTT security settings
@@ -467,6 +489,9 @@ allowedAEOriginators=C*,S*,/*/C*,/*/S*
 allowedCSROriginators=
 ; Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True
 checkLiveliness=True
+; Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
+; Default: 60
+checkInterval=60
 
 
 ;
@@ -487,9 +512,6 @@ INCSEcseID=/id-in
 ; Specify the serialization type that must be used for the registration to the registrar CSE.
 ; Allowed values: json, cbor. Default: json
 serialization=json
-; Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
-; Default: 30
-checkInterval=30
 ; List of resources that are excluded when creating a registrar CSR. Default: empty list
 excludeCSRAttributes=
 

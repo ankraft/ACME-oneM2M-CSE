@@ -225,7 +225,7 @@ class BackgroundWorker(object):
 
 
 	def workNow(self) -> BackgroundWorker:
-		"""	Execute the worker right immediately and outside the normal schedule.
+		"""	Execute the worker immediately and outside the normal schedule.
 
 			Return:
 				self.
@@ -841,7 +841,7 @@ class BackgroundWorkerPool(object):
 				ts: Timestamp at which the worker shall be executed.
 				worker: Backgroundworker object to queue.
 		"""
-		top = cls.workerQueue[0] if cls.workerQueue else None
+		# top = cls.workerQueue[0] if cls.workerQueue else None
 		with cls.queueLock:
 			cls._stopTimer()
 			heapq.heappush(cls.workerQueue, WorkerEntry(ts, worker.id, worker.name))

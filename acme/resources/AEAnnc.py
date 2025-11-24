@@ -36,6 +36,7 @@ class AEAnnc(AnnouncedResource):
 													   ResourceTypes.PRMRAnnc,
 													   ResourceTypes.TS, 
 													   ResourceTypes.TSAnnc ]
+	""" The allowed child-resource types. """
 
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		

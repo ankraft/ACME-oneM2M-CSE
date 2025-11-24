@@ -12,10 +12,12 @@ from typing import Callable, cast, Optional
 
 from typing_extensions import Literal, get_args
 import asyncio
+from time import sleep
 from enum import IntEnum, auto
 import pyperclip
 from textual.app import App, ComposeResult
 from textual import on
+from textual._context import active_app
 from textual.widgets import Footer, TabbedContent, TabPane, Static
 from textual.binding import Binding
 from textual.notifications import SeverityLevel
@@ -28,6 +30,8 @@ from ..textui.ACMEContainerTree import ACMEContainerTree
 from ..textui.ACMEContainerRegistrations import ACMEContainerRegistrations
 from ..textui.ACMEContainerRequests import ACMEContainerRequests
 from ..textui.ACMEContainerTools import ACMEContainerTools
+from ..textui.ACMEContentConfirmDialog import ACMEContentConfirmDialog
+
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..etc.Types import ResourceTypes
@@ -438,6 +442,58 @@ class ACMETuiApp(App):
 			self.containerTools.scriptClearConsole(scriptName)
 	
 
+	def showConfirmation(self,
+						 msg:str, 
+						 title:str, 
+						 confirmButtonText:Optional[str]='Confirm', 
+						 cancelButtonText:Optional[str]='Cancel') -> Optional[bool]:
+		"""	Show a confirmation dialog.
+
+			Args:
+				msg: The message to show.
+				title: The title of the dialog.
+				confirmButtonText: The text for the confirm button.
+				cancelButtonText: The text for the cancel button.
+
+			Returns:
+				True if the user confirmed, False if the user cancelled, or None the user cancelled or an error occurred.
+		"""
+
+		async def _showConfirmation(msg:str, 
+								   title:str, 
+								   confirmButtonText:Optional[str]='Confirm', 
+								   cancelButtonText:Optional[str]='Cancel') -> Optional[bool]:
+			"""	Internal function to show the confirmation dialog.
+
+				Args:
+					msg: The message to show.
+					title: The title of the dialog.
+					confirmButtonText: The text for the confirm button.
+					cancelButtonText: The text for the cancel button.
+
+				Returns:
+					True if the user confirmed, False if the user cancelled, or None if the user dismissed the dialog or an error occurred.
+			"""
+			from ..textui.ACMEContentConfirmDialog import ACMEContentConfirmDialog
+
+			try:
+				return await self.push_screen_wait(
+					ACMEContentConfirmDialog(
+						content=msg,
+						title=title,
+						confirmButtonText=confirmButtonText,
+						cancelButtonText=cancelButtonText)
+				)
+			except Exception as e:
+				return None
+
+		active_app.set(self)
+		worker = self.run_worker(_showConfirmation(msg, title, confirmButtonText, cancelButtonText), exclusive=True)
+		while worker.is_running:
+			sleep(0.1)
+		return worker.result
+
+
 	def showNotification(self, message:str, 
 					  		   title:str, 
 							   severity:Literal['information', 'warning', 'error'], 
@@ -452,8 +508,11 @@ class ACMETuiApp(App):
 		"""
 
 		async def _call() -> None:
-			self.notify(message = message, title = title, severity = severity, timeout = timeout)
-		
+			"""	Internal function to call the notify method.
+				This is run in an async task to avoid blocking the UI.
+			"""
+			self.notify(message=message, title=title, severity=severity, timeout=timeout)
+
 		if timeout is None:
 			timeout = (Configuration.textui_notificationTimeout * 5) if severity == 'error' else Configuration.textui_notificationTimeout
 		
@@ -484,14 +543,15 @@ class ACMETuiApp(App):
 	#########################################################################
 
 
-	def runAsyncTask(self, task:Callable) -> None:
+	def runAsyncTask(self, task:Callable) -> Optional[asyncio.Task]:
 		"""	Run an async task from a non-async function.
 
 			Args:
 				task: The async task to run.
 		"""
 		if self.event_loop:
-			self.event_loop.create_task(task())
+			return self.event_loop.create_task(task())
+		return None
 
 
 	def restart(self) -> None:

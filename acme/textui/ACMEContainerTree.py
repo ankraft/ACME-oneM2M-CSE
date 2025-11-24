@@ -275,6 +275,11 @@ class ACMEContainerTree(Container):
 	"""	The *Resources* tree view for the ACME text UI.
 	"""
 
+	treeTabResourceID = 'tree-tab-resource'
+	"""	The ID of the resource tab. """
+
+	# TODO add other IDs here as well
+
 	BINDINGS = 	[ Binding('r', 'refresh_resources', 'Refresh'),
 				#   Binding('o', 'overlay', 'Overlay'),
 		  
@@ -359,7 +364,7 @@ class ACMEContainerTree(Container):
 		with Container():
 			yield self._treeView
 			with self._treeTabs:
-				with TabPane('Resource', id = 'tree-tab-resource'):
+				with TabPane('Resource', id=self.treeTabResourceID):
 					with self._resourceViewContainer:
 						yield self._resourceView
 
@@ -564,6 +569,13 @@ class ACMEContainerTree(Container):
 						self.tabs.show_tab('tree-tab-create')
 						self.tabs.hide_tab('tree-tab-update')
 						self.tabs.show_tab('tree-tab-delete')
+					
+					# Notification Target Self Reference Virtual Resource
+					case ResourceTypes.NTSR:	
+						self.tabs.hide_tab('tree-tab-diagram') 
+						self.tabs.hide_tab('tree-tab-create')
+						self.tabs.hide_tab('tree-tab-update')
+						self.tabs.show_tab('tree-tab-delete')
 
 					case _:
 						self.tabs.hide_tab('tree-tab-diagram') 
@@ -579,6 +591,16 @@ class ACMEContainerTree(Container):
 				except:
 					pass
 
+			if ResourceTypes.isVirtualResource(resource.ty):
+				self.updateResourceView(error='Virtual resource has no resource view')
+			else:
+				# Add syntax highlighting and add to the view
+				# self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
+				self.updateResourceView(commentJson(self.currentResource.asDict(sort=True), 
+										explanations=self.app.attributeExplanations,	# type: ignore [attr-defined]
+										getAttributeValueName=lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None)))	# type: ignore [attr-defined]
+
+
 		else:
 
 			# Disable the views
@@ -588,17 +610,16 @@ class ACMEContainerTree(Container):
 			self.tabs.hide_tab('tree-tab-delete')
 			self.tabs.hide_tab('tree-tab-services')
 
+			# clear the resource view
+			self.updateResourceView()
+
 			# Update the requests view with an empty string
 			self._update_requests('')
 			
-		# Add syntax highlighting and add to the view
-		# self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
-		self.updateResourceView(commentJson(self.currentResource.asDict(sort = True), 
-								explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-								getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None)))	# type: ignore [attr-defined]
 
 
-	def updateResourceView(self, value:Optional[str|Resource] = None, error:Optional[str] = None) -> None:
+	def updateResourceView(self, value:Optional[str|Resource]=None, 
+								 error:Optional[str]=None) -> None:
 		"""	Update the resource view with a value or an error message.
 
 			Args:
@@ -607,10 +628,10 @@ class ACMEContainerTree(Container):
 		"""
 		if value:
 			if isinstance(value, Resource):
-				value = commentJson(value.asDict(sort = True), 
-									explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-									getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, value.ty if value else None))	# type: ignore [attr-defined]
-			self.resourceView.update(Syntax(value, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
+				value = commentJson(value.asDict(sort=True), 
+									explanations=self.app.attributeExplanations,	# type: ignore [attr-defined]
+									getAttributeValueName=lambda a, v: CSE.validator.getAttributeValueName(a, v, value.ty if value else None))	# type: ignore [attr-defined]
+			self.resourceView.update(Syntax(value, 'json', theme=self.app.syntaxTheme))	# type: ignore [attr-defined]
 		elif error:
 			self.resourceView.update(error)
 		else:
@@ -640,7 +661,7 @@ class ACMEContainerTree(Container):
 			case 'tree-tab-services':
 				pass
 
-		self.app.updateFooter()	# type:ignore[attr-defined]
+		await self.app.updateFooter()	# type:ignore[attr-defined]
 
 
 	def _update_requests(self, ri:Optional[str] = None) -> None:

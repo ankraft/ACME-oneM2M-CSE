@@ -218,7 +218,7 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.logWarning, lambda n: self._handleStatsEvent(logWarnings))					# type: ignore
 
 			# Also do some internal handling
-			CSE.event.addHandler(CSE.event.cseReset, self.restart)														# type: ignore
+			CSE.event.addHandler(CSE.event.cseReset, self.reset)														# type: ignore
 
 		L.isInfo and L.log('Statistics initialized')
 
@@ -241,16 +241,16 @@ class Statistics(object):
 		return True
 	
 	
-	def restart(self, name:str) -> None:
-		"""	Restart the statistics service.
+	def reset(self, name:str) -> None:
+		"""	Reset the statistics data.
 
 			Args:
-				name:	The name of the event that triggered the restart.
+				name:	The name of the event that triggered the reset.
 		"""
 		self.purgeDBStatistics()
 		self.stats = self.setupStats()
 		self.handleCseStartup(None)
-		L.isDebug and L.logDebug('Statistics restarted')
+		L.isDebug and L.logDebug('Statistics resetted')
 
 
 	def setupStats(self) -> StatsT:
@@ -262,54 +262,54 @@ class Statistics(object):
 		if (stats := self.retrieveDBStatistics()):
 			return stats
 		return {
-			deletedResources	: 0,
-			createdResources	: 0,
-			updatedResources	: 0,
-			expiredResources 	: 0,
-			notifications		: 0,
-			coRetrieves			: 0,
-			coCreates			: 0,
-			coUpdates 			: 0,
-			coDeletes 			: 0,
-			coNotifies 			: 0,
-			coSendRetrieves		: 0,
-			coSendCreates		: 0,
-			coSendUpdates 		: 0,
-			coSendDeletes 		: 0,
-			coSendNotifies 		: 0,
-			httpRetrieves		: 0,
-			httpCreates			: 0,
-			httpUpdates 		: 0,
-			httpDeletes 		: 0,
-			httpNotifies 		: 0,
-			httpSendRetrieves	: 0,
-			httpSendCreates		: 0,
-			httpSendUpdates 	: 0,
-			httpSendDeletes 	: 0,
-			httpSendNotifies 	: 0,
-			mqttRetrieves		: 0,
-			mqttCreates			: 0,
-			mqttUpdates 		: 0,
-			mqttDeletes 		: 0,
-			mqttNotifies 		: 0,
-			mqttSendRetrieves	: 0,
-			mqttSendCreates		: 0,
-			mqttSendUpdates 	: 0,
-			mqttSendDeletes 	: 0,
-			mqttSendNotifies 	: 0,
-			wsRetrieves			: 0,
-			wsCreates			: 0,
-			wsUpdates 			: 0,
-			wsDeletes 			: 0,
-			wsNotifies 			: 0,
-			wsSendRetrieves		: 0,
-			wsSendCreates		: 0,
-			wsSendUpdates 		: 0,
-			wsSendDeletes 		: 0,
-			wsSendNotifies 		: 0,
-			cseStartUpTime		: 0.0,
-			logErrors 			: 0,
-			logWarnings 		: 0
+			deletedResources: 0,
+			createdResources: 0,
+			updatedResources: 0,
+			expiredResources: 0,
+			notifications: 0,
+			coRetrieves: 0,
+			coCreates: 0,
+			coUpdates: 0,
+			coDeletes: 0,
+			coNotifies: 0,
+			coSendRetrieves: 0,
+			coSendCreates: 0,
+			coSendUpdates: 0,
+			coSendDeletes: 0,
+			coSendNotifies: 0,
+			httpRetrieves: 0,
+			httpCreates: 0,
+			httpUpdates: 0,
+			httpDeletes: 0,
+			httpNotifies: 0,
+			httpSendRetrieves: 0,
+			httpSendCreates: 0,
+			httpSendUpdates: 0,
+			httpSendDeletes: 0,
+			httpSendNotifies: 0,
+			mqttRetrieves: 0,
+			mqttCreates: 0,
+			mqttUpdates: 0,
+			mqttDeletes: 0,
+			mqttNotifies: 0,
+			mqttSendRetrieves: 0,
+			mqttSendCreates: 0,
+			mqttSendUpdates: 0,
+			mqttSendDeletes: 0,
+			mqttSendNotifies: 0,
+			wsRetrieves: 0,
+			wsCreates: 0,
+			wsUpdates: 0,
+			wsDeletes: 0,
+			wsNotifies: 0,
+			wsSendRetrieves: 0,
+			wsSendCreates: 0,
+			wsSendUpdates: 0,
+			wsSendDeletes: 0,
+			wsSendNotifies: 0,
+			cseStartUpTime: 0.0,
+			logErrors: 0,
+			logWarnings: 0
 		}
 
 
@@ -501,15 +501,16 @@ skinparam linetype ortho
 		result += '}\n' # rectangle
 
 		# Has parent Registrar CSE?
-		if RC.cseType != CSEType.IN and Configuration.cse_registrar_address:
-			registrarCSE = CSE.remote.registrarCSE
-			bg = 'white' if registrarCSE else 'lightgrey'
-			color = 'green' if registrarCSE else 'black'
-			address = urlparse(Configuration.cse_registrar_address)
-			(ip, port) = tuple(address.netloc.split(':'))
-			registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-			result += f'cloud PARENT as "<color:{color}>{Configuration.cse_registrar_cseID[1:]}</color> ({registrarType})\\n{Configuration.cse_registrar_address}" #{bg}\n'
-			result += 'CSE -UP- PARENT\n'
+		if len(Configuration.cse_registrars) > 0:
+			for index, registrar in enumerate(Configuration.cse_registrars.values()):
+				registrarCSE = registrar._registrarCSEBaseResource
+				bg = 'white' if registrarCSE else 'lightgrey'
+				color = 'green' if registrarCSE else 'black'
+				address = urlparse(registrar.address)
+				(ip, port) = tuple(address.netloc.split(':'))
+				registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
+				result += f'cloud PARENT_{index} as "<color:{color}>{registrar.cseID[1:] if registrar.spID != RC.cseSPid else registrar.spID + registrar.cseID}</color> ({registrarType})\\n{registrar.address}" #{bg}\n'
+				result += f'CSE -UP- PARENT_{index}\n'
 
 		
 		# Has CSE descendants?

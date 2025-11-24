@@ -91,7 +91,7 @@ class ACMEContainerDelete(Container):
 		else: # No originator, use CSE originator
 			self.requestView.updateOriginator(self.requestOriginator, [RC.cseOriginator])
 		self.responseView.clear()
-	
+
 
 	def doDelete(self) -> None:
 		"""	Handle the *DELETE Request* button event. This is a callback function.
@@ -107,6 +107,8 @@ class ACMEContainerDelete(Container):
 			with CriticalSection('tuiRequest', timeout = 0.0):
 				self._app.containerTree.refreshCurrentParrentNode()
 				self._app.containerTree.updateResource(self.resource)
+			self._app.containerTree.tabs.active = self._app.containerTree.treeTabResourceID
+			self._app.containerTree.update()
 
 		
 	def action_show_request(self) -> None:

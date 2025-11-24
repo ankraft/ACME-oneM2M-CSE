@@ -26,6 +26,7 @@ class ACTRAnnc(AnnouncedResource):
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB,
 													   ResourceTypes.DEPRAnnc 
 													   ]
+	""" The allowed child-resource types. """
 
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		

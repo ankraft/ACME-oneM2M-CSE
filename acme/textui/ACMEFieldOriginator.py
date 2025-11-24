@@ -9,15 +9,17 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import cast
+from typing import cast, Optional
 
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical, Middle
+from textual.widget import Widget
 from textual.widgets import Input, Label
 from textual.suggester import SuggestFromList
 from textual.validation import Function
 from textual import on
 from textual.message import Message
+from ..etc.Types import Operation, ResourceTypes
 
 
 class ACMEInputField(Container):
@@ -189,34 +191,40 @@ class ACMEInputField(Container):
 idFieldOriginator = 'field-originator'
 """The ID of the originator field."""
 
-def validateOriginator(value: str) -> bool:
+def validateOriginator(value: str, requestView:Optional[Widget]=None) -> bool:
 	"""Validate a originator.
 	
 		Args:
 			value: The value to validate.
-		
+			requestView: The request view for context (to determine operation type).
 		Returns:
 			True if the value is valid, False otherwise.
 	"""
-	return value is not None and len(value) > 1 and value.startswith(('C', 'S', '/')) and not set(value) & set(' \t\n')
+	from .ACMEViewRequest import ACMEViewRequest
+	requestView = cast(ACMEViewRequest, requestView) 
+	minLength = 1 if requestView and requestView.operation == Operation.CREATE and requestView.childResourceType == ResourceTypes.AE else 2
+	return value is not None and len(value) >= minLength and value.startswith(('C', 'S', '/')) and not set(value) & set(' \t\n')
 
 #TODO add id to the field
 
 class ACMEFieldOriginator(ACMEInputField):
 	"""An input field for an *originator* in the ACME text UI.
 	"""
-	def __init__(self, originator:str, suggestions:list[str] = []) -> None:
+	def __init__(self, originator:str, 
+			  		   suggestions:list[str]=[],
+					   requestView:Optional[Widget]=None) -> None:
 		"""Initialize the originator field.
 		
 			Args:
 				originator: The value of the field.
 				suggestions: The suggestions for the field.
+				requestView: The request view for context (to determine operation type).
 		"""
-		super().__init__(label = 'Originator',
-		   				 suggestions = suggestions,
-						 placeholder = 'Originator',
-						 validators = Function(validateOriginator, 
-				 							   'Wrong originator format: Must start with "C", "S" or "/", contain now white spaces, and have length > 1.')
+		super().__init__(label='Originator',
+		   				 suggestions=suggestions,
+						 placeholder='Originator',
+						 validators=Function(lambda x: validateOriginator(x, requestView), 
+				 						     'Wrong originator format: Must start with "C", "S" or "/", contain now white spaces, and have length > 1.')
 						)
 		self.originator = originator
 		"""The originator value of the field."""

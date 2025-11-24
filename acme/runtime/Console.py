@@ -10,9 +10,9 @@
 """
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any, Tuple
+from typing import List, cast, Optional, Any, Tuple, TextIO
 
-import csv, datetime, json, os, sys, webbrowser, socket, platform, io
+import csv, json, os, sys, webbrowser, io
 
 from rich.live import Live
 from rich.panel import Panel
@@ -29,18 +29,18 @@ from ..runtime import CSE
 
 from ..helpers.KeyHandler import FunctionKey, loop, stopLoop, waitForKeypress, Commands
 from ..helpers.TextTools import simpleMatch
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..helpers.Interpreter import PContext, PError
+from ..helpers.interpreter.PContext import PContext
+from ..helpers.interpreter.Types import PError
 from ..helpers.OrderedSet import OrderedSet
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.Types import CSEType, ResourceTypes, Operation, RequestOptionality, TreeMode
 from ..etc.ResponseStatusCodes import ResponseException
-from ..helpers.NetworkTools import getIPAddress
-from ..etc.DateUtils import fromAbsRelTimestamp, toISO8601Date, getResourceDate
+from ..etc.DateUtils import toISO8601Date, getResourceDate
+from ..etc.IDUtils import getSPFromID, isAbsolute
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
-from ..runtime import Statistics
 from ..runtime.Configuration import Configuration
+from ..runtime.Management import getCSEStatusJSON
 from .Configuration import Configuration
 from .Logging import Logging as L
 
@@ -87,9 +87,8 @@ class Console(object):
 
 		'_eventKeyboard',
 		'_exitFromTUI',
-
-		
 	)
+	""" The slots for the Console to optimize memory usage. """
 
 	def __init__(self) -> None:
 		"""	Initialization of a *Console* instance.
@@ -116,7 +115,10 @@ class Console(object):
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 
 		self._eventKeyboard = CSE.event.keyboard			# type: ignore [attr-defined]
+		""" The keyboard event handler. """
+
 		self._exitFromTUI = False
+		""" Indication whether the TUI should exit. """
 
 		L.isInfo and L.log('Console initialized')
 
@@ -246,7 +248,17 @@ class Console(object):
 	
 
 	def _postCommandHandler(self, key:str) -> str:
-		# TODO doc
+		"""	Post command handler for the console.
+
+			This is called after a command has been executed. It checks whether the TUI should exit
+			and returns a special character to indicate that.
+
+			Args:
+				key: The key that was pressed.
+
+			Return:
+				A special character if the TUI should exit, otherwise *None*.
+		"""
 		if self._exitFromTUI:
 			if key in ['Q', FunctionKey.CTRL_C]:
 				return '#'
@@ -285,6 +297,7 @@ class Console(object):
 			('l', 'Toggle screen logging on/off'),
 			('L', 'Toggle through log levels'),
 			('r', 'Show CSE registrations'),
+			('R', 'Run script'),
 			('s', 'Show statistics'),
 			('^S', 'Show & refresh statistics continuously'),
 			('t', 'Show resource tree'),
@@ -311,7 +324,6 @@ class Console(object):
 
 	def about(self, key:str) -> None:
 		"""	Print QR-code for keyboard commands.
-
 
 		Args:
 			key: Input key. Ignored.
@@ -675,7 +687,16 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
-	def doExportResource(self, ri:str, withChildResources:bool = False) -> Tuple[int, str]:
+	def doExportResource(self, ri:str, withChildResources:bool=False) -> Tuple[int, str]:
+		"""	Export a resource and its children to the tmp directory as a shell script with curl commands.
+
+			Args:
+				ri: Resource ID of the resource to export.
+				withChildResources: If *True*, also export child resources.
+
+			Return:
+				Tuple with the number of resources exported, and the filename of the exported file.
+		"""
 		try:
 
 			if withChildResources:
@@ -786,7 +807,7 @@ function createResource() {{
 
 		count:int = 0
 
-		def _writeTo(f:io.TextIOWrapper, instances:List[Resource]) -> None:
+		def _writeTo(f:TextIO, instances:List[Resource]) -> None:
 			nonlocal count
 
 			writer = csv.writer(f)
@@ -914,14 +935,14 @@ function createResource() {{
 				L.console(f'Script {name} not found', isError = True, nlb = True)
 				L.on()
 				return
-			argument = L.consolePrompt('Arguments', default = self.previousArgument)
+			argument = L.consolePrompt('Arguments', default=self.previousArgument)
 			self.previousArgument = argument
 			pcontext = scripts[0]
 			L.on()	# Turn on log before running the script
 			try:
-				CSE.script.runScript(pcontext, arguments = argument, background = True, finished = finished)
+				CSE.script.runScript(pcontext, arguments=argument, background=True, finished=finished)
 			except Exception as e:
-				L.logErr(f'Exception during script execution: {str(e)}', exc = e)
+				L.logErr(f'Exception during script execution: {str(e)}', exc=e)
 
 		L.on()
 
@@ -1098,8 +1119,8 @@ function createResource() {{
 	#	Generators for rich output
 	#
 
-	def getRegistrationsRich(self, style:Optional[Style] = Style(), 
-						  		   textStyle:Optional[Style] = None) -> Table:
+	def getRegistrationsRich(self, style:Optional[Style]=Style(), 
+						  		   textStyle:Optional[Style]=None) -> Table:
 		"""	Create and return an overview about the registrar, registrees, and
 			descendant CSE's.
 
@@ -1115,10 +1136,13 @@ function createResource() {{
 		if textStyle is None:
 			textStyle = style
 
-		def _addCSERow(table:Table, style:Style, cse:Resource, registrarCSE:Resource, registrees:List[str]) -> None:
+		def _addCSERow(table:Table, 
+				 	   style:Style, 
+					   cse:Resource, 
+					   registrarCSE:Resource, 
+					   registrees:List[str]) -> None:
 			table.add_row(cse.csi, 
 						  CSEType(cse.cst.value if isinstance(cse.cst, CSEType) else cse.cst).name, 
-						  cse.rn, 
 						  cse.ri, 
 						  '' if not cse.srv else ', '.join(cse.srv),
 						  str(cse.rr) if cse.rr is not None else '', 
@@ -1127,46 +1151,76 @@ function createResource() {{
 						  '' if not registrees else ', '.join(registrees),
 						  style = style)
 
-		tableCSE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Type[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Name[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Resource ID[/u]\n', style = textStyle), width = 12, no_wrap = True)
-		tableCSE.add_column(_markup('[u]Release[/u]\n', style = textStyle), no_wrap = False)
-		tableCSE.add_column(_markup('[u]Reachable[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]POA[/u]\n', style = textStyle), no_wrap = False)
-		tableCSE.add_column(_markup('[u]Registrar[/u]\n', style = textStyle), no_wrap = True)
-		tableCSE.add_column(_markup('[u]Registrees[/u]\n', style = textStyle), no_wrap = False)
-
 		cse = getCSE()
+
+		tableCSE = Table(row_styles=[ '', L.tableRowStyle], box=None, expand=True)
+		tableCSE.add_column(_markup('[u]CSE-ID[/u]\n', style=textStyle), no_wrap=True)
+		tableCSE.add_column(_markup('[u]Type[/u]\n', style=textStyle), no_wrap=True)
+		tableCSE.add_column(_markup('[u]Resource ID[/u]\n', style=textStyle), width=12, no_wrap=True)
+		tableCSE.add_column(_markup('[u]Release[/u]\n', style=textStyle), no_wrap=False)
+		tableCSE.add_column(_markup('[u]Reachable[/u]\n', style=textStyle), no_wrap=True)
+		tableCSE.add_column(_markup('[u]POA[/u]\n', style=textStyle), no_wrap=False)
+		tableCSE.add_column(_markup('[u]Registrar[/u]\n', style=textStyle), no_wrap=True)
+		tableCSE.add_column(_markup('[u]Registrees[/u]\n', style=textStyle), no_wrap=False)
+
+		# one row for the CSE itself
 		_addCSERow(tableCSE, 
-			 	   Style.combine((Style(italic = True, bold = True), textStyle)), 
+			 	   Style.combine((Style(italic=True, bold=True), textStyle)), 
 				   cse, 
-				   CSE.remote.registrarCSE, 
+				   CSE.remote.registrarConfig._registrarCSEBaseResource if CSE.remote.registrarConfig else None, 
 				   CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
-		# _addCSERow(tableCSE, Style(italic = True, bold = True), cse, CSE.remote.registrarCSE, CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
+
+		spCsr:list[Resource] = []
 		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
-			if CSE.remote.registrarCSE and csr.csi == CSE.remote.registrarCSE.csi:
+			if isAbsolute(csr.csi) and getSPFromID(csr.csi) != RC.cseSPIDSlashLess:	# store the CSR for other SP for later
+				spCsr.append(csr)
+				continue
+			if CSE.remote.registrarConfig and CSE.remote.registrarConfig._registrarCSEBaseResource and csr.csi == CSE.remote.registrarConfig._registrarCSEBaseResource.csi:
 				_addCSERow(tableCSE, textStyle, csr, None, [cse.csi] + csr.dcse)
 			else:
 				_addCSERow(tableCSE, textStyle, csr, cse, csr.dcse)
-		
+
 		panelCSE = Panel(tableCSE, 
 				  		 box=box.ROUNDED, 
-						 title=_markup('[b]Common Services Entities (CSE)[/b]'), 
+						 title=_markup('[b]CSE – Common Services Entities[/b]'), 
 						 title_align='left', 
 						 padding = (1, 0, 0, 0),
 						 expand=True,
-						 style = style)
+						 style=style)
+
+		if spCsr:
+
+			tableSPCSE = Table(row_styles=[ '', L.tableRowStyle], box=None, expand=True)
+			tableSPCSE.add_column(_markup('[u]SP-ID[/u]\n', style=textStyle), no_wrap=True)
+			tableSPCSE.add_column(_markup('[u]CSE-ID[/u]\n', style=textStyle), no_wrap=True)
+			tableSPCSE.add_column(_markup('[u]Resource ID[/u]\n', style=textStyle), no_wrap=True)
+			tableSPCSE.add_column(_markup('[u]Release[/u]\n', style=textStyle), no_wrap=False)
+			tableSPCSE.add_column(_markup('[u]POA[/u]\n', style=textStyle), no_wrap=False)
+
+			for csr in spCsr:
+				tableSPCSE.add_row(f'//{getSPFromID(csr.csi)}',
+								csr.csi,
+								csr.ri, 
+								'' if not csr.srv else ', '.join(csr.srv),
+								'' if csr.poa is None else ', '.join(csr.poa),
+								style=textStyle)
+			
+			panelSPCSE = Panel(tableSPCSE, 
+							box=box.ROUNDED, 
+							title=_markup("[b]SP CSE – Services Providers via Mcc'[/b]"), 
+							title_align='left', 
+							padding=(1, 0, 0, 0),
+							expand=True,
+							style=style)
 		
 
-		tableAE = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-		tableAE.add_column(_markup('[u]AE-ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Name[/u]\n', style = textStyle), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Resource ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]APP-ID[/u]\n', style = textStyle), width = 10, no_wrap = True)
-		tableAE.add_column(_markup('[u]Reachable[/u]\n', style = textStyle), width = 5, no_wrap = True)
-		tableAE.add_column(_markup('[u]POA[/u]\n', style = textStyle), width = 15, no_wrap = False)
+		tableAE = Table(row_styles=[ '', L.tableRowStyle], box=None, expand=True)
+		tableAE.add_column(_markup('[u]AE-ID[/u]\n', style=textStyle), width=10, no_wrap=True)
+		tableAE.add_column(_markup('[u]Name[/u]\n', style=textStyle), width=10, no_wrap=True)
+		tableAE.add_column(_markup('[u]Resource ID[/u]\n', style=textStyle), width=10, no_wrap=True)
+		tableAE.add_column(_markup('[u]APP-ID[/u]\n', style=textStyle), width=10, no_wrap=True)
+		tableAE.add_column(_markup('[u]Reachable[/u]\n', style=textStyle), width=5, no_wrap=True)
+		tableAE.add_column(_markup('[u]POA[/u]\n', style=textStyle), width=15, no_wrap=False)
 
 		for ae in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.AE):
 			tableAE.add_row(ae.aei, 
@@ -1175,48 +1229,24 @@ function createResource() {{
 							ae.api, 
 							str(ae.rr), 
 							'' if ae.poa is None else ', '.join(ae.poa),
-							style = textStyle)
+							style=textStyle)
 
 		panelAE = Panel(tableAE, 
 				  		box=box.ROUNDED, 
-						title=_markup('[b]Application Entities (AE)[/b]'), 
+						title=_markup('[b]AE – Application Entities[/b]'), 
 						title_align='left', 
-						padding = (1, 0, 0, 0),
+						padding=(1, 0, 0, 0),
 						expand=True,
-						style = style)
+						style=style)
 
-		result = Table.grid(expand = True)
+		result = Table.grid(expand=True)
 		result.add_column()
 		result.add_row(panelCSE)
+		if spCsr:
+			result.add_row(panelSPCSE)
 		result.add_row(panelAE)
 
 		return result
-		# result = ''
-
-		# if RC.cseType != CSEType.IN:
-		# 	result += f'- **Registrar CSE**\n'
-		# 	if CSE.remote.registrarAddress:
-		# 		registrarCSE = CSE.remote.registrarCSE
-		# 		registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-		# 		result += f'    - {Configuration.cse_registrar_cseID[1:]} ({registrarType}) @ {CSE.remote.registrarAddress}\n'
-		# 	else:
-		# 		result += '   - None'
-
-		# if RC.cseType != CSEType.ASN:
-		# 	result += f'- **Registree CSEs**\n'
-		# 	if len(CSE.remote.descendantCSR) > 0:
-		# 		for desc in CSE.remote.descendantCSR.keys():
-		# 			(csr, _) = CSE.remote.descendantCSR[desc]
-		# 			if csr:
-		# 				result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
-		# 				for desc2 in CSE.remote.descendantCSR.keys():
-		# 					(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
-		# 					if not csr2 and atCsi2 == desc:
-		# 						result += f'    - {desc2[1:]}\n'
-		# 	else:
-		# 		result += '    - None'
-	
-		# return result if len(result) else 'None'
 		
 
 # TODO events transit requests
@@ -1236,45 +1266,49 @@ function createResource() {{
 				Rich Table object.
 		"""
 
+		status = getCSEStatusJSON()
+
 		def _stats() -> Table:
 			#
 			#	Right columns
 			#
-			stats = CSE.statistics.getStats()
 
 			#
 			#	Misc
 			#
 
 			miscLeft  = Text(style = textStyle)
-			miscLeft += f'CSE-ID | CSE-Name : {RC.cseCsi}  |  {RC.cseRn}\n'
-			miscLeft += f'Hostname          : {socket.gethostname()}\n'
+			miscLeft += f'CSE-ID | CSE-Name : {status["cse"]["CSE-ID"]}  |  {status["cse"]["CSE-RN"]}\n'
+			miscLeft += f'SP-ID             : {status["cse"]["SP-ID"]}\n'
+			miscLeft += f'Hostname          : {status["network"]["hostname"]}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
-				miscLeft += f'IP-Address        : {getIPAddress()}\n'
+				miscLeft += f'IP-Address        : {status["network"]["ipaddress"]}\n'
 			except Exception as e:
 				print(e)
-			miscLeft += f'PoA               : {RC.csePOA[0]}\n'
-			if len(RC.csePOA) > 1:
-				miscLeft += ''.join([f'                    {poa}\n' for poa in RC.csePOA[1:] ])
+
+			_poa = status["network"]['POA']
+			miscLeft += f'PoA               : {_poa[0]}\n'
+			if len(_poa) > 1:
+				miscLeft += ''.join([f'                    {poa}\n' for poa in _poa[1:] ])
 
 			miscLeft += '\n'
-			miscLeft += f'CWD               : {os.getcwd()}\n'
-			miscLeft += f'Runtime Directory : {Configuration.baseDirectory}\n'
-			miscLeft += f'Config File       : {Configuration.configfile}\n'
+			miscLeft += f'CWD               : {status["runtime"]["cwd"]}\n'
+			miscLeft += f'Runtime Directory : {status["runtime"]["baseDirectory"]}\n'
+			miscLeft += f'Config Source     : {status["runtime"]["configFile"]}\n'
 			miscLeft += '\n'
-			miscLeft += f'StartTime         : {datetime.datetime.fromtimestamp(fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
-			miscLeft += f'Uptime            : {stats.get(Statistics.cseUpTime, "")}\n'
+			miscLeft += f'StartTime         : {status["runtime"]["startTime"]} (UTC)\n'
+			miscLeft += f'Uptime            : {status["runtime"]["uptime"]}\n'
 
 			miscLeft += '\n'
-			if hasattr(os, 'getloadavg'):
-				load = os.getloadavg()
-				miscLeft += f'Load              : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
+			if _load := status['runtime']['load']:
+				miscLeft += f'Load              : {_load[0]:.2f} | {_load[1]:.2f} | {_load[2]:.2f}\n'
 			else:
 				miscLeft += '\n'
-			miscLeft += f'Platform          : {platform.platform(terse=True)} ({platform.machine()})\n'
-			miscLeft += f'Python Version    : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
-			miscLeft += f'ACME CSE Version  : {Constants.version}'
+
+			miscLeft += f'Platform          : {status["runtime"]["platform"]}\n'
+			miscLeft += f'Python Version    : {status["runtime"]["pythonVersion"]}\n'
+			miscLeft += f'ACME CSE Version  : {status["runtime"]["version"]}'
 
 			miscHeight = len(miscLeft.split('\n'))
 
@@ -1293,87 +1327,96 @@ function createResource() {{
 			if Configuration.cse_statistics_enable:
 				resourceOps  =  _markup('[underline]Operations[/underline]\n', style = textStyle)
 				resourceOps += 	'\n'
-				resourceOps +=  f'Create:   {stats.get(Statistics.createdResources, 0)}\n'
-				resourceOps +=  f'Retrieve: {stats.get(Statistics.retrievedResources, 0)}\n'
-				resourceOps +=  f'Update:   {stats.get(Statistics.updatedResources, 0)}\n'
-				resourceOps +=  f'Delete:   {stats.get(Statistics.deletedResources, 0)}\n'
-				resourceOps +=  f'Notify:   {stats.get(Statistics.notifications, 0)}\n'
-				resourceOps +=  f'Expire:   {stats.get(Statistics.expiredResources, 0)}\n'
+				_st = status['resources']['operations']
+				resourceOps +=  f'Created:  {_st["created"]}\n'
+				resourceOps +=  f'Retrieved:{_st["retrieved"]}\n'
+				resourceOps +=  f'Updated:  {_st["updated"]}\n'
+				resourceOps +=  f'Deleted:  {_st["deleted"]}\n'
+				resourceOps +=  f'Notified:  {_st["notified"]}\n'
+				resourceOps +=  f'Expired:  {_st["expired"]}\n'
 				resourceOps +=  _markup(f'\n[dim]Includes virtual\nresources[/dim]')
 
+				_st = status['requests']['coap']["received"]
 				coapReceived  = _markup('[underline]CoAP:R[/underline]\n', style = textStyle)
 				coapReceived += '\n'
-				coapReceived += f'C: {stats.get(Statistics.coCreates, 0)}\n'
-				coapReceived += f'R: {stats.get(Statistics.coRetrieves, 0)}\n'
-				coapReceived += f'U: {stats.get(Statistics.coUpdates, 0)}\n'
-				coapReceived += f'D: {stats.get(Statistics.coDeletes, 0)}\n'
-				coapReceived += f'N: {stats.get(Statistics.coNotifies, 0)}\n'
+				coapReceived += f'C: {_st["create"]}\n'
+				coapReceived += f'R: {_st["retrieve"]}\n'
+				coapReceived += f'U: {_st["update"]}\n'
+				coapReceived += f'D: {_st["delete"]}\n'
+				coapReceived += f'N: {_st["notify"]}\n'
 
+				_st = status['requests']['coap']["sent"]
 				coapSent  = 	_markup('[underline]CoAP:S[/underline]\n', style = textStyle)
 				coapSent += 	'\n'
-				coapSent += 	f'C: {stats.get(Statistics.coSendCreates, 0)}\n'
-				coapSent += 	f'R: {stats.get(Statistics.coSendRetrieves, 0)}\n'
-				coapSent += 	f'U: {stats.get(Statistics.coSendUpdates, 0)}\n'
-				coapSent += 	f'D: {stats.get(Statistics.coSendDeletes, 0)}\n'
-				coapSent += 	f'N: {stats.get(Statistics.coSendNotifies, 0)}\n'
+				coapSent += 	f'C: {_st["create"]}\n'
+				coapSent += 	f'R: {_st["retrieve"]}\n'
+				coapSent += 	f'U: {_st["update"]}\n'
+				coapSent += 	f'D: {_st["delete"]}\n'
+				coapSent += 	f'N: {_st["notify"]}\n'
 
 
+				_st = status['requests']['http']["received"]
 				httpReceived  = _markup('[underline]HTTP:R[/underline]\n', style = textStyle)
 				httpReceived += '\n'
-				httpReceived += f'C: {stats.get(Statistics.httpCreates, 0)}\n'
-				httpReceived += f'R: {stats.get(Statistics.httpRetrieves, 0)}\n'
-				httpReceived += f'U: {stats.get(Statistics.httpUpdates, 0)}\n'
-				httpReceived += f'D: {stats.get(Statistics.httpDeletes, 0)}\n'
-				httpReceived += f'N: {stats.get(Statistics.httpNotifies, 0)}\n'
+				httpReceived += f'C: {_st["create"]}\n'
+				httpReceived += f'R: {_st["retrieve"]}\n'
+				httpReceived += f'U: {_st["update"]}\n'
+				httpReceived += f'D: {_st["delete"]}\n'
+				httpReceived += f'N: {_st["notify"]}\n'
 
+				_st = status['requests']['http']["sent"]
 				httpSent  = 	_markup('[underline]HTTP:S[/underline]\n', style = textStyle)
 				httpSent += 	'\n'
-				httpSent += 	f'C: {stats.get(Statistics.httpSendCreates, 0)}\n'
-				httpSent += 	f'R: {stats.get(Statistics.httpSendRetrieves, 0)}\n'
-				httpSent += 	f'U: {stats.get(Statistics.httpSendUpdates, 0)}\n'
-				httpSent += 	f'D: {stats.get(Statistics.httpSendDeletes, 0)}\n'
-				httpSent += 	f'N: {stats.get(Statistics.httpSendNotifies, 0)}\n'
+				httpSent += 	f'C: {_st["create"]}\n'
+				httpSent += 	f'R: {_st["retrieve"]}\n'
+				httpSent += 	f'U: {_st["update"]}\n'
+				httpSent += 	f'D: {_st["delete"]}\n'
+				httpSent += 	f'N: {_st["notify"]}\n'
 
+				_st = status['requests']['mqtt']["received"]
 				mqttReceived  = _markup('[underline]MQTT:R[/underline]\n', style = textStyle)
 				mqttReceived += 	'\n'
-				mqttReceived += f'C: {stats.get(Statistics.mqttCreates, 0)}\n'
-				mqttReceived += f'R: {stats.get(Statistics.mqttRetrieves, 0)}\n'
-				mqttReceived += f'U: {stats.get(Statistics.mqttUpdates, 0)}\n'
-				mqttReceived += f'D: {stats.get(Statistics.mqttDeletes, 0)}\n'
-				mqttReceived += f'N: {stats.get(Statistics.mqttNotifies, 0)}\n'
+				mqttReceived += f'C: {_st["create"]}\n'
+				mqttReceived += f'R: {_st["retrieve"]}\n'
+				mqttReceived += f'U: {_st["update"]}\n'
+				mqttReceived += f'D: {_st["delete"]}\n'
+				mqttReceived += f'N: {_st["notify"]}\n'
 
+				_st = status['requests']['mqtt']["sent"]
 				mqttSent  = 	_markup('[underline]MQTT:S[/underline]\n', style = textStyle)
 				mqttSent += 	'\n'
-				mqttSent += 	f'C: {stats.get(Statistics.mqttSendCreates, 0)}\n'
-				mqttSent += 	f'R: {stats.get(Statistics.mqttSendRetrieves, 0)}\n'
-				mqttSent += 	f'U: {stats.get(Statistics.mqttSendUpdates, 0)}\n'
-				mqttSent += 	f'D: {stats.get(Statistics.mqttSendDeletes, 0)}\n'
-				mqttSent += 	f'N: {stats.get(Statistics.mqttSendNotifies, 0)}\n'
+				mqttSent += 	f'C: {_st["create"]}\n'
+				mqttSent += 	f'R: {_st["retrieve"]}\n'
+				mqttSent += 	f'U: {_st["update"]}\n'
+				mqttSent += 	f'D: {_st["delete"]}\n'
+				mqttSent += 	f'N: {_st["notify"]}\n'
 
+				_st = status['requests']['ws']["received"]
 				wsReceived  =	_markup('[underline]WS:R[/underline]\n', style = textStyle)
 				wsReceived +=	'\n'
-				wsReceived +=	f'C: {stats.get(Statistics.wsCreates, 0)}\n'
-				wsReceived +=	f'R: {stats.get(Statistics.wsRetrieves, 0)}\n'
-				wsReceived +=	f'U: {stats.get(Statistics.wsUpdates, 0)}\n'
-				wsReceived +=	f'D: {stats.get(Statistics.wsDeletes, 0)}\n'
-				wsReceived +=	f'N: {stats.get(Statistics.wsNotifies, 0)}\n'
+				wsReceived +=	f'C: {_st["create"]}\n'
+				wsReceived +=	f'R: {_st["retrieve"]}\n'
+				wsReceived +=	f'U: {_st["update"]}\n'
+				wsReceived +=	f'D: {_st["delete"]}\n'
+				wsReceived +=	f'N: {_st["notify"]}\n'
 
+				_st = status['requests']['ws']["sent"]
 				wsSent  =   	_markup('[underline]WS:S[/underline]\n', style = textStyle)
 				wsSent +=   	'\n'
-				wsSent +=   	f'C: {stats.get(Statistics.wsSendCreates, 0)}\n'
-				wsSent +=   	f'R: {stats.get(Statistics.wsSendRetrieves, 0)}\n'
-				wsSent +=   	f'U: {stats.get(Statistics.wsSendUpdates, 0)}\n'
-				wsSent +=   	f'D: {stats.get(Statistics.wsSendDeletes, 0)}\n'
-				wsSent +=   	f'N: {stats.get(Statistics.wsSendNotifies, 0)}\n'
+				wsSent +=   	f'C: {_st["create"]}\n'
+				wsSent +=   	f'R: {_st["retrieve"]}\n'
+				wsSent +=   	f'U: {_st["update"]}\n'
+				wsSent +=   	f'D: {_st["delete"]}\n'
+				wsSent +=   	f'N: {_st["notify"]}\n'
 
 				#
 				#	Logs
 				#
 
 				miscLogs  = Text(style = textStyle)
-				miscLogs += f'LogLevel : {str(L.logLevel)}\n'
-				miscLogs += f'Errors   : {stats.get(Statistics.logErrors, 0)}\n'
-				miscLogs += f'Warnings : {stats.get(Statistics.logWarnings, 0)}'
+				miscLogs += f'LogLevel : {status["logging"]["level"]}\n'
+				miscLogs += f'Errors   : {status["logging"]["errors"]}\n'
+				miscLogs += f'Warnings : {status["logging"]["warnings"]}'
 
 				panelMiscLogs = Panel(miscLogs, 
 									  box = box.ROUNDED, 
@@ -1389,15 +1432,17 @@ function createResource() {{
 				#
 
 				miscDB  = Text(style = textStyle)
-				miscDB += f'Type     : {Configuration.database_type}\n'
-				match Configuration.database_type:
+				miscDB += f'Type     : {(_dbt := status["runtime"]["database"]["type"])}\n'
+				match _dbt:
 					case 'postgresql':
-						miscDB += f'Host     : {Configuration.database_postgresql_host}:{Configuration.database_postgresql_port}\n'
-						miscDB += f'Role     : {Configuration.database_postgresql_role}\n'
-						miscDB += f'Database : {Configuration.database_postgresql_database}\n'
-						miscDB += f'Schema   : {Configuration.database_postgresql_schema}\n'
+						_dbt = status["runtime"]["database"]["postgresql"]
+						miscDB += f'Host     : {_dbt["host"]}\n'
+						miscDB += f'Role     : {_dbt["role"]}\n'
+						miscDB += f'Database : {_dbt["database"]}\n'
+						miscDB += f'Schema   : {_dbt["schema"]}\n'
 					case 'tinydb':
-						miscDB += f'Path     : ./{os.path.relpath(Configuration.database_tinydb_path, Configuration.baseDirectory)}\n'
+						_dbt = status["runtime"]["database"]["tinydb"]
+						miscDB += f'Path     : {_dbt["path"]}\n'
 						miscDB += '\n\n\n'
 					case 'memory':
 						miscDB += '\n\n\n\n'
@@ -1423,9 +1468,16 @@ function createResource() {{
 			tableWorkers.add_column(_markup('[u]Type[/u]\n', style = textStyle), no_wrap = True)
 			tableWorkers.add_column(_markup('[u]Intvl (s)[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
 			tableWorkers.add_column(_markup('[u]#Runs[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
-			for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()):
-				a = 'Actor' if w.maxCount == 1 else 'Worker'
-				tableWorkers.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '', style = textStyle)
+			for w in status['runtime']['workers']:
+				tableWorkers.add_row(w['name'], 
+						 			 w['type'], 
+									 str(w['interval']) if w['interval'] is not None else '', 
+									 str(w['runs']) if w['runs'] is not None else '', 
+									 style = textStyle)
+
+			# for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()):
+			# 	a = 'Actor' if w.maxCount == 1 else 'Worker'
+			# 	tableWorkers.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '', style = textStyle)
 			
 			panelWorkers = Panel(tableWorkers, 
 								 box = box.ROUNDED, 
@@ -1438,11 +1490,9 @@ function createResource() {{
 			tableThreads = Table(box = None, padding = (0, 0))
 			tableThreads.add_column(_markup('[u]Queues[/u]    \n', style = textStyle), no_wrap = True)
 			tableThreads.add_column(_markup('[u]Count[/u]\n', style = textStyle), no_wrap = True, justify = 'right')
-			r, p = BackgroundWorkerPool.countJobs()
-			tableThreads.add_row('Running', str(r), style = textStyle)
-			tableThreads.add_row('Paused', str(p), style = textStyle)
-			import threading
-			tableThreads.add_row('Native', str(threading.active_count()), style = textStyle)
+			tableThreads.add_row('Running', str(status['runtime']["threads"]["running"]), style = textStyle)
+			tableThreads.add_row('Paused', str(status['runtime']["threads"]["paused"]), style = textStyle)
+			tableThreads.add_row('Native', str(status['runtime']["threads"]["native"]), style = textStyle)
 			for _ in range(len(tableWorkers.rows)-3):	# Fill up lines
 				tableThreads.add_row('', '')
 			
@@ -1497,50 +1547,45 @@ function createResource() {{
 			rightGrid.add_row(workerGrid)
 			rightGrid.add_row(infoGrid)
 
-			_virtualCount = CSE.dispatcher.countResources(( ResourceTypes.CNT_LA, 
-															ResourceTypes.CNT_OL,
-															ResourceTypes.FCNT_LA,
-															ResourceTypes.FCNT_OL,
-															ResourceTypes.TS_LA,
-															ResourceTypes.TS_OL, 
-															ResourceTypes.GRP_FOPT, 
-															ResourceTypes.PCH_PCU))
-
 			#
 			#	Left column
 			#
 
+			_cts = status["resources"]["counts"]
 			resourceTypes = Text(style = textStyle)
-			resourceTypes += f'AE      : {(_cAE   := CSE.dispatcher.countResources(ResourceTypes.AE))}\n'
-			resourceTypes += f'ACP     : {(_cACP  := CSE.dispatcher.countResources(ResourceTypes.ACP))}\n'
-			resourceTypes += f'ACTR    : {(_cACTR := CSE.dispatcher.countResources(ResourceTypes.ACTR))}\n'
-			resourceTypes += f'CB      : {(_cCB   := CSE.dispatcher.countResources(ResourceTypes.CSEBase))}\n'
-			resourceTypes += f'CIN     : {(_cCIN  := CSE.dispatcher.countResources(ResourceTypes.CIN))}\n'
-			resourceTypes += f'CNT     : {(_cCNT  := CSE.dispatcher.countResources(ResourceTypes.CNT))}\n'
-			resourceTypes += f'CRS     : {(_cCRS  := CSE.dispatcher.countResources(ResourceTypes.CRS))}\n'
-			resourceTypes += f'CSR     : {(_cCSR  := CSE.dispatcher.countResources(ResourceTypes.CSR))}\n'
-			resourceTypes += f'DEPR    : {(_cDEPR := CSE.dispatcher.countResources(ResourceTypes.DEPR))}\n'
-			resourceTypes += f'FCNT    : {(_cFCNT := CSE.dispatcher.countResources(ResourceTypes.FCNT))}\n'
-			resourceTypes += f'FCI     : {(_cFCI  := CSE.dispatcher.countResources(ResourceTypes.FCI))}\n'
-			resourceTypes += f'GRP     : {(_cGRP  := CSE.dispatcher.countResources(ResourceTypes.GRP))}\n'
-			resourceTypes += f'LCP     : {(_cLCP  := CSE.dispatcher.countResources(ResourceTypes.LCP))}\n'
-			resourceTypes += f'MgmtObj : {(_cMOBJ := CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ))}\n'
-			resourceTypes += f'NOD     : {(_cNOD  := CSE.dispatcher.countResources(ResourceTypes.NOD))}\n'
-			resourceTypes += f'PCH     : {(_cPCH  := CSE.dispatcher.countResources(ResourceTypes.PCH))}\n'
-			resourceTypes += f'REQ     : {(_cREQ  := CSE.dispatcher.countResources(ResourceTypes.REQ))}\n'
-			resourceTypes += f'SCH     : {(_cSCH  := CSE.dispatcher.countResources(ResourceTypes.SCH))}\n'
-			resourceTypes += f'SMD     : {(_cSMD  := CSE.dispatcher.countResources(ResourceTypes.SMD))}\n'
-			resourceTypes += f'SUB     : {(_cSUB  := CSE.dispatcher.countResources(ResourceTypes.SUB))}\n'
-			resourceTypes += f'TS      : {(_cTS   := CSE.dispatcher.countResources(ResourceTypes.TS))}\n'
-			resourceTypes += f'TSB     : {(_cTSB  := CSE.dispatcher.countResources(ResourceTypes.TSB))}\n'
-			resourceTypes += f'TSI     : {(_cTSI  := CSE.dispatcher.countResources(ResourceTypes.TSI))}\n'
+			resourceTypes += f'AE      : {_cts["AE"]}\n'
+			resourceTypes += f'ACP     : {_cts["ACP"]}\n'
+			resourceTypes += f'ACTR    : {_cts["ACTR"]}\n'
+			resourceTypes += f'CB      : {_cts["CB"]}\n'
+			resourceTypes += f'CIN     : {_cts["CIN"]}\n'
+			resourceTypes += f'CNT     : {_cts["CNT"]}\n'
+			resourceTypes += f'CRS     : {_cts["CRS"]}\n'
+			resourceTypes += f'CSR     : {_cts["CSR"]}\n'
+			resourceTypes += f'DEPR    : {_cts["DEPR"]}\n'
+			resourceTypes += f'FCNT    : {_cts["FCNT"]}\n'
+			resourceTypes += f'FCI     : {_cts["FCI"]}\n'
+			resourceTypes += f'GRP     : {_cts["GRP"]}\n'
+			resourceTypes += f'LCP     : {_cts["LCP"]}\n'
+			resourceTypes += f'MgmtObj : {_cts["MGMTOBJ"]}\n'
+			resourceTypes += f'NOD     : {_cts["NOD"]}\n'
+			resourceTypes += f'NTP     : {_cts["NTP"]}\n'
+			resourceTypes += f'NTPR    : {_cts["NTPR"]}\n'
+			resourceTypes += f'PCH     : {_cts["PCH"]}\n'
+			resourceTypes += f'PDR     : {_cts["PDR"]}\n'
+			resourceTypes += f'REQ     : {_cts["REQ"]}\n'
+			resourceTypes += f'SCH     : {_cts["SCH"]}\n'
+			resourceTypes += f'SMD     : {_cts["SMD"]}\n'
+			resourceTypes += f'SUB     : {_cts["SUB"]}\n'
+			resourceTypes += f'TS      : {_cts["TS"]}\n'
+			resourceTypes += f'TSB     : {_cts["TSB"]}\n'
+			resourceTypes += f'TSI     : {_cts["TSI"]}\n'
 			resourceTypes += '\n'
 			# resourceTypes += _markup(f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - _virtualCount}')	# substract the virtual resources
-			resourceTypes += _markup(f'[bold]Total[/bold]   : {_cAE + _cACP + _cACTR + _cCB + _cCIN + _cCNT + _cCRS + _cCSR + _cDEPR + _cFCNT + _cFCI + _cGRP + _cLCP + _cMOBJ + _cNOD + _cPCH + _cREQ + _cSCH + _cSMD + _cSUB + _cTS + _cTSB + _cTSI }')	# substract the virtual resources
+			resourceTypes += _markup(f'[bold]Total[/bold]   : {_cts["total"]}')	# substract the virtual resources
 
 			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
 			# we need to multiply the number of lines with 2 to get the correct padding.
-			_padding = 16 + (miscHeight - 15) * 2
+			_padding = 12 + (miscHeight - 15) * 2
 			
 			panelResources = Panel(resourceTypes, 
 								   box = box.ROUNDED, 
@@ -1568,28 +1613,32 @@ function createResource() {{
 
 
 	def getConfigurationRich(self,
-							 style:Optional[Style] = Style()) -> Table:
+							 style:Optional[Style]=Style()) -> Table:
 	
 		keys:list[Tuple[str, ...]] = []
 
 		# Prepare
 		for k in list(Configuration.all().keys()):
-			t = k.rsplit('.', maxsplit = 1) + [ k ]
+			t = k.rsplit('.', maxsplit=1) + [ k ]
 			keys.append(tuple(t))
-		keys.sort(key = lambda x : (x[0], x[1]))
+		keys.sort(key=lambda x : (x[0], x[1]))
 
 		# Init the result grid
-		result = Table.grid(expand = True)
+		result = Table.grid(expand=True)
 		result.add_column()
 
 		def _addTableToResult() -> None:
 			if table:
-				grid = Table.grid(expand = True)
+				grid = Table.grid(expand=True)
 				grid.add_column()
-				grid.add_row(_markup(f'[u b]{previousTop}[/u b]'))
+				# grid.add_row(_markup(f'[u b]{previousTop}[/u b]'))
 				grid.add_row(table)
+				grid.add_row()
 
-				result.add_row(Panel(grid, style = style))
+				result.add_row(Panel(grid, 
+						 			 title=f'[ {previousTop} ]',
+									 title_align='left',
+									 style=style))
 
 
 		previousTop = None
@@ -1604,9 +1653,9 @@ function createResource() {{
 					previousTop = section[0]
 				
 					# Create a table for the new topic
-					table = Table(row_styles = [ '', L.tableRowStyle], box = None, expand = True)
-					table.add_column(_markup('[u]Setting[/u]\n'), no_wrap = True, ratio = 30)
-					table.add_column(_markup('[u]Value(s)[/u]\n'), ratio = 70)
+					table = Table(row_styles=[ '', L.tableRowStyle], box=None, expand=True)
+					table.add_column(no_wrap=True, ratio=30)
+					table.add_column(ratio=70)
 				_v = Configuration.get(section[2])
 				if isinstance(_v, list) and len(_v) and isinstance(_v[0], tuple):
 					_v = [ str(x) for x in _v  ]
@@ -1755,8 +1804,15 @@ function createResource() {{
 		return '\n'.join([item.rstrip() for item in console.end_capture().splitlines()])
 
 
-	def getRequestsRich(self, id:Optional[str] = None) -> Tuple[Table, str]:
+	def getRequestsRich(self, id:Optional[str]=None) -> Tuple[Table, str]:
+		"""	Generate a Rich table with all requests and a PlantUML sequence diagram.
 
+			Args:
+				id: If set, then only the requests for this resource ID are returned.
+			
+			Return:
+				A tuple with a Rich Table object and a PlantUML sequence diagram string.
+		"""
 
 		table = Table(row_styles = [ '', L.tableRowStyle],  expand = True)
 		table.add_column(_markup('[u]Timestamp[/u]\n'), no_wrap = True)
@@ -1781,7 +1837,7 @@ skinparam BoxPadding 60
 		seqs = ''
 		origPrefix = '<originator>\\n'
 
-		for r in CSE.storage.getRequests(id, sortedByOt = True):
+		for r in CSE.storage.getRequests(id, sortedByOt=True):
 			req = r['req']
 			op = req['op']
 
@@ -1792,7 +1848,7 @@ skinparam BoxPadding 60
 				ri = f'"{ri}"'
 
 			org = r['org']
-			if org == RC.cseCsi:
+			if org == RC.cseCsi or org == f'{RC.cseSPid}/{RC.cseCsi}':
 				participants.add(orig := f'"{org[1:]}"')	# CSI without the leading /
 			else:
 				participants.add(orig := f'"{origPrefix}{org}"')
@@ -1804,16 +1860,16 @@ skinparam BoxPadding 60
 				table.add_row(toISO8601Date(r['ts']), 
 							org,
 							Operation(op).name, 
-							Pretty(req, indent_size = 2),
-							Pretty(r['rsp'], indent_size = 2))
+							Pretty(req, indent_size=2),
+							Pretty(r['rsp'], indent_size=2))
 			else:
 				table.add_row(toISO8601Date(r['ts']), 
 							org,
 							Operation(op).name, 
-							ri, 
-							Pretty(req, indent_size = 2),
-							Pretty(r['rsp'], indent_size = 2))
-			
+							ri,
+							Pretty(req, indent_size=2),
+							Pretty(r['rsp'], indent_size=2))
+
 			if ri not in participants:
 				targets.add(ri)
 			tyn = ResourceTypes(ty).name if ResourceTypes.has(ty) else f'UNKNOWN_TYPE_{ty}'

@@ -18,7 +18,7 @@ import sys, re
 from .Constants import Constants
 from .Types import ResourceTypes
 from .Types import JSON
-from .IDUtils import isStructured, isCSERelative, toSPRelative
+from .IDUtils import isStructured, isCSERelative, toSPRelative, isAbsolute, toAbsolute, isSPRelative
 from ..runtime import CSE
 from ..etc.Constants import RuntimeConstants as RC
 
@@ -67,6 +67,23 @@ def riFromStructuredPath(srn: str) -> Optional[str]:
 		return None
 
 
+def resourceTypeFromID(id:str) -> Optional[ResourceTypes]:
+	""" Get the resource type from a resource ID.
+
+		Args:
+			id: Resource ID to check.
+		Return:
+			Resource type, or None in case of an error.
+	"""
+	if isStructured(id):
+		lst = CSE.storage.structuredIdentifier(id)
+	else:
+		lst = CSE.storage.identifier(id)
+	if not lst:
+		return None
+	return ResourceTypes(lst[0]['ty'])
+
+
 def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	""" Get the structured part of a hybrid resource ID, including the necessary handling of virtual
 		resources in the path.
@@ -86,18 +103,18 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	return srn, id
 
 
-def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
+def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 	""" Split a full path e.g. from a http request into its component and return a CSE local ri .
 		Also handle retargeting paths.
 
 		Args:
 			id: A resource ID to process. This could be a structured or unstructured, and in CSE-relative, SP-relative or Absolute format.
 		Return:
-			The return tupple is (RI, CSI of the resource ID, structured path of the ID, debug message or None).
+			The return tupple is (RI, CSI of the resource ID, structured path of the ID, SPID if any, debug message or None).
 	"""
 
 	if not id:
-		return None, None, None, 'ID must not be empty'
+		return None, None, None, None, 'ID must not be empty'
 	
 	csi 		= None
 	spi 		= None
@@ -121,7 +138,7 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		lvl += 1
 		idsLen -= 1
 	if lvl > 2:						# not more than 2 * / in front
-		return None, None, None, 'Too many "/" level'
+		return None, None, None, None, 'Too many "/" level'
 
 	# Remove virtual resource shortname if it is present
 	if ResourceTypes.isVirtualResourceName(ids[-1]):
@@ -144,12 +161,12 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 		case 1:
 			# L.logDebug("SP-Relative")
 			if idsLen < 2:
-				return None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
+				return None, None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
 			csi = ids[0]					# extract the csi
 			if csi != RC.cseCsiSlashLess:	# Not for this CSE? retargeting
 				if vrPresent:				# append last path element again
 					ids.append(vrPresent)
-				return id, csi, srn, None	# Early return. ri is the (un)structured path
+				return id, csi, srn, None, None	# Early return. ri is the (un)structured path
 			# replace placeholder "-", convert in CSE-relative when the target is this CSE
 			if ids[1] == '-' and ids[0] == RC.cseCsiSlashLess:	
 				ids[1] = RC.cseRn
@@ -158,22 +175,22 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 			elif idsLen == 2:				# unstructured
 				ri = ids[1]
 			else:
-				return None, None, None, 'Too many "/" level'
+				return None, None, None, None, 'Too many "/" level'
 
 
 		# Absolute (2 first elements are /)
 		case 2:
 			# L.logDebug("Absolute")
 			if idsLen < 3:
-				return None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
+				return None, None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
 			spi = ids[0]
 			csi = ids[1]
-			if spi != RC.cseSpid:			# Check for SP-ID
-				return None, None, None, f'SP-ID: {RC.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
-			if csi != RC.cseCsiSlashLess:	# Check for CSE-ID
+			# if spi != RC.cseSpid:			# Check for SP-ID
+			# 	return None, None, None, f'SP-ID: {RC.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
+			if spi != RC.cseSPIDSlashLess or csi != RC.cseCsiSlashLess:	# Check for SP-ID and CSE-ID
 				if vrPresent:				# append virtual last path element again
 					ids.append(vrPresent)
-				return id, csi, srn, None	# Not for this CSE? retargeting
+				return id, csi, srn, spi, None	# Not for this CSE or SP? retargeting
 
 			# replace placeholder "-", convert in absolute when the target is this CSE
 			if ids[2] == '-' and ids[1] == RC.cseCsiSlashLess:	
@@ -183,21 +200,20 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str]:
 			elif idsLen == 3:				# unstructured
 				ri = ids[2]
 			else:
-				return None, None, None, 'Too many "/" level'
+				return None, None, None, None, 'Too many "/" level'
 
 	# Now either csi, ri or structured srn is set
 	if ri:
 		if vrPresent:
 			ri = f'{ri}/{vrPresent}'
-		return ri, csi, srn, None
+		return ri, csi, srn, spi, None
 	if srn:
 		if vrPresent:
 			srn = f'{srn}/{vrPresent}'
-		return riFromStructuredPath(srn), csi, srn, None
+		return riFromStructuredPath(srn), csi, srn, spi, None
 	if csi:
-		return riFromCSI(f'/{csi}'), csi, srn, None
-	# TODO do something with spi?
-	return None, None, None, 'Unsupported ID'
+		return riFromCSI(f'/{csi}'), csi, srn, spi, None
+	return None, None, None, None, f'Unsupported ID: {id}'
 
 
 def riFromCSI(csi:str) -> Optional[str]:
@@ -230,10 +246,10 @@ def compareIDs(id1:str, id2:str) -> bool:
 	if not isStructured(id1) and not isStructured(id2):
 		ri1 = id1
 		ri2 = id2
-		if isCSERelative(id1):
-			ri1 = toSPRelative(id1)
-		if isCSERelative(id2):
-			ri2 = toSPRelative(id2)
+		if not isAbsolute(id1):
+			ri1 = toAbsolute(id1)
+		if not isAbsolute(id2):
+			ri2 = toAbsolute(id2) 		
 		return ri1 == ri2
 
 	return riFromID(id1) == riFromID(id2)
@@ -324,6 +340,7 @@ def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Opt
 		Args:
 			old: Old resource dictionary to compare.
 			new: New resource dictionary to compare.
+			requestPC: The original request's content. This is used to remove the attributes that are part of the update request.
 			modifiers: A dictionary. If this dictionary is given then it contains the changes that let from old to new. This is used to determine if attributes were just updated with the same values.
 		Return:	
 			Return a dictionary of those attributes that have been changed in a CREATE or UPDATE request.	

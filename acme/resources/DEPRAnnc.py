@@ -25,6 +25,7 @@ class DEPRAnnc(AnnouncedResource):
 	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB,
 													#    ResourceTypes.DEBAnnc 
 													   ]
+	""" The allowed child-resource types. """
 
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		

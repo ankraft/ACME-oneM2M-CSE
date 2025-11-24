@@ -83,8 +83,8 @@ class ACTR(AnnounceableResource):
 																  self.sri, 	# type: ignore[has-type]
 																  self.orc, 	# type: ignore[has-type]
 																  self._getApvOperation())
-		self.sri = riFromID(self.sri)	# type: ignore[has-type]
-		self.orc = riFromID(self.orc)	# type: ignore[has-type]
+		# self.setAttribute('sri', riFromID(self.sri))	# type: ignore[has-type]
+		# self.setAttribute('orc', riFromID(self.orc))	# type: ignore[has-type]
 
 		#	Check that the from parameter of the actionPrimitive is the originator
 		self._checkApvFrom(originator)

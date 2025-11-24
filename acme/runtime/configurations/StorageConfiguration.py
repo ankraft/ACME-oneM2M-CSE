@@ -6,6 +6,7 @@
 #
 #	CSE configurations
 #
+""" This module contains the configuration for the Storage Manager."""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,14 +18,15 @@ from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 
 class StorageConfiguration(ModuleConfiguration):
+	""" Storage Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		config.database_type = parser.get('database', 'type', fallback = 'tinydb')
-		config.database_resetOnStartup = parser.getboolean('database', 'resetOnStartup', fallback = False)
-		config.database_backupPath = parser.get('database', 'backupPath', fallback = './data/backup')
+		config.database_type = parser.get('database', 'type', fallback='tinydb')
+		config.database_resetOnStartup = parser.getboolean('database', 'resetOnStartup', fallback=False)
+		config.database_backupPath = parser.get('database', 'backupPath', fallback='./data/backup')
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 
 		# override configuration with command line arguments
 		if Configuration._args_DBReset is True:

@@ -5,23 +5,41 @@
 #
 #	Targets:
 #		- build (default)
-#		- open
-#		- open-missing
-#		- clean
+#		- pydoctor - generate API documentation using PyDoctor
+#		- open - open the generated API documentation in a web browser
+#		- open-missing - open the undoccedSummary.html file in a web browser
+#		- dash - generate a .docset for Dash documentation
+#		- dash-install - install and open the generated .docset in Dash
+#		- clean - clean up generated files
 #
 
-DOCDIR = ../../docs/apidocs
+DOCDIR = ../../docs
+APIDOCS = ${DOCDIR}/apidocs
+TITLE = ACME oneM2M CSE
+DASHDOCSET = ${DOCDIR}
 
-build: 
+build: pydoctor
+
+pydoctor:				## Build API documentation (default)
 	pydoctor
 
-open:
-	open ${DOCDIR}/index.html
+open:					## Open API documentation in the default web browser
+	open ${APIDOCS}/index.html
 
-open-missing:
-	open ${DOCDIR}/undoccedSummary.html
+open-missing:				## Open a list of undocumented items in the default web browser
+	open ${APIDOCS}/undoccedSummary.html
 
-clean:
-	rm -r ${DOCDIR}
+dash:					## Generate a docset for Dash documentation
+	doc2dash "${APIDOCS}" -f -n "${TITLE}" -d "${DASHDOCSET}" -I index.html
 
+dash-install:				## Install and open the generated docset in Dash
+	open "${DASHDOCSET}/${TITLE}.docset"
+
+clean:					## Remove generated files
+	rm -r ${APIDOCS}
+	rm -r "${DASHDOCSET}.docset"
+
+
+help:					## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make [command]\033[36m\033[0m\n\n  Commands:\n"} /^[$$()% a-zA-Z0-9_-]+:.*?##/ { printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 

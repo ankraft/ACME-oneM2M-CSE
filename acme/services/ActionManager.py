@@ -31,8 +31,6 @@ from ..helpers.ResourceSemaphore import CriticalSection
 class ActionManager(object):
 	"""	This class defines functionalities to handle action triggerings, 
 		dependancies and other action related functionalities
-
-		Attributes:
 	"""
 
 	
@@ -70,7 +68,14 @@ class ActionManager(object):
 	###############################################################################################
 
 
-	def evaluateActions(self, name:str, resource:Resource, realRi:Optional[str] = None) -> None:
+	def evaluateActions(self, name:str, resource:Resource, realRi:Optional[str]=None) -> None:
+		"""	Eventhandler to evaluate actions for a resource in case a resource changes.
+
+			Args:
+				name: The name of the resource.
+				resource: The resource instance that triggered the event.
+				realRi: The real resource ID, if available.
+		"""
 
 		if resource.isVirtual():
 			return
@@ -195,7 +200,16 @@ class ActionManager(object):
 
 
 	def evaluateSingleAction(self, resource:Resource, action:JSON, nowTS:float) -> bool:
-		# TODO doc
+		"""	Evaluate a single action for a resource.
+
+			Args:
+				resource: The resource to evaluate against.
+				action: The action to evaluate.
+				nowTS: The current timestamp.
+
+			Returns:
+				Boolean that indicates the success of the evaluation.
+		"""
 
 		L.isDebug and L.logDebug(f'Evaluate action: {action["ri"]}')
 		# If the mode is periodic, and the next timestamp for the action is greater then now,
@@ -210,8 +224,15 @@ class ActionManager(object):
 
 
 	def evaluateDependencies(self, action:JSON) -> bool:
-		# TODO doc
-		
+		"""	Evaluate the dependencies of an action.
+
+			Args:
+				action: The action to evaluate.
+
+			Returns:
+				Boolean that indicates the success of the evaluation.
+		"""
+
 		if not (dependencies := action.get('dep')):
 			return True
 		
@@ -264,6 +285,12 @@ class ActionManager(object):
 
 
 	def scheduleAction(self, action:ACTR) -> None:
+		"""	Schedule an action for execution.
+
+			Args:
+				action: The action to schedule.
+		"""
+
 		evm = action.evm
 		if evm == EvalMode.off:
 			L.isDebug and L.logDebug(f'evm: off for action: {action.ri} - Action inactive.')
@@ -287,11 +314,20 @@ class ActionManager(object):
 		
 
 	def unscheduleAction(self, action:ACTR) -> None:
+		"""	Unschedule an action.
+
+			Args:
+				action: The action to unschedule.
+		"""
 		CSE.storage.removeActionRepr(action.ri)
 
 	
 	def updateAction(self, actr:ACTR) -> None:
-		# TODO  doc
+		"""	Update an existing action.
+
+			Args:
+				actr: The action to update.
+		"""
 		# hack, only update the dep attribute
 		if action := CSE.storage.getActionRepr(actr.ri):
 			action['dep'] = actr.dep

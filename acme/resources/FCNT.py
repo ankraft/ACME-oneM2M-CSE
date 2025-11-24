@@ -85,19 +85,24 @@ class FCNT(ContainerResource):
 
 
 
-	def __init__(self, dct:Optional[JSON] = None, typeShortname:Optional[str] = None, create:Optional[bool] = False) -> None:
+	def __init__(self, dct:Optional[JSON]=None, typeShortname:Optional[str]=None, create:Optional[bool]=False) -> None:
 		self.typeShortname = typeShortname
 
-		# TODO this could be optimized? copy to an internal attribute?
-		self.nonCustomAttributes = internalAttributes + [ a for a in self._attributes.keys() ]
+		# TODO The following could be optimized? copy to internal attributes?
+		self.nonCustomAttributes = internalAttributes + list(self._attributes.keys())
 		"""	List of attributes that are not custom attributes. """
 
-		super().__init__(dct, create = create)
+		self.customAttributes: list[str] = []
+		"""	List of custom attributes defined for this particular FlexContainerSpecialization. """
+		if (policies := CSE.validator.getFlexContainerAttributesFor(self.typeShortname)) is not None:
+			self.customAttributes = list(policies.keys())
+
+		super().__init__(dct, create=create)
 
 
 	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute('cs', 0, overwrite = False)
-		self.setAttribute('st', 0, overwrite = False)
+		self.setAttribute('cs', 0, overwrite=False)
+		self.setAttribute('st', 0, overwrite=False)
 
 		self.setAttribute(Constants.attrHasFCI, False, False)	# stored in DB
 
@@ -117,7 +122,7 @@ class FCNT(ContainerResource):
 		# Calculate contentSize. Only the custom attribute
 		self.setAttribute('cs', sum([getAttributeSize(self[attr]) for attr in self.dict if attr not in self.nonCustomAttributes]))
 
-		# returen if fcinEnabled is not present at all
+		# return if fcinEnabled is not present at all
 		if (fcied := self.fcied) is None:
 			if any(attr is not None for attr in [self.mni, self.mbs, self.mia]):
 				raise BAD_REQUEST('mni, mbs, or mia must not be present when fcied is not present')
@@ -255,7 +260,7 @@ class FCNT(ContainerResource):
 
 		# Update cbs and cni if any of the custom attributes or lbl is present in the request
 		needsFcin = False
-		if any([each not in self.nonCustomAttributes or each in [ 'lbl' ] for each in _dct.keys()]):
+		if any([each not in self.nonCustomAttributes or each in [ 'lbl', 'loc' ] for each in _dct.keys()]):
 			needsFcin = True
 			self.setAttribute('cbs', self.cbs + self.cs)
 			self.setAttribute('cni', self.cni + 1)
@@ -315,7 +320,7 @@ class FCNT(ContainerResource):
 		# Update self first
 		super().update(dct, originator, doValidateAttributes)
 
-		# Add a new FCIN if necessary (if any of the custom attributes or lbl is present in the request)	
+		# Add a new FCIN if necessary (if any of the custom attributes or /loc is present in the request)	
 		if needsFcin:
 			L.isDebug and L.logDebug('Adding flexContainerInstance')
 			self.addFlexContainerInstance(originator)
@@ -388,6 +393,11 @@ class FCNT(ContainerResource):
 		# Copy the label as well
 		if self.lbl:
 			dct['lbl'] = self.lbl
+		
+		# Copy the location if present
+		if self.loc:
+			dct['loc'] = self.loc
+
 		
 		for attr in self.dict:
 			if attr not in self.nonCustomAttributes:

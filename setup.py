@@ -1,6 +1,16 @@
-from setuptools import setup, find_packages
 
+from setuptools import setup, find_packages
 import pathlib, os, time
+
+
+
+#_name='acmecse-dev'
+#_version=time.strftime("%Y%m%d%H%M%S")
+
+_name='acmecse'
+_version='2025.11'
+
+
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -10,21 +20,18 @@ README = (HERE / 'tools/pypi/README.md').read_text()
 
 # Find directories that are modules and have __init__.py
 directories = [d for d,n,f in os.walk('acmecse') if '__init__.py' in f]
-print(directories)
+#print(directories)
 
 setup(
-	# name='acmecse-dev',
-	# version=time.strftime("%Y%m%d%H%M%S"),
-
-	name='acmecse',
-	version='2025.03.2',
-
+	name=_name,
+	version=_version,
 
 	author='Andreas Kraft',
 	author_email='an.kraft@gmail.com',
+
 	classifiers=[
 		'License :: OSI Approved :: BSD License',
-		'Programming Language :: Python :: 3.10',
+		'Programming Language :: Python :: 3.11',
 	],
 	description='An open source CSE Middleware for Education',
 	entry_points={
@@ -42,18 +49,20 @@ setup(
 		'flask-cors',
 		'InquirerPy',
 		'isodate',
+		'kazoo',
 		'paho-mqtt>=2.0.0',
 		'plotext',
 		'psycopg2-binary',
 		'pyperclip',
+		'python-dotenv',
 		#'python3-dtls',
 		'rdflib',
 		'requests', 
 		'rich', 
 		'shapely',
-		'textual==1.0.0',
+		'textual==5.2.0',
 		# 'textual[syntax]',
-		'textual-plotext>=1.0.0',
+		'textual-plotext==1.0.1',
 		'tinydb',
 		'waitress',
 		'websockets',

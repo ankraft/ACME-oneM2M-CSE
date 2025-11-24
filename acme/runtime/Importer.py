@@ -422,16 +422,16 @@ class Importer(object):
 					for entry in attributeDefs:
 						if not (attributePolicy := self._parseAttribute(entry, fn, sname = sname)):
 							return False
-						#L.isDebug and L.logDebug(attributePolicy)
 						if not attributePolicy.rtypes:
 							L.logErr(f'Missing or unknown resource type definition for attribute: {sname} in file {fn}', showStackTrace = False)
 							return False
 						for rtype in attributePolicy.rtypes:
 							ap = deepcopy(attributePolicy)
-							CSE.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
-				
-					countAP += 1
-		
+							try:
+								CSE.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
+							except ValueError as e:
+								L.logErr(str(e))
+								return False
 
 		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
 		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
@@ -531,6 +531,12 @@ class Importer(object):
 			if not isinstance(ctype, str) or len(ctype) == 0:
 				L.logErr(f'Wrong complex type name (ctype) for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 				return None
+		
+		# Get the optional choice attribute
+		if (choice := findXPath(attr, 'choice')) is not None:
+			if not isinstance(choice, bool):
+				L.logErr(f'Wrong type for choice for attribute: {typeShortname} in file: {fn} - must be boolean', showStackTrace=False)
+				return None
 
 		#	Determine the type name and assign the internal data type
 		if not (typeName := findXPath(attr, 'type')) or not isinstance(typeName, str) or len(typeName) == 0:
@@ -590,6 +596,15 @@ class Importer(object):
 					# evalues = self._expandEnumValues(evalues, typeShortname, fn)	# TODO this is perhaps wrong, bc we changed the evalue handling to a different format
 			if typ == BasicType.list and lTypeName is None:
 					L.isDebug and L.logDebug(f'Missing list type for attribute: {typeShortname} in file: {fn}')
+		
+		# Check optional list size
+		if lSize := findXPath(attr, 'lsize'):
+			if not lTypeName:
+				L.logErr(f'List size (lsize) defined for non-list attribute type: {typ} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				return None
+			if not isinstance(lSize, int) or lSize < 0:
+				L.logErr(f'Wrong list size (lsize): {lSize} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				return None
 
 		#	Check and get enum definitions
 		evalues = None
@@ -617,25 +632,33 @@ class Importer(object):
 				L.logErr(f'Empty, or wrong resourceTypes (rtypes): {rtypes} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 				return None
 
+		# Test whether the rtypes are known and convert them to the internal representation
+		_rtypes = ResourceTypes.to(tuple(rtypes)) if rtypes else None 	# type:ignore[arg-type]
+		if rtypes and not _rtypes:
+			L.logErr(f'Unknown resource type definition: {rtypes} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+			return None
+		
 		#	Create an AttributePolicy instance and return it
-		ap = AttributePolicy(	type = typ,
-								typeName = typeName,
-								optionalCreate = oc,
-								optionalUpdate = ou,
-								optionalDiscovery = od,
-								cardinality = car,
-								announcement = annc,
-								namespace = ns,
-								lname = lname,
-								sname = sname,
-								typeShortname = typeShortname,
-								rtypes = ResourceTypes.to(tuple(rtypes)) if rtypes else None, 	# type:ignore[arg-type]
-								ctype = ctype,
-								fname = fn,
-								ltype = ltype,
-								etype = etype,
-								lTypeName = lTypeName,
-								evalues = evalues
+		ap = AttributePolicy(	type=typ,
+								typeName=typeName,
+								optionalCreate=oc,
+								optionalUpdate=ou,
+								optionalDiscovery=od,
+								cardinality=car,
+								announcement=annc,
+								namespace=ns,
+								lname=lname,
+								sname=sname,
+								typeShortname=typeShortname,
+								rtypes=_rtypes,
+								ctype=ctype,
+								fname=fn,
+								ltype=ltype,
+								etype=etype,
+								lTypeName=lTypeName,
+								evalues=evalues,
+								lSize=lSize,
+								choice=choice,
 							)
 		return ap
 

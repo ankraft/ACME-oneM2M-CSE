@@ -6,6 +6,7 @@
 #
 #	HTTP Server Binding configurations
 #
+""" This module contains the configuration for the HTTP server."""
 
 from __future__ import annotations
 from typing import Optional
@@ -18,57 +19,45 @@ from ...etc.Utils import normalizeURL
 from ...helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 
 class HTTPServerConfiguration(ModuleConfiguration):
+	"""	HTTP Server Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		"""	Read the configuration from the configuration file.
-
-			Args:
-				parser: The configuration parser.
-				config: The configuration object.
-		"""
-
 		#	HTTP Server
-		config.http_address = parser.get('http', 'address', fallback = 'http://127.0.0.1:8080')
-		config.http_allowPatchForDelete = parser.getboolean('http', 'allowPatchForDelete', fallback = False)
-		config.http_enableStructureEndpoint = parser.getboolean('http', 'enableStructureEndpoint', fallback = False)
-		config.http_enableUpperTesterEndpoint = parser.getboolean('http', 'enableUpperTesterEndpoint', fallback = False)
-		config.http_listenIF = parser.get('http', 'listenIF', fallback = '0.0.0.0')
-		config.http_port = parser.getint('http', 'port', fallback = 8080)
-		config.http_root = parser.get('http', 'root', fallback = '')
-		config.http_timeout = parser.getfloat('http', 'timeout', fallback = 10.0)
+		config.http_address = parser.get('http', 'address', fallback='http://127.0.0.1:8080')
+		config.http_allowPatchForDelete = parser.getboolean('http', 'allowPatchForDelete', fallback=False)
+		config.http_enableStructureEndpoint = parser.getboolean('http', 'enableStructureEndpoint', fallback=False)
+		config.http_enableUpperTesterEndpoint = parser.getboolean('http', 'enableUpperTesterEndpoint', fallback=False)
+		config.http_enableManagementEndpoint = parser.getboolean('http', 'enableManagementEndpoint', fallback=False)
+		config.http_listenIF = parser.get('http', 'listenIF', fallback='0.0.0.0')
+		config.http_port = parser.getint('http', 'port', fallback=8080)
+		config.http_root = parser.get('http', 'root', fallback='')
+		config.http_timeout = parser.getfloat('http', 'timeout', fallback=10.0)
 
 		#	HTTP Server CORS
-		config.http_cors_enable = parser.getboolean('http.cors', 'enable', fallback = False)
-		config.http_cors_resources = parser.getlist('http.cors', 'resources', fallback = [ r'/*' ])	# type: ignore[attr-defined]
+		config.http_cors_enable = parser.getboolean('http.cors', 'enable', fallback=False)
+		config.http_cors_resources = parser.getlist('http.cors', 'resources', fallback=[ r'/*' ])	# type: ignore[attr-defined]
 
 		#	HTTP Server Security
-		config.http_security_caCertificateFile = parser.get('http.security', 'caCertificateFile', fallback = None)
-		config.http_security_caPrivateKeyFile = parser.get('http.security', 'caPrivateKeyFile', fallback = None)
-		config.http_security_tlsVersion = parser.get('http.security', 'tlsVersion', fallback = 'auto')
-		config.http_security_useTLS = parser.getboolean('http.security', 'useTLS', fallback = False)
-		config.http_security_verifyCertificate = parser.getboolean('http.security', 'verifyCertificate', fallback = False)
-		config.http_security_enableBasicAuth = parser.getboolean('http.security', 'enableBasicAuth', fallback = False)
-		config.http_security_enableTokenAuth = parser.getboolean('http.security', 'enableTokenAuth', fallback = False)
-		config.http_security_basicAuthFile = parser.get('http.security', 'basicAuthFile', fallback = './certs/http_basic_auth.txt')
-		config.http_security_tokenAuthFile = parser	.get('http.security', 'tokenAuthFile', fallback = './certs/http_token_auth.txt')
+		config.http_security_caCertificateFile = parser.get('http.security', 'caCertificateFile', fallback=None)
+		config.http_security_caPrivateKeyFile = parser.get('http.security', 'caPrivateKeyFile', fallback=None)
+		config.http_security_tlsVersion = parser.get('http.security', 'tlsVersion', fallback='auto')
+		config.http_security_useTLS = parser.getboolean('http.security', 'useTLS', fallback=False)
+		config.http_security_verifyCertificate = parser.getboolean('http.security', 'verifyCertificate', fallback=False)
+		config.http_security_enableBasicAuth = parser.getboolean('http.security', 'enableBasicAuth', fallback=False)
+		config.http_security_enableTokenAuth = parser.getboolean('http.security', 'enableTokenAuth', fallback=False)
+		config.http_security_basicAuthFile = parser.get('http.security', 'basicAuthFile', fallback='./certs/http_basic_auth.txt')
+		config.http_security_tokenAuthFile = parser	.get('http.security', 'tokenAuthFile', fallback='./certs/http_token_auth.txt')
 
 		#	HTTP Server WSGI
-		config.http_wsgi_enable = parser.getboolean('http.wsgi', 'enable', fallback = False)
-		config.http_wsgi_connectionLimit = parser.getint('http.wsgi', 'connectionLimit', fallback = 100)
-		config.http_wsgi_threadPoolSize = parser.getint('http.wsgi', 'threadPoolSize', fallback = 100)
+		config.http_wsgi_enable = parser.getboolean('http.wsgi', 'enable', fallback=False)
+		config.http_wsgi_connectionLimit = parser.getint('http.wsgi', 'connectionLimit', fallback=100)
+		config.http_wsgi_threadPoolSize = parser.getint('http.wsgi', 'threadPoolSize', fallback=100)
 
 		#	Web UI
-		config.webui_root = parser.get('webui', 'root', fallback = '/webui')
+		config.webui_root = parser.get('webui', 'root', fallback='/webui')
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		"""	Validate the configuration.
-
-			Args:
-				config: The configuration object.
-				initial: If True, the configuration is validated for the first time.
-		"""
-
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# override configuration with command line arguments
 		if Configuration._args_httpAddress is not None:
 			Configuration.http_address = Configuration._args_httpAddress

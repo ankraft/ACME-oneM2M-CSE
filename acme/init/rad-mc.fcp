@@ -1,13 +1,15 @@
+
 // Created by SDTTool
-// oneM2M Release: 4.12.0
+// oneM2M Release: 5.6.0
 // Domain:         org.onem2m.railway
 [
+
     // ModuleClass: baliseTransmissionModule (baTMe)
     {
         "type"      : "rad:baTMe",
         "lname"     : "baliseTransmissionModule",
         "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModule",
-		"sdttype"	: "moduleclass",
+        "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -26,7 +28,7 @@
         "type"      : "rad:baTMeAnnc",
         "lname"     : "baliseTransmissionModuleAnnc",
         "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModuleAnnc",
-		"sdttype"	: "moduleclass",
+        "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -42,7 +44,7 @@
         "type"      : "rad:baTMeInst",
         "lname"     : "baliseTransmissionModuleInst",
         "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModuleInst",
-		"sdttype"	: "moduleclass",
+        "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 

@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import cast, Optional, Callable
 from copy import deepcopy
-import json
+import json, re
 
 from rich.syntax import Syntax
 from textual import on
@@ -76,12 +76,12 @@ class ACMEViewRequest(VerticalScroll):
 			  		   header:str, 
 					   originator:str,
 					   buttonLabel:str, 
-					   buttonVariant:Optional[ButtonVariant] = 'primary',
-					   callback:Optional[Callable] = None,
-					   enableEditor:bool = True,
-					   operation:Operation = Operation.CREATE,
-					   selectCallback:Optional[Callable] = None,
-					   responseView:Optional[ACMEViewResponse] = None
+					   buttonVariant:Optional[ButtonVariant]='primary',
+					   callback:Optional[Callable]=None,
+					   enableEditor:bool=True,
+					   operation:Operation=Operation.CREATE,
+					   selectCallback:Optional[Callable]=None,
+					   responseView:Optional[ACMEViewResponse]=None
 					   ):
 		"""	Initialize the view.
 
@@ -103,30 +103,32 @@ class ACMEViewRequest(VerticalScroll):
 		self.header = Label(header, classes = 'request-header-label')
 		"""	The header label. """
 
-		self.button = Button(buttonLabel, 
-					   		 variant = buttonVariant, 
-							 id = 'request-button', 
-							 classes = 'request-button',
-							 disabled = operation == Operation.CREATE)	# start disabled when CREATE operation
+		self.button = Button(buttonLabel,
+					   		 variant=buttonVariant,
+							 id='request-button',
+							 classes='request-button',
+							 disabled=operation == Operation.CREATE)	# start disabled when CREATE operation
 		"""	The button to submit the request. """
 		
 		self.childResources = Select([('None', 0), ('some', 1)], 
-							   		 prompt = 'Select resource type', 
-									 id = 'request-child-resources-select', 
-									 classes = 'request-child-resources-select'	)
+							   		 prompt='Select resource type', 
+									 id='request-child-resources-select', 
+									 classes='request-child-resources-select')
 		"""	The child resource select view. """
 
-		self.inputOriginator = ACMEFieldOriginator(originator, suggestions = [RC.cseOriginator, originator])
+		self.inputOriginator = ACMEFieldOriginator(originator, 
+											 	   suggestions=[RC.cseOriginator, originator], 
+												   requestView=self)
 		"""	The input originator. """
 
-		self.resourceTextArea = ACMETextArea('', 
-						 	 				 classes = 'request-resource-textarea', 
-											 language = 'json' if Configuration.textui_enableTextEditorSyntaxHighlighting else None,
-											 soft_wrap = False,
-											 tab_behavior = 'indent',
-				  							 show_line_numbers = True,
-											 disabled = operation == Operation.CREATE,	# start disabled for CREATE operation
-											 theme = 'monokai')
+		self.resourceTextArea = ACMETextArea('',
+						 	 				 classes='request-resource-textarea',
+											 language='json' if Configuration.textui_enableTextEditorSyntaxHighlighting else None,
+											 soft_wrap=False,
+											 tab_behavior='indent',
+				  							 show_line_numbers=True,
+											 disabled=operation == Operation.CREATE,	# start disabled for CREATE operation
+											 theme='monokai')
 		"""	The resource text area. """
 
 		self.border_title = title
@@ -297,6 +299,7 @@ class ACMEViewRequest(VerticalScroll):
 				elif self.operation == Operation.CREATE and _policy.optionalCreate == RequestOptionality.M:
 					# set the default value
 					_resourceAttributes[attr] = None
+					_possibleResourceAttributes.pop(attr)
 				
 				# remove to-be-processed attributes that are already in the resource
 				elif attr in _resourceAttributes:
@@ -306,7 +309,13 @@ class ACMEViewRequest(VerticalScroll):
 			_text = json.dumps({ resource.typeShortname: _resourceAttributes }, indent = 4)
 
 			# Replace all None values with an indication that the value is not yet present and must be added
-			_text = _text.replace('null', '... // mandatory attribute')
+			_newText:list[str] = []
+			for line in _text.split('\n'):
+				if line.endswith(('null', 'null,')):
+					match = re.search(r'"([^"]*)"', line)
+					line = line.replace('null', f'{CSE.validator.getAttributeValueRepresentation( match.group(1), resourceType, False)}, // mandatory attribute')
+				_newText.append(line)
+			_text = '\n'.join(_newText)	
 		
 			# add the not-yet present but possible resource attributes in the middle of the resource
 			_result = [ f'        // "{attr}": {CSE.validator.getAttributeValueRepresentation(attr, resourceType)}'
@@ -425,9 +434,9 @@ class ACMEViewRequest(VerticalScroll):
 				
 				from ..helpers.TextTools import commentJson
 
-				jsns = commentJson(result.resource.asDict(sort = True), 
+				jsns = commentJson(cast(Resource, result.resource).asDict(sort = True), 
 									explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-									getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, result.resource.ty if result.resource else None))	# type: ignore [attr-defined]
+									getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, cast(Resource, result.resource).ty if result.resource else None))	# type: ignore [attr-defined]
 				self.responseView.success(Syntax(jsns,
 												'json', 
 												theme = self._app.syntaxTheme),

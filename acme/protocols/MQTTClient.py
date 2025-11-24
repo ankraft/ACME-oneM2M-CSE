@@ -328,11 +328,11 @@ class MQTTClient(object):
 		self.mqttConnections:Dict[Tuple[str, int], MQTTConnection]	= {}
 		""" Dictionary of MQTT connections. """
 
-		self.mqttConnection = self.connectToMqttBroker(address	= Configuration.mqtt_address,
-													   port		= Configuration.mqtt_port,
-													   useTLS	= Configuration.mqtt_security_useTLS,
-													   username = Configuration.mqtt_security_username,
-													   password	= Configuration.mqtt_security_password)
+		self.mqttConnection = self.connectToMqttBroker(address=Configuration.mqtt_address,
+													   port=Configuration.mqtt_port,
+													   useTLS=Configuration.mqtt_security_useTLS,
+													   username=Configuration.mqtt_security_username,
+													   password=Configuration.mqtt_security_password)
 		""" The MQTT connection. """
 
 		L.isInfo and L.log('MQTT Client initialized')
@@ -424,27 +424,35 @@ class MQTTClient(object):
 		return waitFor(Configuration.mqtt_timeout, lambda:self.mqttConnection.isConnected)
 
 
-	def connectToMqttBroker(self, address:str, port:int, useTLS:bool, username:Optional[str], password:Optional[str]) -> Optional[MQTTConnection]:
+	def connectToMqttBroker(self, address:str, 
+						 		  port:int, 
+								  useTLS:bool, 
+								  username:Optional[str], 
+								  password:Optional[str]) -> Optional[MQTTConnection]:
 		"""	Connect to a oneM2M MQTT Broker. The connection is cached and reused. The key for identifying the
 			broker is a tupple (*address*, *port*). A new MQTTClientHandler() object be used for handling
 			requests.
 		"""
+		# TODO support MQTT over WebSocket for foreign brokers, too. Currently only for the configured broker in the CSE is supported
 		if Configuration.mqtt_enable:
 			if not (mqttConnect := self.mqttConnections.get( (address, port) )):
-				mqttConnection = MQTTConnection(address				= address,
-												port				= port,
-												keepalive			= Configuration.mqtt_keepalive,
-												interface			= Configuration.mqtt_listenIF,
-												clientID			= idToMQTTClientID(RC.cseCsi),
-												useTLS				= useTLS,
-												caFile				= Configuration.mqtt_security_caCertificateFile,
-												verifyCertificate	= Configuration.mqtt_security_verifyCertificate,
-												username 			= username,
-												password			= password,
-												lowLevelLogging 	= L.enableBindingsLogging,
-												messageHandler 		= MQTTClientHandler	(self))
+				mqttConnection = MQTTConnection(address=address,
+												port=port,
+												keepalive=Configuration.mqtt_keepalive,
+												interface=Configuration.mqtt_listenIF,
+												clientID=idToMQTTClientID(RC.cseCsi),
+												useTLS=useTLS,
+												caFile=Configuration.mqtt_security_caCertificateFile,
+												verifyCertificate=Configuration.mqtt_security_verifyCertificate,
+												username=username,
+												password=password,
+												lowLevelLogging=L.enableBindingsLogging,
+												messageHandler=MQTTClientHandler(self),
+												enableWebSocket=Configuration.mqtt_websocket_enable,
+												webSocketPort=Configuration.mqtt_websocket_port,
+												websocketPath=Configuration.mqtt_websocket_path)
 				if mqttConnection:
-					self.mqttConnections[(address, port)] = mqttConnection
+					self.mqttConnections[(mqttConnection.address, mqttConnection.port)] = mqttConnection
 			return mqttConnection
 		return None
 
@@ -511,12 +519,11 @@ class MQTTClient(object):
 		topicSplit = urlParsed.path.split('/')
 
 		# Build the topic
-		if not len(topic):
+		if not len(topic) or topic == '/':
 			# Miguel's proposal
 			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(req.request.to if req.request.to else req.request.originator))}/{req.request.ct.name.lower()}'
 			#topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(toSPRelative(originator))}/{ct.name.lower()}'
 			# topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(csiFromSPRelative(req.request.to))}/{req.request.ct.name.lower()}'
-
 			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(getIdFromOriginator(req.request.to))}/{req.request.ct.name.lower()}'
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(RC.cseCsi)}/{idToMQTT(topicSplit[3])}/{req.request.ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
@@ -525,8 +532,8 @@ class MQTTClient(object):
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
-			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
-						  dbg = 'Cannot build topic')
+			return Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+						  dbg='Cannot build topic')
 		
 		# Unquote the topic now, after the processing
 		topic = unquote(topic)
@@ -534,11 +541,11 @@ class MQTTClient(object):
 		# Get the broker, or connect to a new MQTTBroker for this address
 		if not (mqttConnection := self.getMqttBroker(mqttHost, mqttPort)):
 			L.isDebug and L.logDebug(f'Creating a new connection for: {mqttHost}:{mqttPort}')
-			mqttConnection = self.connectToMqttBroker(address = mqttHost,
-													  port = mqttPort,
-													  useTLS = mqttScheme == 'mqtts',
-													  username = mqttUsername,
-													  password = mqttPassword)
+			mqttConnection = self.connectToMqttBroker(address=mqttHost,
+													  port=mqttPort,
+													  useTLS=mqttScheme == 'mqtts',
+													  username=mqttUsername,
+													  password=mqttPassword)
 
 			# Wait a moment until we are connected.
 			waitFor(Configuration.mqtt_timeout, lambda: mqttConnection is not None and mqttConnection.isConnected)

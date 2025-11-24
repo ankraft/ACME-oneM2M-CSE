@@ -15,6 +15,7 @@ from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class CSEBaseAnnc(AnnouncedResource):
+	""" CSEBase announced (CSEBaseA) resource type. """
 
 	resourceType = ResourceTypes.CSEBaseAnnc
 	""" The resource type """
@@ -36,6 +37,7 @@ class CSEBaseAnnc(AnnouncedResource):
 									ResourceTypes.SUB, 
 									ResourceTypes.TSAnnc, 
 									ResourceTypes.TSBAnnc ]
+	""" The allowed child-resource types. """
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -57,9 +59,16 @@ class CSEBaseAnnc(AnnouncedResource):
 		'lnk': None,
 
 		# Resource attributes
+		'csi': None,
+		'cst': None,
+		'csz': None,
+		'ctm': None,
+		'daci': None,
 		'esi': None,
+		'nl': None,
+		'poa': None,
 		'srv': None,
-		# TODO no CSI?
 	}
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 

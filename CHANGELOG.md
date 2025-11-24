@@ -8,6 +8,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
+## [2025.11] - 2025-11-23
+
+### Added
+- [CSE] Added support for notification target removal.
+- [CSE] Added new resource types *&lt;notificationTargetPolicy>*, *&lt;notificationTargetSelfReference>*, *&lt;notificationTargetMgmtPolicyRef>*, and *&lt;policyDeletionRules>*.
+- [CSE] Added tests for deletion notifications (*creator* attribute).
+- [CSE] Added support for xs:token type in attribute policies and validation.
+- [CSE] Added validation support for fixed list lengths in attribute policies.
+- [CSE] Added validation support for choices in attribute policies, when only one of the marked attributes is allowed.
+- [CSE] Added *UtTriggerPrimitive* and *UtTriggerAckPrimitive* support to the Upper Tester interface.
+- [CSE] Added support for Mcc': Registering to another service providers IN-CSE.
+- [CSE] Added announcement via Mcc'.
+- [CSE] Added *location* attribute as a copied attribute for *&lt;flexContainerInstance>* resources.
+- [CSE] Added new *management* interface for the CSE. It is accessible via http(s). Thanks to Egan Perais for the idea.
+- [CSE] Added onboarding support for Service Provider registrations and storing the config settings in a Zookeeper service.
+- [CSE] Added .env file support to set environment variables for configuration settings.
+- [MQTT] Added support for MQTT over WebSockets. This is an ESTIMED project contribution. Thanks to Mudassar Khan.
+- [SCRIPTS] Added "T" symbol to the script interpreter.
+- [SCRIPTS] Spaces in script arguments are now preserved when passing them in double quotes to the script interpreter.
+- [SCRIPTS] Added *base64-decode*, *shutdown-cse*, *restart-cse*, *refresh-registrations* and *tui-confirm* functions to the script interpreter.
+- [MISC] Added support to retrieve configuration settings from a Zookeeper service. This is an alternative to the *acme.ini* configuration file.
+- [MISC] Added the *zk-tool* to manage the Zookeeper configuration data. This tool is used to create, delete, and list nodes in Zookeeper as well as to store and retrieve configuration data in INI format.
+- [MISC] Added exiting the CSE with an exit code of 82 when the CSE is shutdown for a restart.
+- [MISC] Added restart CSE support for the Docker container. The CSE will now restart automatically when it exits with an exit code of 82 without exiting the Docker container.
+
+### Experimental
+- [CSE] Allow optional announcement of *resourceName* attribute in announced resources. Added discoverable naming of CSEBaseAnnc.
+
+### Changed
+- [CSE] Changed the default *releaseVersion* from 4 to 5.
+- [CSE] Added *serviceProviderID* to the *[basic.config]* configuration section. This way the service provider ID can be easier configured.
+- [CSE] Renamed the default ACP that is created during CSE initialization from *acpCreateAcps* to *acpCreateRootResources*.
+- [CSE] Changed the format of the configuration setting *\[[cse.registration].allowedCSROriginators* to correct SP-relative identifiers. This could be a breaking change if the configuration file is not adapted.
+- [CSE] Restructured and widely extended the onboarding manager to support more flexible onboarding configurations.
+- [MISC] Python 3.11 is now the minimum required version to run the CSE.
+- [MISC] Moved *checkInterval* setting to *\[cse.registration]* configuration section.
+- [DATABASE] Changed the file name scheme for the TinyDB database files. It now consists of the database name, the service provider ID and the CSE ID, e.g. *resources-acme.example.com-id-in.json*.
+- [LOGGING] Changed the file name scheme for log files. It now consists of the service provider ID and the CSE ID, e.g. *cse-acme.example.com-id-in.log*.
+- [HTTP] Changed server ID format to use a slash instead of a space (ACME/version).
+
+### Fixed
+- [CSE] Added check for "Resource Type" request parameter. It is only allowed for *CREATE* requests.
+- [CSE] Added missing *creator* attribute in deletion notifications for &lt;crossResourceSubscription> resources.
+- [CSE] Fixed wrong handling of announced &lt;flexContainer> resources. Custom attributes were not announced correctly. Thanks to Alper Ramadan for reporting this issue.
+- [TUI] Fixed error message for *originator* field validation when creating an &lt;AE> resource. Thanks to Egan Perais for reporting this issue.
+
+
 ## [2025.03.2] - 2025-03-16
 
 ### Fixed

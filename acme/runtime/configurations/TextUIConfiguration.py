@@ -6,6 +6,7 @@
 #
 #	Text UI configurations
 #
+""" This module contains the configuration for the Text User Interface (TUI)."""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,20 +18,21 @@ from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 
 class TextUIConfiguration(ModuleConfiguration):
+	""" Text UI Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 
 		#	Text UI
-		config.textui_refreshInterval = parser.getfloat('textui', 'refreshInterval', fallback = 2.0)
-		config.textui_startWithTUI = parser.getboolean('textui', 'startWithTUI', fallback = False)
-		config.textui_theme = parser.get('textui', 'theme', fallback = 'dark')
-		config.textui_maxRequestSize = parser.getint('textui', 'maxRequestSize', fallback = 10000)
-		config.textui_notificationTimeout = parser.getfloat('textui', 'notificationTimeout', fallback = 2.0)
-		config.textui_enableTextEditorSyntaxHighlighting = parser.getboolean('textui', 'enableTextEditorSyntaxHighlighting', fallback = False)
+		config.textui_refreshInterval = parser.getfloat('textui', 'refreshInterval', fallback=2.0)
+		config.textui_startWithTUI = parser.getboolean('textui', 'startWithTUI', fallback=False)
+		config.textui_theme = parser.get('textui', 'theme', fallback='dark')
+		config.textui_maxRequestSize = parser.getint('textui', 'maxRequestSize', fallback=10000)
+		config.textui_notificationTimeout = parser.getfloat('textui', 'notificationTimeout', fallback=2.0)
+		config.textui_enableTextEditorSyntaxHighlighting = parser.getboolean('textui', 'enableTextEditorSyntaxHighlighting', fallback=False)
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
+
 		# override configuration with command line arguments
 		if Configuration._args_lightScheme is not None:
 			Configuration.textui_theme = Configuration._args_lightScheme

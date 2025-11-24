@@ -6,6 +6,7 @@
 #
 #	Statistics configurations
 #
+""" This module contains the configuration for statistics."""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,16 +18,17 @@ from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
 
 
 class StatisticsConfiguration(ModuleConfiguration):
+	""" Statistics Configuration """
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 
 		#	Statistics
 
-		config.cse_statistics_enable = parser.getboolean('cse.statistics', 'enable', fallback = True)
-		config.cse_statistics_writeInterval = parser.getint('cse.statistics', 'writeInterval', fallback = 60)		# Seconds
+		config.cse_statistics_enable = parser.getboolean('cse.statistics', 'enable', fallback=True)
+		config.cse_statistics_writeInterval = parser.getint('cse.statistics', 'writeInterval', fallback=60)		# Seconds
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.cse_statistics_writeInterval <= 0:
 			raise ConfigurationError(r'Configuration Error: [i]\[cse.statistics]:writeInterval[/i] must be > 0')
 		

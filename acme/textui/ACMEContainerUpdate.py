@@ -111,7 +111,7 @@ class ACMEContainerUpdate(Container):
 			# Display a success message and update the container tree
 			with CriticalSection('tuiRequest', timeout = 0.0):
 				self._app.containerTree.refreshCurrentNode()
-				self._app.containerTree.updateResourceView(result.resource)
+				self._app.containerTree.updateResourceView(cast(Resource, result.resource))
 
 
 	def action_show_request(self) -> None:

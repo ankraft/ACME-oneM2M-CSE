@@ -95,10 +95,7 @@ def _randomID() -> str:
 		Return:
 			String with a random ID
 	"""
-	while True:
-		result = ''.join(random.choices(_randomIDCharSet, k = RC.idLength))
-		if 'fopt' not in result:	# prevent 'fopt' in ID
-			return result
+	return ''.join(random.choices(_randomIDCharSet, k=RC.idLength))
 
 
 def localResourceID(ri:str) -> Optional[str]: # type: ignore[return]
@@ -203,9 +200,14 @@ def toSPRelative(id:str) -> str:
 		Return:
 			A string in the format */<csi>/<id>*.
 	"""
-	if not isSPRelative(id):
-		return  f'{RC.cseCsi}/{id}'
-	return id
+	if isSPRelative(id):
+		return id
+	if isAbsolute(id):
+		s = id.split('/')
+		return f'/{ "/".join(s[3:])}'
+	# if not isSPRelative(id) and not isAbsolute(id):
+		# return  f'{RC.cseCsi}/{id}'
+	return  f'{RC.cseCsi}/{id}'
 
 
 def toCSERelative(id:str) -> str:
@@ -224,6 +226,33 @@ def toCSERelative(id:str) -> str:
 	return id
 
 
+def toAbsolute(id:str, spId:Optional[str] = None) -> str:
+	"""	Convert an ID to absolute format.
+
+		Args:
+			id: 	An ID in CSE-Relative or SP-Relative format.
+			spId:	Optional SP-ID. If not provided, the CSE-ID is used.
+		Return:
+			An ID in absolute format.
+	"""
+	if isAbsolute(id):
+		return id
+	if isSPRelative(id):
+		return f'{spId or RC.cseSPid}{id}'
+	return f'{spId or RC.cseSPid}{RC.cseCsi}/{id}'	
+
+
+_spidRx = re.compile(r'^//[a-zA-Z0-9\-._]+') # Must start with a / and must not contain a further / or white space
+"""	Regular expression to test for valid SP-ID format (unreserved characters in IDs according to RFC 3986). """
+def isValidSPID(spid:str) -> bool:
+	"""	Test for valid SP-ID format.
+
+		Args:
+			spid: The SP-ID to check
+		Return:
+			Boolean
+	"""
+	return re.fullmatch(_spidRx, spid) is not None
 
 
 _csiRx = re.compile(r'^/[a-zA-Z0-9\-._]+') # Must start with a / and must not contain a further / or white space
@@ -278,6 +307,32 @@ def isValidID(id:str, allowEmpty:Optional[bool] = False) -> bool:
 	return id is not None and len(id) > 0 and hasOnlyUnreserved(id)
 
 
+def isValidPath(id:str) -> bool:
+	"""	Test for a valid path. A path is a string that does not start with a slash and does not contain spaces and
+		invalid characters. It may contain slashes, but not at the beginning.
+
+		Args:
+			id: The ID to check
+		Returns:
+			Boolean
+	"""
+	if not id: # None or empty
+		return False
+	
+	elem = id.split('/')
+	if len(elem) == 1:
+		return hasOnlyUnreserved(elem[0])
+	
+	# if the first element is empty, then the path starts with a slash
+	if elem[0] == '':
+		elem = elem[1:]  # remove the first empty element
+	# check all elements for unreserved characters
+	for e in elem:
+		if not hasOnlyUnreserved(e):
+			return False
+	# if all elements are valid, return True
+	return True
+
 _unreserved = re.compile(r'^[\w\-.~]*$')
 """	Regular expression to test for unreserved characters. """
 
@@ -291,7 +346,8 @@ def isCSI(uri:str) -> bool:
 			Boolean if the URI is a CSE-ID
 	"""
 	_r = csiFromRelativeAbsoluteUnstructured(uri)[1]
-	return len(_r) == 2 and _r[0] == ''
+	return len(_r) == 2 and _r[0] == '' or \
+		   len(_r) == 4 and _r[0] == _r[1] == ''
 
 
 
@@ -342,7 +398,7 @@ def csiFromRelativeAbsoluteUnstructured(id:str) -> Tuple[str, list[str]]:
 	return id, ids
 
 
-def getIdFromOriginator(originator: str, idOnly:Optional[bool] = False) -> str:
+def getIdFromOriginator(originator:str, idOnly:Optional[bool]=False) -> str:
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used).
 
 		Args:
@@ -351,7 +407,43 @@ def getIdFromOriginator(originator: str, idOnly:Optional[bool] = False) -> str:
 		Returns:
 			Resource ID.
 	"""
+	splits = originator.split('/')
+
+	# Only the ID part, independent of the format
 	if idOnly:
-		return originator.split("/")[-1] if originator else originator
+		return splits[-1] if len(splits) > 0 else originator
+
+	if originator.startswith('//'):
+		# Absolute with SPID
+		return splits[2] if len(splits) > 2 else originator
+	elif originator.startswith('/'):
+		# SP-Relative
+		return splits[1] if len(splits) > 1 else originator
 	else:
-		return originator.split("/")[-1] if originator and originator.startswith('/') else originator
+		return originator
+
+
+def originatorToID(originator:str) -> str:
+	""" Convert an originator to a resource ID. The originator is expected to be in CSE-relative, SP-relative or absolute format.
+	
+		Args:
+			originator: An originator in CSE-relative, SP-relative or absolute format.
+		Return:
+			A resource ID in CSE-relative format.
+	"""
+	return originator.replace('/', '_').strip('_')
+
+
+def getSPFromID(id:str) -> str:
+	"""	Get the SP-ID from an Absolute resource ID. If the ID is not in absolute format, 
+		None is returned.
+
+		Args:
+			id: An Absolute resource ID.
+		Return:
+			The SP-ID of the resource ID without leading slashes, or None if the ID is not in absolute format.
+	"""
+	if not isAbsolute(id):
+		return None
+	ids = id.split('/')
+	return ids[2] if len(ids) > 2 else None

@@ -22,8 +22,24 @@ class ModuleConfiguration(ABC):
 
 	@abstractmethod
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
+		""" Read a configuration from the configuration file.
+		
+			Args:
+				parser: The configuration parser
+				config: The configuration instance
+		"""
 		...
 
 	@abstractmethod
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
+		""" Validate a configuration.
+
+			Args:
+				config: The configuration object
+				initial: If True, this is the initial validation
+
+			Raises:
+				May raise ConfigurationError if the configuration is invalid
+		"""
+
 		...

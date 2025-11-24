@@ -9,20 +9,22 @@
 """
 
 from __future__ import annotations
+from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple, TYPE_CHECKING
 
 from copy import deepcopy
-import traceback, logging, sys, base64
+import traceback, logging, sys, base64, json
 from dataclasses import dataclass, field, astuple
-from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias
 from enum import auto
-from collections import namedtuple
 from ..helpers.ACMEIntEnum import ACMEIntEnum
-from ..etc.ResponseStatusCodes import ResponseStatusCode
+from ..helpers.EventManager import Event
+from ..etc.ResponseStatusCodes import ResponseStatusCode, INTERNAL_SERVER_ERROR
 from ..etc.DateUtils import utcTime, getResourceDate
 from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
 from coapthon.defines import Content_types as CoAPContentTypes
 from ..etc.Constants import RuntimeConstants as RC
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
 
 
 #
@@ -43,6 +45,10 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Type for request / response structures (internal). """
 	COMPLEX			= -4
 	"""	Indicate a comples data structure (internal). """
+	REQUEST 		= -5
+	"""	Request primitive (internal). """
+	RESPONSE		= -6
+	"""	Response primitive (internal). """
 
 	# Resource Types
 	# NOTE Always apply changes also to the m2m:resourceTypes in attributePolicies.ap etc
@@ -79,6 +85,12 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Subscription resource type. """
 	SMD				= 24
 	""" SemanticDescriptor resouce type. """
+	NTPR			= 25
+	""" notificationTargetMgmtPolicyRef resource type. """
+	NTP				= 26
+	""" NotificationTargetPolicy resource type. """
+	PDR 			= 27
+	""" PolicyDeletionRules resource type. """
 	FCNT	 		= 28
 	"""	FlexContainer resource type. """
 	TS				= 29
@@ -121,6 +133,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Latest virtual resource type for TimeSeries. """
 	TS_LA			=  -20008
 	"""	Oldest virtual resource type for TimeSeries. """
+	NTSR			=  -20009
+	"""	NotificationTargetSelfReference of a Subscription. """
 
 
 	# <mgmtObj> Specializations
@@ -248,7 +262,7 @@ class ResourceTypes(ACMEIntEnum):
 		return _ResourceTypesNames.get(self)
 
 
-	def announced(self, mgd:Optional[ResourceTypes] = None) -> ResourceTypes:
+	def announced(self, mgd:Optional[ResourceTypes]=None) -> ResourceTypes:
 		"""	Get the announced resource type for a resource type.
 		
 			Args:
@@ -257,18 +271,33 @@ class ResourceTypes(ACMEIntEnum):
 				The announced resource type, or UNKNOWN.
 		"""
 
-		if self != ResourceTypes.MGMTOBJ:
-			# Handling for non-mgmtObjs
-			if (r := _ResourceTypesAnnouncedMappings.get(self)):
-				return r
-		else:
-			# Handling for mgmtObjs
-			if mgd is not None:
-				if (r := _ResourceTypesAnnouncedMappings.get(mgd)):
+		match self:
+			case ResourceTypes.MGMTOBJ:
+				# Handling for mgmtObjs
+				if mgd is not None:
+					if (r := _ResourceTypesAnnouncedMappings.get(mgd)):
+						return r
+				else:
+					return _ResourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
+			case _:
+				# Handling for non-mgmtObjs
+				if (r := _ResourceTypesAnnouncedMappings.get(self)):
 					return r
-			else:
-				return _ResourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
 		return ResourceTypes.UNKNOWN
+
+
+		# if self != ResourceTypes.MGMTOBJ:
+		# 	# Handling for non-mgmtObjs
+		# 	if (r := _ResourceTypesAnnouncedMappings.get(self)):
+		# 		return r
+		# else:
+		# 	# Handling for mgmtObjs
+		# 	if mgd is not None:
+		# 		if (r := _ResourceTypesAnnouncedMappings.get(mgd)):
+		# 			return r
+		# 	else:
+		# 		return _ResourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
+		# return ResourceTypes.UNKNOWN
 
 
 	def fromAnnounced(self) -> ResourceTypes:
@@ -300,7 +329,7 @@ class ResourceTypes(ACMEIntEnum):
 		return self.value in _ResourceTypesVirtualResourcesSet
 
 
-	def resourceClass(self) -> Resource:			# type:ignore [name-defined]
+	def resourceClass(self) -> Type[Resource]:			# type:ignore [name-defined]
 		"""	Return a Resource class for this resource type.
 
 			Return:
@@ -464,7 +493,7 @@ class ResourceDescription():
 	"""	Whether the resource type is an internal type. """
 	virtualResourceName:str = None	# If this is set then the resource is a virtual resouce
 	"""	The name of a virtual resource. """
-	clazz:Resource = None 			# type:ignore [name-defined]
+	clazz:Type[Resource] = None 			# type:ignore [name-defined]
 	"""	The resource class. """
 	factory:FactoryCallableT = None
 	"""	The resource factory callable to create this resource. """
@@ -512,8 +541,12 @@ _ResourceTypeDetails = {
 	ResourceTypes.MGMTOBJAnnc 	: ResourceDescription(typeName = 'm2m:mgoA', isAnnouncedResource = True, fullName = 'ManagementObject Announced'),				# not an official type name
 	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc, fullName='Node'),
 	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True, fullName='Node Announced'),
+	ResourceTypes.NTP			: ResourceDescription(typeName = 'm2m:ntp', fullName='NotificationTargetPolicy'),
+	ResourceTypes.NTPR			: ResourceDescription(typeName = 'm2m:ntpr', fullName='notificationTargetMgmtPolicyRef'),
+	ResourceTypes.NTSR			: ResourceDescription(typeName = 'm2m:ntsr', virtualResourceName = 'ntsr', isRequestCreatable = False, fullName='NotificationTargetSelfReference'),
 	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
 	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', isRequestCreatable = False, fullName='PollingChannel URI'),
+	ResourceTypes.PDR			: ResourceDescription(typeName = 'm2m:pdr', fullName='PolicyDeletionRules'),
 	ResourceTypes.PRMR			: ResourceDescription(typeName = 'm2m:prmr', announcedType = ResourceTypes.PRMRAnnc, fullName='ProcessManagement'),
 	ResourceTypes.PRMRAnnc		: ResourceDescription(typeName = 'm2m:prmrA', isAnnouncedResource = True, fullName='ProcessManagement Announced'),
 	ResourceTypes.PRP			: ResourceDescription(typeName = 'm2m:prp', announcedType = ResourceTypes.PRPAnnc, fullName='PrimitiveProfile'),
@@ -575,12 +608,14 @@ _ResourceTypeDetails = {
 	ResourceTypes.MIXED		: ResourceDescription(typeName = 'm2m:mixed', isInternalType = True),
 	ResourceTypes.REQRESP	: ResourceDescription(typeName = 'reqresp', isInternalType = True),
 	ResourceTypes.COMPLEX	: ResourceDescription(typeName = 'complex', isInternalType = True),
+	ResourceTypes.REQUEST	: ResourceDescription(typeName = 'requestPrimitive', isInternalType = True),
+	ResourceTypes.RESPONSE	: ResourceDescription(typeName = 'responsePrimitive', isInternalType = True),
 
 }
 """	Mapping between resource types and their description. """
 
 
-def addResourceFactoryCallback(ty:ResourceTypes, clazz:Resource, factory:FactoryCallableT) -> None: 	# type:ignore [name-defined]
+def addResourceFactoryCallback(ty:ResourceTypes, clazz:Type[Resource], factory:FactoryCallableT) -> None: 	# type:ignore [name-defined]
 	"""	Add a class and a factory to create an instande for a resource type.
 
 		Args:
@@ -752,6 +787,8 @@ class BasicType(ACMEIntEnum):
 	"""	IPv4 address. """
 	ipv6Address			= auto()	# dcfg:ipv6Address
 	"""	IPv6 address. """
+	token				= auto()	# xs:token
+	"""	XML token. """
 
 	# aliases. Always put at the end! Seems cause confusion with python < 3.11
 	time				= timestamp	# alias type for time
@@ -1214,10 +1251,12 @@ class CSEStatus(ACMEIntEnum):
 	"""	CSE is starting. """
 	RUNNING				= auto()
 	"""	CSE is running. """
-	STOPPING			= auto()
-	"""	CSE is stopping. """
+	SHUTTINGDOWN		= auto()
+	"""	CSE is shutting down. """
 	RESETTING			= auto()
 	"""	CSE is resetting. """
+	SHUTTINGDOWNRESTART	= auto()
+	"""	CSE is shutting down to restart. """
 
 ##############################################################################
 #
@@ -1598,6 +1637,29 @@ _defaultNCT = {
 	NotificationEventType.reportOnGeneratedMissingDataPoints:	NotificationContentType.timeSeriesNotification
 }
 """	Mappings between NotificationEventType and default NotificationContentType """
+
+
+class LogicalOperator(ACMEIntEnum):
+	"""	Logical Operator enum values for notification target policies. """
+
+	AND = 1
+	""" AND operation. """
+	OR = 2
+	""" OR operation. """
+
+
+class NotificationTargetPolicyAction(ACMEIntEnum):
+	"""	Notification Target Policy Action enum values. """
+
+	ACCEPTREQUEST = 1
+	""" Accept request. """
+	REJECTREQUEST = 2
+	""" Reject request. """
+	SEEKAUTHORIZATION = 3
+	""" Seek authorization from the subscription originator before taking any action. """
+	INFORMONLY = 4
+	""" Inform the subscription originator without taking any action. """
+
 
 ##############################################################################
 #
@@ -2000,7 +2062,7 @@ class Result:
 	"""	This class represents the generic return state for many functions. It main contain
 		the general result, a status code, values, resources etc.
 	"""
-	resource:Resource						= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	resource:Resource|JSON					= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
 	""" Resource instance. """
 	data:Any|Sequence[Any]|Tuple|JSON|str	= None 		# Anything, or list of anything, or a JSON dictionary	
 	""" Data. """
@@ -2429,6 +2491,15 @@ class RequestCredentials:
 		return f'Bearer {self.wsToken}'
 	
 
+	def __repr__(self) -> str:
+		"""	String representation of the RequestCredentials.
+			
+			Return:
+				String representation.
+		"""
+		return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})
+
+
 @dataclass
 class CSERequest:
 	"""	Structure that holds all the attributes for a Request (or a Response) to a CSE.
@@ -2455,6 +2526,9 @@ class CSERequest:
 	
 	csi:Optional[str] = None
 	""" The CSE-ID of the target's hosting CSI. Might not be present in a request. Based on the value of `to`. """
+
+	spid:Optional[str] = None
+	""" The Service Provider ID of the target's hosting CSI. Might not be present in a request. Based on the value of `to`. """
 
 	# Request attributes
 	op:Optional[Operation] = None
@@ -2658,7 +2732,180 @@ class CSERequest:
 			newRequest.vsi = None
 		return newRequest
 
+##############################################################################
+#
+#	Registration related
+#
 
+@dataclass
+class CSERegistrarSecurity:
+	"""	Structure to hold the security information for a CSE registrar.
+	"""
+
+	credentials:RequestCredentials = field(default_factory=RequestCredentials)
+	"""	Credentials for the registrar CSE to connect to this CSE. """
+
+	selfCredentials:RequestCredentials = field(default_factory=RequestCredentials)
+	"""	Credentials for the registrar CSE to connect to this CSE. """
+
+
+	def __repr__(self) -> str:
+		"""	String representation of the CSERegistrarSecurity object.
+
+			Return:
+				String representation of the CSERegistrarSecurity object.
+		"""
+		return str({k: v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')})
+
+
+@dataclass
+class CSERegistrar:
+	"""	Structure to hold the CSE registrar information.
+	"""
+
+	spID:str = None
+	"""	The service provider ID of the registrar. """
+	
+	address:str = None
+	"""	The address of the registrar. """
+
+	cseID:str = None
+	"""	The CSE-ID of the registrar. """
+
+	excludeCSRAttributes:list[str] = field(default_factory=list)
+	"""	Attributes to exclude from CSR. """
+
+	resourceName:str = None
+	"""	The resource name of the registrar. """
+
+	root:str = None
+	"""	The root of the registrar. """
+
+	# serialization: str | ContentSerializationType = field(default_factory=ContentSerializationType.JSON)
+	serialization: str | ContentSerializationType = None
+	"""	The serialization for the registrar. """
+
+	originator:str = None
+	"""	The originator of the sending requesrs to the registrar. """
+
+	INCSEcseID:str = None
+	"""	The CSE-ID of the IN-CSE on the top-level of the CSE deployment tree. """
+
+	security:CSERegistrarSecurity = field(default_factory=CSERegistrarSecurity)
+	""" Security information for the registrar. """
+
+	_registrarCSEBaseResource:Optional[Resource] = None
+	""" Internal: The registrar's CSEBase resource. This is set after the registration. """
+
+	_registrarCSEURL:Optional[str] = None
+	""" Internal: The registrar CSE URL. This is set after the registration. """
+
+	_registrarCSESRN:Optional[str] = None
+	""" Internal: The registrar CSE's SP-relative structured resource name. This is set after the registration. """
+	
+	_registrarAbsoluteCSI:Optional[str] = None
+	""" Internal: The registrar CSE's absolute CSE-ID. """
+
+
+	_csrOnRegistrarSRN:Optional[str] = None
+	""" Internal: The SP-relative structured resource name to the CSR on the registrar. This is set after the registration. """
+
+	_registrarCSRRN:Optional[str] = None
+	""" The resource name for the remote CSR. """
+
+
+	_localCSRRN:Optional[str] = None
+	""" The resource name for the local CSR. """
+
+	_configurationSection:Optional[str] = None
+	""" Internal: The configuration section for the registrar. """
+
+
+	def postInit(self) -> None:
+		"""	Post initialization actions. Set various internal attributes based on the
+			registrar's attributes.
+			
+			This is called after the CSERegistrar object is created, so that the attributes
+			are available.
+		"""
+
+		# Set the registrar and local CSR resource name, depending whether this is a remote or local CSR
+		if self.spID is not None and self.spID != RC.cseSPid:
+			self._registrarCSRRN = f'{RC.cseSPIDSlashLess}_{RC.cseCsiSlashLess}'	# prefix: own SP-ID
+			self._localCSRRN = f'{self.spID[2:]}_{self.cseID[1:]}'			# prefix: remote SP-ID
+		else:
+			self._registrarCSRRN = RC.cseCsi[1:]
+			self._localCSRRN = self.cseID[1:]
+
+		# Set other manager attributes
+		self._registrarAbsoluteCSI = f'{self.cseID}' if self.spID is None or self.spID == RC.cseSPid else f'{self.spID}{self.cseID}'
+
+		# Set the registrar CSE URL and structured resource name
+		self._registrarCSEURL = f'{self.address}{self.root}/'
+		self._registrarCSESRN = f'{self.cseID}/{self.resourceName}'
+		if self.spID is not None and self.spID != RC.cseSPid:
+			self._registrarCSESRN = f'{self.spID}{self._registrarCSESRN}' 	# assumes that the CSEID is valid (ie. starts with a slash)
+		if self.spID is not None and self.spID != RC.cseSPid:
+			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self.spID}_{RC.cseCsi[1:]}' 
+			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
+		else:
+			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}{RC.cseCsi}' 
+			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
+
+
+	def toDict(self) -> dict:
+		"""	Return a dictionary representation of the CSERegistrar object.
+		
+			This is used for serialization and debugging.
+			
+			Return:
+				Dictionary representation of the CSERegistrar object.
+		"""
+		result = {}
+		for k,v in self.__dict__.items():
+			if k.startswith('_') or v is None:	# skip private attributes and None values
+				continue
+			if isinstance(v, CSERegistrarSecurity):	# convert the sub-attribute to a dictionary
+				v = v.__repr__()
+			result[k] = v
+		return result
+
+	def __deepcopy__(self, memo:Dict[int, Any]) -> 'CSERegistrar':
+		"""	Create a deep copy of the CSERegistrar object. This skips private attributes
+			and None values.
+		
+			Args:
+				memo: Memoization dictionary for deepcopy.
+			Return:
+				Deep copy of the CSERegistrar object.
+		"""
+		cls = self.__class__
+		result = cls.__new__(cls)
+		memo[id(self)] = result
+		for k, v in self.__dict__.items():
+			if k.startswith('_') or v is None:	# skip private attributes and None values
+				continue
+			setattr(result, k, deepcopy(v, memo))
+		return result
+
+
+
+	def __str__(self) -> str:
+		"""	String representation of the CSERegistrar object.
+		
+			Return:
+				String representation of the CSERegistrar object.
+		"""
+		return str(self.toDict())
+	
+
+	def __repr__(self) -> str:
+		"""	Return a string representation of the CSERegistrar object.
+		
+			Return:
+				String representation of the CSERegistrar object.
+		"""
+		return self.__str__()
 
 
 ##############################################################################
@@ -2711,6 +2958,10 @@ class AttributePolicy:
 	""" Dict of enum values and interpretations. """
 	ptype:Type					= None	# Implementation type of the enum values
 	""" Implementation type of the enum values. """
+	lSize:int					= None	# mandatory size of the list
+	""" Mandatory size of a list. """
+	choice:bool					= False	# whether this is a choice attribute
+	""" Whether this attribute is part of a choice. """
 
 	# TODO support annnouncedSyncType
 
@@ -2730,6 +2981,9 @@ class AttributePolicy:
 
 AttributePolicyDict:TypeAlias = Dict[str, AttributePolicy]
 """	Represent a dictionary of attribute policies used in validation. """
+
+AttributePolicyDictList:TypeAlias = Dict[str, list[AttributePolicy]]
+"""	Represent a dictionary of  attribute policies lists used in validation. """
 
 ResourceAttributePolicyDict:TypeAlias = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
 """	Represent a dictionary of attribute policies used in validation. """
@@ -2902,12 +3156,18 @@ JSONLIST:TypeAlias = List[JSON]
 ReqResp:TypeAlias = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """
 
-RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest sendRequest coapEvent httpEvent mqttEvent wsEvent')
+RequestCallback = NamedTuple('RequestCallback', [('ownRequest', Callable), 
+												 ('dispatcherRequest', Callable), 
+												 ('sendRequest', Callable), 
+												 ('coapEvent', Event),
+												 ('httpEvent', Event),
+												 ('mqttEvent', Event),
+												 ('wsEvent', Event)])
 """ Type definition for a callback function to handle outgoing requests. """
 RequestHandler:TypeAlias = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
 
-RequestResponse = namedtuple('RequestResponse', 'request result')
+RequestResponse = NamedTuple('RequestResponse', [('request', CSERequest), ('result', Result)])
 """ Type definition for a request/response pair. """
 RequestResponseList:TypeAlias = List[RequestResponse]
 """ Type definition for a list of request/response pairs. """

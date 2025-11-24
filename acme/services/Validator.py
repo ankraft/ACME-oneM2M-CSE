@@ -101,7 +101,7 @@ class Validator(object):
 	#########################################################################
 
 
-	def validateResourceUpdate(self, resource:Resource, dct:JSON, doValidateAttributes:bool = False) -> None:
+	def validateResourceUpdate(self, resource:Resource, dct:JSON, doValidateAttributes:bool=False) -> None:
 		"""	Validate a resource update dictionary. Besides of the attributes it also validates the resource type.
 
 			Args:
@@ -123,19 +123,19 @@ class Validator(object):
 									resource.typeShortname, 
 									resource.ty, 
 									resource._attributes, 
-									create = False, 
-									createdInternally = resource.isCreatedInternally(), 
-									isAnnounced = resource.isAnnounced())
+									create=False, 
+									createdInternally=resource.isCreatedInternally(), 
+									isAnnounced=resource.isAnnounced())
 
 
 	def	validateAttributes(self, resource:JSON, 
 								 typeShortname:str, 
-								 ty:Optional[ResourceTypes] = ResourceTypes.UNKNOWN, 
-								 attributes:Optional[AttributePolicyDict] = None, 
-								 create:Optional[bool] = True , 
-								 isImported:Optional[bool] = False, 
-								 createdInternally:Optional[bool] = False, 
-								 isAnnounced:Optional[bool] = False) -> None:
+								 ty:Optional[ResourceTypes]=ResourceTypes.UNKNOWN, 
+								 attributes:Optional[AttributePolicyDict]=None, 
+								 create:Optional[bool]=True, 
+								 isImported:Optional[bool]=False, 
+								 createdInternally:Optional[bool]=False, 
+								 isAnnounced:Optional[bool]=False) -> None:
 		""" Validate a resources' attributes for types etc.
 
 			Args:
@@ -178,7 +178,7 @@ class Validator(object):
 		# If this is a flexContainer then add the additional attributePolicies.
 		# We don't want to change the original attributes, so copy it before (only if we add new attributePolicies)
 
-		if ty in ( ResourceTypes.FCNT, ResourceTypes.FCI ) and typeShortname:
+		if ty in (ResourceTypes.FCNT, ResourceTypes.FCNTAnnc, ResourceTypes.FCI ) and typeShortname:
 			if (fca := flexContainerAttributes.get(typeShortname)) is not None:
 				attributePolicies = deepcopy(attributePolicies)
 				attributePolicies.update(fca)
@@ -198,29 +198,36 @@ class Validator(object):
 				L.isWarn and L.logWarn(f'no attribute policy found for attribute: {attributeName}')
 				continue
 
-			# Get the correct tuple for a resource when there are more definitions
+			# Only for UPDATE checks attribute not in request so we can skip it
+			if not create and attributeName not in pureResDict:
+				continue
 
+			# Get the correct tuple for a resource when there are more definitions
 			# Used a couple of times below
 			policyOptional = policy.select(optionalIndex)
 
 			# Check whether the attribute is allowed or mandatory in the request
 			if (attributeValue := pureResDict.get(attributeName)) is None:	# ! might be an int, bool, so we need to check for None
+				# L.logWarn(f'attribute {attributeName} is None')
 
-				# check the the announced cases first
-				if isAnnounced:
-					# MA are not checked bc they are only present if they are present in the original resource
-					continue
-					
-				if policyOptional == RequestOptionality.M:		# Not okay, this attribute is mandatory but absent
-					raise BAD_REQUEST(L.logWarn(f'cannot find mandatory attribute: {attributeName}'))
-
+				# check whether the attribute is mandatory or NP
 				if attributeName in pureResDict:
 					if policy.cardinality in (Cardinality.CAR1, Cardinality.CAR1LN): 	# but ignore CAR.car1N or CAR1LN (which may be Null/None)
 						raise BAD_REQUEST( L.logWarn(f'cannot delete a mandatory attribute: {attributeName}'))
 					if policyOptional == RequestOptionality.NP: # present with any value or None/null? Then this is an error for NP
 						raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is NP for operation'))
 
-				if policyOptional in ( RequestOptionality.NP, RequestOptionality.O ):		# Okay that the attribute is not in the dict, since it is provided or optional
+				# Ignore when the resource is already announced
+				if isAnnounced:
+					# MA are not checked bc they are only present if they are present in the original resource
+					continue
+
+				# Check whether this attribute is mandatory but absent
+				if policyOptional == RequestOptionality.M:		# Not okay, this attribute is mandatory but absent
+					raise BAD_REQUEST(L.logWarn(f'cannot find mandatory attribute in request: {attributeName}'))
+
+				if policyOptional in ( RequestOptionality.NP, RequestOptionality.O ):		
+					# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
@@ -256,8 +263,8 @@ class Validator(object):
 
 	def validateAttribute(self, attribute:str, 
 								value:Any, 
-								attributeType:Optional[BasicType] = None, 
-								rtype:Optional[ResourceTypes] = ResourceTypes.ALL) -> Tuple[BasicType, Any]:
+								attributeType:Optional[BasicType]=None, 
+								rtype:Optional[ResourceTypes]=ResourceTypes.ALL) -> Tuple[BasicType, Any]:
 		""" Validate a single attribute. 
 		
 			Args:
@@ -265,14 +272,18 @@ class Validator(object):
 				value: Value to validate for the attribute.
 				attributeType: If *attributeType* is set then that type is taken to perform the check, otherwise the attribute type is determined.
 				rtype: Some attributes' validations depend on the resource type.
+			
 			Return:
 				A tuple with determined data type and the converted value.
+			
+			Raises:
+				BAD_REQUEST: If the validation fails.
 		"""
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
 		if policy := self.getAttributePolicy(rtype, attribute):
-			return self._validateType(policy.type, value, True, policy = policy)
-		raise BAD_REQUEST(f'validation for attribute {attribute} not defined for resource type: {rtype}')
+			return self._validateType(policy.type, value, True, policy=policy)
+		raise BAD_REQUEST(f'validation for attribute {attribute} not defined for resource type: {rtype.name}')
 
 
 	#
@@ -606,7 +617,7 @@ class Validator(object):
 		"""	Add a new attribute policy for normal resources. 
 		"""
 		if (rtype, attr) in attributePolicies:
-			L.logErr(f'Policy {(rtype, attr)} is already registered')
+			raise ValueError(f'Policy {(rtype.name if isinstance(rtype, ResourceTypes) else rtype, attr)} is already registered')
 		attributePolicies[(rtype, attr)] = attrPolicy
 
 		# Collect a list of attributes for complex types
@@ -622,12 +633,13 @@ class Validator(object):
 				attributesComplexTypes[attr] = [ attrPolicy.ctype ]
 
 
-	def getAttributePolicy(self, rtype:ResourceTypes|str, attr:str) -> AttributePolicy:
+	def getAttributePolicy(self, rtype:ResourceTypes|str, attr:str, specific:bool=False) -> AttributePolicy:
 		"""	Return the attributePolicy for a resource type.
 
 			Args:
-				rtype: Resource type.
+				rtype: Resource type to check first.
 				attr: Attribute name.
+				specific: Boolean, indicating whether to search for a specific type.
 			
 			Return:
 				AttributePolicy or None.
@@ -636,8 +648,22 @@ class Validator(object):
 		if (ap := attributePolicies.get((rtype, attr))):
 			return ap
 
+		# We can return here if we are looking for a specific type		
+		if specific:
+			return None
+		
+		# Try Request or Response parameters
+		if (ap := attributePolicies.get((ResourceTypes.REQUEST, attr))):
+			return ap
+		if (ap := attributePolicies.get((ResourceTypes.RESPONSE, attr))):
+			return ap
+
 		# If it couldn't be found, look whether it has been defined for ALL
 		if (ap := attributePolicies.get((ResourceTypes.ALL, attr))):
+			return ap
+
+		# Request or Reponse Attribute?
+		if (ap := attributePolicies.get((ResourceTypes.REQRESP, attr))):
 			return ap
 		
 		# TODO look for other types, requests, filter...
@@ -771,17 +797,20 @@ class Validator(object):
 		return str(value)
 
 
-	def getAttributeValueRepresentation(self, attr:str, resourceType:ResourceTypes) -> str:
+	def getAttributeValueRepresentation(self, attr:str, resourceType:ResourceTypes, withComments:Optional[bool]=True) -> str:
 		"""	Return the representation of an attribute value. This is usually used for
 			the representation of an attribute where the value is not known yet.
 
 			Args:
 				attr: Attribute name.
 				resourceType: Type of the attribute's resource.
+				withComments: Boolean, indicating whether to include comments in the representation.
 				
 			Return:
 				String, representation of the attribute value. This might be a JSON representation of the value.
 		"""
+
+		commentChars = '//' if withComments else ''
 
 		def basicTypeDefaultValue(typ:BasicType, 
 								  policy:Optional[AttributePolicy] = None, 
@@ -799,19 +828,21 @@ class Validator(object):
 
 			match typ:
 				case BasicType.string:
-					return '<string>'
+					return '"<string>"'
 				case BasicType.ID:
-					return '<ID>'
+					return '"<ID>"'
+				case BasicType.token:
+					return '"<token>"'
 				case BasicType.anyURI:
-					return '<uri>'
+					return '"<uri>"'
 				case BasicType.ncname:
-					return '<NCname>'
+					return '"<NCname>"'
 				case BasicType.imsi:
-					return '<imsi>'
+					return '"<imsi>"'
 				case BasicType.iccid:
-					return '<iccid>'
+					return '"<iccid>"'
 				case BasicType.base64:
-					return '<base64 encoded string>'
+					return '"<base64 encoded string>"'
 				case BasicType.positiveInteger:
 					return '<positiveInteger>'
 				case BasicType.nonNegInteger:
@@ -827,13 +858,13 @@ class Validator(object):
 				case BasicType.boolean:
 					return '<boolean true|false>'
 				case BasicType.timestamp:
-					return '<ISO 8601 timestamp>'
+					return '"<ISO 8601 timestamp>"'
 				case BasicType.absRelTimestamp:
-					return '<ISO 8601 timestamp or integer>'
+					return '"<ISO 8601 timestamp or integer>"'
 				case BasicType.duration:
-					return '<ISO 8601 duration>'
+					return '"<ISO 8601 duration>"'
 				case BasicType.schedule:
-					return '<schedule 7-digits cron-like>'
+					return '"<schedule 7-digits cron-like>"'
 				case BasicType.geoJsonCoordinate:
 					return '<GeoJsonCoordinate>'
 				case BasicType.list | BasicType.listNE:
@@ -841,8 +872,8 @@ class Validator(object):
 						if policy.ltype == BasicType.complex:
 							_result = '[ {\n'
 							for a in self.getComplexTypeAttributePolicies(policy.lTypeName):
-								_result += f'        //{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
-							_result += f'        //{" "*4*(level+1)} }} ]'
+								_result += f'        {commentChars}{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
+							_result += f'        {commentChars}{" "*4*(level+1)} }} ]'
 							return _result
 
 						return f'[ {basicTypeDefaultValue(policy.ltype, policy, level+1)} ]'
@@ -858,8 +889,8 @@ class Validator(object):
 					if policy:
 						_result = '{\n'
 						for a in self.getComplexTypeAttributePolicies(policy.typeName):
-							_result += f'        //{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
-						_result += f'        //{" "*4*(level+1)} }}'
+							_result += f'        {commentChars}{" "*4*(level+1)} "{a.sname}": {basicTypeDefaultValue(a.type, a, level+1)}\n'
+						_result += f'        {commentChars}{" "*4*(level+1)} }}'
 						return _result
 					return '{ ... }'
 				case _:
@@ -878,6 +909,9 @@ class Validator(object):
 								'?', '@', '[', ']', '^', '´' , '`', '{', '|', '}', '~' )
 	"""	Disallowed characters in NCName. """
 
+	_tokenDisallowedChars = ( '\t', '\n', '\r' )
+	"""	Disallowed characters in token. """
+
 	def _validateType(self, dataType:BasicType, 
 							value:Any, 
 							convert:Optional[bool] = False, 
@@ -892,6 +926,9 @@ class Validator(object):
 					is an error. 
 			Return:
 				Result. If the check is positive then a tuple is returned: (the determined data type, the converted value).
+
+			Raises:
+				BAD_REQUEST: If the validation fails.
 		"""
 
 		# Ignore None values
@@ -961,7 +998,7 @@ class Validator(object):
 							if fromAbsRelTimestamp(value) == 0.0:
 								raise BAD_REQUEST(f'format error in absRelTimestamp: {value}')
 						# fallthrough
-					case int():
+					case int() if not isinstance(value, bool):	# bool is a subclass of int !
 						pass
 						# fallthrough
 					case _:
@@ -973,7 +1010,14 @@ class Validator(object):
 
 			case BasicType.ID if isinstance(value, str):	# TODO check for valid resourceID
 				return (dataType, value)
-			
+		
+			case BasicType.token if isinstance(value, str):
+				if any(_c in value for _c in self._tokenDisallowedChars) or '  ' in value:
+					raise BAD_REQUEST(f'invalid token: "{value}" must not contain double spaces or any of ' + ', '.join([f'0x{ord(c):02x}' for c in self._tokenDisallowedChars]))
+				if len(value) == 0:
+					raise BAD_REQUEST(f'invalid token: "{value}" must not be empty')
+				return (dataType, value)			
+
 			case BasicType.ncname if isinstance(value, str):
 				if len(value) == 0 or value[0].isdigit() or value[0] in ('-', '.'):
 					raise BAD_REQUEST(f'invalid NCName: {value} (must not start with a digit, "-", or ".")')
@@ -988,6 +1032,8 @@ class Validator(object):
 				if dataType == BasicType.listNE and len(value) == 0:
 					raise BAD_REQUEST('empty list is not allowed')
 				if policy is not None and policy.ltype is not None:
+					if policy.lSize is not None and len(value) != policy.lSize:
+						raise BAD_REQUEST(f'list size mismatch: {len(value)} != {policy.lSize}')
 					for each in value:
 						self._validateType(policy.ltype, each, convert = convert, policy = policy)
 				return (dataType, value)
@@ -999,11 +1045,16 @@ class Validator(object):
 
 				if isinstance(value, dict):
 					typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
+					choiceAttributes:list[str] = []
 					for k, v in value.items():
 						if not (p := self.getAttributePolicy(typeName, k)):
 							raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
+						if policy.choice:
+							choiceAttributes.append(k)
+							if len(choiceAttributes) > 1:
+								raise BAD_REQUEST(f'only one of the attributes {choiceAttributes} is allowed in complex type: {typeName}')
 						# recursively validate a dictionary attribute
-						self._validateType(p.type, v, convert = convert, policy = p)
+						self._validateType(p.type, v, convert=convert, policy=p)
 
 					# Check that all mandatory attributes are present
 					attributeNames = value.keys()

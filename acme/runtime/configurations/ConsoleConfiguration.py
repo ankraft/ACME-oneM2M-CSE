@@ -14,45 +14,29 @@ import configparser
 from ...etc.Types import TreeMode
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
+from ...etc.Constants import RuntimeConstants as RC
 
 class ConsoleConfiguration(ModuleConfiguration):
 	""" Console configurations
 	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-		""" Read the configuration from the configuration file.
-		
-			Args:
-				parser: The configuration parser
-				config: The configuration instance
-		"""
-					
 		#	Console
-		config.console_confirmQuit = parser.getboolean('console', 'confirmQuit', fallback = False)
-		config.console_headless = parser.getboolean('console', 'headless', fallback = False)
-		config.console_hideResources = parser.getlist('console', 'hideResources', fallback = [])		# type: ignore[attr-defined]
-		config.console_refreshInterval = parser.getfloat('console', 'refreshInterval', fallback = 2.0)
-		config.console_theme = parser.get('console', 'theme', fallback = 'dark')
-		config.console_treeIncludeVirtualResource = parser.getboolean('console', 'treeIncludeVirtualResources', fallback = False)
-		config.console_treeMode = parser.get('console', 'treeMode', fallback = 'normal')
+		config.console_confirmQuit = parser.getboolean('console', 'confirmQuit', fallback=False)
+		config.console_headless = parser.getboolean('console', 'headless', fallback=False)
+		config.console_hideResources = parser.getlist('console', 'hideResources', fallback=[])		# type: ignore[attr-defined]
+		config.console_refreshInterval = parser.getfloat('console', 'refreshInterval', fallback=2.0)
+		config.console_theme = parser.get('console', 'theme', fallback='dark')
+		config.console_treeIncludeVirtualResource = parser.getboolean('console', 'treeIncludeVirtualResources', fallback=False)
+		config.console_treeMode = parser.get('console', 'treeMode', fallback='normal')
 
 
-	def validateConfiguration(self, config:Configuration, initial:Optional[bool] = False) -> None:
-		""" Validate the configuration.
-
-			Args:
-				config: The configuration object
-				initial: If True, this is the initial validation
-
-			Raises:
-				ConfigurationError if the configuration is invalid
-		"""
-
+	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# override configuration with command line arguments
-		if Configuration._args_headless is True:
+		if Configuration._args_headless:
 			Configuration.console_headless = True
 		if Configuration._args_lightScheme is not None:
-			Configuration.console_theme = Configuration._args_lightScheme 					# Override console theme 
+			Configuration.console_theme = Configuration._args_lightScheme  # Override console theme 
 
 		# Console settings
 
@@ -71,3 +55,5 @@ class ConsoleConfiguration(ModuleConfiguration):
 		if Configuration.console_headless:
 			Configuration.logging_enableScreenLogging = False
 			Configuration.textui_startWithTUI = False
+			RC.isHeadless = True
+			

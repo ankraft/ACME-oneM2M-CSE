@@ -21,6 +21,7 @@ from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
+from ..resources import Factory
 
 
 # TODO notificationForwardingURI
@@ -36,7 +37,9 @@ class SUB(Resource):
 	"""	The resource's domain and type name. """
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SCH
+	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.NTSR,
+												   	   ResourceTypes.NTPR,
+												   	   ResourceTypes.SCH,
 						   							 ]
 
 	# Attributes and Attribute policies for this Resource Class
@@ -129,6 +132,20 @@ class SUB(Resource):
 		parentResource.incrementSubscriptionCounter()
 		# L.logWarn(f'Incremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
 
+		L.isDebug and L.logDebug(f'Registering <NTSR> for: {self.ri}')
+		dct = {
+			'm2m:ntsr' : {
+				'rn' : 'ntsr'
+			}
+		}
+		pcu = Factory.resourceFromDict(dct, 
+								 	   pi = self.ri, 
+									   ty = ResourceTypes.NTSR,
+									   create = True,
+									   originator = originator)	# rn is assigned by resource itself
+		
+		resource = CSE.dispatcher.createLocalResource(pcu, self, originator = originator)
+
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
@@ -169,7 +186,7 @@ class SUB(Resource):
 		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
 			for crsRI in set(self.acrs) - set(newAcrs):
 				L.isDebug and L.logDebug(f'Update of acrs: {crsRI} removed. Sending deletion notification')
-				CSE.notification.sendDeletionNotification(crsRI, self.ri)	# TODO ignore result?
+				CSE.notification.sendDeletionNotification(crsRI, self.ri, self.cr)	# TODO ignore result?
 
 		# Do actual update
 		super().update(dct, originator, doValidateAttributes = False)
@@ -183,9 +200,9 @@ class SUB(Resource):
 		CSE.notification.updateSubscription(self, previousNus, originator)
 
  
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator:Optional[str]=None, 
+					   dct:Optional[JSON]=None, 
+					   parentResource:Optional[Resource]=None) -> None:
 		super().validate(originator, dct, parentResource)
 
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
@@ -211,7 +228,7 @@ class SUB(Resource):
 		
 		# Apply default enc/net value.
 		if self['enc/net'] is None and self['enc/om'] is None:
-			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
+			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite=False)
 
 		# Check NotificationEventType
 		if (newNet := findXPath(attrs, 'enc/net')) is not None and not NotificationEventType.has(newNet):
@@ -280,8 +297,6 @@ class SUB(Resource):
 					# Check missing data structure
 					if (md := self['enc/md']) is None:	# enc/md is a boolean
 						raise BAD_REQUEST(L.logDebug(f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing'))
-					CSE.validator.validateAttribute('num', md.get('num'))
-					CSE.validator.validateAttribute('dur', md.get('dur'))
 		
 		# if nct is not provided, check that net contains only event types that have the same default nct
 		if nct is None and newNet is not None:

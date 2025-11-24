@@ -141,18 +141,18 @@ class TestAddressing(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_absoluteStructuredWrongSPIDFail(self) -> None:
-		""" Test absolute structured with wrong SPID -> Fail"""
-		url = f'{CSEURL}//wrong{CSEID}/{CSERN}/{aeRN}/{cntRN}'
+		""" Test absolute structured with unknown SPID -> Fail"""
+		url = f'{CSEURL}//unknown{CSEID}/{CSERN}/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
-		self.assertEqual(rsc, RC.BAD_REQUEST)
+		self.assertEqual(rsc, RC.NOT_FOUND, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_absoluteUnstructuredWrongSPIDFail(self) -> None:
-		""" Test absolute unstructured with wrong SPID -> Fail"""
-		url = f'{CSEURL}//wrong{CSEID}/{TestAddressing.cntRI}'
+		""" Test absolute unstructured with unknown SPID -> Fail"""
+		url = f'{CSEURL}//unknown{CSEID}/{TestAddressing.cntRI}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
-		self.assertEqual(rsc, RC.BAD_REQUEST)
+		self.assertEqual(rsc, RC.NOT_FOUND, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

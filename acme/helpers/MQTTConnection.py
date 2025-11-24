@@ -170,6 +170,9 @@ class MQTTConnection(object):
 		'messageHandler',
 		'actor',
 		'subscribedTopics',
+		'enableWebSocket',
+		'webSocketPort',
+		'websocketPath',
 	)
 	"""	Slots of the class. """
 
@@ -190,7 +193,10 @@ class MQTTConnection(object):
 					   certfile:Optional[str] = None, 
 					   keyfile:Optional[str] = None,
 					   lowLevelLogging:bool = True,
-					   messageHandler:Optional[MQTTHandler] = None
+					   messageHandler:Optional[MQTTHandler] = None,
+					   enableWebSocket:Optional[bool] = False,
+					   webSocketPort:Optional[int] = 8080,
+					   websocketPath: Optional[str] = None
 				) -> None:
 		"""	Constructor. Initialize the MQTT client.
 
@@ -209,6 +215,9 @@ class MQTTConnection(object):
 				keyfile: The key file for the MQTT client.
 				lowLevelLogging: Indicator whether to log MQTT messages.
 				messageHandler: The message handler.
+				enableWebSocket: Whether to enable WebSocket support.
+				webSocketPort: The port to use for WebSocket connections.
+				websocketPath: The websocket path to use (incase of websockets).
 		"""
 		
 		self.address								= address
@@ -255,6 +264,22 @@ class MQTTConnection(object):
 		self.subscribedTopics:dict[str, MQTTTopic]	= {}
 		""" The list of subscribed-to topics. """
 
+		self.enableWebSocket						= enableWebSocket
+		""" Whether to enable WebSocket support. """
+		self.websocketPath							= websocketPath if websocketPath else '/'
+		""" The websocket path to use (incase of websockets). """
+
+		# Re-assign the port if WebSocket is enabled
+		self.port = webSocketPort if self.enableWebSocket else self.port
+
+		# transport = transport.lower()  # type: ignore
+		# if transport not in ("websockets", "tcp"):
+		# 	raise ValueError(
+		# 		f'transport must be "websockets", "tcp", not {transport}')
+		# self.transport								= transport
+		# """	The transport protocol to use (tcp or websockets). """
+		# self.websocketPath							= websocketPath
+		# """ The websocket path to use (incase of websockets). """
 	
 	def shutdown(self) -> bool:
 		"""	Shutting down the MQTT client.
@@ -284,20 +309,63 @@ class MQTTConnection(object):
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
 		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: client name: {self.clientID}')
-		self.mqttClient = MQTTClient(callback_api_version = mqtt.CallbackAPIVersion.VERSION2,
-							   		 client_id = self.clientID, 
-									 clean_session = False if self.clientID else True)	# clean_session=False is defined by TS-0010
 
-		# Enable SSL see: https://pypi.org/project/paho-mqtt/
-		if self.useTLS:
-			self.mqttClient.tls_set(ca_certs = self.caFile, 
-									certfile = self.mqttsCertfile, 
-									keyfile = self.mqttsKeyfile, 
-									cert_reqs = ssl.CERT_REQUIRED, 
-									tls_version = ssl.PROTOCOL_TLS, 
-									ciphers = None)
-			# If tls_insecure_set is set to True, it is impossible to guarantee that the host you are connecting to is not impersonating your server. This can be useful in initial server testing, but makes it possible for a malicious third party to impersonate your server through DNS spoofing, for example.
-			self.mqttClient.tls_insecure_set(True)
+		if self.enableWebSocket:
+			self.mqttClient = MQTTClient(callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+										 client_id=self.clientID,
+										 transport='websockets',
+										 clean_session=False if self.clientID else True
+										)	# clean_session=False is defined by TS-0010
+			
+			# TODO handle TLS configuration for WebSocket connections
+			if self.useTLS:
+				if self.verifyCertificate:
+					self.mqttClient.tls_set()
+				else:
+					self.mqttClient.tls_set(cert_reqs=ssl.CERT_NONE)  # Accept self-signed certificates 
+			
+			# Set the WebSocket path
+			self.mqttClient.ws_set_options(path=self.websocketPath if self.websocketPath else '/')
+
+		else:
+
+			self.mqttClient = MQTTClient(callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+										 client_id=self.clientID,
+										 clean_session=False if self.clientID else True
+										)	# clean_session=False is defined by TS-0010
+		
+			if self.useTLS:
+				self.mqttClient.tls_set(ca_certs=self.caFile,
+										certfile=self.mqttsCertfile,
+										keyfile=self.mqttsKeyfile,
+										cert_reqs=ssl.CERT_REQUIRED,
+										tls_version=ssl.PROTOCOL_TLS,
+										ciphers=None)
+				# If tls_insecure_set is set to True, it is impossible to guarantee that the host
+				# you are connecting to is not impersonating your server. This can be useful in 
+				# initial server testing, but makes it possible for a malicious third party to 
+				# impersonate your server through DNS spoofing, for example.
+				# TODO make this configurable
+				self.mqttClient.tls_insecure_set(True)
+
+
+		# Configure TLS for WebSocket connections
+		# if self.transport == "websockets":
+		# 	if self.verifyCertificate:
+		# 		self.mqttClient.tls_set()
+		# 	else:
+		# 		self.mqttClient.tls_set(cert_reqs=ssl.CERT_NONE)  # Accept self-signed certificates 
+		# 	self.mqttClient.ws_set_options(path=self.websocketPath if self.websocketPath else "/")
+		# Configure TLS for regular MQTT connections
+		# elif self.useTLS:
+		# 	self.mqttClient.tls_set(ca_certs = self.caFile, 
+		# 							certfile = self.mqttsCertfile, 
+		# 							keyfile = self.mqttsKeyfile, 
+		# 							cert_reqs = ssl.CERT_REQUIRED, 
+		# 							tls_version = ssl.PROTOCOL_TLS, 
+		# 							ciphers = None)
+		# 	# If tls_insecure_set is set to True, it is impossible to guarantee that the host you are connecting to is not impersonating your server. This can be useful in initial server testing, but makes it possible for a malicious third party to impersonate your server through DNS spoofing, for example.
+		# 	self.mqttClient.tls_insecure_set(True)
 			
 		# Set username/password
 		if self.username and self.password:
@@ -311,7 +379,7 @@ class MQTTConnection(object):
 		self.mqttClient.on_message		= self._onMessage
 
 		try:
-			self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: connecting to host:{self.address}, port:{self.port}, keepalive: {self.keepalive}, bind: {self.bindIF}')
+			self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: connecting to host:{self.address}, port:{self.port}, keepalive:{self.keepalive}, bind:{self.bindIF} websocket:{self.enableWebSocket}')
 			self.mqttClient.connect(host = self.address, port = self.port, keepalive = self.keepalive, bind_address = self.bindIF)
 		except Exception as e:
 			if self.messageHandler:
@@ -332,7 +400,20 @@ class MQTTConnection(object):
 		self.isStopped = False
 		self.messageHandler and self.messageHandler.logging(self, logging.INFO, 'MQTT: client started')
 		while not self.isStopped:
-			self.mqttClient.loop_forever()	# Will return when disconnect() is called
+			try:
+				self.mqttClient.loop_forever()	# Will return when disconnect() is called
+				# If loop_forever() returns without stopping, attempt reconnection
+				if not self.isStopped:
+					self.messageHandler and self.messageHandler.logging(self, logging.WARNING, 
+						'MQTT: Connection lost, attempting to reconnect...')
+					time.sleep(1)  # Brief delay before retry
+				
+			except Exception as e:
+				if not self.isStopped:
+					self.messageHandler and self.messageHandler.logging(self, logging.ERROR, 
+						f'MQTT: Error in connection loop: {str(e)}')
+					time.sleep(5)  # Longer delay on errors
+    
 		if self.messageHandler:
 			self.messageHandler.onShutdown(self)
 		return True
@@ -555,12 +636,18 @@ class MQTTConnection(object):
 		"""
 		self.mqttClient.publish(topic, data)
 
+	
+	def __str__(self) -> str:
+		return f'MQTTConnection({self.address}:{self.port}, websocket={self.enableWebSocket}, clientID={self.clientID}, connected={self.isConnected}, topics={len(self.subscribedTopics)})'
+
 
 
 ##############################################################################
 #
 #	Utility functions
 #
+
+# TODO support Absolute IDs as well
 
 def idToMQTT(id:str) -> str:
 	"""	Convert a oneM2M ID to an MQTT compatible path element.

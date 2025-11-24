@@ -4,16 +4,16 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-"""  Group announced (GRPA) resource type."""
+"""	Group announced (GRPA) resource type."""
 
 from __future__ import annotations
-from typing import Optional
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class GRPAnnc(AnnouncedResource):
+	""" Group announced (GRPA) resource type."""
 
 	resourceType = ResourceTypes.GRPAnnc
 	""" The resource type """
@@ -47,7 +47,6 @@ class GRPAnnc(AnnouncedResource):
 		# Resource attributes
 		'mt': None,
 		'spty': None,
-		'cnm': None,
 		'mnm': None,
 		'mid': None,
 		'macp': None,
