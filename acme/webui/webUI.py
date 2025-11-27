@@ -36,7 +36,8 @@ class WebUI(object):
 					   webuiDirectory:Optional[str] = '.', 
 					   redirectURL:Optional[str] = None, 
 					   version:Optional[str] ='',
-					   httpRoot:Optional[str] = '') -> None:
+					   httpRoot:Optional[str] = '',
+					   nonLocalRoot:Optional[str] = '') -> None:
 		"""	Initialize the web user interface.
 
 			Args:
@@ -48,6 +49,7 @@ class WebUI(object):
 				redirectURL: The URL to redirect to.
 				version: The version of the web UI.
 				httpRoot: The root for the HTTP server.
+				nonLocalRoot: The non-local root for the HTTP server.
 		"""
 
 		# Register the endpoint for the web UI
@@ -74,6 +76,9 @@ class WebUI(object):
 
 		self.httpRoot 			= httpRoot
 		""" The root for the HTTP server. """
+
+		self.httpNonLocalRoot 	= nonLocalRoot
+		""" The non-local root for the HTTP server. """
 		
 		self.oauthToken:Token	= None
 		""" The oauth token. """
@@ -155,7 +160,7 @@ class WebUI(object):
 		# if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
 		if not path:
 			# print(f'{self.webuiRoot}/index.html?ri=/{self.defaultRII}&or={self.defaultOriginator}')
-			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&hr=" + self.httpRoot}{"&" + request.query_string.decode() if request.query_string else ""}', code = 302)
+			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&hr=" + self.httpRoot}{"&nlhr=" + self.httpNonLocalRoot}{"&" + request.query_string.decode() if request.query_string else ""}', code = 302)
 		else:
 			filename = f'{self.webuiDirectory}/{path}'	# return any file in the web directory
 		try:

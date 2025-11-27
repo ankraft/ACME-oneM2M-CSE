@@ -278,6 +278,10 @@ function setup() {
 
   var hrField = document.getElementById("httproot");
   httpRoot = getUrlParameterByName("hr")
+  nonLocalhttpRoot = getUrlParameterByName("nlhr")
+  if (nonLocalhttpRoot != httpRoot) {
+	httpRoot = nonLocalhttpRoot
+  }
   if (httpRoot.startsWith("/")) {
 	httpRoot = httpRoot.slice(1)
   }

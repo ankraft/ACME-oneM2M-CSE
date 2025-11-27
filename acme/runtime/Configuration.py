@@ -291,6 +291,9 @@ class Configuration(object):
 	http_root:str
 	"""	The root of the HTTP path. """
 
+	http_nonLocalRoot:str
+	"""	The non-local root of the HTTP path. This is used when the CSE is accessed from non-local addresses, e.g. in a Kubernetes cluster. """
+
 	http_timeout:float
 	"""	The timeout for HTTP requests. """
 

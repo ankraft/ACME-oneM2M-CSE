@@ -31,6 +31,7 @@ class HTTPServerConfiguration(ModuleConfiguration):
 		config.http_listenIF = parser.get('http', 'listenIF', fallback='0.0.0.0')
 		config.http_port = parser.getint('http', 'port', fallback=8080)
 		config.http_root = parser.get('http', 'root', fallback='')
+		config.http_nonLocalRoot = parser.get('http', 'nonLocalRoot', fallback=config.http_root)
 		config.http_timeout = parser.getfloat('http', 'timeout', fallback=10.0)
 
 		#	HTTP Server CORS
@@ -72,6 +73,7 @@ class HTTPServerConfiguration(ModuleConfiguration):
 
 		config.http_address = normalizeURL(config.http_address)
 		config.http_root = normalizeURL(config.http_root)
+		config.http_nonLocalRoot = normalizeURL(config.http_nonLocalRoot)
 
 		# Just in case: check the URL's (http, ws)
 		if config.http_security_useTLS:
