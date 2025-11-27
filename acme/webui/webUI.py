@@ -82,24 +82,24 @@ class WebUI(object):
 		if self.redirectURL is not None and self.redirectURL[-1] != '/':
 			self.redirectURL += '/'
 
-		self.addEndpoint(self.webuiRoot, handler = self.handleWebUIGET, methods = ['GET'])
-		self.addEndpoint(f'{self.webuiRoot}/<path:path>', handler = self.handleWebUIGET, methods = ['GET'])
-		self.addEndpoint(f'{httpRoot}/', handler = self.redirectRoot, methods = ['GET'])
-		self.addEndpoint(f'{self.webuiRoot}/__version__', handler = self.getVersion, methods = ['GET'])
+		self.addEndpoint(self.webuiRoot, handler=self.handleWebUIGET, methods=['GET'])
+		self.addEndpoint(f'{self.webuiRoot}/<path:path>', handler=self.handleWebUIGET, methods=['GET'])
+		self.addEndpoint(f'{httpRoot}/', handler=self.redirectRoot, methods=['GET'])
+		self.addEndpoint(f'{self.webuiRoot}/__version__', handler=self.getVersion, methods=['GET'])
 
-		if self.redirectURL:
-			print("will redirect" + self.redirectURL)
-			self.addEndpoint('/<path:path>', handler = self.proxy, methods = ['GET', 'POST', 'PUT', 'DELETE'])
+		# if self.redirectURL:
+		# 	print(f'will redirect to {self.redirectURL}')
+		# 	self.addEndpoint('/<path:path>', handler=self.proxy, methods=['GET', 'POST', 'PUT', 'DELETE'])
 		
 		logging.getLogger("requests").setLevel(logging.WARNING)
 		logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-	def addEndpoint(self, endpoint:Optional[str] = None, 
-						  endpoint_name:Optional[str] = None, 
-						  handler:Optional[FlaskHandler] = None, 
-						  methods:Optional[list[str]] = None, 
-						  strictSlashes:Optional[bool] = True) -> None:
+	def addEndpoint(self, endpoint:Optional[str]=None, 
+						  endpoint_name:Optional[str]=None, 
+						  handler:Optional[FlaskHandler]=None, 
+						  methods:Optional[list[str]]=None, 
+						  strictSlashes:Optional[bool]=True) -> None:
 		"""	Add an endpoint to the web UI.
 
 			Args:
@@ -146,7 +146,6 @@ class WebUI(object):
 			Returns:
 				The response.
 		"""
-
 		# security check whether the path will under the web root
 
 		if not f'{self.webuiRoot}/{request.path}'.startswith(self.webuiRoot):
@@ -177,8 +176,8 @@ class WebUI(object):
 			Returns:
 				The response.
 		"""
-		print(request.host_url)
-		print(self.redirectURL)
+		# print(request.host_url)
+		# print(self.redirectURL)
 		url = request.url.replace(request.host_url, self.redirectURL)
 		if doLogging and console:
 			console.log('[dim]--------------------------------------------------')

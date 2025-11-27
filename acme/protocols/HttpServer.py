@@ -93,7 +93,8 @@ class HttpServer(object):
 
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
-		self.flaskApp = Flask(RC.cseCsi)
+		# Also prevent flask from registering the static endpoint
+		self.flaskApp = Flask(RC.cseCsi, static_folder=None)
 		""" The Flask application instance. """
 
 		self.webuiDirectory:Optional[str] = None
@@ -120,7 +121,6 @@ class HttpServer(object):
 		L.isInfo and L.log(f'Registering http server root at: {Configuration.http_root}')
 		if Configuration.http_security_useTLS:
 			L.isInfo and L.log('TLS enabled. HTTP server serves via https.')
-		
 		# Add CORS support for flask
 		if Configuration.http_cors_enable:
 			logging.getLogger('flask_cors').level = logging.DEBUG	# switch on flask-cors internal logging
@@ -130,10 +130,10 @@ class HttpServer(object):
 			L.isDebug and L.logDebug('CORS is NOT enabled for the HTTP server.')
 
 		# Add endpoints
-		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleGET, methods = ['GET'])
-		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePOST, methods = ['POST'])
-		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePUT, methods = ['PUT'])
-		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleDELETE, methods = ['DELETE'])
+		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleGET, methods=['GET'])
+		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePOST, methods=['POST'])
+		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePUT, methods=['PUT'])
+		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
 
 		self.httpActor:Optional[BackgroundWorker] = None
 		""" The background worker for the HTTP server. """
@@ -145,7 +145,7 @@ class HttpServer(object):
 						   defaultOriginator=RC.cseOriginator, 
 						   root=Configuration.webui_root,
 						   webuiDirectory=self.webuiDirectory,
-						   redirectURL=f'{Configuration.http_address}{Configuration.http_root}' if Configuration.http_root else None,
+						   redirectURL=f'{Configuration.http_address}' if Configuration.http_root else None,
 						   version=Constants.version,
 						   httpRoot=Configuration.http_root)
 		""" The web UI instance. """
@@ -201,6 +201,7 @@ class HttpServer(object):
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
 		""" Event for HTTP response received. """
 
+		# L.log(self.getEndpoints())
 
 	def _assignConfig(self) -> None:
 		"""	Assign the configuration values to the http server.
@@ -286,7 +287,7 @@ class HttpServer(object):
 			# Disable the flask banner messages
 			cli = sys.modules['flask.cli']
 			cli.show_server_banner = lambda *x: None 	# type: ignore
-			# Start the serverz
+			# Start the server
 			try:
 				if Configuration.http_wsgi_enable:
 					L.isInfo and L.log(f'HTTP server listening on {Configuration.http_listenIF}:{Configuration.http_port} (wsgi)')
@@ -297,12 +298,12 @@ class HttpServer(object):
 						  connection_limit = Configuration.http_wsgi_connectionLimit)
 				else:
 					L.isInfo and L.log(f'HTTP server listening on {Configuration.http_listenIF}:{Configuration.http_port} (flask http)')
-					self.flaskApp.run(host = Configuration.http_listenIF, 
-									  port = Configuration.http_port,
-									  threaded = True,
-									  request_handler = ACMERequestHandler,
-									  ssl_context = CSE.security.getSSLContextHttp(),
-									  debug = False)
+					self.flaskApp.run(host=Configuration.http_listenIF, 
+									  port=Configuration.http_port,
+									  threaded=True,
+									  request_handler=ACMERequestHandler,
+									  ssl_context=CSE.security.getSSLContextHttp(),
+									  debug=False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
 				if RC.isHeadless:
@@ -334,6 +335,23 @@ class HttpServer(object):
 		"""
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
+
+	def getEndpoints(self) -> list[dict]:
+		"""Get all registered HTTP endpoints.
+		
+		Return:
+			List of dictionaries containing endpoint information.
+		"""
+		endpoints = []
+		for rule in self.flaskApp.url_map.iter_rules():
+			endpoints.append({
+				'endpoint': rule.endpoint,
+				'methods': sorted(list(rule.methods - {'HEAD', 'OPTIONS'})),
+				'url_pattern': str(rule),
+				'strict_slashes': rule.strict_slashes
+			})
+		return endpoints
+	
 
 	def _handleRequest(self, path:str, operation:Operation, authResult:AuthorizationResult) -> Response:
 		"""	Get and check all the necessary information from the request and

@@ -51,13 +51,21 @@ function setRestUI(resourceFull) {
 	currentResourceType = Object.keys(resourceFull)[0];
 	currentResource = resourceFull[currentResourceType]
 	// bri = document.getElementById("baseri").value
-	// cri = "/" + currentResource.ri
-	// if (bri == cri) {
-	//   document.getElementById("rest-url").value=bri
-	// } else {
-	//   document.getElementById("rest-url").value=bri + cri
-	// }
-	document.getElementById("rest-url").value=currentResource.ri
+	base = getUrlParameterByName("hr")
+	if (base.startsWith('/')) {
+		base = base.substring(1);
+		cri = "/" + currentResource.ri
+    } else {
+		cri = currentResource.ri
+	}
+
+
+	if (base == cri) {
+	  document.getElementById("rest-url").value = base
+	} else {
+	  document.getElementById("rest-url").value = base + cri
+	}
+	// document.getElementById("rest-url").value=currentResource.ri
 
 
 	// check requests for this resource type
