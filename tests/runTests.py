@@ -100,7 +100,6 @@ if __name__ == '__main__':
 	# Disable the upper tester interface
 	if args.disableUpperTester:
 		init.disableUpperTester()
-		print("hu")
 
 	# Import all test* modules.
 	for name in filenames:

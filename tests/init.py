@@ -1018,7 +1018,7 @@ def checkUpperTester() -> None:
 		try:
 			headers = { UTCMD: f'Status'}
 			addHttpAuthorizationHeader(headers)
-			response = requests.post(UTURL, headers = headers)
+			response = requests.post(UTURL, headers=headers)
 			match response.status_code:
 				case 200:
 					pass
