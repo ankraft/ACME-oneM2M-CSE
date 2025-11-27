@@ -1027,8 +1027,8 @@ def checkUpperTester() -> None:
 					console.print('Add authorization settings to the test suite configuration file')
 					quit(-1)
 				case _:
-					console.print('[red]Upper Tester Interface not enabeled in CSE')
-					console.print(r'Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
+					console.print('[red]Upper Tester Interface not enabeled in CSE or wrong root path[/red]')
+					console.print(r'Try enabling Upper Tester with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
 					quit(-1)
 		except (ConnectionRefusedError, requests.exceptions.ConnectionError):
 			console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
