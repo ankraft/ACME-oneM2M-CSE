@@ -153,11 +153,11 @@ listenIF=${basic.config:networkInterface}
 address=http://${basic.config:cseHost}:${basic.config:httpPort}${http:root}
 ; CSE Server root. Always provide a trailing /. Default: /
 root=/
-; Non-local root. This is used when the CSE is accessed from non-local addresses,
-; e.g. in a Kubernetes cluster. It should only be set when the non-local root
+; External root. This is used when the CSE is accessed from external addresses,
+; e.g. in a Kubernetes cluster. It should only be set when the external root path
 ; is different from the local root.
 ; Default: same as http:root
-nonLocalRoot=${http:root}
+externalRoot=${http:root}
 ; Enable an endpoint for get and set certain configuration values via a 
 ; REST interface.
 ; ATTENTION: Enabling this feature exposes configuration values, IDs and
@@ -762,7 +762,7 @@ bcnt=10.0
 
 [webui]
 ; Root path of the web UI. Default: /webui
-root=${http:root}/webui
+root=${http:root}webui
 
 
 ;

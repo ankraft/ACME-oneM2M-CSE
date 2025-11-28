@@ -31,7 +31,7 @@ class HTTPServerConfiguration(ModuleConfiguration):
 		config.http_listenIF = parser.get('http', 'listenIF', fallback='0.0.0.0')
 		config.http_port = parser.getint('http', 'port', fallback=8080)
 		config.http_root = parser.get('http', 'root', fallback='')
-		config.http_nonLocalRoot = parser.get('http', 'nonLocalRoot', fallback=config.http_root)
+		config.http_externalRoot = parser.get('http', 'externalRoot', fallback=config.http_root)
 		config.http_timeout = parser.getfloat('http', 'timeout', fallback=10.0)
 
 		#	HTTP Server CORS
@@ -71,9 +71,14 @@ class HTTPServerConfiguration(ModuleConfiguration):
 		if Configuration._args_runAsHttpWsgi is not None:
 			Configuration.http_wsgi_enable = Configuration._args_runAsHttpWsgi
 
+		if not config.http_root.endswith('/'):
+			raise ConfigurationError(fr'Configuration Error: [i]\[http]:root[/i] must end with a trailing slash (/): {config.http_root}')
+		if not config.http_externalRoot.endswith('/'):
+			raise ConfigurationError(fr'Configuration Error: [i]\[http]:externalRoot[/i] must end with a trailing slash (/): {config.http_externalRoot}')
+		
 		config.http_address = normalizeURL(config.http_address)
 		config.http_root = normalizeURL(config.http_root)
-		config.http_nonLocalRoot = normalizeURL(config.http_nonLocalRoot)
+		config.http_externalRoot = normalizeURL(config.http_externalRoot)
 
 		# Just in case: check the URL's (http, ws)
 		if config.http_security_useTLS:

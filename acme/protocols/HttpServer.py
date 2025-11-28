@@ -148,7 +148,7 @@ class HttpServer(object):
 						   redirectURL=f'{Configuration.http_address}' if Configuration.http_root else None,
 						   version=Constants.version,
 						   httpRoot=Configuration.http_root,
-						   nonLocalRoot=Configuration.http_nonLocalRoot)
+						   externalRoot=Configuration.http_externalRoot)
 		""" The web UI instance. """
 
 		# Enable the config endpoint

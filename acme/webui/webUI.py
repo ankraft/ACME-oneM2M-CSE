@@ -37,7 +37,7 @@ class WebUI(object):
 					   redirectURL:Optional[str] = None, 
 					   version:Optional[str] ='',
 					   httpRoot:Optional[str] = '',
-					   nonLocalRoot:Optional[str] = '') -> None:
+					   externalRoot:Optional[str] = '') -> None:
 		"""	Initialize the web user interface.
 
 			Args:
@@ -49,7 +49,7 @@ class WebUI(object):
 				redirectURL: The URL to redirect to.
 				version: The version of the web UI.
 				httpRoot: The root for the HTTP server.
-				nonLocalRoot: The non-local root for the HTTP server.
+				externalRoot: The external root for the HTTP server.
 		"""
 
 		# Register the endpoint for the web UI
@@ -77,7 +77,7 @@ class WebUI(object):
 		self.httpRoot 			= httpRoot
 		""" The root for the HTTP server. """
 
-		self.httpNonLocalRoot 	= nonLocalRoot
+		self.httpExternalRoot 	= externalRoot
 		""" The non-local root for the HTTP server. """
 		
 		self.oauthToken:Token	= None
@@ -90,6 +90,8 @@ class WebUI(object):
 		self.addEndpoint(self.webuiRoot, handler=self.handleWebUIGET, methods=['GET'])
 		self.addEndpoint(f'{self.webuiRoot}/<path:path>', handler=self.handleWebUIGET, methods=['GET'])
 		self.addEndpoint(f'{httpRoot}/', handler=self.redirectRoot, methods=['GET'])
+		if httpRoot:	# not empty
+			self.addEndpoint(f'{httpRoot}', handler=self.redirectRoot, methods=['GET'])
 		self.addEndpoint(f'{self.webuiRoot}/__version__', handler=self.getVersion, methods=['GET'])
 
 		# if self.redirectURL:
@@ -114,10 +116,10 @@ class WebUI(object):
 				methods: The methods for the endpoint.
 				strictSlashes: Whether to use strict slashes.
 		"""
-		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods = methods, strict_slashes = strictSlashes)
+		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
 
-	def redirectRoot(self, path:str = None) -> Response:
+	def redirectRoot(self, path:str=None) -> Response:
 		"""	Redirect request to / to webui.
 
 			Args:
@@ -127,7 +129,12 @@ class WebUI(object):
 				The response.
 		"""
 		# print(f'Forwarding {request.method.upper()} request {request.url}')
-		return flask.redirect(f'{self.webuiRoot}{"?" + request.query_string.decode() if request.query_string else ""}', code = 302)
+		_root = self.webuiRoot
+		if self.httpExternalRoot is not None and self.httpExternalRoot != self.httpRoot:
+			# replace the http root in webui root with the external root
+			_root = self.httpExternalRoot + self.webuiRoot[len(self.httpRoot):]
+		# print(f'Redirecting to {_root}')	
+		return flask.redirect(f'{_root}{"?" + request.query_string.decode() if request.query_string else ""}', code=302)
 
 
 	def getVersion(self, path:str = None) -> Response:
@@ -159,8 +166,14 @@ class WebUI(object):
 		# Redirect to index file. Also include base / cse RI
 		# if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
 		if not path:
+			# print(f'Forwarding {request.method.upper()} request {request.url}')
+			_root = self.webuiRoot
+			if self.httpExternalRoot is not None and self.httpExternalRoot != self.httpRoot:
+				# replace the http root in webui root with the external root
+				_root = self.httpExternalRoot + self.webuiRoot[len(self.httpRoot):]
+			# print(f'Redirecting to {_root}')	
 			# print(f'{self.webuiRoot}/index.html?ri=/{self.defaultRII}&or={self.defaultOriginator}')
-			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&hr=" + self.httpRoot}{"&nlhr=" + self.httpNonLocalRoot}{"&" + request.query_string.decode() if request.query_string else ""}', code = 302)
+			return flask.redirect(f'{_root}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&hr=" + self.httpRoot}{"&nlhr=" + self.httpExternalRoot}{"&" + request.query_string.decode() if request.query_string else ""}', code = 302)
 		else:
 			filename = f'{self.webuiDirectory}/{path}'	# return any file in the web directory
 		try:
