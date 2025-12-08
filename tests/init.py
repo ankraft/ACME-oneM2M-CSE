@@ -650,7 +650,10 @@ def sendHttpRequest(method:str, url:str, originator:str, ty:ResourceTypes=None, 
 		console.print('\n'.join([f'{h}: {v}' for h,v in r.headers.items()]))
 		if r.content:
 			console.print()
-			console.print(r.json())
+			try:
+				console.print(r.json())
+			except:
+				console.print(r.text)
 
 	# return plain text
 	if (ct := r.headers.get('Content-Type')) is not None and ct.startswith('text/plain'):
