@@ -138,7 +138,7 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 		lvl += 1
 		idsLen -= 1
 	if lvl > 2:						# not more than 2 * / in front
-		return None, None, None, None, 'Too many "/" level'
+		return None, None, None, None, 'Too many "/" in front of ID'
 
 	# Remove virtual resource shortname if it is present
 	if ResourceTypes.isVirtualResourceName(ids[-1]):
@@ -175,12 +175,13 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 			elif idsLen == 2:				# unstructured
 				ri = ids[1]
 			else:
-				return None, None, None, None, 'Too many "/" level'
+				return None, None, None, None, f'Too many "/" level ({idsLen}) for SP-Relative ID: {id}. Perhaps resource name mismatch?'
 
 
 		# Absolute (2 first elements are /)
 		case 2:
 			# L.logDebug("Absolute")
+			print(ids)
 			if idsLen < 3:
 				return None, None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
 			spi = ids[0]
@@ -200,7 +201,7 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 			elif idsLen == 3:				# unstructured
 				ri = ids[2]
 			else:
-				return None, None, None, None, 'Too many "/" level'
+				return None, None, None, None, f'Too many "/" level ({idsLen}) for Absolute ID: {id}. Perhaps resource name mismatch?'
 
 	# Now either csi, ri or structured srn is set
 	if ri:
