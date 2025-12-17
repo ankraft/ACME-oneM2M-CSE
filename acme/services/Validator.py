@@ -212,7 +212,7 @@ class Validator(object):
 
 				# check whether the attribute is mandatory or NP
 				if attributeName in pureResDict:
-					if policy.cardinality in (Cardinality.CAR1, Cardinality.CAR1LN): 	# but ignore CAR.car1N or CAR1LN (which may be Null/None)
+					if policy.cardinality in (Cardinality.CAR1, Cardinality.CAR1LN, Cardinality.CAR1L): 	# but ignore CAR.car1N or CAR1LN (which may be Null/None)
 						raise BAD_REQUEST( L.logWarn(f'cannot delete a mandatory attribute: {attributeName}'))
 					if policyOptional == RequestOptionality.NP: # present with any value or None/null? Then this is an error for NP
 						raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is NP for operation'))
