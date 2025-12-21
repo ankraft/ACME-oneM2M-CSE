@@ -37,6 +37,7 @@ from ..services.GroupManager import GroupManager
 from ..runtime.Importer import Importer
 from ..services.LocationManager import LocationManager
 from ..services.NotificationManager import NotificationManager
+from ..runtime.PluginManager import PluginManager
 from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
 from ..runtime.ScriptManager import ScriptManager
@@ -95,6 +96,9 @@ mqttClient:MQTTClient = None
 
 notification:NotificationManager = None
 """	Runtime instance of the `NotificationManager`. """
+
+pluginManager:PluginManager = None
+"""	Runtime instance of the `PluginManager`. """
 
 registration:RegistrationManager = None
 """	Runtime instance of the `RegistrationManager`. """
@@ -155,8 +159,8 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			False if the CSE couldn't initialized and started. 
 	"""
 	global action, announce, coapServer, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
-	global notification, registration, remote, request, script, security, semantic, statistics, storage, textUI, time
-	global timeSeries, validator, webSocketServer
+	global notification, pluginManager, registration, remote, request, script, security, semantic
+	global statistics, storage, textUI, time, timeSeries, validator, webSocketServer
 
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
@@ -222,17 +226,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		script = ScriptManager()				# Initialize the script manager
 		action = ActionManager()				# Initialize the action manager
 
-		# → Experimental late loading
-		#
-		# import importlib
-		# mod = importlib.import_module('acme.services.ActionManager')
-		# action = mod.ActionManager()	
-
-		# mod = importlib.import_module('acme.runtime.ScriptManager')			# Initialize the action manager
-		# # script = mod.ScriptManager()				# Initialize the script manager
-		# thismodule = sys.modules[__name__]
-		# setattr(thismodule, 'script', mod.ScriptManager())
-
 		# Import a default set of resources, e.g. the CSE, first ACP or resource structure
 		# Import extra attribute policies for specializations first
 		# When this fails, we cannot continue with the CSE startup
@@ -241,6 +234,11 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			RC.cseStatus = CSEStatus.STOPPED
 			return False
 		
+		# Initialize the plugin manager
+		# This loads, configures and runs the plugins as well
+		pluginManager = PluginManager()	
+
+
 		# Start the HTTP server
 		if not httpServer.run(): 						# This does return (!)
 			L.logErr('Terminating', showStackTrace = False)
@@ -269,8 +267,13 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		L.logErr(f'Error during startup: {e.dbg}')
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
+	except KeyError as e:
+		L.logErr(f'Error during startup: {e}')
+		RC.cseStatus = CSEStatus.STOPPED
+		return False
+
 	except Exception as e:
-		L.logErr(f'Error during startup: {e}', exc = e)
+		L.logErr(f'Error during startup: {e}', exc=e)
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
 
@@ -296,7 +299,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 
 
 def shutdown() -> None:
-	"""	Gracefully shutdown the CSE programmatically. This will end the mail console loop
+	"""	Gracefully shutdown the CSE programmatically. This will end the main console loop
 		to terminate.
 
 		The actual shutdown happens in the _shutdown() method.
@@ -333,6 +336,7 @@ def _shutdown() -> None:
 		event.cseShutdown() 	# type: ignore
 	
 	# shutdown the services
+	pluginManager and pluginManager.shutdown()
 	textUI and textUI.shutdown()
 	console and console.shutdown()
 	time and time.shutdown()
@@ -429,7 +433,7 @@ def resetCSE() -> None:
 		# Enable log queuing again
 		L.queueOn()
 
-		# Send restart event
+		# Send restarted event
 		event.cseRestarted()	# type: ignore [attr-defined]   
 
 		RC.cseStatus = CSEStatus.RUNNING

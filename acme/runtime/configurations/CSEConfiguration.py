@@ -58,6 +58,10 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_operation_requests_enable = parser.getboolean('cse.operation.requests', 'enable', fallback=False)
 		config.cse_operation_requests_size = parser.getint('cse.operation.requests', 'size', fallback=1000)
 
+		#	CSE Operation : Plugins
+		config.cse_operation_plugins_disabledPlugins = parser.getlist('cse.operation.plugins', 'disabledPlugins', fallback=[])  # type: ignore [attr-defined]
+		config.cse_operation_plugins_replace = parser.getboolean('cse.operation.plugins', 'replace', fallback=False)
+		
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# override configuration with command line arguments

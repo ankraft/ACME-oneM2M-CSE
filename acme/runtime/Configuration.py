@@ -54,6 +54,9 @@ class Configuration(object):
 			
 	"""
 
+	configParser:ACMEConfiguration = None
+	"""	The ACMEConfiguration instance holding the configuration values. """
+
 	coap_enable:bool
 	"""	Enable or disable the CoAP server. """
 
@@ -199,6 +202,13 @@ class Configuration(object):
 
 	cse_operation_requests_size:int
 	"""	The size of the operation requests. """
+
+
+	cse_operation_plugins_disabledPlugins:list[str]
+	"""	A list of disabled plugins. """
+
+	cse_operation_plugins_replace:bool
+	"""	Replace existing plugins with the same name. """
 
 
 	cse_registrars:dict[str, CSERegistrar] = {}
@@ -839,7 +849,7 @@ class Configuration(object):
 				zk.disconnect()
 
 		# Read and parse the configuration file
-		config = ACMEConfiguration()
+		Configuration.configParser = ACMEConfiguration()
 	
 		# Construct the default values that are used for interpolation
 		_defaults = {	'basic.config': {	
@@ -887,18 +897,18 @@ class Configuration(object):
 		_defaults['DEFAULT'].update(_envVariables)
 
 		# Set the defaults
-		config.read_dict(_defaults)
+		Configuration.configParser.read_dict(_defaults)
 		
 		try:
 			# Read the configuration files
 			# if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
-			if len(config.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
+			if len(Configuration.configParser.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
 				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._args_configfile}')
 				return False
 			
 			# Read the extra configuration strings (e.g. from Zookeeper)
 			for cs in configurationStrings:
-				config.read_string(cs)
+				Configuration.configParser.read_string(cs)
 
 		except configparser.Error as e:
 			Configuration._print('[red]Error in configuration file')
@@ -909,7 +919,7 @@ class Configuration(object):
 		#	Look for deprecated and renamed sections and print an error message
 		if _deprecatedSections:
 			for o, n in _deprecatedSections:
-				if config.has_section(o):
+				if Configuration.configParser.has_section(o):
 					Configuration._print(fr'[red]Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
 					return False
 
@@ -921,7 +931,7 @@ class Configuration(object):
 			# and to set the respective attributes in the Configuration class.
 			# Validations are done later below.
 			for m in _moduleConfigs:
-				m.readConfiguration(config, Configuration)	# type:ignore [arg-type]
+				m.readConfiguration(Configuration.configParser, Configuration)	# type:ignore [arg-type]
 		
 		except configparser.InterpolationMissingOptionError as e:
 			Configuration._print(f'[red]Error in configuration file: {Configuration.configfile}\n{str(e)}')

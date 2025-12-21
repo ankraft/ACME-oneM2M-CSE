@@ -11,6 +11,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [2026.DEV] - unreleased 
 
 ### Added
+- [CSE] Added support for Python code plugins to extend the CSE's functionality. This is an ESTIMED project contribution.
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
 
 ### Experimental
