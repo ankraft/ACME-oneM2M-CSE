@@ -25,9 +25,6 @@ class HTTPServerConfiguration(ModuleConfiguration):
 		#	HTTP Server
 		config.http_address = parser.get('http', 'address', fallback='http://127.0.0.1:8080')
 		config.http_allowPatchForDelete = parser.getboolean('http', 'allowPatchForDelete', fallback=False)
-		config.http_enableStructureEndpoint = parser.getboolean('http', 'enableStructureEndpoint', fallback=False)
-		config.http_enableUpperTesterEndpoint = parser.getboolean('http', 'enableUpperTesterEndpoint', fallback=False)
-		config.http_enableManagementEndpoint = parser.getboolean('http', 'enableManagementEndpoint', fallback=False)
 		config.http_listenIF = parser.get('http', 'listenIF', fallback='0.0.0.0')
 		config.http_port = parser.getint('http', 'port', fallback=8080)
 		config.http_root = parser.get('http', 'root', fallback='')
@@ -53,9 +50,6 @@ class HTTPServerConfiguration(ModuleConfiguration):
 		config.http_wsgi_enable = parser.getboolean('http.wsgi', 'enable', fallback=False)
 		config.http_wsgi_connectionLimit = parser.getint('http.wsgi', 'connectionLimit', fallback=100)
 		config.http_wsgi_threadPoolSize = parser.getint('http.wsgi', 'threadPoolSize', fallback=100)
-
-		#	Web UI
-		config.webui_root = parser.get('webui', 'root', fallback='/webui')
 
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:

@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Experimental
 
 ### Changed
+- [CSE] Moved various HTTP server extensions to plugins: Upper Tester, Web UI, management & structure interfaces. These plugins are now loaded via the new plugin manager.
 
 ### Fixed
 

@@ -10,9 +10,8 @@
 from __future__ import annotations
 from typing import Any, Callable, cast, Optional
 
-import logging, sys, urllib3, re, json
+import logging, sys, urllib3, re
 
-import flask
 from flask import Flask, Request, request
 
 from werkzeug.wrappers import Response
@@ -32,18 +31,15 @@ from ..etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl
 from ..helpers.TextTools import findXPath
 from ..helpers.MultiDict import MultiDict
 from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
-from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult, prepareResultForSending
+from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
 from ..etc.RequestUtils import createPositiveResponseResult, fromHttpURL, contentAsString, fillRequestWithArguments
 from ..helpers.NetworkTools import isTCPPortAvailable
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
-from ..webui.webUI import WebUI
 from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..helpers.interpreter.Interpreter import SType
 from ..helpers.PerfTimer import perfTimer
 from ..runtime.Logging import Logging as L
-from ..runtime import Management as Mgmt
 from ..etc.Constants import RuntimeConstants as RC
 
 
@@ -66,14 +62,11 @@ class HttpServer(object):
 	"""
 
 	__slots__ = (
-		'webuiDirectory',
-		
 		'flaskApp',
 		'isStopped',
 		'backgroundActor',
 		'serverID',
 		'_responseHeaders',
-		'webui',
 		'httpActor',
 
 		'_eventHttpRetrieve',
@@ -96,9 +89,6 @@ class HttpServer(object):
 		# Also prevent flask from registering the static endpoint
 		self.flaskApp = Flask(RC.cseCsi, static_folder=None)
 		""" The Flask application instance. """
-
-		self.webuiDirectory:Optional[str] = None
-		""" The directory where the web UI is located. """
 
 		# Get the configuration settings
 		self._assignConfig()
@@ -138,40 +128,6 @@ class HttpServer(object):
 		self.httpActor:Optional[BackgroundWorker] = None
 		""" The background worker for the HTTP server. """
 
-		# Register the endpoint for the web UI
-		# This is done by instancing the otherwise "external" web UI
-		self.webui = WebUI(self.flaskApp, 
-						   defaultRI=RC.cseRi, 
-						   defaultOriginator=RC.cseOriginator, 
-						   root=Configuration.webui_root,
-						   webuiDirectory=self.webuiDirectory,
-						   redirectURL=f'{Configuration.http_address}' if Configuration.http_root else None,
-						   version=Constants.version,
-						   httpRoot=Configuration.http_root,
-						   externalRoot=Configuration.http_externalRoot)
-		""" The web UI instance. """
-
-		# Enable the config endpoint
-		if Configuration.http_enableStructureEndpoint:
-			structureEndpoint = f'{Configuration.http_root}/__structure__'
-			L.isInfo and L.log(f'Registering structure endpoint at: {structureEndpoint}')
-			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
-			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
-
-		# Enable the upper tester endpoint
-		if Configuration.http_enableUpperTesterEndpoint:
-			upperTesterEndpoint = f'{Configuration.http_root}/__ut__'
-			L.isInfo and L.log(f'Registering upper tester endpoint at: {upperTesterEndpoint}')
-			self.addEndpoint(upperTesterEndpoint, handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
-
-		# Enable the management endpoint
-		if Configuration.http_enableManagementEndpoint:
-			managementEndpoint = f'{Configuration.http_root}/__mgmt__'
-			L.isInfo and L.log(f'Registering management endpoint at: {managementEndpoint}')
-			self.addEndpoint(managementEndpoint, handler=self.handleManagement, methods=['GET'], strictSlashes=False)
-			self.addEndpoint(f'{managementEndpoint}/<command>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
-			self.addEndpoint(f'{managementEndpoint}/<command>/<param>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
-
 		# Allow to use PATCH as a replacement for the DELETE method
 		if Configuration.http_allowPatchForDelete:
 			self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler = self.handlePATCH, methods = ['PATCH'])
@@ -207,7 +163,7 @@ class HttpServer(object):
 	def _assignConfig(self) -> None:
 		"""	Assign the configuration values to the http server.
 		"""
-		self.webuiDirectory = f'{Configuration.moduleDirectory}/webui'
+		pass
 
 
 	def configUpdate(self, name:str, 
@@ -226,7 +182,6 @@ class HttpServer(object):
 						'http.port',
 						'http.allowPatchForDelete',
 						'http.timeout',
-						'webui.root',
 						'http.cors.enable',
 						'http.cors.resources',
 						'http.wsgi.enable',
@@ -237,7 +192,6 @@ class HttpServer(object):
 					  ):
 			return
 		self._assignConfig()
-		# TODO remove _assignConfig
 		# TODO restart with delay
 
 
@@ -324,7 +278,7 @@ class HttpServer(object):
 						  endpoint_name:Optional[str]=None, 
 						  handler:Optional[FlaskHandler]=None, 
 						  methods:Optional[list[str]]=None, 
-						  strictSlashes:Optional[bool]=True) -> None:
+						  strictSlashes:Optional[bool]=True) -> str:
 		"""	Add an endpoint to the Flask application.
 
 			Args:
@@ -333,8 +287,12 @@ class HttpServer(object):
 				handler: The handler function for the endpoint.
 				methods: The HTTP methods allowed for this endpoint.
 				strictSlashes: Whether to enforce strict slashes in the URL.
+			Return:
+				The path of the registered endpoint.
 		"""
-		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
+		path = f'{Configuration.http_root}/{endpoint}'
+		self.flaskApp.add_url_rule(path, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
+		return path
 
 
 	def getEndpoints(self) -> list[dict]:
@@ -484,247 +442,6 @@ class HttpServer(object):
 		L.enableScreenLogging and renameThread('HT_D')
 		self._eventHttpDelete()
 		return self._handleRequest(path, Operation.DELETE, authResult)
-
-
-	#########################################################################
-	#
-	#	Various handlers
-	#
-
-	# Redirect request to / to webui
-	def redirectRoot(self) -> Response:
-		"""	Redirect a request to the webroot to the web UI.
-
-			Return:
-				A redirect response to the web UI root.
-		"""
-		if self.isStopped:
-			return Response('Service not available', status=503)
-		return flask.redirect(Configuration.webui_root, code=302)
-
-
-	def handleStructure(self, path:Optional[str]='puml') -> Response:
-		"""	Handle a structure request. Return a description of the CSE's current resource
-			and registrar / registree deployment.
-			An optional parameter 'lvl=<int>' can limit the generated resource tree's depth.
-		"""
-		if self.isStopped:
-			return Response('Service not available', status=503)
-		lvl = request.args.get('lvl', default=0, type=int)
-		if path == 'puml':
-			return Response(response=CSE.statistics.getStructurePuml(lvl), headers=self._responseHeaders)
-		if path == 'text':
-			return Response(response=CSE.console.getResourceTreeText(lvl), headers=self._responseHeaders)
-		return Response(response='unsupported', status=422, headers=self._responseHeaders)
-
-
-	def handleUpperTester(self, path:Optional[str]=None) -> Response:
-		"""	Handle a Upper Tester request. See TS-0019 for details.
-
-			Args:
-				path: The path of the request.
-
-			Return:
-				A response object.
-		"""
-		if self.isStopped:
-			return Response('Service not available', status=503)
-
-		# Check, when authentication is enabled, the user is authorized, else return status 401
-		if self.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
-			return Response(status=401)
-
-
-		def prepareUTResponse(rcs:ResponseStatusCode, result:Optional[str]=None, body:Optional[str|bytes]=None) -> Response:
-			"""	Prepare the Upper Tester Response.
-
-				Args:
-					rcs: The response status code.
-					result: The result to be returned.
-
-				Return:
-					The response object.
-			"""
-			headers = {}
-			headers['Server'] = self.serverID
-			headers['X-M2M-RSC'] = str(rcs.value)	# Set the ResponseStatusCode accordingly
-			if result:								# Return an optional return value
-				headers['X-M2M-UTRSP'] = result
-			resp = Response(status=200 if rcs == ResponseStatusCode.OK else 400, headers=headers, response=body)
-			L.isDebug and L.logDebug(f'<== Upper Tester Response:') 
-			L.isDebug and L.logDebug(f'Headers: \n{str(resp.headers).rstrip()}')
-			return resp
-
-
-		L.enableScreenLogging and renameThread('UT')
-		L.isDebug and L.logDebug(f'==> Upper Tester Request:') 
-		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
-
-		# Handle special commands
-		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
-			cmd, _, arg = cmd.partition(' ')
-			if not (res := CSE.script.run(cmd, arg, metaFilter=[ 'uppertester' ], ignoreCase=True))[0]:
-				return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, str(res[1]))
-			
-			if res[1].type in [SType.tList, SType.tListQuote]:
-				_r = ','.join(res[1].raw())
-			else:
-				_r = res[1].toString(quoteStrings=False, pythonList=True)
-			return prepareUTResponse(ResponseStatusCode.OK, _r)
-		
-		# Treat the request as a normal UT request
-		
-		# Extract the request from the body
-		L.isDebug and L.logDebug(f'Body: \n{request.data!r}')
-		if request.data:
-			try:
-				# Dissect the request
-				dissectResult = CSE.request.dissectRequestFromBytes(request.data, ContentSerializationType.getType(request.content_type))
-				# Directly handle the request
-				responseResult = CSE.request.handleRequest(dissectResult.request)
-			except ResponseException as e:
-				return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, body=f'{{ "m2m:dbg" : "{e.dbg}" }}')
-			
-			# Prepare and send the response
-			_rs, _b = prepareResultForSending(responseResult.prepareResultFromRequest(dissectResult.request),
-									 		  True, 
-											  dissectResult.request)
-			return prepareUTResponse(ResponseStatusCode.OK, body=_b)
-
-		# Return an error if no body or command is present
-		return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, L.logWarn('UT requires request body or X-M2M-UTCMD.'))
-
-
-	def handleManagement(self, command:Optional[str]=None, param:Optional[str]=None) -> Response:
-		"""	Handle a management request. This is used to control the CSE.
-
-			Args:
-				command: The management command to execute. If None, the request is rejected.
-			
-			Return:
-				A response object.
-		"""
-		if self.isStopped:
-			return Response('Service not available', status=503)
-
-		# Check, when authentication is enabled, the user is authorized, else return status 401
-		if self.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
-			return Response(status=401)
-		
-		try:
-			command = command.lower() if command else None
-			L.isInfo and L.log(f'Management request: {command}{"(" + param + ")" if param else ""}')
-			match command:
-
-				case 'config':
-					return Response(response=Mgmt.getConfig(), mimetype='application/json',	headers=self._responseHeaders)
-			
-				case 'log':
-					return Response(Mgmt.getLogGenerator(), mimetype='text/event-stream')
-					
-				case 'loglevel':
-					if param is None: # No parameter given, return the current log level
-						return Response(response=Mgmt.getLoglevel(), headers=self._responseHeaders)
-					else: # A parameter is given, try to set the log level
-						match param.lower():
-							case 'info' | 'debug' | 'warning' | 'error' | 'off':
-								_n = Mgmt.setLogLevel(param)
-								return Response(response=f'Log level set to {_n}', headers=self._responseHeaders)
-							case _:
-								return Response(response=f'Unknown log level: {param}.\nValid log levels are: {list(LogLevel.__members__.keys())}', 
-												status=422, 
-												headers=self._responseHeaders)
-
-				case 'registrations':
-					if param is None:
-						return Response(response=Mgmt.getRegistrations(), mimetype='application/json', headers=self._responseHeaders)
-					else:
-						match param.lower():
-							case 'refresh':
-								return Response(response=Mgmt.refreshRegistrations(), headers=self._responseHeaders)
-							case 'help':
-								return Response(response='''ACME oneM2M CSE Management Registrations Commands
-						
-(no command)  Get the current registrations
-refresh       Refresh the registrations
-help          Show this help message
-''',
-									status=200,
-									headers=self._responseHeaders)
-							case _:
-								L.isWarn and L.logWarn(f'Unknown management registrations command: {param}')
-								return Response(response=f'Unknown management registrations command: {param}.\nUse "registrations/help" for a list of commands.', 
-												status=422, 
-												headers=self._responseHeaders)
-
-				case 'requests':
-					if param is None:
-						return Response(response=Mgmt.getRequests(), mimetype='application/json', headers=self._responseHeaders)
-					else:
-						match param.lower():
-							case 'enable' | 'on' | 'disable' | 'off' | 'status':
-								return Response(response=Mgmt.setRequestRecording(param), headers=self._responseHeaders)
-							case 'help':
-								return Response(response='''ACME oneM2M CSE Management Requests Commands
-						
-(no command)  Stream the current requests
-enable        Enable request recording
-disable       Disable request recording
-status        Get the current request recording status
-''',
-									status=200,
-									headers=self._responseHeaders)
-							case _:
-								L.isWarn and L.logWarn(f'Unknown management requests command: {param}')
-								return Response(response=f'Unknown management requests command: {param}.\nUse "requests/help" for a list of commands.', 
-												status=422, 
-												headers=self._responseHeaders)
-						
-						
-				case 'reset':
-					Mgmt.resetCSE()
-					return Response(response='CSE resetting', headers=self._responseHeaders)
-				
-				case 'restart':
-					Mgmt.restartCSE()	# This might not return (e.g. under Windows)
-					return Response(response='CSE is shutting down to restart', headers=self._responseHeaders)
-
-				case 'shutdown':
-					Mgmt.shutdownCSE()	# This might not return (e.g. under Windows)
-					return Response(response='CSE is shutting down', headers=self._responseHeaders)
-				
-				case 'status':
-					return Response(response=Mgmt.getCSEStatus(), mimetype='application/json', headers=self._responseHeaders)
-
-				case 'help':
-					return Response(response='''ACME oneM2M CSE Management Commands
-
-config         Get the current configuration
-log            Stream the live log output
-loglevel       Get or set the log level (.../{info|debug|warning|error|off})
-registrations  Get or refresh the registrations (.../refresh)
-requests       Get or set the request recording (.../{on|off|status})
-reset          Reset the CSE
-restart        Shutdown the CSE with exit code 82 (indicating a restart)
-shutdown       Shutdown the CSE normally (with exit code 0)
-status         Get the current CSE status
-help           Show this help message
-''',
-									status=200,
-									headers=self._responseHeaders)
-
-				case _:
-					L.isWarn and L.logWarn(f'Unknown management command: {command}')
-
-		except Exception as e:
-			return Response(response=L.logWarn(f'Error occurred while processing command: {e}'),
-							status=500, 
-							headers=self._responseHeaders)
-
-		return Response(response='Unsupported command.\nUse "help" for a list of commands.', 
-				  		status=422, 
-						headers=self._responseHeaders)
-
 
 	#########################################################################
 
