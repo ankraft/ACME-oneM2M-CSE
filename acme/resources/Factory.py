@@ -39,6 +39,7 @@ from ..resources.CSEBaseAnnc import CSEBaseAnnc
 from ..resources.CRS import CRS
 from ..resources.CSR import CSR
 from ..resources.CSRAnnc import CSRAnnc
+from ..resources.DAC import DAC
 from ..resources.DEPR import DEPR
 from ..resources.DEPRAnnc import DEPRAnnc
 from ..resources.FCI import FCI
@@ -135,6 +136,7 @@ addResourceFactoryCallback(ResourceTypes.CSEBaseAnnc,	CSEBaseAnnc,	lambda dct, t
 addResourceFactoryCallback(ResourceTypes.CRS,			CRS,			lambda dct, typeShortname, create : CRS(dct, create=create)) 
 addResourceFactoryCallback(ResourceTypes.CSR,			CSR,			lambda dct, typeShortname, create : CSR(dct, create=create)) 
 addResourceFactoryCallback(ResourceTypes.CSRAnnc,		CSRAnnc,		lambda dct, typeShortname, create : CSRAnnc(dct, create=create)) 
+addResourceFactoryCallback(ResourceTypes.DAC,			DAC,			lambda dct, typeShortname, create : DAC(dct, create=create)) 
 addResourceFactoryCallback(ResourceTypes.DEPR,			DEPR,			lambda dct, typeShortname, create : DEPR(dct, create=create)) 
 addResourceFactoryCallback(ResourceTypes.DEPRAnnc,		DEPRAnnc,		lambda dct, typeShortname, create : DEPRAnnc(dct, create=create)) 
 addResourceFactoryCallback(ResourceTypes.FCI,			FCI,			lambda dct, typeShortname, create : FCI(dct, typeShortname=typeShortname, create=create)) 

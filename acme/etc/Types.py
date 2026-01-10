@@ -97,6 +97,10 @@ class ResourceTypes(ACMEIntEnum):
 	"""	TimeSeries resource type. """
 	TSI   			= 30
 	"""	TimeSeriesInstance resource type. """
+	DAC				= 34
+	"""	DynamicAuthorizationConsultation resource type. """
+	TGR				= 47
+	"""	TriggerRequest resource type. """
 	CRS				= 48
 	"""	CrossResourceSubscription resource type. """
 	FCI 			= 58
@@ -524,7 +528,8 @@ _ResourceTypeDetails = {
 	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True, fullName='CSEBase Announced'),
 	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True, fullName='RemoteCSE'),
 	ResourceTypes.CSRAnnc 		: ResourceDescription(typeName = 'm2m:csrA', isAnnouncedResource = True, fullName='RemoteCSE Announced'),
-	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr',  announcedType = ResourceTypes.DEPRAnnc, fullName='Dependency'),
+	ResourceTypes.DAC			: ResourceDescription(typeName = 'm2m:dac', fullName='DynamicAuthorizationConsultation'),
+	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr', announcedType=ResourceTypes.DEPRAnnc, fullName='Dependency'),
 	ResourceTypes.DEPRAnnc		: ResourceDescription(typeName = 'm2m:deprA', isAnnouncedResource = True, fullName='Dependency Announced'),
 	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance'),					# not an official type name
 	ResourceTypes.FCIAnnc		: ResourceDescription(typeName = 'm2m:fciA', isAnnouncedResource = True, isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance Announced'),	# not an official type name
@@ -559,6 +564,7 @@ _ResourceTypeDetails = {
 	ResourceTypes.STTE			: ResourceDescription(typeName = 'm2m:stte', announcedType = ResourceTypes.STTEAnnc, fullName='State'),
 	ResourceTypes.STTEAnnc		: ResourceDescription(typeName = 'm2m:stteA', isAnnouncedResource = True, fullName='State Announced'),
 	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),
+	ResourceTypes.TGR 			: ResourceDescription(typeName = 'm2m:tgr', fullName='TriggerRequest'),
 	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc, isContainer = True, fullName='TimeSeries'),
 	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True, isContainer = True, fullName='TimeSeries Announced'),
 	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),

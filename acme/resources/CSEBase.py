@@ -39,6 +39,7 @@ class CSEBase(AnnounceableResource):
 								   ResourceTypes.CRS, 
 								   ResourceTypes.CSR, 
 								   ResourceTypes.CNT, 
+								   ResourceTypes.DAC,
 								   ResourceTypes.FCNT, 
 								   ResourceTypes.GRP, 
 								   ResourceTypes.LCP,

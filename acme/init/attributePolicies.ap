@@ -1390,6 +1390,46 @@
 			"annc": "OA"
 		}
 	],
+	"dae": [
+		{
+			"rtypes": [ "DAC", "REQRESP" ],
+			"lname": "dynamicAuthorizationEnabled",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
+	"dal": [
+		{
+			"rtypes": [ "DAC", "REQRESP" ],
+			"lname": "dynamicAuthorizationLifetime",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"dap": [
+		{
+			"rtypes": [ "DAC", "REQRESP" ],
+			"lname": "dynamicAuthorizationPoA",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "1LN",
+			"oc": "M",
+			"ou": "O",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
 	"dc": [
 		{
 			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 

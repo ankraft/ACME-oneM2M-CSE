@@ -9,6 +9,7 @@
 
 from typing import Optional
 import socket
+from rich import print
 
 BINDING						= 'http'		# possible values: http, https, mqtt, ws, coap
 TARGETHOST					= 'localhost'	# Hostname of the CSE	
@@ -193,3 +194,17 @@ NOTIFICATIONDELAY   = 0.5	# Time to wait for some async notifications
 UTURL	= f'{CONFIGPROTOCOL}://{CSEHOST}:{CSEPORT}{HTTPROOT}__ut__'	# CSE's Upper Tester URL
 UTCMD	= 'X-M2M-UTCMD'
 UTRSP	= 'X-M2M-UTRSP'
+
+
+
+
+##############################################################################
+
+#
+#	Validate some configurations
+#
+
+if not HTTPROOT.endswith('/'):
+	print('[red]HTTPROOT in tests/config.py must end with a trailing slash.[/red]')
+	quit(1)
+	

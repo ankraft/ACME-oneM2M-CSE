@@ -32,6 +32,7 @@ class AE(AnnounceableResource):
 													   ResourceTypes.ACTR,
 													   ResourceTypes.CNT,
 													   ResourceTypes.CRS,
+													   ResourceTypes.DAC,
 													   ResourceTypes.FCNT,
 													   ResourceTypes.GRP,
 													   ResourceTypes.LCP,
