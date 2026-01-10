@@ -8,7 +8,7 @@ blinker==1.9.0
     # via flask
 cachetools==6.1.0
     # via acmecse-dev (setup.py)
-cbor2==5.6.5
+cbor2==5.8.0
     # via acmecse-dev (setup.py)
 certifi==2025.8.3
     # via requests
@@ -100,7 +100,7 @@ typing-extensions==4.14.1
     # via textual
 uc-micro-py==1.0.3
     # via linkify-it-py
-urllib3==2.6.0
+urllib3==2.6.3
     # via requests
 waitress==3.0.2
     # via acmecse-dev (setup.py)
@@ -108,7 +108,7 @@ wcwidth==0.2.13
     # via prompt-toolkit
 websockets==15.0.1
     # via acmecse-dev (setup.py)
-werkzeug==3.1.4
+werkzeug==3.1.5
     # via
     #   flask
     #   flask-cors
