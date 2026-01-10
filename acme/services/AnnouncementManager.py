@@ -287,6 +287,9 @@ class AnnouncementManager(object):
 				resource.dbUpdate()
 			else:
 				L.isWarn and L.logWarn(f'Announced resource could not be created at: {to} ({res.rsc})')
+				if res.rsc == ResponseStatusCode.CONFLICT:
+					# Resource already exists. Remove any announcement info just in case
+					L.isWarn and L.logWarn(f'Conflict on announcement. Resource already exists on remote CSE at target location.\nPossible cause: Annother CSE with same CSE-ID or resource name registered there.')
 
 		except ResponseException as e:
 			e.dbg = L.logDebug(f'Error creating remote announced resource: {int(e.rsc)} ({e.dbg})')
