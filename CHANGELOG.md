@@ -13,6 +13,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Added
 - [CSE] Added support for &lt;dynamicAuthorizationConsultation> resource type.
 - [CSE] Added support for Python code plugins to extend the CSE's functionality. This is an ESTIMED project contribution.
+- [CSE] Added new Uper Tester command "getConfig" to retrieve configuration settings from the CSE via the Upper Tester interface.
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
 
 ### Experimental
