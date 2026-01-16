@@ -19,7 +19,7 @@
         "children"  : [
             "cod:binSh", 
             "cod:fauDn", 
-            "cod:thDP0", 
+            "cod:thDPr", 
             "cod:runSe", 
             "cod:tempe", 
             "cod:priQe"
@@ -44,8 +44,8 @@
             "cod:binShAnnc", 
             "cod:fauDn", 
             "cod:fauDnAnnc", 
-            "cod:thDP0", 
-            "cod:thDP0Annc", 
+            "cod:thDPr", 
+            "cod:thDPrAnnc", 
             "cod:runSe", 
             "cod:runSeAnnc", 
             "cod:tempe", 
