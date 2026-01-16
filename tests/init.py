@@ -1026,6 +1026,7 @@ def checkUpperTester() -> None:
 			response = requests.post(UTURL, headers=headers)
 			match response.status_code:
 				case 200:
+					#print(f'Response from Upper Tester Interface: {response.headers.get(UTRSP)}')
 					pass
 				case 401:
 					console.print('[red]CSE requires authorization')
@@ -1208,6 +1209,55 @@ def disableUpperTester() -> None:
 	"""
 	global UPPERTESTERENABLED
 	UPPERTESTERENABLED = False
+
+
+def dacEnabled() -> bool:
+	"""	Return whether the dynamic authorization is enabled in the CSE. This sends
+		a request to the CSE's upper tester interface.
+
+		Return:
+			Boolean.
+	"""
+	if UPPERTESTERENABLED:
+		headers = { UTCMD: f'GetConfig cse.security.enableDynamicAuthorization'}
+		addHttpAuthorizationHeader(headers)
+		try:
+			resp = requests.post(UTURL, headers=headers)
+		except requests.exceptions.ConnectionError as e:
+			# print(f'Connection error checking DAC enabled: {e}')
+			return False
+		if resp.status_code == 200:
+			if UTRSP in resp.headers:
+				return resp.headers[UTRSP].lower() == 'true'
+	return False
+
+
+def sutCSEType() -> str:
+	"""	Return the CSE type of the SUT. This sends
+		a request to the CSE's upper tester interface.
+
+		Return:
+			String with the CSE type.
+	
+	"""
+	if UPPERTESTERENABLED:
+		headers = { UTCMD: f'GetConfig cse.type'}
+		addHttpAuthorizationHeader(headers)
+		try:
+			resp = requests.post(UTURL, headers=headers)
+		except requests.exceptions.ConnectionError as e:
+			# print(f'Connection error checking CSE type: {e}')
+			return 'UNKNOWN'
+		
+		if resp.status_code == 200:
+			if UTRSP in resp.headers:
+				try:
+					return { '1': 'IN',
+							 '2': 'MN',
+							 '3': 'ASN' }[resp.headers[UTRSP]]
+				except KeyError:
+					return resp.headers[UTRSP]
+	return 'UNKNOWN'
 
 
 ###############################################################################
@@ -1648,6 +1698,13 @@ if status == 401:	# Access denied
 	console.print('Add authorization settings to the test suite configuration file')
 	quit(-1)
 noRemote = not _r
+
+# Check whether Dynamic Authorization is enabled
+noDac = not dacEnabled()
+
+# Get the CSE type of the SUT
+cseType = sutCSEType()
+print(cseType)
 
 # Set the notification server URL
 setNotificationServerURL()
