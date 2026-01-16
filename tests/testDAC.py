@@ -156,14 +156,14 @@ class TestDAC(unittest.TestCase):
 					'dae': False,
 					'dap': [ 'aURL' ]
 				}}
-		r, rsc = CREATE(aeURL, ORIGINATOR, T.DAC, dct)
+		r, rsc = CREATE(aeURL, self.originator, T.DAC, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveDACunderAE(self) -> None:
 		"""	RETRIEVE <DAC> under AE"""
-		r, rsc = RETRIEVE(f'{aeURL}/{dacRN}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{aeURL}/{dacRN}', self.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(findXPath(r, 'm2m:dac/rn'), dacRN, r)
 		self.assertEqual(findXPath(r, 'm2m:dac/dae'), False, r)
@@ -179,10 +179,10 @@ class TestDAC(unittest.TestCase):
 					'dap': [ 'aURL2', 'aURL3' ],
 					'dal': ts
 				}}
-		r, rsc = UPDATE(f'{aeURL}/{dacRN}', ORIGINATOR, dct)
+		r, rsc = UPDATE(f'{aeURL}/{dacRN}', self.originator, dct)
 		self.assertEqual(rsc, RC.UPDATED, r)
 
-		r, rsc = RETRIEVE(f'{aeURL}/{dacRN}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{aeURL}/{dacRN}', self.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(findXPath(r, 'm2m:dac/rn'), dacRN, r)
 		self.assertEqual(findXPath(r, 'm2m:dac/dae'), True, r)
@@ -193,7 +193,7 @@ class TestDAC(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteDACunderAE(self) -> None:
 		"""	DELETE <DAC> under AE"""
-		r, rsc = DELETE(f'{aeURL}/{dacRN}', ORIGINATOR)
+		r, rsc = DELETE(f'{aeURL}/{dacRN}', self.originator)
 		self.assertEqual(rsc, RC.DELETED, r)
 
 		

@@ -112,10 +112,10 @@ class SecurityManager(object):
 	def hasAccess(self, originator:str, 
 						resource:Resource, 
 						requestedPermission:Permission, 
-						ty:Optional[ResourceTypes] = None, 
-						parentResource:Optional[Resource] = None,
-						request:Optional[CSERequest] = None,
-						resultResource:Optional[Resource] = None) -> bool:
+						ty:Optional[ResourceTypes]=None, 
+						parentResource:Optional[Resource]=None,
+						request:Optional[CSERequest]=None,
+						resultResource:Optional[Resource]=None) -> bool:
 		""" Test whether an originator has access to a resource for the requested permission.
 		
 			Args:
@@ -167,7 +167,7 @@ class SecurityManager(object):
 		#
 		# grant full access to the CSE originator
 		#
-		if	originator is None or (originator in RC.cseOriginators and Configuration.cse_security_fullAccessAdmin):
+		if originator is None or (originator in RC.cseOriginators and Configuration.cse_security_fullAccessAdmin):
 			# originator == RC.cseOriginator or \
 			# originator.endswith(RC.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Admin. OK.')
@@ -337,10 +337,66 @@ class SecurityManager(object):
 		#
 		# Further permission checks
 		#
-		
-		# When no acpi is configured for the resource
+
+		# If we have no acpi we need to check for dynamic authorization
 		if not (acpi := resource.acpi):
-			L.isDebug and L.logDebug('Handle with missing acpi in resource')
+
+
+
+
+
+
+
+			# Get the available daci for the resource. This is done by checking the resource itself, of any of its parents
+
+			# TODO make this configurable. If DAC is disabled we don't need to do all this
+
+			daci:list[str] = []
+
+			# Traverse up to find a daci
+			_r = resource
+			while True:
+				if _r.daci:
+					daci = _r.daci
+					break
+				if _r.ty == ResourceTypes.CSEBase: # don't go beyond CSEBase
+					break
+				_r = _r.retrieveParentResource()
+
+			if daci:
+				L.isDebug and L.logDebug(f'Found daci in resource hierarchy: {_r.ri} : {daci}')
+
+				for daciRi in daci:
+					try:
+						if not (daciResource := CSE.dispatcher.retrieveResource(daciRi)):
+							L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DACI> resource not found: {daciRi}')
+							continue
+					except ResponseException as e:
+						L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DACI> resource not found: {daciRi}: {e.dbg}')
+						continue
+
+					# Dynamic auth for the resource enabled?
+					if not daciResource.dae:
+						L.isDebug and L.logDebug(f'Dynamic Authorization Check: <DACI> resource dae is False: {daciRi}')
+						continue
+					if dap := daciResource.dap:
+						for poa in dap:
+							L.isDebug and L.logDebug(f'Dynamic Authorization Check: invoking DAS at: {poa} for originator: {originator} on resource: {resource.ri}')
+							# TODO call the DAS
+							# if ok: > return true
+							# else: continue
+
+					
+					# TODO do something with the lifetime
+
+
+
+
+
+
+
+			# Not authorized by DACI, now check for missing acpi handling, which is the default behavior
+			L.isDebug and L.logDebug('Handle with missing acpi and daci in resource')
 
 			# if the resource *may* have an acpi but doesn't have one set
 			if resource._attributes and 'acpi' in resource._attributes:
