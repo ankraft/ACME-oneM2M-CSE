@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator, Operation
+from ..etc.Types import AttributePolicyDict,CSEType, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator, Operation
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
@@ -21,6 +21,7 @@ from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
+from ..etc.Constants import RuntimeConstants as RC
 
 
 class TGR(AnnounceableResource):
@@ -62,8 +63,21 @@ class TGR(AnnounceableResource):
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
+
+		# Check whether the CSE is an IN-CSE, otherwise send an error
+		if not RC.cseType == CSEType.IN:
+			raise BAD_REQUEST(L.logWarn('TriggerRequests can only be created on an IN-CSE'))
+		
+		# TODO  Implement test for IN & NON-IN CSE
+		
 		super().activate(parentResource, originator)
 
+
+		# TODO If the Originator specifies a Trigger-Recipient-ID value in the Create primitive for a 
+		# Registree AE or CSE, and the triggerEnable attribute of the Registree's <AE> or <remoteCSE>
+		# resource has a value of false, the Receiver shall generate a Response Status Code indicating "TRIGGERING_DISABLED_FOR_RECIPIENT".
+
+		# TODO Rest of activation process
 
 
 	def update(self, dct: JSON=None,
