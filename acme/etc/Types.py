@@ -9,6 +9,7 @@
 """
 
 from __future__ import annotations
+from http.client import PROCESSING
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple, TYPE_CHECKING
 
 from copy import deepcopy
@@ -2055,6 +2056,35 @@ class ProcessControl(ACMEIntEnum):
 	"""	Pause. """
 	Reactivate = 4
 	"""	Reactivate. """
+
+
+##############################################################################
+#
+#	TriggerRequest related
+#
+
+
+class TriggerStatus(ACMEIntEnum):
+	"""	Trigger Status.
+	"""
+	PROCESSING = 1
+	"""	Processing. """
+	ERROR_NSE_NOT_FOUND = 2
+	"""	Error: NSE not found. """
+	TRIGGER_TRIGGERED = 3
+	"""	Triggered. """
+	TRIGGER_DELIVERED = 4
+	"""	Delivered. """
+	TRIGGER_EXPIRED = 5
+	"""	Expired. """
+	TRIGGER_FAILED = 6
+	"""	Failed. """
+	TRIGGER_REPLACED = 7
+	"""	Replaced. """
+	TRIGGER_UNCONFIRMED = 8
+	"""	Unconfirmed. """
+	TRIGGER_TERMINATED = 9
+	"""	Terminated. """
 
 
 ##############################################################################

@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict,CSEType, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator, Operation
+from ..etc.Types import AttributePolicyDict,CSEType, EvalMode, ResourceTypes, JSON, TriggerStatus
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
@@ -73,11 +73,32 @@ class TGR(AnnounceableResource):
 		super().activate(parentResource, originator)
 
 
+		# Check whether the target is an AE or a remoteCSE, and the
+
 		# TODO If the Originator specifies a Trigger-Recipient-ID value in the Create primitive for a 
 		# Registree AE or CSE, and the triggerEnable attribute of the Registree's <AE> or <remoteCSE>
 		# resource has a value of false, the Receiver shall generate a Response Status Code indicating "TRIGGERING_DISABLED_FOR_RECIPIENT".
 
 		# TODO Rest of activation process
+
+		# TODO While processing the <triggerRequest> Create primitive the Receiver shall determine which NSE to forward the
+		# trigger request to based on locally provisioned information or based on a DNS lookup of the M2M-Ext-ID attribute
+		# of the <triggerRequest>. If an NSE cannot be determined, the Receiver shall set the triggerStatus attribute 
+		# to ERROR_NSE_NOT_FOUND. Otherwise, the Receiver shall continue to process the trigger request and set the triggerStatus attribute to PROCESSING.
+
+
+
+		# TODO scripts to handle the trigger requests. Need to define new script meta tags here.
+		# - Determine the NSE to forward the trigger request to
+		# - Submit the trigger request to the NSE
+
+		# Determine the NSE to forward the trigger request to. If found, then set the tst attribute to PROCESSING.
+		
+		# TODO run the script to determine the NSE. Interprete the result to either raise ERROR_NSE_NOT_FOUND or set PROCESSING.
+		
+		# self.setAttribute('tst', TriggerStatus.PROCESSING)
+
+
 
 
 	def update(self, dct: JSON=None,
