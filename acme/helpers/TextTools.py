@@ -478,6 +478,8 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool =
 		- '?' : any single character
 		- '*' : zero or more characters
 		- '+' : one or more characters
+		- '[abc]' : any character in the set
+		- '[^abc]' : any character not in the set
 		- '\\' : Escape an expression operator
 
 		A *pattern* must always match the full string *st*. This means that the
@@ -601,6 +603,42 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool =
 					if patternIndex == patternLen and len(st[stIndex:]) > 0:	# + is the last char in the pattern and there is enough string remaining: this is a match
 						return True
 					return _simpleMatchPlus(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
+
+
+				# Match a character set
+				case '[':
+					charClass = ''
+
+					# Determine whether to negate the character class
+					negate = False
+					if patternIndex < patternLen-1 and pattern[patternIndex+1] == '^':
+						negate = True
+						patternIndex += 1
+
+					# Build Character class
+					patternIndex += 1
+					while patternIndex < patternLen and pattern[patternIndex] != ']':
+						if pattern[patternIndex] == '\\' and patternIndex < patternLen-1:
+							patternIndex += 1
+							print(f'Skipping escape in char class for {pattern[patternIndex]}')
+						charClass += pattern[patternIndex]
+						patternIndex += 1
+					if patternIndex == patternLen:
+						# No closing ]
+						return False
+					
+					# Now test whether the current character is in the charClass
+					if stIndex >= stLen:
+						return False
+					charToTest = st[stIndex]
+					if ignoreCase:
+						charToTest = charToTest.casefold()
+						charClass = charClass.casefold()
+					if (charToTest in charClass) == negate:
+						return False
+					continue
+					
+
 
 				# Literal match with the following character
 				case '\\':
