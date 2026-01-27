@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 from ..etc.Types import ResourceTypes, Permission, CSERequest, RequestCredentials, BindingType, CSERegistrar
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
-from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator, isAbsolute
+from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator, isAbsolute, isValidAEI
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
@@ -804,6 +804,17 @@ class SecurityManager(object):
 		"""
 		return originator == resource.getOriginator()
 
+
+	def isAEOriginator(self, originator:str) -> bool:
+		"""	Check whether the provided originator could be an AE-ID.
+
+			Args:
+				originator: The request originator.
+
+			Return:
+				Boolean indicating the result.
+		"""
+		return isValidAEI(originator)
 
 
 	##########################################################################

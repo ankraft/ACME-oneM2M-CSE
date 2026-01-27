@@ -270,6 +270,14 @@ class RegistrationManager(object):
 	def handleCSRRegistration(self, csr:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Registering CSR. csi: {csr.csi}')
 
+		# Check whether this is an ASN-CSE
+		if RC.cseType == CSEType.ASN:
+			raise OPERATION_NOT_ALLOWED(L.logWarn('Cannot register to ASN CSE'))
+	
+		# Check that the originator is not an AE
+		if CSE.security.isAEOriginator(originator):
+			raise OPERATION_NOT_ALLOWED(L.logWarn('AE originator not allowed for CSR registration'))
+
 		# Check whether a CSE with the same originator has already registered
 
 		if originator != RC.cseOriginator and self.hasRegisteredAE(originator):
