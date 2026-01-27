@@ -87,6 +87,7 @@ class CSR(AnnounceableResource):
 		'poa': None,
 		'cb': None,
 		'csi': None,
+		'spi': None,
 		'mei': None,
 		'tri': None,
 		'rr': None,

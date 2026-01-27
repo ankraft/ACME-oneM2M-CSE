@@ -72,6 +72,7 @@ class CSEBase(AnnounceableResource):
 
 			# Resource attributes
 			'csi': None,
+			'spi': None,
 			'cst': None,
 			'csz': None,
 			'ctm': None,

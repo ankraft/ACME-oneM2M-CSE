@@ -937,7 +937,7 @@ class RemoteCSEManager(object):
 		# 	target['csb'] = registrarConifg._registrarCSEURL
 		
 		# copy certain attributes
-		for attr in [ 'cst', 'csz', 'lbl', 'nl', 'rr', 'srv', 'st' ]:
+		for attr in [ 'cst', 'csz', 'lbl', 'nl', 'rr', 'srv', 'st', 'spi' ]:
 			if attr in source and attr not in registrarConfig.excludeCSRAttributes:
 				target[attr] = source[attr]
 

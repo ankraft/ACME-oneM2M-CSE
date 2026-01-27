@@ -4525,6 +4525,30 @@
 			"annc": "NA"
 		}
 	],
+	"spi": [
+		{
+			"rtypes": [ "CSEBase", "REQRESP" ],
+			"lname": "SP-ID",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "1",
+			"oc": "M",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		},
+		{
+			"rtypes": [ "CSR" ],
+			"lname": "SP-ID",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "1",
+			"oc": "M",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		}
+	],
 	"spn": [
 		{
 			"rtypes": [ "SIM", "SIMAnnc", "REQRESP" ],

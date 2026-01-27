@@ -35,6 +35,7 @@
 			"ri":   "${get-config \"cse.resourceID\"}",
 			"rn":   "${get-config \"cse.resourceName\"}",
 			"csi":  "${get-config \"cse.cseID\"}",
+			"spi":  "${get-config \"cse.serviceProviderID\"}",
 			"csz":  [ "application/json", "application/cbor" ],
 			"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources" ]
 		}}
