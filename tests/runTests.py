@@ -171,6 +171,11 @@ if __name__ == '__main__':
 		quit()
 			
 
+	console.rule(f'[bright_blue]Running Tests on CSE', characters='═')
+	console.print(f'[bright_blue][b]CSE-ID:[/b] {init.CSEID}')
+	console.print(f'[bright_blue][b]Name:[/b]   {init.CSERN}')
+	console.print(f'[bright_blue][b]Type:[/b]   {init.cseType}')
+	console.print(f'[bright_blue][b]URL:[/b]    {init.CSEURL}')
 	
 	for module in modules:
 		if hasattr(module, 'run'):
@@ -180,7 +185,7 @@ if __name__ == '__main__':
 				for n in range(args.numberOfRuns):
 					if args.numberOfRuns > 1:
 						name = f'{module.__name__}_{n}'
-					console.print(f'[bright_blue]Running tests from [bold]{name}{" (skipping tear-down)" if args.disableTearDown else ""}')
+					console.rule(f'[bright_blue]Running Tests From [b]"{name}"{" (skipping tear-down)" if args.disableTearDown else ""}')
 					startProcessTime = time.process_time()
 					startPerfTime = time.perf_counter()
 					startRequestCount = init.requestCount

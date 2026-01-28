@@ -1704,7 +1704,6 @@ noDac = not dacEnabled()
 
 # Get the CSE type of the SUT
 cseType = sutCSEType()
-print(cseType)
 
 # Set the notification server URL
 setNotificationServerURL()
