@@ -276,7 +276,9 @@ class RegistrationManager(object):
 	
 		# Check that the originator is not an AE
 		if CSE.security.isAEOriginator(originator):
-			raise OPERATION_NOT_ALLOWED(L.logWarn('AE originator not allowed for CSR registration'))
+			if originator != RC.cseOriginator:
+				raise OPERATION_NOT_ALLOWED(L.logWarn('AE originator not allowed for CSR registration'))
+			L.isWarn and L.logWarn('Warning: CSR registration with Admin originator')
 
 		# Check whether a CSE with the same originator has already registered
 
@@ -285,7 +287,7 @@ class RegistrationManager(object):
 		
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
 		if not CSE.importer.isImporting:	# ... except when the resource was just been imported
-			csr['csi'] = originator
+			csr['csi'] = originator if originator.startswith('/') else f'/{originator}'	# A bit of a HACK to allow Admin AE to register CSR with csi = /CSE-ID
 			csr['ri']  = originatorToID(originator)
 
 		# Validate csi in csr
