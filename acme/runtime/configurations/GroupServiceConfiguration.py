@@ -30,4 +30,4 @@ class GroupServiceConfiguration(ModuleConfiguration):
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# Check group resource defaults
 		if config.resource_grp_resultExpirationTime < 0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[resource.grp]:resultExpirationTime[/i] must be >= 0')
+			raise ConfigurationError(fr'[i]\[resource.grp]:resultExpirationTime[/i] must be >= 0')

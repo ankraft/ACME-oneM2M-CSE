@@ -83,51 +83,49 @@ class CSEConfiguration(ModuleConfiguration):
 				case 'in':
 					config.cse_type = CSEType.IN
 				case _:
-					raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:type: {RC.cseType}')
+					raise ConfigurationError(fr'Unsupported \[cse]:type: {RC.cseType}')
 
 		# CSE Serialization
 		if isinstance(config.cse_defaultSerialization, str):
 			config.cse_defaultSerialization = ContentSerializationType.getType(config.cse_defaultSerialization)
 			if config.cse_defaultSerialization == ContentSerializationType.UNKNOWN:
-				raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:defaultSerialization: {config.cse_defaultSerialization}')
+				raise ConfigurationError(fr'Unsupported \[cse]:defaultSerialization: {config.cse_defaultSerialization}')
 			
 		# Operation
 		if config.cse_operation_jobs_balanceTarget <= 0.0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0')
+			raise ConfigurationError(fr'[i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0')
 		if config.cse_operation_jobs_balanceLatency < 0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0')
+			raise ConfigurationError(fr'[i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0')
 		if config.cse_operation_jobs_balanceReduceFactor < 1.0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0')
-
+			raise ConfigurationError(fr'[i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0')
 		# check the csi format and value
 		if not isValidCSI(config.cse_cseID):
-			raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {config.cse_cseID}')
+			raise ConfigurationError(fr'Wrong format for [i]\[cse]:cseID[/i]: {config.cse_cseID}')
 		if config.cse_cseID[1:] == config.cse_resourceName:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]')
+			raise ConfigurationError(fr'[i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]')
 
 		# Check flexBlocking value
 		config.cse_flexBlockingPreference = config.cse_flexBlockingPreference.lower()
 		if config.cse_flexBlockingPreference not in ['blocking', 'nonblocking']:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"')
+			raise ConfigurationError(r'[i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"')
 
 		# Check release versions
 		if len(config.cse_supportedReleaseVersions) == 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty')
+			raise ConfigurationError(r'[i]\[cse]:supportedReleaseVersions[/i] must not be empty')
 		if len(config.cse_releaseVersion) == 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty')
+			raise ConfigurationError(r'[i]\[cse]:releaseVersion[/i] must not be empty')
 		if config.cse_releaseVersion not in config.cse_supportedReleaseVersions:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse]:releaseVersion[/i]: {config.cse_releaseVersion} not in [i]\[cse].supportedReleaseVersions[/i]: {config.cse_supportedReleaseVersions}')
-
+			raise ConfigurationError(fr'[i]\[cse]:releaseVersion[/i]: {config.cse_releaseVersion} not in [i]\[cse].supportedReleaseVersions[/i]: {config.cse_supportedReleaseVersions}')
 		# Check various intervals
 		if config.cse_checkExpirationsInterval <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[cse]:checkExpirationsInterval[/i] must be > 0')
 		if config.cse_maxExpirationDelta <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[cse]:maxExpirationDelta[/i] must be > 0')
 
 
 		# Check ID Length
 		if config.cse_idLength < 1:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:idLength[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[cse]:idLength[/i] must be > 0')
 
 
 		# Already assign some Constants

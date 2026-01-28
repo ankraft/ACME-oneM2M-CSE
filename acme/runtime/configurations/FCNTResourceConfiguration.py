@@ -29,8 +29,8 @@ class FCNTResourceConfiguration(ModuleConfiguration):
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.resource_fcnt_mni <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.fcnt]:mni[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.fcnt]:mni[/i] must be > 0')
 		if config.resource_fcnt_mbs <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.fcnt]:mbs[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.fcnt]:mbs[/i] must be > 0')
 		if config.resource_fcnt_mia <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.fcnt]:mia[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.fcnt]:mia[/i] must be > 0')

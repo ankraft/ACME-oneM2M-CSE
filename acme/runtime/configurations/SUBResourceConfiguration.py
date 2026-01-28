@@ -30,4 +30,4 @@ class SUBResourceConfiguration(ModuleConfiguration):
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# Check default subscription duration
 		if config.resource_sub_batchNotifyDuration < 1:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.sub]:batchNotifyDuration[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.sub]:batchNotifyDuration[/i] must be > 0')

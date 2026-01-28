@@ -53,29 +53,29 @@ class WebSocketConfiguration(ModuleConfiguration):
 
 		if config.websocket_security_useTLS:
 			if (val := config.websocket_address).startswith('ws:'):
-				Configuration._print(r'[orange3]Configuration Warning: Changing "ws" to "wss" in [i]\[websocket]:address[/i]')
+				Configuration._warning(r'Changing "ws" to "wss" in [i]\[websocket]:address[/i]')
 				config.websocket_address = val.replace('ws:', 'wss:')
 			# registrar might still be accessible via another protocol
 		else: 
 			if (val := config.websocket_address).startswith('wss:'):
-				Configuration._print(r'[orange3]Configuration Warning: Changing "wss" to "ws" in [i]\[websocket]:address[/i]')
+				Configuration._warning(r'Changing "wss" to "ws" in [i]\[websocket]:address[/i]')
 				config.websocket_address = val.replace('wss:', 'ws:')
 			# registrar might still be accessible via another protocol
 
 		if not isValidPort(config.websocket_port):
-			raise ConfigurationError(fr'Configuration Error: Invalid port number for [i]\[websocket]:port[/i]: {config.websocket_port}')
+			raise ConfigurationError(fr'Invalid port number for [i]\[websocket]:port[/i]: {config.websocket_port}')
 		if not (isValidateHostname(config.websocket_listenIF) or isValidateIpAddress(config.websocket_listenIF)):
-			raise ConfigurationError(fr'Configuration Error: Invalid hostname or IP address for [i]\[websocket]:listenIF[/i]: {config.websocket_listenIF}')
+			raise ConfigurationError(fr'Invalid hostname or IP address for [i]\[websocket]:listenIF[/i]: {config.websocket_listenIF}')
 
 		# Override loglevel with command line argument
 		logLevel = Configuration._args_loglevel if Configuration._args_loglevel else config.websocket_loglevel
 		logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
 		if isinstance(logLevel, str):
 			if (ll := LogLevel.toLogLevel(logLevel)) is None:
-				raise ConfigurationError(fr'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}')
+				raise ConfigurationError(fr'Unsupported \[websocket]:loglevel: {logLevel}')
 			config.websocket_loglevel = ll
 		else:
-			raise ConfigurationError(fr'Configuration Error: Unsupported \[websocket]:loglevel: {logLevel}')
+			raise ConfigurationError(fr'Unsupported \[websocket]:loglevel: {logLevel}')
 
 		# WebSocket TLS & certificates
 		if not config.websocket_security_useTLS:	# clear certificates configuration if not in use
@@ -86,21 +86,21 @@ class WebSocketConfiguration(ModuleConfiguration):
 		else:
 			config.websocket_security_tlsVersion = config.websocket_security_tlsVersion.lower()
 			if not (val := config.websocket_security_tlsVersion) in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				raise ConfigurationError(fr'Configuration Error: Unknown value for [i]\[websocket.security]:tlsVersion[/i]: {val}')
+				raise ConfigurationError(fr'Unknown value for [i]\[websocket.security]:tlsVersion[/i]: {val}')
 			
 			if not (val := config.websocket_security_caCertificateFile):
-				raise ConfigurationError(r'Configuration Error: [i]\[websocket.security]:caCertificateFile[/i] must be set when TLS is enabled')
+				raise ConfigurationError(r'[i]\[websocket.security]:caCertificateFile[/i] must be set when TLS is enabled')
 			if not os.path.exists(val):
-				raise ConfigurationError(fr'Configuration Error: [i]\[websocket.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
+				raise ConfigurationError(fr'[i]\[websocket.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
 			
 			if not (val := config.websocket_security_caPrivateKeyFile):
-				raise ConfigurationError(r'Configuration Error: [i]\[websocket.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
+				raise ConfigurationError(r'[i]\[websocket.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
 			if not os.path.exists(val):
-				raise ConfigurationError(fr'Configuration Error: [i]\[websocket.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
+				raise ConfigurationError(fr'[i]\[websocket.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
 
 
 		# WebSocket authentication
 		if config.websocket_security_enableBasicAuth and not config.websocket_security_basicAuthFile:
-			raise ConfigurationError(r'Configuration Error: [i]\[websocket.security]:basicAuthFile[/i] must be set when WebSocket Basic Auth is enabled')
+			raise ConfigurationError(r'[i]\[websocket.security]:basicAuthFile[/i] must be set when WebSocket Basic Auth is enabled')
 		if config.websocket_security_enableTokenAuth and not config.websocket_security_tokenAuthFile:
-			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:tokenAuthFile[/i] must be set when WebSocket Token Auth is enabled')
+			raise ConfigurationError(r'[i]\[websocket.security]:tokenAuthFile[/i] must be set when WebSocket Token Auth is enabled')

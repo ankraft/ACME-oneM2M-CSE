@@ -45,16 +45,15 @@ class LoggingConfiguration(ModuleConfiguration):
 		logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
 		if isinstance(logLevel, str):
 			if (ll := LogLevel.toLogLevel(logLevel)) is None:
-				raise ConfigurationError(fr'Configuration Error: Unsupported \[logging]:level: {logLevel}')
+				raise ConfigurationError(fr'Unsupported \[logging]:level: {logLevel}')
 			config.logging_level = ll
 		else:
-			raise ConfigurationError(fr'Configuration Error: Unsupported \[logging]:level: {logLevel}')
+			raise ConfigurationError(fr'Unsupported \[logging]:level: {logLevel}')
 
 		# max message length
 		if config.logging_maxLogMessageLength < 0:
-			raise ConfigurationError(fr'Configuration Error: \[logging]:maxLogMessageLength must be 0 or greater')
+			raise ConfigurationError(fr'\[logging]:maxLogMessageLength must be 0 or greater')
 		
 		# Test for correct logging queue size
 		if config.logging_queueSize < 0:
-			raise ConfigurationError(fr'Configuration Error: \[logging]:queueSize must be 0 or greater')
-
+			raise ConfigurationError(fr'\[logging]:queueSize must be 0 or greater')

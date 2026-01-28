@@ -41,12 +41,12 @@ class TextUIConfiguration(ModuleConfiguration):
 
 		# Text UI settings
 		if config.textui_maxRequestSize <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be > 0s')
+			raise ConfigurationError(r'[i]\[textui]:maxRequestSize[/i] must be > 0s')
 		config.textui_theme = config.textui_theme.lower()
 		if config.textui_theme not in [ 'dark', 'light' ]:
-			raise ConfigurationError(fr'Configuration Error: [i]\[textui]:theme[/i] must be "light" or "dark"')
+			raise ConfigurationError(fr'[i]\[textui]:theme[/i] must be "light" or "dark"')
 		if config.textui_maxRequestSize < 0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[textui]:maxRequestSize[/i] must be >= 0')
+			raise ConfigurationError(fr'[i]\[textui]:maxRequestSize[/i] must be >= 0')
 		if config.textui_notificationTimeout < 0.0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[textui]:notificationTimeout[/i] must be >= 0')
+			raise ConfigurationError(fr'[i]\[textui]:notificationTimeout[/i] must be >= 0')
 

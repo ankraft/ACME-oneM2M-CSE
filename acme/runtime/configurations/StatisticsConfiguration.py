@@ -30,5 +30,5 @@ class StatisticsConfiguration(ModuleConfiguration):
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.cse_statistics_writeInterval <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse.statistics]:writeInterval[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[cse.statistics]:writeInterval[/i] must be > 0')
 		

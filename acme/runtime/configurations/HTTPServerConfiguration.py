@@ -66,9 +66,9 @@ class HTTPServerConfiguration(ModuleConfiguration):
 			Configuration.http_wsgi_enable = Configuration._args_runAsHttpWsgi
 
 		if not config.http_root.endswith('/'):
-			raise ConfigurationError(fr'Configuration Error: [i]\[http]:root[/i] must end with a trailing slash (/): {config.http_root}')
+			raise ConfigurationError(fr'[i]\[http]:root[/i] must end with a trailing slash (/): {config.http_root}')
 		if not config.http_externalRoot.endswith('/'):
-			raise ConfigurationError(fr'Configuration Error: [i]\[http]:externalRoot[/i] must end with a trailing slash (/): {config.http_externalRoot}')
+			raise ConfigurationError(fr'[i]\[http]:externalRoot[/i] must end with a trailing slash (/): {config.http_externalRoot}')
 		
 		config.http_address = normalizeURL(config.http_address)
 		config.http_root = normalizeURL(config.http_root)
@@ -77,22 +77,22 @@ class HTTPServerConfiguration(ModuleConfiguration):
 		# Just in case: check the URL's (http, ws)
 		if config.http_security_useTLS:
 			if config.http_address.startswith('http:'):
-				Configuration._print(r'[orange3]Configuration Warning: Changing "http" to "https" in [i]\[http]:address[/i]')
+				Configuration._warning(r'Changing "http" to "https" in [i]\[http]:address[/i]')
 				config.http_address = config.http_address.replace('http:', 'https:')
 			# registrar might still be accessible via another protocol
 		else: 
 			if config.http_address.startswith('https:'):
-				Configuration._print(r'[orange3]Configuration Warning: Changing "https" to "http" in [i]\[http]:address[/i]')
+				Configuration._warning(r'Changing "https" to "http" in [i]\[http]:address[/i]')
 				config.http_address = config.http_address.replace('https:', 'http:')
 			# registrar might still be accessible via another protocol
 
 		# HTTP server
 		if not isValidPort(config.http_port):
-			raise ConfigurationError(fr'Configuration Error: Invalid port number for [i]\[http]:port[/i]: {config.http_port}')
+			raise ConfigurationError(fr'Invalid port number for [i]\[http]:port[/i]: {config.http_port}')
 		if not (isValidateHostname(config.http_listenIF) or isValidateIpAddress(config.http_listenIF)):
-			raise ConfigurationError(fr'Configuration Error: Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {config.http_listenIF}')
+			raise ConfigurationError(fr'Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {config.http_listenIF}')
 		if config.http_timeout < 0.0:
-			raise ConfigurationError(fr'Configuration Error: Invalid timeout value for [i]\[http]:timeout[/i]: {config.http_timeout}')
+			raise ConfigurationError(fr'Invalid timeout value for [i]\[http]:timeout[/i]: {config.http_timeout}')
 		
 		# HTTP TLS & certificates
 		if not config.http_security_useTLS:	# clear certificates configuration if not in use
@@ -102,34 +102,33 @@ class HTTPServerConfiguration(ModuleConfiguration):
 			config.http_security_caPrivateKeyFile = ''
 		else:
 			if not (val := config.http_security_tlsVersion).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				raise ConfigurationError(fr'Configuration Error: Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}')
+				raise ConfigurationError(fr'Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}')
 			if not (val := config.http_security_caCertificateFile):
-				raise ConfigurationError(r'Configuration Error: [i]\[http.security]:caCertificateFile[/i] must be set when TLS is enabled')
+				raise ConfigurationError(r'[i]\[http.security]:caCertificateFile[/i] must be set when TLS is enabled')
 			if not os.path.exists(val):
-				raise ConfigurationError(fr'Configuration Error: [i]\[http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
+				raise ConfigurationError(fr'[i]\[http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
 			if not (val := config.http_security_caPrivateKeyFile):
-				raise ConfigurationError(r'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
+				raise ConfigurationError(r'[i]\[http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
 			if not os.path.exists(val):
-				raise ConfigurationError(fr'Configuration Error: [i]\[http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
-
+				raise ConfigurationError(fr'[i]\[http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
 		# HTTP Security
 		Configuration.http_security_tlsVersion = Configuration.http_security_tlsVersion.lower()
 
 		# HTTP CORS
 		if initial and config.http_cors_enable and not config.http_security_useTLS:
-			Configuration._print(r'[orange3]Configuration Warning: [i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
+			Configuration._warning(r'[i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
 
 		# HTTP authentication
 		if config.http_security_enableBasicAuth and not config.http_security_basicAuthFile:
-			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:basicAuthFile[/i] must be set when HTTP Basic Auth is enabled')
+			raise ConfigurationError(r'[i]\[http.security]:basicAuthFile[/i] must be set when HTTP Basic Auth is enabled')
 		if config.http_security_enableTokenAuth and not config.http_security_tokenAuthFile:
-			raise ConfigurationError(r'Configuration Error: [i]\[http.security]:tokenAuthFile[/i] must be set when HTTP Token Auth is enabled')
+			raise ConfigurationError(r'[i]\[http.security]:tokenAuthFile[/i] must be set when HTTP Token Auth is enabled')
 
 		# HTTP WSGI
 		if config.http_wsgi_enable and config.http_security_useTLS:
 			# WSGI and TLS cannot both be enabled
-			raise ConfigurationError(r'Configuration Error: [i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled (WSGI and TLS cannot both be enabled).')
+			raise ConfigurationError(r'[i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled (WSGI and TLS cannot both be enabled).')
 		if config.http_wsgi_threadPoolSize < 1:
-			raise ConfigurationError(r'Configuration Error: [i]\[http.wsgi]:threadPoolSize[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[http.wsgi]:threadPoolSize[/i] must be > 0')
 		if config.http_wsgi_connectionLimit < 1:
-			raise ConfigurationError(r'Configuration Error: [i]\[http.wsgi]:connectionLimit[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[http.wsgi]:connectionLimit[/i] must be > 0')

@@ -36,5 +36,5 @@ class PostgreSQLBindingConfiguration(ModuleConfiguration):
 		# PostgreSQL
 
 		if not isValidPort(config.database_postgresql_port):
-			raise ConfigurationError(fr'Configuration Error: Invalid port number for [i]\[database.postgresql]:port[/i]: {config.database_postgresql_port}')
+			raise ConfigurationError(fr'Invalid port number for [i]\[database.postgresql]:port[/i]: {config.database_postgresql_port}')
 

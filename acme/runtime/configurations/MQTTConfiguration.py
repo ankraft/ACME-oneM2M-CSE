@@ -53,11 +53,11 @@ class MQTTConfiguration(ModuleConfiguration):
 		if not config.mqtt_port:	# set the default port depending on whether to use TLS
 			config.mqtt_port = 8883 if config.mqtt_security_useTLS else 1883
 		if not config.mqtt_security_username != (not config.mqtt_security_password):	# Hack: != -> either both are empty, or both are set
-			raise ConfigurationError(fr'Configuration Error: Username or password missing for [i]\[mqtt.security][/i]')
+			raise ConfigurationError(fr'Username or password missing for [i]\[mqtt.security][/i]')
 	
 		#	MQTT Websocket
 		if isValidPort(config.mqtt_websocket_port) is False:
-			raise ConfigurationError(fr'Configuration Error: Invalid port number {config.mqtt_websocket_port} for [i]\[mqtt.websocket].port[/i]')
+			raise ConfigurationError(fr'Invalid port number {config.mqtt_websocket_port} for [i]\[mqtt.websocket].port[/i]')
 		
 		# remove empty cid from the list
 		config.mqtt_security_allowedCredentialIDs = [ cid for cid in config.mqtt_security_allowedCredentialIDs if len(cid) ]

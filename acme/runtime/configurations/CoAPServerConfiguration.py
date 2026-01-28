@@ -49,23 +49,23 @@ class CoAPServerConfiguration(ModuleConfiguration):
 
 		if config.coap_security_useDTLS:
 			if (val := config.coap_address).startswith('coap:'):
-				Configuration._print(r'[orange3]Configuration Warning: Changing "coap" to "coaps" in [i]\[coap]:address[/i]')
+				Configuration._warning(r'Changing "coap" to "coaps" in [i]\[coap]:address[/i]')
 				config.coap_address = val.replace('coap:', 'coaps:')
 			# registrar might still be accessible via another protocol
 		else: 
 			if (val := config.coap_address).startswith('coaps:'):
-				Configuration._print(r'[orange3]Configuration Warning: Changing "coaps" to "coap" in [i]\[coap]:address[/i]')
+				Configuration._warning(r'Changing "coaps" to "coap" in [i]\[coap]:address[/i]')
 				config.coap_address = val.replace('coaps:', 'coap:')
 			# registrar might still be accessible via another protocol
 
 		if not isValidPort(config.coap_port):
-			raise ConfigurationError(fr'Configuration Error: Invalid port number for [i]\[coap]:port[/i]: {config.websocket_port}')
+			raise ConfigurationError(fr'Invalid port number for [i]\[coap]:port[/i]: {config.websocket_port}')
 		if not (isValidateHostname(config.coap_listenIF) or isValidateIpAddress(config.coap_listenIF)):
-			raise ConfigurationError(fr'Configuration Error: Invalid hostname or IP address for [i]\[coap]:listenIF[/i]: {config.coap_listenIF}')
+			raise ConfigurationError(fr'Invalid hostname or IP address for [i]\[coap]:listenIF[/i]: {config.coap_listenIF}')
 		if config.coap_timeout < 0.0:
-			raise ConfigurationError(fr'Configuration Error: Invalid timeout value for [i]\[coap]:timeout[/i]: {config.coap_timeout}')
+			raise ConfigurationError(fr'Invalid timeout value for [i]\[coap]:timeout[/i]: {config.coap_timeout}')
 		if config.coap_clientConnectionCacheSize < 0:
-			raise ConfigurationError(fr'Configuration Error: Invalid value for [i]\[coap]:clientConnectionCacheSize[/i]: {config.coap_clientConnectionCacheSize}')
+			raise ConfigurationError(fr'Invalid value for [i]\[coap]:clientConnectionCacheSize[/i]: {config.coap_clientConnectionCacheSize}')
 
 		# COAP TLS & certificates
 		if not config.coap_security_useDTLS:	# clear certificates configuration if not in use
@@ -75,19 +75,19 @@ class CoAPServerConfiguration(ModuleConfiguration):
 			config.coap_security_caPrivateKeyFile = ''
 		else:
 			if not (val := config.coap_security_dtlsVersion).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				raise ConfigurationError(fr'Configuration Error: Unknown value for [i]\[coap.security]:dtlsVersion[/i]: {val}')
+				raise ConfigurationError(fr'Unknown value for [i]\[coap.security]:dtlsVersion[/i]: {val}')
 			config.coap_security_dtlsVersion = val # lower case
 			if not (val := config.coap_security_caCertificateFile):
-				raise ConfigurationError(r'Configuration Error: [i]\[coap.security]:caCertificateFile[/i] must be set when DTLS is enabled')
+				raise ConfigurationError(r'[i]\[coap.security]:caCertificateFile[/i] must be set when DTLS is enabled')
 			if not os.path.exists(val):
-				raise ConfigurationError(fr'Configuration Error: [i]\[coap.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
+				raise ConfigurationError(fr'[i]\[coap.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
 			if not (val := config.coap_security_caPrivateKeyFile):
-				raise ConfigurationError(r'Configuration Error: [i]\[coap.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
+				raise ConfigurationError(r'[i]\[coap.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
 			if not os.path.exists(val):
-				raise ConfigurationError(fr'Configuration Error: [i]\[coap.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
+				raise ConfigurationError(fr'[i]\[coap.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
 			
 		# Warning if security is enabled, because it is not supported yet.
 		# Remove this warning when security is supported
 		if config.coap_security_useDTLS:
-			Configuration._print(r'[orange3]Configuration Warning: CoAP security is not yet supported. Security settings will be ignored.')
+			Configuration._warning(r'CoAP security is not yet supported. Security settings will be ignored.')
 

@@ -30,16 +30,16 @@ class ScriptingConfiguration(ModuleConfiguration):
 
 		# Script settings
 		if config.scripting_fileMonitoringInterval < 0.0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0')
+			raise ConfigurationError(fr'[i]\[scripting]:fileMonitoringInterval[/i] must be >= 0.0')
 		if config.scripting_maxRuntime < 0.0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:maxRuntime[/i] must be >= 0.0')
+			raise ConfigurationError(fr'[i]\[scripting]:maxRuntime[/i] must be >= 0.0')
 		if (scriptDirs := config.scripting_scriptDirectories):
 			lst = []
 			for each in scriptDirs:
 				if not each:
 					continue
 				if not os.path.isdir(each):
-					raise ConfigurationError(fr'Configuration Error: [i]\[scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible')
+					raise ConfigurationError(fr'[i]\[scripting]:scriptDirectory[/i]: directory "{each}" does not exist, is not a directory or is not accessible')
 				lst.append(each)
 			config.scripting_scriptDirectories = lst
 

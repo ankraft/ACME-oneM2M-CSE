@@ -695,8 +695,7 @@ class Configuration(object):
 			Args:
 				msg: The warning message to print.
 		"""
-		Configuration._print(f'[yellow][b]WARNING[/b]\n{msg}[/yellow]\n')
-		time.sleep(2)
+		Configuration._print(f'[orange3][b u]Configuration Warning[/b u]\n{msg}[/orange3]\n')
 
 
 	@staticmethod
@@ -706,9 +705,7 @@ class Configuration(object):
 			Args:
 				msg: The error message to print.
 		"""
-		Configuration._print(f'[red][b]ERROR[/b]\n{msg}[/red]\n')
-		time.sleep(2)
-
+		Configuration._print(f'[red][b u]Configuration Error[/b u]\n{msg}[/red]\n')
 
 
 
@@ -904,7 +901,7 @@ class Configuration(object):
 		# Check wether none of the environment variables has the same name as any of the default values in "basic.config"
 		for k in _defaults['basic.config'].keys():
 			if k in os.environ:
-				Configuration._warning(f'The environment variable "{k}" conflicts with an option with the same name in the section \[[i]basic.config[/i]].\nPlease consider renaming the environment variable otherwise it cannot be used for interpolation in that section.')
+				Configuration._warning(fr'The environment variable "{k}" conflicts with an option with the same name in the section \[[i]basic.config[/i]].\nPlease consider renaming the environment variable otherwise it cannot be used for interpolation in that section.')
 
 		# Add (empty) default for supported environment variables to the defaults dictionary for the interpolation during reading the configuration file
 		_envVariables = { e: os.getenv(e, '') if e not in _defaults else _defaults[e]
@@ -962,7 +959,7 @@ class Configuration(object):
 				m.readConfiguration(Configuration.configParser, Configuration)	# type:ignore [arg-type]
 		
 		except configparser.InterpolationMissingOptionError as e:
-			Configuration._error(f'Error in configuration file: {Configuration.configfile}\n{str(e)}\n\nPlease provide this configuration option in the section \[[i]basic.config[/i]], or set an environment variable with that name.\n')
+			Configuration._error(fr'Error in configuration file: {Configuration.configfile}\n{str(e)}\n\nPlease provide this configuration option in the section \[[i]basic.config[/i]], or set an environment variable with that name.\n')
 			return False
 
 		except Exception as e:	# about when findings errors in configuration

@@ -27,7 +27,7 @@ class ACTRResourceConfiguration(ModuleConfiguration):
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.resource_actr_ecpContinuous <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.actr]:ecpContinuous[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.actr]:ecpContinuous[/i] must be > 0')
 		if config.resource_actr_ecpPeriodic <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.actr]:ecpPeriodic[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.actr]:ecpPeriodic[/i] must be > 0')
 

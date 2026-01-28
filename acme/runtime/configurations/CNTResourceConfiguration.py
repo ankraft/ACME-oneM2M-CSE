@@ -30,8 +30,8 @@ class CNTResourceConfiguration(ModuleConfiguration):
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.resource_cnt_mni <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mni[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.cnt]:mni[/i] must be > 0')
 		if config.resource_cnt_mbs <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mbs[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.cnt]:mbs[/i] must be > 0')
 		if config.resource_cnt_mia <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.cnt]:mia[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.cnt]:mia[/i] must be > 0')

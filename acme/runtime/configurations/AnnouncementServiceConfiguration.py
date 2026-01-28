@@ -31,4 +31,4 @@ class AnnouncementServiceConfiguration(ModuleConfiguration):
 		# check intervals
 		
 		if config.cse_announcements_delayAfterRegistration < 0.0:
-			raise ConfigurationError(fr'Configuration Error: \[cse.announcements]:delayAfterRegistration must be 0 or greater')
+			raise ConfigurationError(fr'\[cse.announcements]:delayAfterRegistration must be 0 or greater')
