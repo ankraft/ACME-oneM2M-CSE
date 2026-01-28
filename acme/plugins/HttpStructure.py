@@ -15,7 +15,7 @@ from ..helpers.PluginManager import pluginClass, start, configure
 from ..runtime.Configuration import Configuration
 
 
-@pluginClass
+@pluginClass('httpStructure')
 class HttpStructure:
 	"""	Plugin class to add the Structure functionality to the HTTP server.
 	"""

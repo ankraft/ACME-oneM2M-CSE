@@ -337,6 +337,7 @@ def _shutdown() -> None:
 	
 	# shutdown the services
 	pluginManager and pluginManager.shutdown()
+
 	textUI and textUI.shutdown()
 	console and console.shutdown()
 	time and time.shutdown()

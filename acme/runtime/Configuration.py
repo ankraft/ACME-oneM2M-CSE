@@ -15,6 +15,7 @@ from typing import Any, Dict, Tuple, Optional, cast, Set
 
 import configparser, argparse, os, os.path, pathlib
 from copy import deepcopy
+import time
 from inspect import getmembers
 from dotenv import load_dotenv, find_dotenv
 
@@ -688,6 +689,30 @@ class Configuration(object):
 
 
 	@staticmethod
+	def _warning(msg:str) -> None:
+		"""	Print a warning message to the console.
+
+			Args:
+				msg: The warning message to print.
+		"""
+		Configuration._print(f'[yellow][b]WARNING[/b]\n{msg}[/yellow]\n')
+		time.sleep(2)
+
+
+	@staticmethod
+	def _error(msg:str) -> None:
+		"""	Print an error message to the console.
+
+			Args:
+				msg: The error message to print.
+		"""
+		Configuration._print(f'[red][b]ERROR[/b]\n{msg}[/red]\n')
+		time.sleep(2)
+
+
+
+
+	@staticmethod
 	def initDirectories() -> bool:
 		"""	Initialize the directories for the configuration. This method must be called before accessing any configuration value.
 
@@ -700,7 +725,7 @@ class Configuration(object):
 		
 		# Test that the config filename is just a filename without a path. If it is then throw an error
 		if Configuration._args_configfile and os.path.dirname(Configuration._args_configfile):
-			Configuration._print(f'[red]Configuration file must be a filename without a path: {Configuration._args_configfile}')
+			Configuration._error(f'Configuration file must be a filename without a path: {Configuration._args_configfile}')
 			return False
 
 		# Find out the path to the init directory
@@ -717,7 +742,7 @@ class Configuration(object):
 		Configuration._defaultConfigFilePath = Configuration.initDirectory / C.defaultConfigFile
 		Configuration._defaultConfigFile = str(Configuration._defaultConfigFilePath)
 		if not os.access(Configuration._defaultConfigFile, os.R_OK):
-			Configuration._print(f'[red]Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
+			Configuration._error(f'Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
 			return False
 
 		return True
@@ -843,7 +868,7 @@ class Configuration(object):
 			except Exception as e:
 				import traceback
 				traceback.print_exc()
-				Configuration._print(f'[red]Error connecting to Zookeeper server: {e}')
+				Configuration._error(f'Error connecting to Zookeeper server: {e}')
 				return False
 			finally:
 				zk.disconnect()
@@ -876,6 +901,11 @@ class Configuration(object):
 		# Add environment variables to the defaults
 		_defaults.update({ 'DEFAULT': {k: v.replace('$', '$$') for k,v in os.environ.items()} })
 
+		# Check wether none of the environment variables has the same name as any of the default values in "basic.config"
+		for k in _defaults['basic.config'].keys():
+			if k in os.environ:
+				Configuration._warning(f'The environment variable "{k}" conflicts with an option with the same name in the section \[[i]basic.config[/i]].\nPlease consider renaming the environment variable otherwise it cannot be used for interpolation in that section.')
+
 		# Add (empty) default for supported environment variables to the defaults dictionary for the interpolation during reading the configuration file
 		_envVariables = { e: os.getenv(e, '') if e not in _defaults else _defaults[e]
 			for e in (
@@ -903,7 +933,7 @@ class Configuration(object):
 			# Read the configuration files
 			# if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
 			if len(Configuration.configParser.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
-				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._args_configfile}')
+				Configuration._error(f'Configuration file missing or not readable: {Configuration._args_configfile}')
 				return False
 			
 			# Read the extra configuration strings (e.g. from Zookeeper)
@@ -911,16 +941,14 @@ class Configuration(object):
 				Configuration.configParser.read_string(cs)
 
 		except configparser.Error as e:
-			Configuration._print('[red]Error in configuration file')
-			Configuration._print(str(e))
+			Configuration._error(f'Error in configuration file\n{str(e)}')
 			return False
-	
 		
 		#	Look for deprecated and renamed sections and print an error message
 		if _deprecatedSections:
 			for o, n in _deprecatedSections:
 				if Configuration.configParser.has_section(o):
-					Configuration._print(fr'[red]Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
+					Configuration._error(fr'Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
 					return False
 
 		#	Retrieve configuration values
@@ -934,12 +962,11 @@ class Configuration(object):
 				m.readConfiguration(Configuration.configParser, Configuration)	# type:ignore [arg-type]
 		
 		except configparser.InterpolationMissingOptionError as e:
-			Configuration._print(f'[red]Error in configuration file: {Configuration.configfile}\n{str(e)}')
-			Configuration._print('\n[red]Please provide the option in the section [bold](basic.config)[/bold] in the configuration file or set an environment variable with that name.\n')
+			Configuration._error(f'Error in configuration file: {Configuration.configfile}\n{str(e)}\n\nPlease provide this configuration option in the section \[[i]basic.config[/i]], or set an environment variable with that name.\n')
 			return False
 
 		except Exception as e:	# about when findings errors in configuration
-			Configuration._print(f'[red]Error in configuration file: {Configuration.configfile}\n{str(e)}')
+			Configuration._error(f'Error in configuration file: {Configuration.configfile}\n{str(e)}')
 			return False
 
 		# Validate the configuration for each module
@@ -947,7 +974,7 @@ class Configuration(object):
 			try:
 				m.validateConfiguration(Configuration, True)	# type:ignore [arg-type]
 			except ConfigurationError as e:
-				Configuration._print(f'[red]{str(e)}')
+				Configuration._error(f'{str(e)}')
 				return False
 
 		return True

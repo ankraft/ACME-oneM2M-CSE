@@ -418,6 +418,9 @@ class RemoteCSEManager(object):
 		if len(_csrs := self._retrieveLocalCSRResources(registrarConfig, includeRegistrarCSR=True)):
 			registrarCSR = _csrs[0] # hopefully, there is only one registrar CSR
 
+			# Define variable here for scoping. An exception might skip its definition otherwise
+			csr:Optional[Resource] = None			
+
 			try:
 				# retrieve own CSR from the registrar CSE
 				csr = self._retrieveOwnCSRfromRegistrarCSE(registrarConfig)
@@ -456,7 +459,7 @@ class RemoteCSEManager(object):
 				except:
 					pass
 				# Indicate that we are not registered to the registrar CSE anymore
-				registrarConfig._registrarCSEBaseResource = None				
+				registrarConfig._registrarCSEBaseResource = None	
 				try:
 					try:
 						csr = self._createCSRonRegistrarCSE(registrarConfig)

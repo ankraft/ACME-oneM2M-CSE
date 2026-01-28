@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Any, Callable, ClassVar, Optional
 from dataclasses import dataclass
-import os, importlib, importlib.util, inspect, sys
+import os, importlib, importlib.util, inspect
 from types import ModuleType
 from enum import IntEnum
 from .TextTools import simpleMatch
@@ -20,9 +20,9 @@ except ImportError:
 	from . import Singleton
 
 
-# TODO add disabled plugins configuration
-
-tag = '_pm_state'
+_tagType = '_pm_type'
+_tagInstanceName = '_pm_instance_name'
+_tagInstancePriority = '_pm_instance_priority'
 
 
 class PluginState(IntEnum):
@@ -36,19 +36,53 @@ class PluginState(IntEnum):
 
 @dataclass
 class PluginInfo:
+	"""	Dataclass to hold runtime information, metadata about a plugin, and state management.
+	"""
+
 	name: str
+	""" Name of the plugin. """
+
+	priority: int = 50
+	""" Priority of the plugin. The priority determines the order in which plugins are started, etc. Lower values mean higher priority, but stopping and finalizing happen in reverse order. """
+
 	state: PluginState = PluginState.LOADED
+	""" Internal state of the plugin. """
+
 	fileName: str = ''
+	""" File name of the plugin module. """
+
 	module: ModuleType | None = None
+	""" The loaded plugin module. """
+
 	pluginClass: Any | None = None
+	""" A reference to the plugin class. """
+
 	instance: Any | None = None
+	""" The instantiated plugin class. """
+
+	instanceAttributeName: str | None = None
+	""" If this is set, the plugin instance is accessible as attribute of the PluginManager under this name. """
+
 	initMethod: Callable | None = None
+	""" The initialization method of the plugin. This method, if set, is called during the plugin initialization phase. """
+
 	finishMethod: Callable | None = None
+	""" The finalization method of the plugin. This method, if set, is called during the plugin finalization phase. """
+
 	startMethod: Callable | None = None
+	""" The start method of the plugin. This method, if set, is called when the plugin is started. """
+
 	restartMethod: Callable | None = None
+	""" The restart method of the plugin. This method, if set, is called when the plugin is restarted. """
+	
 	stopMethod: Callable | None = None
+	""" The stop method of the plugin. This method, if set, is called when the plugin is stopped. """
+
 	configureMethod: Callable | None = None
+	""" The configure method of the plugin. This method, if set, is called during the plugin configuration phase. """
+	
 	validateMethod: Callable | None = None
+	""" The validate method of the plugin. This method, if set, is called during the plugin validation phase, after the configuration phase. """
 
 
 	def start(self) -> None:
@@ -96,7 +130,6 @@ class PluginManager(metaclass=Singleton.Singleton):
 		This class manages the loading and registration of plugins.
 	"""
 
-
 	plugins: dict[str, PluginInfo] = {}
 
 
@@ -105,7 +138,9 @@ class PluginManager(metaclass=Singleton.Singleton):
 						  disabledPlugins: list[str]=[], 
 						  replace: bool=False, 
 						  *args: Any, **kwargs: Any) -> None:
-		""" Load plugins from the specified directory.
+		""" Load plugins from the specified directory. 
+
+			Plugins are initialized after loading according to their priority.
 
 			Args:
 				directory: The directory from which to load plugins.
@@ -123,53 +158,52 @@ class PluginManager(metaclass=Singleton.Singleton):
 		if not os.path.isdir(directory):
 			raise NotADirectoryError(f'Plugin directory "{directory}" does not exist or is not a directory.')
 		
-		# load all files in the plugin directory as plugins
+		newPlugins: dict[str, PluginInfo] = {}
+
+		# load all files in the plugin directory as plugins in alphabetical order
 		for file in sorted(os.listdir(directory), key=str.lower):
 			if file.endswith('.py') and not file.startswith('_'):
-				pluginName = file[:-3]
-
-				# check for existing plugin
-				if pluginName in self.plugins:
-					if replace:
-						self.unloadPlugins(pluginName)
-					else:
-						raise KeyError(f'Plugin "{pluginName}" is already loaded.')
-				
-				# check disabled plugins
-				skipModule = False
-				for pattern in disabledPlugins:
-					# print(f"Checking if plugin '{pluginName}' matches disabled pattern '{pattern}'")
-					if simpleMatch(pluginName, pattern):
-						skipModule = True
-						break
-				if skipModule:
-					continue
 
 				try:
 					fileName = os.path.join(directory, file)
+					pluginName = file[:-3]
 					spec = importlib.util.spec_from_file_location(f'{packagePath}.{pluginName}', fileName)
 					module = importlib.util.module_from_spec(spec)
+
+					# change the simple pluginName to the full module name
+					pluginName = module.__name__
+
+					# check for existing plugin. If already loaded, either replace or raise error
+					if pluginName in self.plugins:
+						if replace:
+							# Unload existing plugin first if replace is True
+							self.unloadPlugins(pluginName)
+						else:
+							raise KeyError(f'Plugin "{pluginName}" is already loaded.')
+					
+					# check disabled plugins
+					if any(pattern for pattern in disabledPlugins if simpleMatch(pluginName, pattern)):
+						continue
+
+					# Load the module into the interpreter
 					spec.loader.exec_module(module)
-					self.plugins[pluginName] = PluginInfo(name=pluginName, module=module, fileName=fileName)
-					#print(f"Loaded plugin: {pluginName}")
+
+					# self.plugins[pluginName] = PluginInfo(name=pluginName, module=module, fileName=fileName)
+					newPlugins[pluginName] = PluginInfo(name=pluginName, module=module, fileName=fileName)
+
 				except Exception as e:
 					# print(f"Failed to load plugin {pluginName}: {e}")
 					raise e
 
-		# Sort plugins by name.
-		self.plugins = dict(sorted(self.plugins.items(), key=lambda item: item[0].lower()))
-
 		# After loading all plugins, gather plugin classes and plugin methods
-		for plugin in self.plugins.values():
-			if plugin.state != PluginState.LOADED:	# Skip already processed plugins
-				continue
+		for plugin in newPlugins.values():
 			for _, obj in inspect.getmembers(plugin.module):
-				match getattr(obj, tag, None):
+				match getattr(obj, _tagType, None):
 
 					case 'pluginClass' if not plugin.pluginClass:
 						plugin.pluginClass = obj
 						for _, method in inspect.getmembers(obj):
-							match getattr(method, tag, None):
+							match getattr(method, _tagType, None):
 								case 'init':
 									plugin.initMethod = method
 								case 'finish':
@@ -188,17 +222,37 @@ class PluginManager(metaclass=Singleton.Singleton):
 					case 'pluginClass' if plugin.pluginClass:
 						raise ValueError(f'Plugin "{plugin.name}" has multiple plugin classes.')
 
-		# Instantiate class and execute init methods of now registered plugins
-		for plugin in self.plugins.values():
-			if plugin.pluginClass is None:
+			if not plugin.pluginClass:
 				raise ValueError(f'Plugin "{plugin.name}" has no plugin class.')
+			
+			# Store instance attribute name
+			if (n := getattr(plugin.pluginClass, _tagInstanceName, None)):
+				plugin.instanceAttributeName = n
+
+			# Store priority
+			if (p := getattr(plugin.pluginClass, _tagInstancePriority, None)) is not None:
+				plugin.priority = p
+
+
+		# Instantiate class and execute init methods of now registered plugins
+		# Sorted by priority
+		for plugin in sorted(newPlugins.values(), key=lambda p: p.priority):
+
+			# Instantiate plugin class
 			plugin.instance = plugin.pluginClass()
 			if plugin.initMethod:
 				plugin.initMethod(plugin.instance, *args, **kwargs)
+
+			# Add plugin as attribute of the plugin manager
+			if plugin.instanceAttributeName:
+				setattr(self, plugin.instanceAttributeName, plugin.instance)
 			plugin.state = PluginState.INITIALIZED
+	
+		# Add new plugins to the main plugin list
+		self.plugins.update(newPlugins)
 
 
-	def unloadPlugins(self, pluginNames: Optional[list[str]|str] = None) -> None:
+	def unloadPlugins(self, pluginNames: Optional[list[str]|str]=None) -> None:
 		""" Unload a plugin by name. If running, stop it first.
 
 			Args:
@@ -211,36 +265,49 @@ class PluginManager(metaclass=Singleton.Singleton):
 				pluginNames = list(self.plugins.keys())
 			case str():
 				pluginNames = [pluginNames]
+			case _:
+				pass # already a list
 
-		for pluginName in pluginNames:
-			if pluginName in self.plugins:
-				plugin = self.plugins[pluginName]
-				plugin.finalize()
-				del self.plugins[pluginName]
-			else:
-				raise KeyError(f'Plugin "{pluginName}" not found.')
+		# Sort the plugin names by priority to unload in correct reverse order, then iterate
+		for pluginName in sorted(pluginNames, key=lambda name: self.plugins[name].priority, reverse=True):
+			plugin = self.plugins[pluginName]
+
+			# Remove instance attribute from PluginManager
+			if plugin.instanceAttributeName:	
+				delattr(self, plugin.instanceAttributeName)
+
+			plugin.instance = None	# release instance reference
+			plugin.finalize()
+			del self.plugins[pluginName]
+
+			# TODO unload module from interpreter
+			# import sys
+			# if pluginName in sys.modules.keys():
+			# 	del sys.modules[pluginName]
+
 
 
 	def _action(self, 
 				pluginNames: str|list[str]|None, 
-				action: Callable[[PluginInfo], None]) -> None:
+				action: Callable[[PluginInfo], None],
+				reverse: bool=False) -> None:
 		""" Transition the state of a plugin.
 
 			Args:
 				pluginName: The name of the plugin to transition.
 				action: The action to perform during the state transition.
+				reverse: Whether to process the plugins in reverse order.
 		"""
 		match pluginNames:
 			case None:
 				pluginNames = list(self.plugins.keys())
 			case str():
 				pluginNames = [pluginNames]
+			case _:
+				pass # already a list
 		
-		for name in pluginNames:
-			if (plugin := self.plugins.get(name, None)):
-				action(plugin)
-			else:
-				raise KeyError(f"Plugin '{name}' not found.")
+		for name in sorted(pluginNames, key=lambda name: self.plugins[name].priority, reverse=reverse):
+			action(self.plugins[name])
 			
 
 	def startPlugins(self, pluginNames: Optional[str|list[str]]=None) -> None:
@@ -264,7 +331,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.stop())
+		self._action(pluginNames, lambda plugin: plugin.stop(), reverse=True)
 
 	
 	def restartPlugins(self, pluginNames: Optional[str|list[str]]=None) -> None:
@@ -327,6 +394,8 @@ class PluginManager(metaclass=Singleton.Singleton):
 		"""
 		if name in self.plugins:
 			self.unloadPlugins(name)
+		elif hasattr(self, name):
+			super().__delattr__(name)
 		else:
 			raise AttributeError(f'"PluginManager" object has no attribute "{name}"')
 
@@ -347,7 +416,7 @@ def _wrap(func: Callable, tagValue: str) -> Callable:
 	def wrapper(self :Any, *args :Any, **kwargs: Any) -> Callable:
 		return func(self, *args, **kwargs)
 
-	setattr(wrapper, tag, tagValue)
+	setattr(wrapper, _tagType, tagValue)
 	return wrapper
 
 
@@ -386,20 +455,37 @@ def validate(func: Callable) -> Callable: # type: ignore
 	return _wrap(func, 'validate')
 
 
-def pluginClass(cls: ClassVar) -> ClassVar: # type: ignore
-	""" Decorator to mark plugin classes in plugins. """
-	setattr(cls, tag, 'pluginClass')
-	return cls
+def pluginClass(property: str|ClassVar=None, priority: int=50) -> ClassVar: # type: ignore
+	""" Decorator to mark plugin classes in plugins.
 
+		Args:
+			property: Optional name for the plugin instance. If a class is given here, it is treated directly as the class to decorate.
+			priority: The priority of the plugin. It determines the order in which plugins are started, stopped, etc. Lower values mean higher priority.
 
-# → Experimental late loading
-#
-# import importlib
-# mod = importlib.import_module('acme.services.ActionManager')
-# action = mod.ActionManager()	
+		Returns:
+			The class with the plugin class tag set.
+	"""
 
-# mod = importlib.import_module('acme.runtime.ScriptManager')			# Initialize the action manager
-# # script = mod.ScriptManager()				# Initialize the script manager
-# thismodule = sys.modules[__name__]
-# setattr(thismodule, 'script', mod.ScriptManager())
+	# if property is a class, set the tagType in the class and return it immediately.
+	if inspect.isclass(property):
+		setattr(property, _tagType, 'pluginClass')
+		return property
+
+	# else treat name as extra parameter for an instance name
+	# Here we return the actual decorator.
+	def decorator(cls: type) -> type:
+		""" Decorator to mark plugin classes in plugins. 
+
+			Args:
+				cls: The class to mark as plugin class.
+			Returns:
+				The class with the plugin class tag set.
+		"""
+		setattr(cls, _tagType, 'pluginClass')
+		if property: # If name is given, set it as instance name
+			setattr(cls, _tagInstanceName, property)
+		setattr(cls, _tagInstancePriority, priority)
+		return cls
+	
+	return decorator
 

@@ -160,6 +160,16 @@ def getCSEStatusJSON() -> JSON:
 						}
 						for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()) 
 			],
+			'plugins': [ {
+							'module': p.name,
+							'filename': p.fileName,
+							'instanceClass': p.instance.__class__.__name__,
+							'priority': p.priority,
+							'state': p.state.name,
+						 }
+						 for p in CSE.pluginManager.plugins.values()
+			],
+
 		},
 		'logging': {
 			'level': L.logLevel.name,
