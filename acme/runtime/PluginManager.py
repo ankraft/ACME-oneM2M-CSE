@@ -25,31 +25,33 @@ class PluginManager(PM):
 
 		L.isDebug and L.logDebug('Initializing PluginManager')
 
-		# Load plugins, configure, validate and start them
-		self.loadPlugins(directory=f'{Configuration.moduleDirectory}/plugins', 
-						 packagePath='acme.plugins', 
-						 disabledPlugins=Configuration.cse_operation_plugins_disabledPlugins, 
-						 replace=Configuration.cse_operation_plugins_replace)	# Load system plugins
-		self.loadPlugins(directory=f'{Configuration.moduleDirectory}/runtime/plugins', 
-						 packagePath='acme.runtime', 
-						 disabledPlugins=Configuration.cse_operation_plugins_disabledPlugins, 
-						 replace=Configuration.cse_operation_plugins_replace)	# Load system runtime plugins
-		self.loadPlugins(directory=f'{Configuration.moduleDirectory}/services/plugins', 
-						 packagePath='acme.services', 
-						 disabledPlugins=Configuration.cse_operation_plugins_disabledPlugins, 
-						 replace=Configuration.cse_operation_plugins_replace)	# Load system servicesplugins
 
-		try:
-			# Load plugins from working directory's plugins directory, if it exists
-			self.loadPlugins(directory=f'{Configuration.baseDirectory}/plugins', 
-							 packagePath='acme.plugins', 
-							 disabledPlugins=Configuration.cse_operation_plugins_disabledPlugins, 
-							 replace=Configuration.cse_operation_plugins_replace)		# Load working directory plugins
-		except NotADirectoryError:
-			# Ignore if the directory does not exist
-			pass
+		def _loadPluginsFromDirectory(directory:str, packagePath:str) -> None:
+			"""	Load plugins from a specific directory. Ignore if the directory does not exist. 
+			
+				Args:
+					directory (str): The directory to load plugins from.
+					packagePath (str): The package path for the plugins.
+			"""
+			try:
+				self.loadPlugins(directory=directory, 
+								 packagePath=packagePath, 
+								 disabledPlugins=Configuration.cse_operation_plugins_disabledPlugins, 
+								 replace=Configuration.cse_operation_plugins_replace)
+			except NotADirectoryError:
+				# Ignore if the directory does not exist
+				L.isDebug and L.logDebug(f'Plugin directory not found: {directory}')
+				pass
+
+		# Load plugins, configure, validate and start them
+		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins', 'acme.plugins')			# Load system plugins
+		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/services/plugins', 'acme.services')	# Load system services plugins
+		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/runtime/plugins', 'acme.runtime')	# Load system runtime plugins
+		_loadPluginsFromDirectory(f'{Configuration.baseDirectory}/plugins', 'acme.plugins')				# Load user plugins
 
 		L.isInfo and L.log(f'Loaded plugins: {", ".join(self.plugins.keys())}')
+
+		# Configure, validate and start plugins
 		self.configurePlugins(None, Configuration)
 		self.validatePlugins(None, Configuration)
 		self.startPlugins()
