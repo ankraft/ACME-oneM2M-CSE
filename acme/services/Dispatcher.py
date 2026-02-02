@@ -981,6 +981,10 @@ class Dispatcher(object):
 		# Unknown resource ?
 		if not id and not fopsrn:
 			raise NOT_FOUND(L.logDebug('resource not found'))
+		
+		# Check for wrong rcn before doing anything else
+		if request.rcn not in [ None, ResultContentType.attributes, ResultContentType.modifiedAttributes, ResultContentType.nothing ]:
+			raise BAD_REQUEST('wrong rcn for UPDATE')
 
 		# Handle operation execution time , and check CSE schedule and request expiration
 		self.handleOperationExecutionTime(request)
@@ -1024,7 +1028,7 @@ class Dispatcher(object):
 
 		# Check resource update with registration
 		# CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))
-		CSE.registration.checkResourceUpdate(resource, request.pc)
+		CSE.registration.checkResourceUpdated(resource, request.pc)
 
 		#
 		# Handle RCN's
@@ -1048,7 +1052,7 @@ class Dispatcher(object):
 			case ResultContentType.nothing:
 				return Result(rsc = ResponseStatusCode.UPDATED)
 			
-			case _:
+			case _:	# This should never happen because of the check above
 				raise BAD_REQUEST('wrong rcn for UPDATE')
 
 		# TODO C.rcnDiscoveryResultReferences 

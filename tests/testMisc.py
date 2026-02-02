@@ -362,6 +362,30 @@ class TestMisc(unittest.TestCase):
 		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_wrongRCNinUpdateFail(self) -> None:
+		""" Test wrong RCN in UPDATE -> Fail """
+
+		# create test container
+		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
+					'rn': cntRN,
+				}}
+		cnt, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, cnt)
+
+		# Update with RCN = 2 (not allowed)
+		dct2 =	{ 'm2m:cnt': {
+					'lbl': [ 'aLabel' ],
+				}}
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}?rcn=2', ORIGINATOR, dct2)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# delete the CNT again
+		r, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
 	#
 	#	Partial RETRIEVE
 	#
@@ -615,6 +639,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createAEContentTypeWithSpacesHeader',
 		'test_retrieveCSEwithResourceTypeFail',
 		'test_tokenValidationFail',
+		'test_wrongRCNinUpdateFail',
 
 		# Partial retrieve
 		'test_partialRetrieveCSEBaseSingle',

@@ -462,7 +462,7 @@ class HttpServer(object):
 	def sendHttpRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
 		"""	Send an http request.
 		
-			The result is returned in *Result.data*.
+			The result is always returned in *Result.data*, even an error/dbg message.
 		"""
 
 		# Request timeout
