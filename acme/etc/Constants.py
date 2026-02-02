@@ -17,7 +17,7 @@ class Constants(object):
 	""" Various CSE and oneM2M constants """
 
 	
-	version	= '2025.DEV'
+	version	= '2026.DEV'
 	"""	ACME's release version """
 
 	logoColor = '#b42025'
@@ -32,7 +32,7 @@ class Constants(object):
 	textLogo = fr'[dim]\[[/dim][{logoColor}][i]ACME[/i][/{logoColor}][dim]][/dim]'
 	"""	ACME's colorful console logo """
 
-	copyright = '(c) 2025 by Andreas Kraft'
+	copyright = '(c) 2026 by Andreas Kraft'
 	"""	ACME's copyright """
 
 	#
