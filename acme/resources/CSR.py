@@ -11,10 +11,11 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, CSERequest
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
 from ..etc.IDUtils import getIdFromOriginator, originatorToID
 from ..resources.Resource import Resource
+from ..resources.CSEBase import getCSE
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
@@ -88,6 +89,7 @@ class CSR(AnnounceableResource):
 		'cb': None,
 		'csi': None,
 		'spi': None,
+		'ici': None,
 		'mei': None,
 		'tri': None,
 		'rr': None,
@@ -107,7 +109,7 @@ class CSR(AnnounceableResource):
 	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
 	
 
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi: str, originator: str) -> None:
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
 			self.setAttribute('ri', originatorToID(self.csi))	# overwrite ri (only after /'s')
@@ -117,7 +119,16 @@ class CSR(AnnounceableResource):
 		super().initialize(pi, originator)
 
 
-	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
+	def validate(self, originator: Optional[str]=None, 
+					   dct: Optional[JSON]=None, 
+					   parentResource: Optional[Resource]=None) -> None:
+		super().validate(originator, dct, parentResource)
+
+		# make sure that the poa attribute URIs are normalized
+		self._normalizeURIAttribute('poa')
+
+
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
 		super().childWillBeAdded(childResource, originator)
 
 		# Perform checks for <PCH>	
@@ -129,10 +140,3 @@ class CSR(AnnounceableResource):
 			# check that there will only by one PCH as a child
 			if CSE.dispatcher.countDirectChildResources(self.ri, ty=ResourceTypes.PCH) > 0:
 				raise BAD_REQUEST(L.logDebug('Only one <PCH> per <CSR> is allowed'))
-
-
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
-		super().validate(originator, dct, parentResource)
-		self._normalizeURIAttribute('poa')

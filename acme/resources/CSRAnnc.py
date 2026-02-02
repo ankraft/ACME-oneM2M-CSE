@@ -75,6 +75,7 @@ class CSRAnnc(AnnouncedResource):
 		'cb': None,
 		'csi': None,
 		'spi': None,
+		'ici': None,
 		'rr': None,
 		'nl': None,
 		'csz': None,

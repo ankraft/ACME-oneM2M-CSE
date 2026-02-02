@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes, ContentSerializationType, JSON
+from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes, ContentSerializationType, JSON, CSEType
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.IDUtils import isValidCSI
 from ..etc.ACMEUtils import resourceFromCSI
@@ -73,6 +73,7 @@ class CSEBase(AnnounceableResource):
 			# Resource attributes
 			'csi': None,
 			'spi': None,
+			'ici': None,
 			'cst': None,
 			'csz': None,
 			'ctm': None,
@@ -134,6 +135,13 @@ class CSEBase(AnnounceableResource):
 				#CSE.dispatcher.updateLocalResource(nresource)
 
 			self[Constants.attrNode] = nl
+		
+		# Set ici and spi if not set and cst == IN
+		if self.cst == CSEType.IN:
+			if self.ici is None:		# type: ignore[has-type]
+				self.setAttribute('ici', self.csi)	# type: ignore[has-type]
+			if self.spi is None:		# type: ignore[has-type]
+				self.setAttribute('spi', self.csi)	# type: ignore[has-type]
 
 
 	def willBeRetrieved(self, originator:str, 

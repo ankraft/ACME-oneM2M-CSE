@@ -60,6 +60,8 @@ class CSEBaseAnnc(AnnouncedResource):
 
 		# Resource attributes
 		'csi': None,
+		'spi': None,
+		'ici': None,
 		'cst': None,
 		'csz': None,
 		'ctm': None,
