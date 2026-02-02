@@ -1279,7 +1279,9 @@ function createResource() {{
 
 			miscLeft  = Text(style = textStyle)
 			miscLeft += f'CSE-ID | CSE-Name : {status["cse"]["CSE-ID"]}  |  {status["cse"]["CSE-RN"]}\n'
+			miscLeft += f'Type              : {status["cse"]["Type"]}\n'
 			miscLeft += f'SP-ID             : {status["cse"]["SP-ID"]}\n'
+			miscLeft += f'IN-CSE-ID         : {status["cse"]["IN-CSE-ID"]}\n'
 			miscLeft += f'Hostname          : {status["network"]["hostname"]}\n'
 			# misc += f'IP-Address : {socket.gethostbyname(socket.gethostname() + ".local")}\n'
 			try:
@@ -1585,7 +1587,7 @@ function createResource() {{
 
 			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
 			# we need to multiply the number of lines with 2 to get the correct padding.
-			_padding = 12 + (miscHeight - 15) * 2
+			_padding = 10 + (miscHeight - 15) * 2
 			
 			panelResources = Panel(resourceTypes, 
 								   box = box.ROUNDED, 

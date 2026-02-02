@@ -17,6 +17,7 @@ from ..etc.IDUtils import isAbsolute, getSPFromID
 from ..helpers.NetworkTools import getIPAddress
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime import CSE
+from ..resources.CSEBase import getCSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..runtime import Statistics
@@ -120,13 +121,15 @@ def getCSEStatusJSON() -> JSON:
 			Status as JSON object.
 	"""
 	stats = CSE.statistics.getStats()
+	csebase = getCSE()
 
 	status:JSON = {
 		'cse': {
 			'Type': RC.cseType.name,
 			'CSE-ID': RC.cseCsi,
 			'CSE-RN': RC.cseRn,
-			'SP-ID': RC.cseSPid,
+			'SP-ID': csebase.spid if csebase and csebase.spid else RC.cseSPid,
+			'IN-CSE-ID': csebase.ici if csebase and csebase.ici else '',
 		},
 		'network': {
 			'hostname': socket.gethostname(),
