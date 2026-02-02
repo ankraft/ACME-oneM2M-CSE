@@ -203,7 +203,7 @@ class RegistrationManager(object):
 
 		# check for empty originator and assign something
 		if not originator:
-			originator = 'C'
+			originator = 'C'	# TODO make this configurable
 
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
@@ -213,9 +213,12 @@ class RegistrationManager(object):
 		# Assign originator for the AE
 		match originator:
 			case 'C':
+				# Assigning a C originator is trivial, just create a unique AEI in
+				# the scope of the local CSE
 				originator = uniqueAEI('C')
 			case 'S':
-				originator = uniqueAEI('S')
+				# Assigning an S originator requires interactions with the {remote) IN-CSE.
+				originator = CSE.remote.assignSOriginator(ae, originator)
 
 		# Check whether an originator has already registered with the same AE-ID
 		if self.hasRegisteredAE(originator):

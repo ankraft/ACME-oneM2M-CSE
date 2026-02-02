@@ -994,3 +994,16 @@ class RemoteCSEManager(object):
 				if attr in target:
 					target.delAttribute(attr, setNone = False)
 
+
+	#########################################################################
+
+	def assignSOriginator(self, ae: Resource, originator: str) -> str:
+		"""	Assign the S-Originator for an AE resource.
+
+			Args:
+				ae: The AE resource.
+				originator: The original originator.
+			Return:
+				The assigned S-Originator.
+		"""
+		return uniqueAEI('S')
