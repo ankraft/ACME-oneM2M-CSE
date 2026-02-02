@@ -2186,6 +2186,30 @@
 			"annc": "OA"
 		}
 	],
+	"ici": [
+		{
+			"rtypes": [ "CSEBase", "REQRESP" ],
+			"lname": "IN-CSE-ID",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		},
+		{
+			"rtypes": [ "CSR" ],
+			"lname": "IN-CSE-ID",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"icid": [
 		{
 			"rtypes": [ "SIM", "REQRESP" ],
@@ -4543,8 +4567,8 @@
 			"ns": "m2m",
 			"type": "ID",
 			"car": "1",
-			"oc": "M",
-			"ou": "NP",
+			"oc": "O",
+			"ou": "O",
 			"od": "NP",
 			"annc": "OA"
 		}
