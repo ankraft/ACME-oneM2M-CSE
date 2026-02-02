@@ -93,7 +93,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 		for spName, registrar in config.cse_registrars.copy().items():
 
 			# First finish the registrar initialization. This can only be done after all the other configurations have been read
-			config.cse_registrars[spName].postInit()
+			config.cse_registrars[spName].reInit()
 
 			# Set the correct originator
 			if registrar.originator is None:

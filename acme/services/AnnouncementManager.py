@@ -67,7 +67,11 @@ class AnnouncementManager(object):
 	#	Event Handlers. Listen on remote CSE registrations
 	#
 
-	def handleRegisteredToRegistrarCSE(self, registrarConfig:CSERegistrar, name:str, remoteCSE:Resource, remoteCSR:Resource) -> None:
+	def handleRegisteredToRegistrarCSE(self, registrarConfig: CSERegistrar, 
+											 name: str, 
+											 remoteCSE: Resource, 
+											 remoteCSR: Resource,
+											 localRegistrarCSR: Resource) -> None:
 		"""	Handle registrations to a registrar CSE.
 
 			Args:
@@ -75,6 +79,7 @@ class AnnouncementManager(object):
 				registrarConfig: The registrar configuration that is registered.
 				remoteCSE: The remote `CSEBase` resource.
 				remoteCSR: The own CSE's remote `CSR` resource.
+				localRegistrarCSR: The registrar CSE's local `CSR` resource.
 		"""
 		time.sleep(Configuration.cse_announcements_delayAfterRegistration)	# Give some time until remote CSE fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)

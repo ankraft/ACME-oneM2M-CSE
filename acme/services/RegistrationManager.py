@@ -32,7 +32,7 @@ class RegistrationManager(object):
 		'_eventRegistreeCSEHasDeregistered',
 		'_eventAEHasRegistered',
 		'_eventAEHasDeregistered',
-		'_eventRegistreeCSEUpdate',
+		'_eventCsrUpdated',
 		'_eventExpireResource',
 	)
 
@@ -53,7 +53,7 @@ class RegistrationManager(object):
 		self._eventRegistreeCSEHasDeregistered = CSE.event.registreeCSEHasDeregistered		# type: ignore
 		self._eventAEHasRegistered = CSE.event.aeHasRegistered								# type: ignore
 		self._eventAEHasDeregistered = CSE.event.aeHasDeregistered							# type: ignore
-		self._eventRegistreeCSEUpdate = CSE.event.registreeCSEUpdate						# type: ignore
+		self._eventCsrUpdated = CSE.event.csrUpdated						# type: ignore
 		self._eventExpireResource = CSE.event.expireResource								# type: ignore
 
 		L.isInfo and L.log('RegistrationManager initialized')
@@ -155,10 +155,11 @@ class RegistrationManager(object):
 		# fall-through
 
 
-	def checkResourceUpdate(self, resource:Resource, updateDict:JSON) -> None:
-		if resource.ty == ResourceTypes.CSR:
-			if not self.handleCSRUpdate(resource, updateDict):
-				raise BAD_REQUEST('cannot update CSR')
+	def checkResourceUpdated(self, resource:Resource, updateDict:JSON) -> None:
+		match resource.ty:
+			case ResourceTypes.CSR:
+				if not self.handleCSRUpdate(resource, updateDict):
+					raise BAD_REQUEST('cannot update CSR')
 		# fall-through
 
 
@@ -274,8 +275,8 @@ class RegistrationManager(object):
 		L.isDebug and L.logDebug(f'Registering CSR. csi: {csr.csi}')
 
 		# Check whether this is an ASN-CSE
-		if RC.cseType == CSEType.ASN:
-			raise OPERATION_NOT_ALLOWED(L.logWarn('Cannot register to ASN CSE'))
+		if RC.cseType == CSEType.ASN and originator != CSE.remote.registrarConfig.cseID:
+			raise OPERATION_NOT_ALLOWED(L.logWarn('Registration to ASN CSE is not allowed'))
 	
 		# Check that the originator is not an AE
 		if CSE.security.isAEOriginator(originator):
@@ -326,7 +327,7 @@ class RegistrationManager(object):
 	def handleCSRUpdate(self, csr:Resource, updateDict:JSON) -> bool:
 		L.isDebug and L.logDebug(f'Updating CSR. csi: {csr.csi}')
 		# send event
-		self._eventRegistreeCSEUpdate(csr, updateDict)
+		self._eventCsrUpdated(csr, updateDict)
 		return True
 
 

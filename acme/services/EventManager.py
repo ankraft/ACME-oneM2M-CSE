@@ -85,7 +85,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('registeredToRegistrarCSE')
 		self.addEvent('deregisteredFromRegistrarCSE')
 		self.addEvent('registreeCSEHasRegistered')
-		self.addEvent('registreeCSEUpdate')
+		self.addEvent('csrUpdated')
 		self.addEvent('registreeCSEHasDeregistered')
 		self.addEvent('registeredToRemoteCSE')							# After this CSE has also registered to the registering remote CSE
 		self.addEvent('aeHasRegistered')								# AE has registered

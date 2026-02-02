@@ -51,7 +51,7 @@ class TextUI(object):
 							  CSE.event.aeHasDeregistered, 									# type:ignore[attr-defined]
 							  CSE.event.registreeCSEHasRegistered,							# type:ignore[attr-defined]
 							  CSE.event.registreeCSEHasDeregistered,						# type:ignore[attr-defined]
-							  CSE.event.registreeCSEUpdate,  								# type:ignore[attr-defined]
+							  CSE.event.csrUpdated,  								# type:ignore[attr-defined]
 							  CSE.event.registeredToRegistrarCSE, 							# type:ignore[attr-defined]
 							  CSE.event.deregisteredFromRegistrarCSE, 						# type:ignore[attr-defined]
 							  CSE.event.registeredToRemoteCSE], self.registrationUpdate)	# type:ignore[attr-defined]
@@ -77,7 +77,8 @@ class TextUI(object):
 
 	# TODO the following parameters do not match the event signatures, but we ignore this for now until
 	# the arguments are used.
-	def registrationUpdate(self, name:str, resource:Resource, dct:dict=None, anotherResource:Resource=None) -> None:
+	# def registrationUpdate(self, name:str, resource:Resource, dct:dict=None, anotherResource:Resource=None) -> None:
+	def registrationUpdate(self, *args, **kwargs) -> None:		# type: ignore[no-untyped-def]
 		if self.tuiApp and self.tuiApp.containerRegistrations:
 			self.tuiApp.containerRegistrations.registrationsUpdate()
 
