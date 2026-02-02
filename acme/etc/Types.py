@@ -2888,6 +2888,13 @@ class CSERegistrar:
 			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}{RC.cseCsi}' 
 			self._csrOnRegistrarSRN = f'{self._registrarCSESRN}/{self._registrarCSRRN}' 
 
+	
+	def restart(self) -> None:
+		"""	Restart the registrar internal attributes.
+		"""
+		self._registrarCSEBaseResource = None
+		self._registrarAbsoluteCSI = None
+
 
 	def toDict(self) -> dict:
 		"""	Return a dictionary representation of the CSERegistrar object.
