@@ -162,7 +162,7 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 				if not isValidCSI(val := registrar.cseID): 
 					raise ConfigurationError(fr'Invalid format for [i]\[{registrar._configurationSection}]:cseID[/i]: {val}')
 				if len(registrar.cseID) > 0 and len(registrar.resourceName) == 0:
-					raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}]:resourceName[/i]')
+					raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}]:resourceName[/i]')
 
 			if registrar.INCSEcseID:
 				if not isValidCSI(val := registrar.INCSEcseID):
@@ -170,23 +170,23 @@ class RemoteCSEServiceConfiguration(ModuleConfiguration):
 			#TODO Investigate: The INCSEcseID above might need be set the same as the cseID, if not set.
 
 			if registrar.security.credentials.httpUsername and not registrar.security.credentials.httpPassword:
-				raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}.security]:httpPassword[/i]')
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:httpPassword[/i] (password is required if username is set)')
 			if not registrar.security.credentials.httpUsername and registrar.security.credentials.httpPassword:
-				raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}.security]:httpUsername[/i]')
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:httpUsername[/i] (username is required if password is set)')
 			if registrar.security.credentials.httpToken and registrar.security.credentials.httpUsername:
-				raise ConfigurationError(r'Only one of [i]\[{registrar._configurationSection}.security]:httpBearerToken[/i] or [i]\[{registrar._configurationSection}.security]:httpUsername[/i] can be set')
+				raise ConfigurationError(rf'Only one of [i]\[{registrar._configurationSection}.security]:httpBearerToken[/i] or [i]\[{registrar._configurationSection}.security]:httpUsername[/i] can be set')
 			if registrar.security.credentials.wsUsername and not registrar.security.credentials.wsPassword:
-				raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}.security]:wsPassword[/i]')
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:wsPassword[/i] (password is required if username is set)')
 			if not registrar.security.credentials.wsUsername and registrar.security.credentials.wsPassword:
-				raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}.security]:wsUsername[/i]')
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:wsUsername[/i] (username is required if password is set)')
 			if registrar.security.credentials.wsToken and registrar.security.credentials.wsUsername:
-				raise ConfigurationError(r'Only one of [i]\[{registrar._configurationSection}.security]:wsBearerToken[/i] or [i]\[{registrar._configurationSection}.security]:wsUsername[/i] can be set')
+				raise ConfigurationError(rf'Only one of [i]\[{registrar._configurationSection}.security]:wsBearerToken[/i] or [i]\[{registrar._configurationSection}.security]:wsUsername[/i] can be set')
 
 			if registrar.security.selfCredentials.httpUsername and not registrar.security.selfCredentials.httpPassword:
-				raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}.security]:selfHttpPassword[/i]')
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:selfHttpPassword[/i] (password is required if username is set)')
 			if not registrar.security.selfCredentials.httpUsername and registrar.security.selfCredentials.httpPassword:
-				raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}.security]:selfHttpUsername[/i]')
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:selfHttpUsername[/i] (username is required if password is set)')
 			if registrar.security.selfCredentials.wsUsername and not registrar.security.selfCredentials.wsPassword:
-				raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}.security]:selfWsPassword[/i]')
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:selfWsPassword[/i] (password is required if username is set)')
 			if not registrar.security.selfCredentials.wsUsername and registrar.security.selfCredentials.wsPassword:
-				raise ConfigurationError(r'Missing configuration [i]\[{registrar._configurationSection}.security]:selfWsUsername[/i]')
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:selfWsUsername[/i] (username is required if password is set)')
