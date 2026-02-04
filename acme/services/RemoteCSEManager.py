@@ -191,20 +191,22 @@ class RemoteCSEManager(object):
 			self.connectionMonitor.stop()
 			self.connectionMonitor = None
 
-		# Remove <csr> resources
-		if RC.cseType in [ CSEType.ASN, CSEType.MN ]:
-			try:
-				self._deleteOwnCSRonRegistrarCSE(self.registrarConfig)	# delete remote CSR. Ignore result
-				L.isInfo and L.log(f'De-registered from registrar CSE: {self.registrarConfig.cseID}')
-			except:
-				pass
-		
-		if len(resources := self._retrieveLocalCSRResources(self.registrarConfig, includeRegistrarCSR=True)):	# retrieve local CSR of the registrar
-			L.isDebug and L.logDebug('Deleting local registrar CSR ')
-			try:
-				self._deleteRegistreeCSR(resources[0])		# delete local CSR of the registrar
-			except:
-				pass
+		# Remove <csr> resources and thereby de-register from registrar CSEs
+		if Configuration.cse_registration_unregisterWhenStopping:
+			L.isDebug and L.logDebug('Unregistering from registrar CSEs')
+			if RC.cseType in [ CSEType.ASN, CSEType.MN ]:
+				try:
+					self._deleteOwnCSRonRegistrarCSE(self.registrarConfig)	# delete remote CSR. Ignore result
+					L.isInfo and L.log(f'De-registered from registrar CSE: {self.registrarConfig.cseID}')
+				except:
+					pass
+			
+			if len(resources := self._retrieveLocalCSRResources(self.registrarConfig, includeRegistrarCSR=True)):	# retrieve local CSR of the registrar
+				L.isDebug and L.logDebug('Deleting local registrar CSR ')
+				try:
+					self._deleteRegistreeCSR(resources[0])		# delete local CSR of the registrar
+				except:
+					pass
 	
 
 	def connectionMonitorWorker(self) -> bool:

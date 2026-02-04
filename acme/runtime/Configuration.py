@@ -228,6 +228,8 @@ class Configuration(object):
 	cse_registration_checkInterval:int
 	"""	Time interval to check liveliness of registration(s). """
 
+	cse_registration_unregisterWhenStopping:bool
+	"""	Unregister the CSR resource when stopping the CSE. """
 
 	cse_security_secret:str
 	"""	The main secret key for the CSE. """

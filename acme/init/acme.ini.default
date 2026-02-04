@@ -511,6 +511,9 @@ checkLiveliness=True
 ; Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
 ; Default: 60
 checkInterval=60
+; Unregister from the registrar when stopping the CSE. This includes deleting the CSR resource at the registrar CSE.
+; Default: True
+unregisterWhenStopping=True
 
 
 ;

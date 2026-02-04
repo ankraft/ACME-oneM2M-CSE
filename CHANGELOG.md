@@ -15,7 +15,9 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for Python code plugins to extend the CSE's functionality. This is an ESTIMED project contribution.
 - [CSE] Added new Uper Tester command "getConfig" to retrieve configuration settings from the CSE via the Upper Tester interface.
 - [CSE] Added support for new *SP-ID* attribute in &lt;CSEBase> and &lt;remoteCSE> resources.
+- [CSE] Added functionality to disable or enable removing registrations when stopping the CSE. This can be configured via the new configuration setting *cse.registration.unregisterWhenStopping*. By default, registrations are removed when stopping the CSE (the old behavior).
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
+
 
 ### Experimental
 - [CSE] Added experimental support for new *spi* and *ici* attributes in &lt;CSEBsae> and &lt;remoteCSE> resources. Both attributes are updated automatically in registree CSEs throughout a oneM2M deployment tree.
