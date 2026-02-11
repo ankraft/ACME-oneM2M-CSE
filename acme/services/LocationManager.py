@@ -230,7 +230,7 @@ class LocationManager(object):
 
 
 
-	def getNewLocation(self, lcpRi:str, content:Optional[str] = None) -> Optional[Tuple[LocationType, LocationType]]:
+	def getNewLocation(self, lcpRi: str, content: Optional[str]=None) -> Optional[Tuple[LocationType, LocationType]]:
 		"""	Get the new location for a location policy. Also, update the internal policy info if necessary.
 		
 			Args:
@@ -254,7 +254,7 @@ class LocationManager(object):
 			content = cin.con
 		
 		# Check whether the content is a valid location or an event
-		if content in ('', '1', '2', '3', '4'):	# This could be done better...
+		if (isinstance(content, int) and GeofenceEventCriteria.has(content)) or content == '':
 			return None	# An event, so return 
 
 		# From here on, content is a location
@@ -288,7 +288,7 @@ class LocationManager(object):
 			"""
 			L.isDebug and L.logDebug(f'Position: {eventType}')
 			cnt = CSE.dispatcher.retrieveResource(info.locationContainerID)
-			cin = Factory.resourceFromDict({ 'con': f'{eventType.value}' },
+			cin = Factory.resourceFromDict({ 'con': eventType.value },
 										   pi = info.locationContainerID, 
 										   ty = ResourceTypes.CIN,
 										   create = True,

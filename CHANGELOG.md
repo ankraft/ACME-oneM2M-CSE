@@ -24,6 +24,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Changed
 - [CSE] Moved various HTTP server extensions to plugins: Upper Tester, Web UI, management & structure interfaces. These plugins are now loaded via the new plugin manager.
+- [CSE] For location handling the *content* attributes of &lt;contentInstance> resources support now now integer or JSON objects, not strings anymore. The work-around using a string representation was necessary because the *content* attribute was only supporting string values before.
 
 ### Fixed
 - [CSE] Fixed missing validation of mandatory list attributes (1L) when updating resources.

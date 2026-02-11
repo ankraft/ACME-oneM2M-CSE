@@ -19,13 +19,11 @@ pointInside = {
 	'coordinates' : [ 52.520817, 13.409446 ]
 }
 
-pointInsideStr = json.dumps(pointInside)
 
 pointOutside = {
 	'type' : 'Point',
 	'coordinates' : [ 52.505033, 13.278189 ]
 }
-pointOutsideStr = json.dumps(pointOutside)
 
 targetPoligon = {
 	'type' : 'Polygon',
@@ -33,7 +31,6 @@ targetPoligon = {
 		[ [52.522423, 13.409468], [52.520634, 13.412107], [52.518362, 13.407172], [52.520086, 13.404897] ]
 	]
 }
-targetPoligonStr = json.dumps(targetPoligon)
 
 # TODO wrong poligon, wrong point
 
@@ -220,8 +217,8 @@ class TestLCP(unittest.TestCase):
 
 		dct = { 'm2m:lcp': {
 		  		'rn': lcpRN,
-		  		'los': 2,							# device based
-				'gta': targetPoligonStr	# geoTargetArea
+		  		'los': 2,				# device based
+				'gta': targetPoligon	# geoTargetArea
 		}}
 		r, rsc = CREATE(aeURL, self.originator, T.LCP, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
@@ -264,7 +261,7 @@ class TestLCP(unittest.TestCase):
 				'lit': 2,				# locationInformationType = 2 (geo-fence)
 				'lou': [ 'PT1S' ],		# locationUpdatePeriod = 1s
 				'lon': cntRN,			# containerName
-				'gta': targetPoligonStr,# geoTargetArea
+				'gta': targetPoligon,	# geoTargetArea
 				'gec': 2				# geoEventCategory	= 2 (leaving). Assuming that the initial location is inside the target area
 
 
@@ -277,7 +274,7 @@ class TestLCP(unittest.TestCase):
 
 		# Add a location ContentInstance
 		dct = { 'm2m:cin': { 
-				'con': pointOutsideStr 
+				'con': pointOutside
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
@@ -289,7 +286,7 @@ class TestLCP(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{aeURL}/{cntRN}/la', self.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/con'))
-		self.assertEqual(findXPath(r, 'm2m:cin/con'), '2', r)	# leaving
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), 2, r)	# leaving
 
 
 		_, rsc = DELETE(lcpURL, self.originator)
@@ -314,7 +311,7 @@ class TestLCP(unittest.TestCase):
 		  		'los': 2,				# device based
 				'lit': 2,				# locationInformationType = 2 (geo-fence)
 				'lon': cntRN,			# containerName
-				'gta': targetPoligonStr,# geoTargetArea
+				'gta': targetPoligon,	# geoTargetArea
 				'gec': 2				# geoEventCategory	= 2 (leaving). Assuming that the initial location is inside the target area
 		}}
 		r, rsc = CREATE(aeURL, self.originator, T.LCP, dct)
@@ -325,7 +322,7 @@ class TestLCP(unittest.TestCase):
 
 		# Add a location ContentInstance
 		dct = { 'm2m:cin': { 
-				'con': pointOutsideStr 
+				'con': pointOutside 
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
@@ -335,7 +332,6 @@ class TestLCP(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, r)
 		latest = findXPath(r, 'm2m:cin/con')
 		print(latest)
-
 
 		# Just wait a moment
 		testSleep(2)
