@@ -342,7 +342,7 @@ class Logging:
 
 
 	@staticmethod
-	def _logMessageToLoggerConsole(level:int, msg:str, caller:inspect.Traceback, threadName:str) -> None:
+	def _logMessageToLoggerConsole(level: int, msg: str, caller: inspect.Traceback, threadName: str) -> None:
 		if isinstance(msg, str):
 			
 			# optimize determining the source file's basename
@@ -353,7 +353,7 @@ class Logging:
 			Logging.loggerConsole.log(level, f'{basename}\x04{caller.lineno}\x04{threadName:<10.10}\x04{msg}')
 		else:
 			try:
-				richInspect(msg, private=True, docs=False, dunder=False)
+				richInspect(msg, private=True, docs=False, dunder=False, all=True)
 			except:
 				pass
 			
@@ -637,7 +637,7 @@ class Logging:
 
 	
 	@staticmethod
-	def inspect(obj:Any, immediate:bool = False) -> None:
+	def inspect(obj: Any, immediate: bool=False) -> None:
 		"""	Output a very comprehensive description of an object.
 		
 			Args:
@@ -645,7 +645,7 @@ class Logging:
 				immediate: Immediately log the message, don't put it into the log queue.
 		"""
 		if Logging.logLevel != LogLevel.OFF:
-			Logging._log(Logging.logLevel, obj, immediate = immediate)
+			Logging._log(Logging.logLevel, obj, immediate=immediate)
 	
 
 	@staticmethod

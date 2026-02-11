@@ -324,6 +324,7 @@ def _shutdown() -> None:
 	"""
 	if RC.cseStatus not in [CSEStatus.RUNNING, CSEStatus.SHUTTINGDOWNRESTART]:
 		return
+	L.console('CSE shutting down now', nlb=True)
 	
 	# The status STOPPINGRESTART is used to indicate that the CSE is shutting down to restart.
 	# This is a normal shutdown but in the end the CSE process will return with a special exit code

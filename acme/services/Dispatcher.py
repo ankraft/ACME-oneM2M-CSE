@@ -870,10 +870,10 @@ class Dispatcher(object):
 
 
 	def createLocalResource(self,
-							resource:Resource,
-							parentResource:Resource,
-							originator:Optional[str] = None,
-							request:Optional[CSERequest] = None) -> Resource:
+							resource: Resource,
+							parentResource: Resource,
+							originator: Optional[str]=None,
+							request: Optional[CSERequest]=None) -> Resource:
 		"""	Create a resource locally.
 
 			Args:

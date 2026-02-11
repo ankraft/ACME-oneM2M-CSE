@@ -187,7 +187,6 @@ class Validator(object):
 
 		# L.logDebug(attributePolicies.items())
 		# L.logWarn(pureResDict)
-		
 		# Check that all attributes have been defined
 		for attributeName in pureResDict.keys():
 			if attributeName not in attributePolicies.keys():
