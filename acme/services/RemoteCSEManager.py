@@ -102,7 +102,8 @@ class RemoteCSEManager(object):
 	def restart(self) -> None:
 		"""	Restart the remote service monitor.
 		"""
-		self.registrarConfig.restart()
+		if self.registrarConfig:
+			self.registrarConfig.restart()
 		self.descendantCSR.clear()
 		self.checkConnectionsNow()	# Force the connection monitor to check the connections now
 		L.isDebug and L.logDebug('RemoteManager restarted')
