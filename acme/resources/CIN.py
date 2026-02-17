@@ -95,8 +95,13 @@ class CIN(AnnounceableResource):
 		self.setAttribute('st', st)
 
 
-	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
-		super().willBeDeactivated(originator, parentResource)
+	def willBeDeactivated(self, originator: str, parentResource: Resource, parentDelete: bool=False) -> None:
+		super().willBeDeactivated(originator, parentResource, parentDelete)
+		
+		# If the parent resource is deleted, we do not have to check the disableRetrieval attribute
+		# of the parent container, because the whole parent container will be deleted.
+		if parentDelete:
+			return
 		
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
 		if parentResource.disr:

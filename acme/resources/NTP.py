@@ -82,9 +82,9 @@ class NTP(Resource):
 					raise BAD_REQUEST(f'Only one NTP resource with the same creator and policyLabel is allowed. Existing NTP: {r.ri}')
 
 	
-	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
+	def willBeDeactivated(self, originator:str, parentResource:Resource, parentDelete: bool=False) -> None:
 		# Check that the system default policy is not deleted
 		if self.plbl == _defaultPLBL and self.getOriginator() == RC.cseOriginator:
 			raise BAD_REQUEST(f'The system default NTP resource cannot be deleted.')
-		super().willBeDeactivated(originator, parentResource)
+		super().willBeDeactivated(originator, parentResource, parentDelete)
 	

@@ -183,7 +183,7 @@ class Resource(object):
 		self.setAttribute(Constants.attrRtype, self.typeShortname, overwrite = False) 
 
 
-	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
+	def willBeDeactivated(self, originator:str, parentResource:Resource, parentDelete: bool=False) -> None:
 		""" This method is called before a resource will be deactivated.
 			
 			This method is implemented in some sub-classes, which may throw an
@@ -205,7 +205,7 @@ class Resource(object):
 		for r in CSE.dispatcher.retrieveDirectChildResources(self.ri):
 			if r.isVirtual():
 				continue
-			r.willBeDeactivated(originator, self)
+			r.willBeDeactivated(originator, self, True)
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:

@@ -228,7 +228,7 @@ class Dispatcher(object):
 
 					resource = self.retrieveResource(id, originator, request)
 
-					if not CSE.security.hasAccess(originator, resource, permission, request = request, resultResource = resource):
+					if not CSE.security.hasAccess(originator, resource, permission, request=request, resultResource=resource):
 						raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no {permission} privileges for resource: {resource.ri}'))
 
 					match rcn:

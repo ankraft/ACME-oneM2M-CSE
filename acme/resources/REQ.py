@@ -72,7 +72,7 @@ class REQ(Resource):
 				raise UNABLE_TO_RECALL_REQUEST('Unable to cancel FORWARDED request')
 			case RequestStatus.PARTIALLY_COMPLETED:
 				raise UNABLE_TO_RECALL_REQUEST('Unable to cancel PARTIALLY_COMPLETED request')
-		return super().willBeDeactivated(originator, parentResource)
+		return super().willBeDeactivated(originator, parentResource, parentDelete)
 	
 	
 	@staticmethod

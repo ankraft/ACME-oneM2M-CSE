@@ -118,7 +118,12 @@ class STTE(AnnounceableResource):
 # 6) For any evalCriteria defined in the stateTransitions attribute of the request, the Receiver shall check the value provided for the threshold element of the evalCriteria attribute is within the value space (as defined in [3]) of the data type of the subject element of the evalCriteria attribute. The Receiver shall also check that the value provided for the operator element of the evalCriteria attribute is a valid value based on Table 6.3.4.2.86-1. If either check fails, the receiver shall return a response primitive with a Response Status Code indicating an "INVALID_PROCESS_CONFIGURATION" error.
 
 
-	def willBeDeactivated(self, originator: str, parentResource: Resource) -> None:
+	def willBeDeactivated(self, originator: str, parentResource: Resource, parentDelete: bool=False) -> None:
+
+		# If the parent resource is deleted, we do not have to check the stateActive attribute of
+		# the state resource, because the whole parent resource will be deleted.
+		if parentDelete:
+			return
 		# Check own stateActive attribute
 		if self.sact:
 			raise OPERATION_NOT_ALLOWED('State resource is still active. Deletion not allowed.')
