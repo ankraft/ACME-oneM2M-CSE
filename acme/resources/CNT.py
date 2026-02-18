@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import Optional, cast
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, JSONLIST
+from ..etc.Types import ResourceTypes, JSON, JSONLIST
 from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE
 from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
@@ -21,67 +21,11 @@ from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
-from ..resources import Factory	# attn: circular import
+from ..runtime import Factory	# attn: circular import
 
 
 class CNT(ContainerResource):
 	""" Container resource type. """
-
-	resourceType = ResourceTypes.CNT
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-
-	_allowedChildResourceTypes =  [ ResourceTypes.ACTR,
-									ResourceTypes.CNT, 
-									ResourceTypes.CIN,
-									ResourceTypes.FCNT,
-									ResourceTypes.SMD,
-									ResourceTypes.SUB,
-									ResourceTypes.TS,
-									ResourceTypes.CNT_LA,
-									ResourceTypes.CNT_OL ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'daci': None,
-		'st': None,
-		'cr': None,
-		'loc': None,
-
-		# Resource attributes
-		'mni': None,
-		'mbs': None,
-		'mia': None,
-		'cni': None,
-		'cbs': None,
-		'li': None,
-		'or': None,
-		'disr': None,
-
-		# EXPERIMENTAL
-		'subi': None,
-	}		
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
 
 	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
 		super().__init__(dct, create = create)
@@ -90,47 +34,47 @@ class CNT(ContainerResource):
 		""" Semaphore to prevent recursive validation of children. """
 
 
-	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute('cni', 0, overwrite = False)
-		self.setAttribute('cbs', 0, overwrite = False)
-		self.setAttribute('st', 0, overwrite = False)
+	def initialize(self, pi: str, originator: str) -> None:
+		self.setAttribute('cni', 0, overwrite=False)
+		self.setAttribute('cbs', 0, overwrite=False)
+		self.setAttribute('st', 0, overwrite=False)
 		super().initialize(pi, originator)
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
 		# Set the limits for this container if enabled
 		# TODO optimize this
 		if Configuration.resource_cnt_enableLimits:	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.resource_cnt_mni, overwrite = False)
-			self.setAttribute('mbs', Configuration.resource_cnt_mbs, overwrite = False)
-			self.setAttribute('mia', Configuration.resource_cnt_mia, overwrite = False)
+			self.setAttribute('mni', Configuration.resource_cnt_mni, overwrite=False)
+			self.setAttribute('mbs', Configuration.resource_cnt_mbs, overwrite=False)
+			self.setAttribute('mia', Configuration.resource_cnt_mia, overwrite=False)
 
 		# register latest and oldest virtual resources
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
 		latestResource = Factory.resourceFromDict({ 'et': self.et }, 
-													pi = self.ri, 
-													ty = ResourceTypes.CNT_LA,
-													create = True,
-													originator = originator)		# rn is assigned by resource itself
+													pi=self.ri, 
+													ty=ResourceTypes.CNT_LA,
+													create=True,
+													originator=originator)		# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(latestResource, self)
 		self.setLatestRI(resource.ri)
 
 		# add oldest
 		oldestResource = Factory.resourceFromDict({ 'et': self.et }, 
-													pi = self.ri, 
-													ty = ResourceTypes.CNT_OL,
-													create = True,
-													originator = originator)		# rn is assigned by resource itself
+													pi=self.ri, 
+													ty=ResourceTypes.CNT_OL,
+													create=True,
+													originator=originator)		# rn is assigned by resource itself
 		resource = CSE.dispatcher.createLocalResource(oldestResource, self)
 		self.setOldestRI(resource.ri)
 
 
-	def update(self, dct:JSON = None, 
-					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+	def update(self, dct: JSON=None, 
+					 originator: Optional[str]=None, 
+					 doValidateAttributes: Optional[bool]=True) -> None:
 
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr

@@ -23,7 +23,7 @@ from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..resources.LCP import LCP
 from ..resources.CIN import CIN
-from ..resources import Factory
+from ..runtime import Factory
 from ..resources.Resource import Resource
 
 GeofencePositionType = Literal[GeofenceEventCriteria.Inside, GeofenceEventCriteria.Outside]
@@ -136,21 +136,22 @@ class LocationManager(object):
 		
 		# Create a worker
 		L.isDebug and L.logDebug(f'Starting location policy worker for: {lcpRi} Intervall: {_lou}')
-		self.locationPolicyInfos[lcpRi] = LocationInformation(worker = BackgroundWorkerPool.newWorker(interval = _lou,
-								  									workerCallback = self.locationWorker, 
-																	name = f'lcp_{lcp.ri}', 
-																	startWithDelay = True).start(lcpRi = lcpRi),
-															targetArea = gta,
-															geofencePosition = self.deviceDefaultPosition,
-															eventCriteria = lcp.gec,
-															locationContainerID = loi
-														  )
+		self.locationPolicyInfos[lcpRi] = LocationInformation(	worker=BackgroundWorkerPool.newWorker(interval=_lou,
+								  									workerCallback=self.locationWorker, 
+																	name=f'lcp_{lcp.ri}', 
+																	startWithDelay=True).start(lcpRi=lcpRi
+																),
+																targetArea=gta,
+																geofencePosition=self.deviceDefaultPosition,
+																eventCriteria=lcp.gec,
+																locationContainerID=loi
+														  	)
 		# # Immediately update the location
 		# self.getNewLocation(lcpRi)
 		
 
 	
-	def removeLocationPolicy(self, lcp:LCP) -> None:
+	def removeLocationPolicy(self, lcp: LCP) -> None:
 		"""	Remove a location policy. This will stop the worker and remove the LCP from the internal list.	
 
 			Args:
@@ -166,7 +167,7 @@ class LocationManager(object):
 			del self.locationPolicyInfos[ri]
 
 
-	def updateLocationPolicy(self, lcp:LCP) -> None:
+	def updateLocationPolicy(self, lcp: LCP) -> None:
 		"""	Update a location policy. This will remove the old location policy and add a new one.
 		"""
 		L.isDebug and L.logDebug('Updating location policy')
@@ -174,7 +175,7 @@ class LocationManager(object):
 		self.addLocationPolicy(lcp)
 
 
-	def handleLatestRetrieve(self, latest:CIN, lcpRi:str) -> None:
+	def handleLatestRetrieve(self, latest: CIN, lcpRi: str) -> None:
 		"""	Handle a latest RETRIEVE request for a CNT with a location policy.
 
 			Args:
@@ -197,7 +198,7 @@ class LocationManager(object):
 				return	# No updates needed
 
 		
-		if (locations := self.getNewLocation(lcpRi, content = latest.con)) is None:
+		if (locations := self.getNewLocation(lcpRi, content=latest.con)) is None:
 			return
 
 		# check if the location is inside the polygon and update the location event
@@ -305,15 +306,19 @@ class LocationManager(object):
 		match currentGeofencePosition:
 			case GeofenceEventCriteria.Inside if previousGeofencePosition == GeofenceEventCriteria.Outside and info.eventCriteria == GeofenceEventCriteria.Entering:
 				# Entering
+				L.isDebug and L.logDebug(f'Entering event criteria met for: {lcpRi}')
 				addEventContentInstance(info, GeofenceEventCriteria.Entering)
 			case GeofenceEventCriteria.Outside if previousGeofencePosition == GeofenceEventCriteria.Inside and info.eventCriteria == GeofenceEventCriteria.Leaving:
 				# Leaving
+				L.isDebug and L.logDebug(f'Leaving event criteria met for: {lcpRi}')
 				addEventContentInstance(info, GeofenceEventCriteria.Leaving)
 			case GeofenceEventCriteria.Inside if previousGeofencePosition == GeofenceEventCriteria.Inside and info.eventCriteria == GeofenceEventCriteria.Inside:
 				# Inside
+				L.isDebug and L.logDebug(f'Inside event criteria met for: {lcpRi}')
 				addEventContentInstance(info, GeofenceEventCriteria.Inside)
 			case GeofenceEventCriteria.Outside if previousGeofencePosition == GeofenceEventCriteria.Outside and info.eventCriteria == GeofenceEventCriteria.Outside:
 				# Outside
+				L.isDebug and L.logDebug(f'Outside event criteria met for: {lcpRi}')
 				addEventContentInstance(info, GeofenceEventCriteria.Outside)
 			case _:
 				# No event

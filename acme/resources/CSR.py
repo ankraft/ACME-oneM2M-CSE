@@ -11,11 +11,10 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, CSERequest
+from ..etc.Types import ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
-from ..etc.IDUtils import getIdFromOriginator, originatorToID
+from ..etc.IDUtils import originatorToID
 from ..resources.Resource import Resource
-from ..resources.CSEBase import getCSE
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
@@ -23,91 +22,6 @@ from ..runtime import CSE
 
 class CSR(AnnounceableResource):
 	""" RemoteCSE resource class."""
-
-	resourceType = ResourceTypes.CSR
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	ResourceTypes.ACP, 
-									ResourceTypes.ACPAnnc, 
-									ResourceTypes.ACTR, 
-									ResourceTypes.ACTRAnnc, 
-									ResourceTypes.AEAnnc, 
-									ResourceTypes.CINAnnc,
-									ResourceTypes.CNT,
-									ResourceTypes.CNTAnnc, 
-									ResourceTypes.CRS,
-									ResourceTypes.CSRAnnc,
-									ResourceTypes.FCNT,
-									ResourceTypes.FCNTAnnc,
-									ResourceTypes.FCI,
-									ResourceTypes.GRP, 
-									ResourceTypes.GRPAnnc,
-									ResourceTypes.LCPAnnc,
-									ResourceTypes.MGMTOBJAnnc,
-									ResourceTypes.NODAnnc,
-									ResourceTypes.PCH,
-								    ResourceTypes.PRMR,
-								    ResourceTypes.PRMRAnnc,
-									ResourceTypes.PRP,
-									# ResourceTypes.PRPAnnc,	# TODO
-									ResourceTypes.SMDAnnc,
-									ResourceTypes.SUB,
-									ResourceTypes.TS,
-									ResourceTypes.TSAnnc,
-									ResourceTypes.TSB ]
-	""" The allowed child-resource types. """
-
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'daci': None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'cr': None,
-		'loc': None,
-
-		# Resource attributes
-		'cst': None,
-		'poa': None,
-		'cb': None,
-		'csi': None,
-		'spi': None,
-		'ici': None,
-		'mei': None,
-		'tri': None,
-		'rr': None,
-		'nl': None,
-		'csz': None,
-		'esi': None,
-		'trn': None,
-		'dcse': None,
-		'mtcc': None,
-		'egid': None,
-		'tren': None,
-		'ape': None,
-		'srv': None
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
-	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
-	
 
 	def initialize(self, pi: str, originator: str) -> None:
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen

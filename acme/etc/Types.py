@@ -257,14 +257,13 @@ class ResourceTypes(ACMEIntEnum):
 	MNWKAnnc		= -30031
 	"""	Announced MobileNetwork ManagementObject specialization. """
 
-
 	def typeShortname(self) -> str:
 		"""	Get the resource type name.
 		
 			Return:
 				The resource type name.
 		"""
-		return _ResourceTypesNames.get(self)
+		return _resourceTypesNames.get(self)
 
 
 	def announced(self, mgd:Optional[ResourceTypes]=None) -> ResourceTypes:
@@ -280,13 +279,13 @@ class ResourceTypes(ACMEIntEnum):
 			case ResourceTypes.MGMTOBJ:
 				# Handling for mgmtObjs
 				if mgd is not None:
-					if (r := _ResourceTypesAnnouncedMappings.get(mgd)):
+					if (r := _resourceTypesAnnouncedMappings.get(mgd)):
 						return r
 				else:
-					return _ResourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
+					return _resourceTypesAnnouncedMappings[ResourceTypes.MGMTOBJ] 
 			case _:
 				# Handling for non-mgmtObjs
-				if (r := _ResourceTypesAnnouncedMappings.get(self)):
+				if (r := _resourceTypesAnnouncedMappings.get(self)):
 					return r
 		return ResourceTypes.UNKNOWN
 
@@ -311,7 +310,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				Announceable resource type, or UNKNOWN
 		"""
-		if (r := _ResourceTypesAnnouncedReverseMappings.get(self)):
+		if (r := _resourceTypesAnnouncedReverseMappings.get(self)):
 			return r
 		return ResourceTypes.UNKNOWN
 
@@ -322,7 +321,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				True if the type is an announced resource type.
 		"""
-		return self in _ResourceTypesAnnouncedSetFull
+		return self in _resourceTypesAnnouncedSetFull
 	
 	
 	def isVirtual(self) -> bool:
@@ -331,7 +330,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				True if the type is a virtual resource type.
 		"""
-		return self.value in _ResourceTypesVirtualResourcesSet
+		return self.value in _resourceTypesVirtualResourcesSet
 
 
 	def resourceClass(self) -> Type[Resource]:			# type:ignore [name-defined]
@@ -340,7 +339,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				The Resource class for the ResourceType.
 		"""
-		return _ResourceTypeDetails.get(self).clazz
+		return resourceTypeDetails.get(self).clazz
 
 
 	def resourceFactory(self) -> FactoryCallableT:
@@ -349,7 +348,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				The FactoryCallableT for the ResourceType.
 		"""	
-		return _ResourceTypeDetails.get(self).factory
+		return resourceTypeDetails.get(self).factory
 
 
 	@classmethod
@@ -361,7 +360,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				The resource type.
 		"""
-		return _ResourceNamesTypes.get(typeShortname)
+		return _resourceNamesTypes.get(typeShortname)
 
 
 	@classmethod
@@ -373,7 +372,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				True if the resource type is a virtual resource.
 		"""
-		return ty in _ResourceTypesVirtualResourcesSet
+		return ty in _resourceTypesVirtualResourcesSet
 
 
 	@classmethod
@@ -385,7 +384,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				True if the resource type inidcated by the name is a virtual resource.
 		"""
-		return name in _ResourceTypesVirtualResourcesNames
+		return name in _resourceTypesVirtualResourcesNames
 
 
 	@classmethod
@@ -396,7 +395,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				List of supported `ResourceTypes`.
 		"""
-		return _ResourceTypesSupportedResourceTypes
+		return _resourceTypesSupportedResourceTypes
 
 
 	@classmethod
@@ -408,7 +407,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				*True* if the resource type is an instance resource.
 		"""
-		return ty in _ResourceTypesInstanceResourcesSet
+		return ty in _resourceTypesInstanceResourcesSet
 
 
 	@classmethod
@@ -420,7 +419,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				*True* if the resource type is a container resource.
 		"""
-		return ty in _ResourceTypesContainerResourcesSet
+		return ty in _resourceTypesContainerResourcesSet
 	
 
 	@classmethod
@@ -432,7 +431,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				*True* if the resource type can be created through a request.
 		"""
-		return ty in _ResourceTypesIsRequestCreatable
+		return ty in _resourceTypesIsRequestCreatable
 
 
 	@classmethod
@@ -445,7 +444,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				*True* if the resource type represents a notification target.
 		"""
-		return ty in _ResourceTypesIsNotificationEntity
+		return ty in _resourceTypesIsNotificationEntity
 
 
 	@classmethod
@@ -458,7 +457,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				*True* if the resource type is a *latest* or *oldest* virtual resource.
 		"""
-		return ty in _ResourceTypesLatestOldest
+		return ty in _resourceTypesLatestOldest
 		
 
 	@classmethod
@@ -470,263 +469,109 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				The full name of the resource type.
 		"""
-		return _ResourceTypeDetails.get(ResourceTypes(ty)).fullName
+		return resourceTypeDetails.get(ResourceTypes(ty)).fullName
 	
 	
 	def __str__(self) -> str:
 		return str(int(self.value))
 	
-	
+
+# Resource Helper Structures
+
+_resourceTypesAnnouncedMappings:dict[ResourceTypes, ResourceTypes] = {}
+"""	Mapping between announceable and announced resources. """
+
+_resourceTypesAnnouncedReverseMappings:dict[ResourceTypes, ResourceTypes] = {}
+"""	Mapping between announced and announceable resources. """
+
+_resourceTypesAnnouncedSetFull:list[ResourceTypes] = []
+""" Mapping of resources to their announced counterparts. """
+
+_resourceTypesAnnouncedResourceTypes:list[ResourceTypes] = []
+""" Sorted list of announced resources without MgmtObj specializations. """
+
+_resourceTypesSupportedResourceTypes:list[ResourceTypes] = []
+""" Sorted list of supported resource types (without MgmtObj spezializations and virtual resources). """
+
+_resourceTypesVirtualResourcesSet:list[ResourceTypes] = []
+""" List of virtual resources. """
+
+_resourceTypesInstanceResourcesSet:list[ResourceTypes] = []
+"""	List of instance resources. """
+
+_resourceTypesContainerResourcesSet:list[ResourceTypes] = []
+"""	List of container resources. """
+
+_resourceTypesVirtualResourcesNames:list[str] = []
+"""	List of unique virtual resource names. """
+
+_resourceTypesNames:dict[ResourceTypes, str] = {}
+""" Mapping between oneM2M resource types to type names. """
+
+_resourceNamesTypes:dict[str, ResourceTypes] = {}
+""" Mapping between oneM2M resource names to type names. """
+
+_resourceTypesIsRequestCreatable:list[ResourceTypes] = []
+"""	List of resource types that can be created by a request. """
+
+_resourceTypesIsNotificationEntity:list[ResourceTypes] = []
+"""	List of resource types that represent an entity that can be a notification target. """
+
+_resourceTypesLatestOldest:list[ResourceTypes] = []
+"""	List of resource typs that represent latest or oldest virtual resources. """
+
+_resourceTypesSpecializationBase:list[ResourceTypes] = []
+"""	List of resource types that are specialization base resources. """
 
 @dataclass()
 class ResourceDescription():
 	"""	Describes a resource type.
 	"""
-	typeName:str = None
+	type: ResourceTypes = ResourceTypes.UNKNOWN
+	""" The resource's oneM2M Type """
+	typeName: str = None
 	"""	The resource type name. """
-	announcedType:ResourceTypes = None
+	announcedType: ResourceTypes = None
 	"""	The announced resource type. """
-	isAnnouncedResource:bool= False
+	isAnnouncedResource: bool = False
 	"""	Whether the resource type is an announced resource type. """
-	isMgmtSpecialization:bool = False
+	isMgmtSpecialization: bool = False
 	"""	Whether the resource type is a mgmtObj specialization. """
-	isInstanceResource:bool = False
+	isInstanceResource: bool = False
 	"""	Whether the resource type is an instance resource. """
-	isContainer:bool = False
+	isContainer: bool = False
 	"""	Whether the resource type is a container. """
-	isInternalType:bool = False
+	isInternalType: bool = False
 	"""	Whether the resource type is an internal type. """
-	virtualResourceName:str = None	# If this is set then the resource is a virtual resouce
+	virtualResourceName: str = None	# If this is set then the resource is a virtual resouce
 	"""	The name of a virtual resource. """
-	clazz:Type[Resource] = None 			# type:ignore [name-defined]
+	clazz: Type[Resource] = None 			# type:ignore [name-defined]
 	"""	The resource class. """
-	factory:FactoryCallableT = None
+	factory: FactoryCallableT = None
 	"""	The resource factory callable to create this resource. """
-	isRequestCreatable:bool = True	# Can be created by a request
+	isRequestCreatable: bool = True	# Can be created by a request
 	"""	Whether the resource type can be created by a request. """
-	isNotificationEntity:bool = False	# Is a direct notification target
+	isRequestUpdatable: bool = True	# Can be updated by a request
+	"""	Whether the resource type can be updated by a request. """
+	isRequestDeletable: bool = True	# Can be deleted by a request
+	"""	Whether the resource type can be deleted by a request. """
+	isNotificationEntity: bool = False	# Is a direct notification target
 	"""	Whether the resource type is a direct notification target. """
-	fullName:str = ''				# Full name of the resource type
+	isSpecializationBaseResource: bool = False
+	""" Whether the resource type is a specialization resource, i.e. a mgmtObj or Fcnt specialization or an announced resource. """
+	fullName: str = ''				# Full name of the resource type
 	"""	The full name of the resource type. """
+	inheritACP: bool = False
+	"""	Whether the resource type inherits the ACP from the parent resource, or defines its own. """
+	mgmtType: Optional[int] = None
+	"""	The mgmtType for mgmtObj specializations. """
+	attributes: List[str] = field(default_factory=list)
+	"""	List of attributes for this resource type. """
+	childResourceTypes: List[ResourceTypes] = field(default_factory=list)
+	"""	List of allowed child resource types. """
 	
-_ResourceTypeDetails = {
-	
-	# Normal resource types
-	ResourceTypes.ACP 			: ResourceDescription(typeName = 'm2m:acp', announcedType = ResourceTypes.ACPAnnc, fullName = 'AccessControlPolicy'),
-	ResourceTypes.ACPAnnc 		: ResourceDescription(typeName = 'm2m:acpA', isAnnouncedResource = True, fullName = 'AccessControlPolicy Announced'),
-	ResourceTypes.ACTR 			: ResourceDescription(typeName = 'm2m:actr', announcedType = ResourceTypes.ACTRAnnc, fullName = 'Action'),
-	ResourceTypes.ACTRAnnc		: ResourceDescription(typeName = 'm2m:actrA', isAnnouncedResource = True, fullName = 'Action Announced'),
-	ResourceTypes.AE 			: ResourceDescription(typeName = 'm2m:ae', announcedType = ResourceTypes.AEAnnc, isNotificationEntity = True, fullName = 'ApplicationEntity'),
-	ResourceTypes.AEAnnc		: ResourceDescription(typeName = 'm2m:aeA', isAnnouncedResource = True, fullName = 'ApplicationEntity Announced'),
-	ResourceTypes.CIN 			: ResourceDescription(typeName = 'm2m:cin', announcedType = ResourceTypes.CINAnnc, isInstanceResource = True, fullName='ContentInstance'),
-	ResourceTypes.CINAnnc 		: ResourceDescription(typeName = 'm2m:cinA', isAnnouncedResource = True,  isInstanceResource = True, fullName='ContentInstance Announced'),
-	ResourceTypes.CNT			: ResourceDescription(typeName = 'm2m:cnt', announcedType = ResourceTypes.CNTAnnc, isContainer = True, fullName='Container'),
-	ResourceTypes.CNTAnnc 		: ResourceDescription(typeName = 'm2m:cntA', isAnnouncedResource = True, isContainer = True, fullName='Container Announced'),
-	ResourceTypes.CNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
-	ResourceTypes.CNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),
-	ResourceTypes.CRS			: ResourceDescription(typeName = 'm2m:crs', fullName='CrossResourceSubscription'),
-	ResourceTypes.CSEBase 		: ResourceDescription(typeName = 'm2m:cb', announcedType = ResourceTypes.CSEBaseAnnc, isRequestCreatable = False, isNotificationEntity = True, fullName='CSEBase'),
-	ResourceTypes.CSEBaseAnnc 	: ResourceDescription(typeName = 'm2m:cbA', isAnnouncedResource = True, fullName='CSEBase Announced'),
-	ResourceTypes.CSR			: ResourceDescription(typeName = 'm2m:csr', announcedType = ResourceTypes.CSRAnnc, isNotificationEntity = True, fullName='RemoteCSE'),
-	ResourceTypes.CSRAnnc 		: ResourceDescription(typeName = 'm2m:csrA', isAnnouncedResource = True, fullName='RemoteCSE Announced'),
-	ResourceTypes.DAC			: ResourceDescription(typeName = 'm2m:dac', fullName='DynamicAuthorizationConsultation'),
-	ResourceTypes.DEPR 			: ResourceDescription(typeName = 'm2m:depr', announcedType=ResourceTypes.DEPRAnnc, fullName='Dependency'),
-	ResourceTypes.DEPRAnnc		: ResourceDescription(typeName = 'm2m:deprA', isAnnouncedResource = True, fullName='Dependency Announced'),
-	ResourceTypes.FCI			: ResourceDescription(typeName = 'm2m:fci', isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance'),					# not an official type name
-	ResourceTypes.FCIAnnc		: ResourceDescription(typeName = 'm2m:fciA', isAnnouncedResource = True, isInstanceResource = True, isRequestCreatable = False, fullName='FlexContainer Instance Announced'),	# not an official type name
-	ResourceTypes.FCNT			: ResourceDescription(typeName = 'm2m:fcnt', announcedType = ResourceTypes.FCNTAnnc, isContainer = True, fullName='FlexContainer'), 	# not an official type name
-	ResourceTypes.FCNTAnnc 		: ResourceDescription(typeName = 'm2m:fcntA', isAnnouncedResource = True, isContainer = True, fullName = 'FlexContainer Announced'),				# not an official type name
-	ResourceTypes.FCNT_LA		: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),	# not an official type name
-	ResourceTypes.FCNT_OL		: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),	# not an official type name
-	ResourceTypes.GRP			: ResourceDescription(typeName = 'm2m:grp', announcedType = ResourceTypes.GRPAnnc, fullName='Group'),
-	ResourceTypes.GRPAnnc 		: ResourceDescription(typeName = 'm2m:grpA', isAnnouncedResource = True, fullName='Group Announced'),
-	ResourceTypes.GRP_FOPT		: ResourceDescription(typeName = 'm2m:fopt', virtualResourceName = 'fopt', isRequestCreatable = False, fullName='Fanout Point'),	# not an official type name
-	ResourceTypes.LCP			: ResourceDescription(typeName = 'm2m:lcp', announcedType = ResourceTypes.LCPAnnc, fullName='LocationPolicy'),
-	ResourceTypes.LCPAnnc		: ResourceDescription(typeName = 'm2m:lcpA', isAnnouncedResource = True, fullName='LocationPolicy Announced'),
-	ResourceTypes.MGMTOBJ		: ResourceDescription(typeName = 'm2m:mgo', announcedType = ResourceTypes.MGMTOBJAnnc, fullName = 'ManagementObject'),	# not an official type name
-	ResourceTypes.MGMTOBJAnnc 	: ResourceDescription(typeName = 'm2m:mgoA', isAnnouncedResource = True, fullName = 'ManagementObject Announced'),				# not an official type name
-	ResourceTypes.NOD			: ResourceDescription(typeName = 'm2m:nod', announcedType = ResourceTypes.NODAnnc, fullName='Node'),
-	ResourceTypes.NODAnnc	 	: ResourceDescription(typeName = 'm2m:nodA', isAnnouncedResource = True, fullName='Node Announced'),
-	ResourceTypes.NTP			: ResourceDescription(typeName = 'm2m:ntp', fullName='NotificationTargetPolicy'),
-	ResourceTypes.NTPR			: ResourceDescription(typeName = 'm2m:ntpr', fullName='notificationTargetMgmtPolicyRef'),
-	ResourceTypes.NTSR			: ResourceDescription(typeName = 'm2m:ntsr', virtualResourceName = 'ntsr', isRequestCreatable = False, fullName='NotificationTargetSelfReference'),
-	ResourceTypes.PCH			: ResourceDescription(typeName = 'm2m:pch', fullName='PollingChannel'),
-	ResourceTypes.PCH_PCU		: ResourceDescription(typeName = 'm2m:pcu', virtualResourceName = 'pcu', isRequestCreatable = False, fullName='PollingChannel URI'),
-	ResourceTypes.PDR			: ResourceDescription(typeName = 'm2m:pdr', fullName='PolicyDeletionRules'),
-	ResourceTypes.PRMR			: ResourceDescription(typeName = 'm2m:prmr', announcedType = ResourceTypes.PRMRAnnc, fullName='ProcessManagement'),
-	ResourceTypes.PRMRAnnc		: ResourceDescription(typeName = 'm2m:prmrA', isAnnouncedResource = True, fullName='ProcessManagement Announced'),
-	ResourceTypes.PRP			: ResourceDescription(typeName = 'm2m:prp', announcedType = ResourceTypes.PRPAnnc, fullName='PrimitiveProfile'),
-	ResourceTypes.PRPAnnc		: ResourceDescription(typeName = 'm2m:prpA', isAnnouncedResource = True, fullName='PrimitiveProfile Announced'),
-	ResourceTypes.REQ			: ResourceDescription(typeName = 'm2m:req', isRequestCreatable = False, fullName='Request'),
-	ResourceTypes.SCH			: ResourceDescription(typeName = 'm2m:sch', announcedType = ResourceTypes.SCHAnnc, fullName='Schedule'),
-	ResourceTypes.SCHAnnc		: ResourceDescription(typeName = 'm2m:schA', isAnnouncedResource = True, fullName='Schedule Announced'),
-	ResourceTypes.SMD			: ResourceDescription(typeName = 'm2m:smd', announcedType = ResourceTypes.SMDAnnc, fullName='SemanticDescriptor'),
-	ResourceTypes.SMDAnnc		: ResourceDescription(typeName = 'm2m:smdA', isAnnouncedResource = True, fullName='SemanticDescriptor Announced'),
-	ResourceTypes.STTE			: ResourceDescription(typeName = 'm2m:stte', announcedType = ResourceTypes.STTEAnnc, fullName='State'),
-	ResourceTypes.STTEAnnc		: ResourceDescription(typeName = 'm2m:stteA', isAnnouncedResource = True, fullName='State Announced'),
-	ResourceTypes.SUB			: ResourceDescription(typeName = 'm2m:sub', fullName='Subscription'),
-	ResourceTypes.TGR 			: ResourceDescription(typeName = 'm2m:tgr', fullName='TriggerRequest'),
-	ResourceTypes.TS 			: ResourceDescription(typeName = 'm2m:ts', announcedType = ResourceTypes.TSAnnc, isContainer = True, fullName='TimeSeries'),
-	ResourceTypes.TSAnnc		: ResourceDescription(typeName = 'm2m:tsA', isAnnouncedResource = True, isContainer = True, fullName='TimeSeries Announced'),
-	ResourceTypes.TS_LA			: ResourceDescription(typeName = 'm2m:la', virtualResourceName = 'la', isRequestCreatable = False, fullName='Latest'),
-	ResourceTypes.TS_OL			: ResourceDescription(typeName = 'm2m:ol', virtualResourceName = 'ol', isRequestCreatable = False, fullName='Oldest'),
-	ResourceTypes.TSI 			: ResourceDescription(typeName = 'm2m:tsi', announcedType = ResourceTypes.TSIAnnc, isInstanceResource = True, fullName='TimeSeriesInstance'),
-	ResourceTypes.TSIAnnc		: ResourceDescription(typeName = 'm2m:tsiA', isAnnouncedResource = True,  isInstanceResource = True, fullName='TimeSeriesInstance Announced'),
-	ResourceTypes.TSB 			: ResourceDescription(typeName = 'm2m:tsb', announcedType = ResourceTypes.TSBAnnc, fullName='TimeSyncBeacon'),
-	ResourceTypes.TSBAnnc 		: ResourceDescription(typeName = 'm2m:tsbA', isAnnouncedResource = True, fullName='TimeSyncBeacon Announced'),
-
-	# ManagementObj Specializations
-	ResourceTypes.ANDI			: ResourceDescription(typeName = 'm2m:andi', announcedType = ResourceTypes.ANDIAnnc, isMgmtSpecialization = True, fullName='AreaNetworkDeviceInfo'),
-	ResourceTypes.ANDIAnnc		: ResourceDescription(typeName = 'm2m:andiA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='AreaNetworkDeviceInfo Announced'),
-	ResourceTypes.ANI			: ResourceDescription(typeName = 'm2m:ani', announcedType = ResourceTypes.ANIAnnc, isMgmtSpecialization = True, fullName='AreaNetworkInfo'),
-	ResourceTypes.ANIAnnc		: ResourceDescription(typeName = 'm2m:aniA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='AreaNetworkInfo Announced'),
-	ResourceTypes.BAT			: ResourceDescription(typeName = 'm2m:bat', announcedType = ResourceTypes.BATAnnc, isMgmtSpecialization = True, fullName='Battery'),
-	ResourceTypes.BATAnnc		: ResourceDescription(typeName = 'm2m:batA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Battery Announced'),
-	ResourceTypes.DATC			: ResourceDescription(typeName = 'dcfg:datc', announcedType = ResourceTypes.DATCAnnc, isMgmtSpecialization = True, fullName='DataCollection'),
-	ResourceTypes.DATCAnnc		: ResourceDescription(typeName = 'dcfg:datcA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='DataCollection Announced'),
-	ResourceTypes.DVC			: ResourceDescription(typeName = 'm2m:dvc', announcedType = ResourceTypes.DVCAnnc, isMgmtSpecialization = True, fullName='DeviceCapability'),
-	ResourceTypes.DVCAnnc		: ResourceDescription(typeName = 'm2m:dvcA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='DeviceCapability Announced'),
-	ResourceTypes.DVI			: ResourceDescription(typeName = 'm2m:dvi', announcedType = ResourceTypes.DVIAnnc, isMgmtSpecialization = True, fullName='DeviceInfo'),
-	ResourceTypes.DVIAnnc		: ResourceDescription(typeName = 'm2m:dviA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='DeviceInfo Announced'),
-	ResourceTypes.EVL			: ResourceDescription(typeName = 'm2m:evl', announcedType = ResourceTypes.EVLAnnc, isMgmtSpecialization = True, fullName='EventLog'),
-	ResourceTypes.EVLAnnc		: ResourceDescription(typeName = 'm2m:evlA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='EventLog Announced'),
-	ResourceTypes.FWR			: ResourceDescription(typeName = 'm2m:fwr', announcedType = ResourceTypes.FWRAnnc, isMgmtSpecialization = True, fullName='Firmware'),
-	ResourceTypes.FWRAnnc		: ResourceDescription(typeName = 'm2m:fwrA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Firmware Announced'),
-	ResourceTypes.MEM			: ResourceDescription(typeName = 'm2m:mem', announcedType = ResourceTypes.MEMAnnc, isMgmtSpecialization = True, fullName='Memory'),
-	ResourceTypes.MEMAnnc		: ResourceDescription(typeName = 'm2m:memA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Memory Announced'),
-	ResourceTypes.NYCFC			: ResourceDescription(typeName = 'm2m:nycfc', announcedType = ResourceTypes.NYCFCAnnc, isMgmtSpecialization = True, fullName='myCertFileCred'),
-	ResourceTypes.NYCFCAnnc		: ResourceDescription(typeName = 'm2m:nycfctA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='myCertFileCred Announced'),
-	ResourceTypes.RBO			: ResourceDescription(typeName = 'm2m:rbo', announcedType = ResourceTypes.RBOAnnc, isMgmtSpecialization = True, fullName='Reboot'),
-	ResourceTypes.RBOAnnc		: ResourceDescription(typeName = 'm2m:rboA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Reboot Announced'),
-	ResourceTypes.SWR			: ResourceDescription(typeName = 'm2m:swr', announcedType = ResourceTypes.SWRAnnc, isMgmtSpecialization = True, fullName='Software'),
-	ResourceTypes.SWRAnnc		: ResourceDescription(typeName = 'm2m:swrA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Software Announced'),
-	ResourceTypes.WIFIC			: ResourceDescription(typeName = 'dcfg:wific', announcedType = ResourceTypes.WIFICAnnc, isMgmtSpecialization = True, fullName='WiFi Client'),
-	ResourceTypes.WIFICAnnc		: ResourceDescription(typeName = 'dcfg:wificA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='WiFi Client Announced'),
-	ResourceTypes.CRDS			: ResourceDescription(typeName = 'dcfg:crds', announcedType = ResourceTypes.CRDSAnnc, isMgmtSpecialization = True, fullName='Credentials'),
-	ResourceTypes.CRDSAnnc		: ResourceDescription(typeName = 'dcfg:crdsA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Credentials Announced'),
-	ResourceTypes.SIM			: ResourceDescription(typeName = 'dcfg:sim', announcedType = ResourceTypes.SIMAnnc, isMgmtSpecialization = True, fullName='SIM'),
-	ResourceTypes.SIMAnnc		: ResourceDescription(typeName = 'dcfg:simA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='SIM Announced'),
-	ResourceTypes.MNWK			: ResourceDescription(typeName = 'dcfg:mnwk', announcedType = ResourceTypes.MNWKAnnc, isMgmtSpecialization = True, fullName='Mobile Network'),
-	ResourceTypes.MNWKAnnc		: ResourceDescription(typeName = 'dcfg:mnwkA', isAnnouncedResource = True, isMgmtSpecialization = True, fullName='Mobile Network Announced'),
-
-	# Internal resource types
-	ResourceTypes.UNKNOWN	: ResourceDescription(typeName = 'unknown', isInternalType = True),
-	ResourceTypes.ALL		: ResourceDescription(typeName = 'all', isInternalType = True),
-	ResourceTypes.MIXED		: ResourceDescription(typeName = 'm2m:mixed', isInternalType = True),
-	ResourceTypes.REQRESP	: ResourceDescription(typeName = 'reqresp', isInternalType = True),
-	ResourceTypes.COMPLEX	: ResourceDescription(typeName = 'complex', isInternalType = True),
-	ResourceTypes.REQUEST	: ResourceDescription(typeName = 'requestPrimitive', isInternalType = True),
-	ResourceTypes.RESPONSE	: ResourceDescription(typeName = 'responsePrimitive', isInternalType = True),
-
-}
-"""	Mapping between resource types and their description. """
-
-
-def addResourceFactoryCallback(ty:ResourceTypes, clazz:Type[Resource], factory:FactoryCallableT) -> None: 	# type:ignore [name-defined]
-	"""	Add a class and a factory to create an instande for a resource type.
-
-		Args:
-			ty: Resource type.
-			clazz: A resource class.
-			factory: A callable to create an instance for the resource type.
-	"""
-	if ty not in _ResourceTypeDetails:
-		raise RuntimeError(f'Unknown resource type: {ty}')
-	if not clazz:
-		raise RuntimeError('undefined class')
-	if not factory:
-		raise RuntimeError('undefined factory callback')
-	_ResourceTypeDetails[ty].clazz = clazz
-	_ResourceTypeDetails[ty].factory = factory
-
-
-# Fill  resource helper structures
-
-_ResourceTypesAnnouncedMappings = { t : d.announcedType
-								   for t, d in _ResourceTypeDetails.items()
-								   if d.announcedType }
-"""	Mapping between announceable and announced resources. """
-
-
-_ResourceTypesAnnouncedReverseMappings = { d.announcedType : t
-										   for t, d in _ResourceTypeDetails.items()
-										   if d.announcedType }
-"""	Mapping between announced and announceable resources. """
-
-
-_ResourceTypesAnnouncedSetFull = [ t
-								   for t, d in _ResourceTypeDetails.items()
-								   if d.isAnnouncedResource ]
-""" Mapping of resources to their announced counterparts. """
-
-
-_ResourceTypesAnnouncedResourceTypes = [ d.announcedType
-										 for t, d in _ResourceTypeDetails.items()
-										 if d.announcedType and not d.isMgmtSpecialization and t != ResourceTypes.CSEBase]
-""" Sorted list of announced resources without MgmtObj specializations. """
-_ResourceTypesAnnouncedResourceTypes.sort()
-
-
-_ResourceTypesSupportedResourceTypes:list[ResourceTypes] = [ t
-										 for t, d in _ResourceTypeDetails.items()
-										 if not d.isMgmtSpecialization and not d.virtualResourceName and not d.isInternalType and t != ResourceTypes.CSEBaseAnnc]
-""" Sorted list of supported resource types (without MgmtObj spezializations and virtual resources). """
-_ResourceTypesSupportedResourceTypes.sort()
-
-
-_ResourceTypesVirtualResourcesSet = [ t
-									  for t, d in _ResourceTypeDetails.items()
-									  if d.virtualResourceName ]
-""" List of virtual resources. """
-
-
-_ResourceTypesInstanceResourcesSet = [ t
-									   for t, d in _ResourceTypeDetails.items()
-									   if d.isInstanceResource ]
-"""	List of instance resources. """
-
-
-_ResourceTypesContainerResourcesSet = [ t
-									   for t, d in _ResourceTypeDetails.items()
-									   if d.isContainer ]
-"""	List of container resources. """
-
-
-_ResourceTypesVirtualResourcesNames = [ d.virtualResourceName
-										for d in _ResourceTypeDetails.values()
-										if d.virtualResourceName ]
-"""	List of virtual resource names. """
-_ResourceTypesVirtualResourcesNames = list(set(_ResourceTypesVirtualResourcesNames))	# unique names
-
-
-_ResourceTypesNames = { t : d.typeName
-						for t, d in _ResourceTypeDetails.items()
-						if not d.isInternalType }
-""" Mapping between oneM2M resource types to type names. """
-
-_ResourceNamesTypes = { d.typeName : t
-						for t, d in _ResourceTypeDetails.items()
-						if not d.isInternalType }
-""" Mapping between oneM2M resource names to type names. """
-
-_ResourceTypesIsRequestCreatable = [ t
-									 for t, d in _ResourceTypeDetails.items()
-									 if d.isRequestCreatable ]
-"""	List of resource types that can be created by a request. """
-
-
-_ResourceTypesIsNotificationEntity = [ t
-									   for t, d in _ResourceTypeDetails.items()
-									   if d.isNotificationEntity ]
-"""	List of resource types that represent an entity that can be a notification target. """
-
-
-_ResourceTypesLatestOldest = [ t
-							   for t, d in _ResourceTypeDetails.items()
-							   if d.typeName in [ 'm2m:la', 'm2m:ol' ] ]
-"""	List of resource typs that represent latest or oldest virtual resources. """
-
-
+resourceTypeDetails:Dict[ResourceTypes, ResourceDescription] = {}
+""" Mapping between resource types and their descriptions. """
 
 class BasicType(ACMEIntEnum):
 	""" Basic resource types.
@@ -1872,8 +1717,18 @@ class EventEvaluationMode(ACMEIntEnum):
 #	MgmtObj related
 #
 
+
+class BatteryStatus(ACMEIntEnum):
+	NORMAL = 1
+	CHARGING =  2
+	CHARGING_COMPLETE = 3
+	DAMAGED = 4
+	LOW_BATTERY = 5
+	NOT_INSTALLED = 6
+	UNKNOWN = 7
+
 class Status(ACMEIntEnum):
-	"""	Status of Firmware Update and Software Update.
+	"""	Status of Firmware Update and Software Update. This represents the "m2m:status" data type.
 	"""
 	UNINITIALIZED = 0
 	"""	Uninitialized. """
@@ -2812,7 +2667,7 @@ class CSERegistrar:
 	"""	Attributes to exclude from CSR. """
 
 	resourceName:str = None
-	"""	The resource name of the registrar. """
+	"""	The resource name of the regiftrar. """
 
 	root:str = None
 	"""	The root of the registrar. """

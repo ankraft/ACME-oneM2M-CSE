@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ...etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ...etc.Types import JSON
 from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ...helpers.TextTools import findXPath
 from ..MgmtObj import MgmtObj
@@ -20,54 +20,9 @@ from ...runtime.Logging import Logging as L
 
 class DATC(MgmtObj):
 
-	resourceType = ResourceTypes.MGMTOBJ
-	""" The resource type """
-
-	mgmtType = ResourceTypes.DATC
-	""" The management object type """
-
-	typeShortname = mgmtType.typeShortname()
-	"""	The resource's domain and type name. """
-
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'daci': None,
-		
-		# MgmtObj attributes
-		'mgd': None,
-		'obis': None,
-		'obps': None,
-		'dc': None,
-		'mgs': None,
-		'cmlk': None,
-
-		# Resource attributes
-		'cntp': None,
-		'rpsc': None,
-		'mesc': None,
-		'meil': None,
-		'cmlk': None,
-	}
-
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator: Optional[str]=None, 
+					   dct: Optional[JSON]=None, 
+					   parentResource: Optional[Resource]=None) -> None:
 		L.isDebug and L.logDebug(f'Validating semanticDescriptor: {self.ri}')
 		super().validate(originator, dct, parentResource)
 

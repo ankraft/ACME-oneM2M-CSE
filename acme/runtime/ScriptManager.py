@@ -41,7 +41,7 @@ from ..helpers.interpreter.PContext import PContext
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
 from ..helpers.NetworkTools import pingTCPServer, isValidPort
-from ..resources.Factory import resourceFromDict
+from .Factory import resourceFromDict
 from ..resources.Resource import Resource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
@@ -724,15 +724,14 @@ class ACMEPContext(PContext):
 		# resource object
 		pcontext, _resource = valueFromArgument(pcontext, symbol, 2, SType.tJson)
 		_resource = resourceFromDict(cast(dict, _resource),
-							   		 create = True, 
-									 isImported = True,
-									 originator = _originator)
+							   		 create=True, 
+									 originator=_originator)
 
 		# Get a potential parent resource
 		parentResource:Any = None
 		if _resource.pi:
 			try:
-				parentResource = CSE.dispatcher.retrieveLocalResource(ri = _resource.pi)
+				parentResource = CSE.dispatcher.retrieveLocalResource(ri=_resource.pi)
 			except ResponseException as e:
 				raise PRuntimeError(self.setError(PError.runtime, e.dbg))
 

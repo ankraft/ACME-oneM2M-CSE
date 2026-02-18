@@ -30,7 +30,7 @@ from ..etc.RequestUtils import curlFromRequest
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import removeCommentsFromJSON, flattenJSON, parseJSONDecodingError
 from ..resources.Resource import Resource
-from ..resources.Factory import resourceFromDict
+from ..runtime.Factory import resourceFromDict
 from ..runtime.Configuration import Configuration
 
 

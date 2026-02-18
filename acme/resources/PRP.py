@@ -27,52 +27,6 @@ notAllowedAttributes = [ 'op', 'to', 'fr', 'rqi', 'rvi', 'rsc', 'fc', 'ot', 'gid
 
 class PRP(AnnounceableResource):
 
-	resourceType = ResourceTypes.PRP
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	ResourceTypes.SUB
-								 ]
-	""" The allowed child-resource types. """
-
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'acpi': None,
-		'daci': None,
-		'cstn': None,
-		'cr': None,
-
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'idl': None,
-		'rtys': None,
-		'ops': None,
-		'rsds': None,
-		'rvs': None,
-		'adds': None,
-		'dels': None,
-		'appl': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 

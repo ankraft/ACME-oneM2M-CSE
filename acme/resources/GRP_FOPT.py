@@ -24,31 +24,6 @@ from ..resources.Resource import Resource
 class GRP_FOPT(VirtualResource):
 	""" Group fanOutPoint (GRP_FOPT) resource type. This is a virtual resource. """
 
-	resourceType = ResourceTypes.GRP_FOPT
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	resourceName = 'fopt'
-	""" Possibility for virtual sub-classes to provide a specific resource name. """
-
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
-	""" The allowed child-resource types. None, this is a virtual resource. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# None for virtual resources
-	}
-	""" Attributes and `AttributePolicy` for this resource type. """
-
-
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
 									id:Optional[str] = None, 
 									originator:Optional[str] = None) -> Result:

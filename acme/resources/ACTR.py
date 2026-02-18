@@ -12,68 +12,18 @@
 from __future__ import annotations
 from typing import Optional, Tuple
 
-from configparser import ConfigParser
-
-from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator, Operation
+from ..etc.Types import  EvalMode, JSON, Permission, Operation
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class ACTR(AnnounceableResource):
 	""" Action (ACTR) resource type. """
-
-	resourceType = ResourceTypes.ACTR
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
-													   ResourceTypes.SUB
-													 ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'lbl': None,
-		'acpi':None,
-		'et': None,
-		'daci': None,
-		'cstn': None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'cr': None,
-
-		# Resource attributes
-		'apy': None,
-		'sri': None,
-		'evc': None,
-		'evm': None,
-		'ecp': None,
-		'dep': None,
-		'orc': None,
-		'apv': None,
-		'ipu': None,
-		'air': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)

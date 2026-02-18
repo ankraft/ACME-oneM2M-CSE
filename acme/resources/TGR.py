@@ -27,39 +27,39 @@ from ..etc.Constants import RuntimeConstants as RC
 class TGR(AnnounceableResource):
 	""" TriggerRequest (TGR) resource type. """
 
-	resourceType = ResourceTypes.TGR
-	""" The resource type """
+	# resourceType = ResourceTypes.TGR
+	# """ The resource type """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
+	# typeShortname = resourceType.typeShortname()
+	# """	The resource's domain and type name. """
 
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB
-													 ]
-	""" The allowed child-resource types. """
+	# # Specify the allowed child-resource types
+	# _allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB
+	# 												 ]
+	# """ The allowed child-resource types. """
 
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'lbl': None,
-		'acpi':None,
-		'et': None,
-		'daci': None,
-		'cstn': None,
+	# # Attributes and Attribute policies for this Resource Class
+	# # Assigned during startup in the Importer
+	# _attributes:AttributePolicyDict = {		
+	# 	# Common and universal attributes
+	# 	'rn': None,
+	# 	'ty': None,
+	# 	'ri': None,
+	# 	'pi': None,
+	# 	'ct': None,
+	# 	'lt': None,
+	# 	'lbl': None,
+	# 	'acpi':None,
+	# 	'et': None,
+	# 	'daci': None,
+	# 	'cstn': None,
 
-		# Resource attributes
-		'mei': None,
-		'tri': None,
-		'tpe': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
+	# 	# Resource attributes
+	# 	'mei': None,
+	# 	'tri': None,
+	# 	'tpe': None,
+	# }
+	# """	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

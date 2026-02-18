@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState
+from ..etc.Types import JSON, ProcessState
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.Resource import Resource
@@ -22,45 +22,6 @@ from ..runtime import CSE
 # TODO add to statistics, also in console
 
 class STTE(AnnounceableResource):
-
-	resourceType = ResourceTypes.STTE
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.ACTR,
-								   ResourceTypes.SUB
-								 ]
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'acpi': None,
-		'lbl': None,
-		'cr': None,
-		'cstn': None,
-		'daci': None,
-
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'sact': None,
-		'stac': None,
-		'sttrs': None,
-	}
-	
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -132,4 +93,4 @@ class STTE(AnnounceableResource):
 		if parentResource.prst != ProcessState.Disabled:
 			raise OPERATION_NOT_ALLOWED('Parent <processManagement> resource must be in state "Disabled"')
 	
-		super().willBeDeactivated(originator, parentResource)
+		super().willBeDeactivated(originator, parentResource, parentDelete)

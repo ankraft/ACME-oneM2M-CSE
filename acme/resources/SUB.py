@@ -14,14 +14,14 @@ from copy import deepcopy
 
 from ..etc.ACMEUtils import pureResource
 from ..helpers.TextTools import findXPath
-from ..etc.Types import AttributePolicyDict, ResourceTypes, NotificationContentType
+from ..etc.Types import ResourceTypes, NotificationContentType
 from ..etc.Types import NotificationEventType, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
-from ..resources import Factory
+from ..runtime import Factory
 
 
 # TODO notificationForwardingURI
@@ -29,57 +29,6 @@ from ..resources import Factory
 
 
 class SUB(Resource):
-
-	resourceType = ResourceTypes.SUB
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.NTSR,
-												   	   ResourceTypes.NTPR,
-												   	   ResourceTypes.SCH,
-						   							 ]
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'daci': None,
-		'cr': None,
-
-		# Resource attributes
-		'enc': None,
-		'exc': None,
-		'nu': None,
-		'gpi': None,
-		'nfu': None,
-		'bn': None,
-		'rl': None,
-		'psn': None,
-		'pn': None,
-		'nsp': None,
-		'ln': None,
-		'nct': None,
-		'nec': None,
-		'su': None,
-		'acrs': None,
-		'nse': None,
-		'nsi': None,
-		'eeno': None,
-		'ma': None,		# EXPERIMENTAL maxage blocking retrieve
-	}
 
 	_disallowedBlockingAttributes = [
 		'exc', 'gpi', 'nfu', 'bn', 'rl', 'psn',	'pn', 'nsp', 'ln',

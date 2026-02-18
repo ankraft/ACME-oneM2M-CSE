@@ -34,7 +34,7 @@ from .Configuration import Configuration, ConfigurationError
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..resources.SCH import SCH
-from ..resources.Factory import resourceFromDict
+from .Factory import resourceFromDict
 from .Logging import Logging as L
 
 from ..databases.DBBinding import DBBinding

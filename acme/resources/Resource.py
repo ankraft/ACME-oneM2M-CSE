@@ -35,7 +35,6 @@ internalAttributes	= [ Constants.attrRtype,
 					  	Constants.attrSrn, 
 						Constants.attrNode, 
 						Constants.attrCreatedInternallyRI, 
-						Constants.attrImported, 
 						Constants.attrIsManuallyInstantiated,
 						Constants.attrLocCoordinate,
 						Constants.attrOriginator, 
@@ -54,13 +53,23 @@ class Resource(object):
 
 	"""
 
-	inheritACP = False
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+	# inheritACP = False
+	# """	Flag to indicate if the resource type inherits the ACP from the parent resource. """
 
+
+	# Some attriute slots are defined here because they will be injected in sub-classes
+	# during startup by the `Importer` based on the resource type definition. 
+	# However, they are used on this class level, so they need to be defined here.
 
 	__slots__ = (
+		'inheritACP',
 		'typeShortname',
+		'resourceType',
+		'mgmtType',
+		'resourceName',		# Used for virtual resources
 		'dict',
+		'_attributes',
+		'_allowedChildResourceTypes',
 		'_originalDict',
 	)
 	"""	Slots for the class. """
@@ -161,9 +170,8 @@ class Resource(object):
 											 self.typeShortname, 
 											 self.ty, 
 											 self._attributes, 
-											 isImported = self[Constants.attrImported],
-											 createdInternally = self.isCreatedInternally(), 
-											 isAnnounced = self.isAnnounced())
+											 createdInternally=self.isCreatedInternally(), 
+											 isAnnounced=self.isAnnounced())
 
 		# Set the internal originator that creates the resource.
 		self.setOriginator(originator, overwrite = False)
@@ -461,8 +469,10 @@ class Resource(object):
 		Return:
 			Boolean indicating whether *resource* is a an allowed resorce for this resource.
 		"""
-		from .Unknown import Unknown # Unknown imports this class, therefore import only here
-		return resource.ty in self._allowedChildResourceTypes or isinstance(resource, Unknown)
+		# from .Unknown import Unknown # Unknown imports this class, therefore import only here
+		# return resource.ty in self._allowedChildResourceTypes or isinstance(resource, Unknown)
+		return resource.ty in self._allowedChildResourceTypes
+
 
 
 	def validate(self, originator:Optional[str]=None, 

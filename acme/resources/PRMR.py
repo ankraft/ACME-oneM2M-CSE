@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from ..resources.Resource import Resource
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState, ProcessControl, Permission
+from ..etc.Types import ResourceTypes, JSON, ProcessState, ProcessControl, Permission
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..helpers.TextTools import findXPath
 from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION
@@ -24,51 +24,6 @@ from ..runtime.Logging import Logging as L
 
 
 class PRMR(AnnounceableResource):
-
-	resourceType = ResourceTypes.PRMR
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.STTE,
-							   	   ResourceTypes.SUB
-								 ]
-	""" The allowed child-resource types. """
-
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'acpi': None,
-		'lbl': None,
-		'cr': None,
-		'cstn': None,
-		'daci': None,
-
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'prst': None,
-		'prct': None,
-		'cust': None,
-		'atcos': None,
-		'encos': None,
-		'inst': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)

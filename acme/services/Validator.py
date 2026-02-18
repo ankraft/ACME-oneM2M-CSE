@@ -16,7 +16,7 @@ import isodate
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType, GeoSpatialFunctionType
-from ..etc.Types import CSEType, ResourceTypes, Permission, Operation
+from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatteryStatus
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.ACMEUtils import pureResource
 from ..etc.Utils import strToBool
@@ -24,8 +24,8 @@ from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
 from ..resources.Resource import Resource
-from ..resources.mgmtobjs.BAT import BatteryStatus
 from ..runtime.Logging import Logging as L
+from ..runtime import CSE
 
 
 # TODO AE Not defined yet: ExternalGroupID?
@@ -133,7 +133,6 @@ class Validator(object):
 								 ty:Optional[ResourceTypes]=ResourceTypes.UNKNOWN, 
 								 attributes:Optional[AttributePolicyDict]=None, 
 								 create:Optional[bool]=True, 
-								 isImported:Optional[bool]=False, 
 								 createdInternally:Optional[bool]=False, 
 								 isAnnounced:Optional[bool]=False) -> None:
 		""" Validate a resources' attributes for types etc.
@@ -144,7 +143,6 @@ class Validator(object):
 				ty: The resource type
 				attributes: The attribute policy dictionary for the resource type. If this is None then validate automatically
 				create: Boolean indicating whether this a CREATE request
-				isImported: Boolean indicating whether a resource is imported. Then automatically return True.
 				createdInternally: Boolean indicating that a resource is created internally
 				isAnnounced: Boolean indicating that a resource is announced
 			Return:
@@ -152,8 +150,8 @@ class Validator(object):
 		"""
 		L.isDebug and L.logDebug('validating attributes')
 
-		# Just return in case the resource instance is imported
-		if isImported:
+		# Just return in case we are in the importing phase
+		if CSE.importer.isImporting:
 			return
 
 		# No policies?

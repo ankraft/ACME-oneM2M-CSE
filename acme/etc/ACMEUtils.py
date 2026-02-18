@@ -181,7 +181,6 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 		# Absolute (2 first elements are /)
 		case 2:
 			# L.logDebug("Absolute")
-			print(ids)
 			if idsLen < 3:
 				return None, None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
 			spi = ids[0]

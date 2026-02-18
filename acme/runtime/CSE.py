@@ -204,6 +204,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		textUI = TextUI()						# Start the textUI
 		console = Console()						# Start the console
 
+		importer = Importer()					# Initialize the importer
+		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
+
 		storage = Storage()						# Initialize the resource storage
 		statistics = Statistics()				# Initialize the statistics system
 		registration = RegistrationManager()	# Initialize the registration manager
@@ -226,11 +229,13 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		script = ScriptManager()				# Initialize the script manager
 		action = ActionManager()				# Initialize the action manager
 
-		# Import a default set of resources, e.g. the CSE, first ACP or resource structure
-		# Import extra attribute policies for specializations first
+		# Import attribute, flexContainer and enum policies, and configuration documentation
+		#
+		# After this, the CSE reads the scripts from the default and runtime init directories.
+		# It also runs the init script, if there is one. 
+		#
 		# When this fails, we cannot continue with the CSE startup
-		importer = Importer()
-		if not importer.doImport():
+		if not importer.importPolicies() or not importer.importScripts():
 			RC.cseStatus = CSEStatus.STOPPED
 			return False
 		
@@ -420,8 +425,11 @@ def resetCSE() -> None:
 
 		# The following event is executed synchronously to give every component
 		# a chance to finish
-		event.cseReset()	# type: ignore [attr-defined]   
-		if not importer.doImport():
+		event.cseReset()	# type: ignore [attr-defined]
+
+		# We only import policies, documentation and scripts during restart
+		# But we don't import the resource policies again.
+		if not importer.importPolicies() or not importer.importScripts():
 			textUI and textUI.shutdown()
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?

@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, ContentSerializationType, JSON
+from ..etc.Types import ResourceTypes, ContentSerializationType, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE
 from ..etc.IDUtils import uniqueAEI
 from ..etc.Constants import Constants
@@ -21,69 +21,6 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
-
-	resourceType = ResourceTypes.AE
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.ACP,
-													   ResourceTypes.ACTR,
-													   ResourceTypes.CNT,
-													   ResourceTypes.CRS,
-													   ResourceTypes.DAC,
-													   ResourceTypes.FCNT,
-													   ResourceTypes.GRP,
-													   ResourceTypes.LCP,
-													   ResourceTypes.PCH,
-													   ResourceTypes.PRMR,
-													   ResourceTypes.PRP,
-													   ResourceTypes.SMD,
-													   ResourceTypes.SUB,
-													   ResourceTypes.TS,
-													   ResourceTypes.TSB ]
-	""" The allowed child-resource types. """
-
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-			# Common and universal attributes
-			'rn': None,
-		 	'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'cstn': None,
-			'acpi':None,
-			'at': None,
-			'aa': None,
-			'daci': None,
-			'ast': None,
-			'loc': None,	
-
-			# Resource attributes
-			'apn': None,
-			'api': None,
-			'aei': None,
-			'poa': None,
-			'nl': None,
-			'rr': None,
-			'csz': None,
-			'esi': None,
-			'mei': None,
-			'srv': None,
-			'regs': None,
-			'trps': None,
-			'scp': None,
-			'tren': None,
-			'ape': None,
-			'or': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 

@@ -230,6 +230,7 @@ class AnnouncementManager(object):
 		# Create announced resource & type
 		dct = resource.createAnnouncedResourceDict(isCreate=True, announceTo=announceTo)
 		tyAnnc = ResourceTypes(resource.ty).announced()
+		print(f'announcing resource with ty: {resource.ty} => {tyAnnc}')
 		targetID = ''
 
 		if resource.ty != ResourceTypes.CSEBase:	# CSEBase is just announced below

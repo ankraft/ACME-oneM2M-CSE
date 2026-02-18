@@ -37,7 +37,7 @@ from ..etc.DateUtils import cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
-from ..resources.Factory import resourceFromDict
+from ..runtime.Factory import resourceFromDict
 from ..resources.Resource import Resource
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.NTSR import NTSR
@@ -725,10 +725,11 @@ class Dispatcher(object):
 		# Create resource from the dictionary
 		# newResource = resourceFromDict(deepcopy(request.pc), 
 		newResource = resourceFromDict(request.pc, 
-								 	   pi = parentResource.ri, 
-									   ty = request.ty, 
-									   create = True,
-									   originator = originator)
+								 	   pi=parentResource.ri, 
+									   ty=request.ty, 
+									   create=True,
+									   originator=originator,
+									   trusted=False)
 
 		# Check whether the parent allows the adding
 		parentResource.childWillBeAdded(newResource, originator)
@@ -829,10 +830,11 @@ class Dispatcher(object):
 
 			# Build a resource instance
 			resource = resourceFromDict(dct, 
-							   			ty = ty, 
-										pi = pID,
-										create = True,
-										originator = originator)
+							   			ty=ty, 
+										pi=pID,
+										create=True,
+										originator=originator,
+										trusted=False)
 
 			# Check Permission
 			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, resultResource=resource):

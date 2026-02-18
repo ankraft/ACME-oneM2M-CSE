@@ -18,7 +18,7 @@ from ..etc.ACMEUtils import pureResource, toSPRelative, compareIDs
 from ..etc.IDUtils import csiFromSPRelative
 from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, TimeWindowType, EventEvaluationMode, CSERequest
+from ..etc.Types import ResourceTypes, JSON, TimeWindowType, EventEvaluationMode, CSERequest
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, CROSS_RESOURCE_OPERATION_FAILURE
@@ -35,54 +35,6 @@ addToInternalAttributes(Constants.attrSudRI)
 
 class CRS(Resource):
 	"""	This class implements the <crossResourceSubscription> resource type. """
-
-	resourceType = ResourceTypes.CRS
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.NTSR,
-												   	   ResourceTypes.NTPR,
-													   ResourceTypes.SCH,
-													]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'acpi': None,
-		'lbl': None,
-		'cr': None,
-		'cstn': None,
-		'daci': None,
-
-		# Resource attributes
-		'exc': None,
-		'nu': None,
-		'nec': None,
-		'su': None,
-		'rrat': None,
-		'srat': None,
-		'rrats': None,
-		'eem': None,	# EXPERIMENTAL
-		'twt': None,
-		'tws': None,
-		'encs': None,
-		'nse': None,
-		'nsi': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def initialize(self, pi:str, originator:str) -> None:

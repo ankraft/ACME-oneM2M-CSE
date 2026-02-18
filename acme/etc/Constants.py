@@ -109,9 +109,6 @@ class Constants(object):
 	attrHasFCI	= '__hasFCI__'
 	""" Constant: Name of the `Resource` internal *__hasFCI__* attribute. This attribute indicates whether this resource has la/ol installed. """
 
-	attrImported = '__imported__'
-	""" Constant: Name of the `Resource` internal *__imported__* attribute. This attribute indicates whether a resource was imported or created by a script, of created by a request. """
-
 	attrIsManuallyInstantiated = '__isInstantiated__'
 	""" Constant: Name of the `Resource` internal *__isInstantiated__* attribute. This attribute indicates whether a resource is manually instantiated. """
 

@@ -10,16 +10,15 @@
 """ LocationPolicy (LCP) resource type. """
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, LocationSource
+from ..etc.Types import ResourceTypes, JSON, LocationSource
 from ..etc.Constants import Constants
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources import Factory 
+from ..runtime import Factory 
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.GeoTools import getGeoPolygon
 
@@ -28,57 +27,8 @@ from ..etc.GeoTools import getGeoPolygon
 addToInternalAttributes(Constants.attrGTA)
 
 
-# TODO add annc
-# TODO add to supported resources of CSE
-
 class LCP(AnnounceableResource):
 	""" LocationPolicy (LCP) resource type. """
-
-	resourceType = ResourceTypes.LCP
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'lbl': None,
-		'acpi':None,
-		'et': None,
-		'daci': None,
-		'cstn': None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'los': None,
-		'lit': None,
-		'lou': None,
-		'lot': None,
-		'lor': None,
-		'loi': None,
-		'lon': None,
-		'lost': None,
-		'gta': None,
-		'gec': None,
-		'aid': None,
-		'rlkl': None,
-		'luec': None
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import cast, Optional
 
-from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTypes, JSON, CSERequest, Result
+from ..etc.Types import Operation, RequestType, JSON, CSERequest, Result
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, INTERNAL_SERVER_ERROR, REQUEST_TIMEOUT
 from ..resources.VirtualResource import VirtualResource
@@ -27,36 +27,15 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 
 class PCH_PCU(VirtualResource):
 
-	resourceType = ResourceTypes.PCH_PCU
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	resourceName = 'pcu'
-	""" Possibility for virtual sub-classes to provide a specific resource name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# None for virtual resources
-	}
-
 
 	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute(Constants.attrPCUAggregate, False, overwrite = False)
+		self.setAttribute(Constants.attrPCUAggregate, False, overwrite=False)
 		super().initialize(pi, originator)
 		
 	
-	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
-									id:Optional[str] = None, 
-									originator:Optional[str] = None) -> Result:
+	def handleRetrieveRequest(self, request: Optional[CSERequest]=None, 
+									id: Optional[str]=None, 
+									originator: Optional[str]=None) -> Result:
 		""" Handle a RETRIEVE request. Return resource or block until available. At the PCU, only received requests are retrieved, otherwise
 			this function does not return until a reqeust timeout occurs. Only the AE's originator has access to this virtual resource.
 
@@ -82,11 +61,11 @@ class PCH_PCU(VirtualResource):
 
 		# Return the response or time out
 		try:
-			res = CSE.request.waitForPollingRequest(originator, None, timeout = ret, aggregate = self.getAggregate())
+			res = CSE.request.waitForPollingRequest(originator, None, timeout=ret, aggregate=self.getAggregate())
 		except REQUEST_TIMEOUT:
 			raise REQUEST_TIMEOUT(L.logWarn(f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}'))
 		
-		return Result(rsc = ResponseStatusCode.OK, resource = res.resource, request = request, embeddedRequest = res.request)
+		return Result(rsc=ResponseStatusCode.OK, resource=res.resource, request=request, embeddedRequest=res.request)
 
 
 	def handleNotifyRequest(self, request:CSERequest, originator:str) -> None:
@@ -120,31 +99,31 @@ class PCH_PCU(VirtualResource):
 		# L.logWarn(innerPC)
 
 		# Enqueue the reqeust
-		CSE.request.queueRequestForPCH(operation = Operation.NOTIFY,
-									   pchOriginator = self.getOriginator(), 
-									   request = response, 
-									   reqType = RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
+		CSE.request.queueRequestForPCH(operation=Operation.NOTIFY,
+									   pchOriginator=self.getOriginator(), 
+									   request=response, 
+									   reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
 		
 
-	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleCreateRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle a CREATE request. Fail with error code. 
 		"""
 		raise OPERATION_NOT_ALLOWED('CREATE operation not allowed for <pollingChanelURI> resource type')
 
 
-	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleUpdateRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle an UPDATE request. Fail with error code. 
 		"""
 		raise OPERATION_NOT_ALLOWED('UPDATE operation not allowed for <pollingChanelURI> resource type')
 
 
-	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleDeleteRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. 
 		"""
 		raise OPERATION_NOT_ALLOWED('DELETE operation not allowed for <pollingChanelURI> resource type')
 
 
-	def setAggregate(self, aggregate:bool) -> None:
+	def setAggregate(self, aggregate: bool) -> None:
 		"""	Set the aggregated state for a polling channel. This usually reflects the state of the PCU's parent resource, and
 			is maintained by it.
 			This attribute is handled as an internal attribute.

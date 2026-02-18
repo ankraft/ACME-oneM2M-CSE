@@ -24,7 +24,7 @@ from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj
 from ..resources.Resource import Resource
 from ..resources.GRP_FOPT import GRP_FOPT
-from ..resources.Factory import resourceFromDict
+from ..runtime.Factory import resourceFromDict
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration

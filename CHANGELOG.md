@@ -16,8 +16,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added new Uper Tester command "getConfig" to retrieve configuration settings from the CSE via the Upper Tester interface.
 - [CSE] Added support for new *SP-ID* attribute in &lt;CSEBase> and &lt;remoteCSE> resources.
 - [CSE] Added functionality to disable or enable removing registrations when stopping the CSE. This can be configured via the new configuration setting *cse.registration.unregisterWhenStopping*. By default, registrations are removed when stopping the CSE (the old behavior).
+- [CSE] Added resource type definition file to define the resource types and their attributes in an external JSON file. 
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
-
 
 ### Experimental
 - [CSE] Added experimental support for new *spi* and *ici* attributes in &lt;CSEBsae> and &lt;remoteCSE> resources. Both attributes are updated automatically in registree CSEs throughout a oneM2M deployment tree.
@@ -25,6 +25,8 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 - [CSE] Moved various HTTP server extensions to plugins: Upper Tester, Web UI, management & structure interfaces. These plugins are now loaded via the new plugin manager.
 - [CSE] For location handling the *content* attributes of &lt;contentInstance> resources support now now integer or JSON objects, not strings anymore. The work-around using a string representation was necessary because the *content* attribute was only supporting string values before.
+- [CSE] Internal restructuring how resource types are configured. The resource types are now defined by an external JSON file that is loaded during CSE initialization.
+- [CSE] Changed the internal handling of resource instantiation and optimized the resource factory.
 
 ### Fixed
 - [CSE] Fixed missing validation of mandatory list attributes (1L) when updating resources.

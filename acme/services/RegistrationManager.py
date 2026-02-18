@@ -219,7 +219,7 @@ class RegistrationManager(object):
 				originator = uniqueAEI('C')
 			case 'S':
 				# Assigning an S originator requires interactions with the {remote) IN-CSE.
-				originator = CSE.remote.assignSOriginator(ae, originator)
+				originator = self.registerSOriginator(ae, originator)
 
 		# Check whether an originator has already registered with the same AE-ID
 		if self.hasRegisteredAE(originator):
@@ -244,6 +244,10 @@ class RegistrationManager(object):
 	def handleAEDeRegistration(self, ae:Resource) -> bool:
 		# More De-registration functions happen in the AE's deactivate() method
 		L.isDebug and L.logDebug(f'DeRegistering AE. aei: {ae.aei}')
+
+		# Special handling for "S" registrations
+		if ae.aei.startswith('S'):
+			self.deregisterSOriginator(ae)
 
 		# Send event
 		self._eventAEHasDeregistered(ae)
@@ -420,55 +424,31 @@ class RegistrationManager(object):
 
 	#########################################################################
 
-	# TODO remove after 0.13.0 . Check whether the acp.functions are still needed !!!
-	
+	#########################################################################
 
-	# def _createACP(self, parentResource:Optional[Resource] = None, 
-	# 					 rn:Optional[str] = None, 
-	# 					 createdByResource:Optional[str] = None, 
-	# 					 originators:Optional[List[str]] = None, 
-	# 					 permission:Optional[Permission] = None, 
-	# 					 selfOriginators:Optional[List[str]] = None, 
-	# 					 selfPermission:Optional[Permission] = None) -> Resource:
-	# 	""" Create an ACP with some given defaults. """
-	# 	if not parentResource or not rn or not originators or permission is None:	# permission is an int
-	# 		raise BAD_REQUEST('missing attribute(s)')
+	def registerSOriginator(self, ae: Resource, originator: str) -> str:
+		"""	Register the S-Originator for an AE resource.
 
-	# 	# Remove existing ACP with that name first
-	# 	try:
-	# 		acpSrn = f'{RC.cseRn}/{rn}'
-	# 		acpResourse = CSE.dispatcher.retrieveResource(id = acpSrn)	# May throw an exception if no resource exists
-	# 		CSE.dispatcher.deleteLocalResource(acpResourse)	# ignore errors
-	# 	except:
-	# 		pass
-
-	# 	# Create the ACP
-	# 	selfPermission = selfPermission if selfPermission is not None else Permission(self.acpPvsAcop)
-
-	# 	origs = deepcopy(originators)
-	# 	origs.append(RC.cseOriginator)	# always append cse originator
-
-	# 	selfOrigs = [ RC.cseOriginator ]
-	# 	if selfOriginators:
-	# 		selfOrigs.extend(selfOriginators)
-
-	# 	acpResourse = ACP({}, pi = parentResource.ri, rn = rn)
-	# 	acpResourse.setCreatedInternally(createdByResource)
-	# 	acpResourse.addPermission(origs, permission)
-	# 	acpResourse.addSelfPermission(selfOrigs, selfPermission)
-
-	# 	self.checkResourceCreation(acpResourse, RC.cseOriginator, parentResource)
-	# 	return CSE.dispatcher.createLocalResource(acpResourse, parentResource, originator = RC.cseOriginator)
+			Args:
+				ae: The AE resource.
+				originator: The original originator.
+			Return:
+				The assigned S-Originator.
+		"""
+		return uniqueAEI('S')
 
 
-	# def _removeACP(self, srn:str, resource:Resource) -> None:
-	# 	""" Remove an ACP created during registration before. """
+	def deregisterSOriginator(self, ae: Resource) -> None:
+		"""	Deregister the S-Originator for an AE resource.
 
-	# 	try:
-	# 		acpResourse = CSE.dispatcher.retrieveResource(id = srn)
-	# 	except ResponseException as e:
-	# 		L.isWarn and L.logWarn(f'Could not find ACP: {srn}: {e.dbg}')	# ACP not found, either not created or already deleted
-	# 		return
-	# 	# only delete the ACP when it was created in the course of AE registration internally
-	# 	if  (createdWithRi := acpResourse.createdInternally()) and resource.ri == createdWithRi:
-	# 		CSE.dispatcher.deleteLocalResource(acpResourse)
+			Args:
+				ae: The AE resource.
+		"""
+		# In case an \<AE> resource hosted on a MN-CSE or ASN-CSE with AE-ID-Stem starting with "S" is
+		# requested to be deleted, the \<AEAnnc> resource that was created on the IN-CSE during the 
+		# initial registration of the associated Application Entity shall be updated with the value 
+		# "INACTIVE" for the link attribute and the value INACTIVE for the *registrationStatus* attribute,
+		# that the associated Application Entity is currently not registered. After this update of the 
+		# \<AEAnnc> resource is completed, the procedure for AE Deregistration 
+		# shall follow the procedure described in this clause.
+		pass

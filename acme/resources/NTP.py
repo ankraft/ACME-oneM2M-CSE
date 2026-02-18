@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, LogicalOperator
+from ..etc.Types import ResourceTypes, JSON, LogicalOperator
 from ..etc.Constants import RuntimeConstants as RC
 from ..resources.Resource import Resource
 from ..runtime import CSE
@@ -20,43 +20,6 @@ _defaultPLBL = 'Default'
 """ Default policy label for NTP resources. """
 
 class NTP(Resource):
-
-	resourceType = ResourceTypes.NTP
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [	ResourceTypes.SUB,
-														ResourceTypes.PDR,
-	]
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = { 
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'et': None,
-		'acpi':None,
-		'ct': None,
-		'lbl': None,
-		'lt': None,
-		'daci': None,
-		'cr': None,
-		'cstn': None,
-
-		# Resource attributes
-   		'acn': None,
-		'plbl': None,
-		'rrs': None
-	}
-
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)

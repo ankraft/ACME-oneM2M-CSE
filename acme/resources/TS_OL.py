@@ -24,29 +24,6 @@ class TS_OL(VirtualResource):
 	"""	This class implements the virtual <oldest> resource for <timeSeries> resources.
 	"""
 
-	resourceType = ResourceTypes.TS_OL
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	resourceName = 'ol'
-	""" Possibility for virtual sub-classes to provide a fixed resource name. """
-
-
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
-	"""	A list of allowed child-resource types for this resource type. """
-
-	_attributes:AttributePolicyDict = {		
-		# None for virtual resources
-	}
-	""" A dictionary of the attributes and attribute policies for this resource type. 
-		The attribute policies are assigned during startup by the `Importer`.
-	"""
-
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
 		""" Handle a RETRIEVE request.
 
@@ -110,4 +87,4 @@ class TS_OL(VirtualResource):
 		return Result(rsc = ResponseStatusCode.DELETED, resource = resource)
 
 	def hasAttributeDefined(self, name: str) -> bool:
-		return name in TSI._attributes
+		return name in TSI._attributes	# type: ignore[attr-defined]

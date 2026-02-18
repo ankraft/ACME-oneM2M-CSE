@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import ResourceTypes, JSON
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..resources.Resource import Resource
@@ -22,42 +22,6 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 class SCH(AnnounceableResource):
 	""" Schedule (SCH) resource type. """
-
-	resourceType = ResourceTypes.SCH
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB
-													 ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'lbl': None,
-		'acpi':None,
-		'et': None,
-		'daci': None,
-		'cstn': None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'se': None,
-		'nco': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

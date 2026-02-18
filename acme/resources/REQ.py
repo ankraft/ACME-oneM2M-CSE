@@ -11,59 +11,21 @@
 from __future__ import annotations
 from typing import Dict, Any
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, RequestStatus, CSERequest, JSON
+from ..etc.Types import ResourceTypes, RequestStatus, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, UNABLE_TO_RECALL_REQUEST
 from ..helpers.TextTools import setXPath	
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
-from ..resources import Factory	# attn: circular import
+from ..runtime import Factory	# attn: circular import
 
 
 class REQ(Resource):
 	""" Request (REQ) resource type. """
 
-	resourceType = ResourceTypes.REQ
-	""" The resource type """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'daci': None,
-
-		# Resource attributes
-		'op': None,
-		'tg': None,
-		'org': None,
-		'rid': None,
-		'mi': None,
-		'pc': None,
-		'rs': None,
-		'ors': None
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def willBeDeactivated(self, originator: str, parentResource: Resource) -> None:
+	def willBeDeactivated(self, originator: str, parentResource: Resource, parentDelete: bool=False) -> None:
 		match self['rs']:
 			case RequestStatus.PENDING:
 				# We cannot really cancel a request. This is for further study.

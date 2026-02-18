@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from ..helpers.TextTools import findXPath
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Permission, JSON
+from ..etc.Types import ResourceTypes, Permission, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..runtime import CSE
@@ -25,44 +25,6 @@ addToInternalAttributes(Constants.attrRiTyMapping)
 
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
-
-	resourceType = ResourceTypes.ACP
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Transaction to be added
-	""" The allowed child-resource types. """
-
-	# Assigned during startup in the Importer.
-	_attributes:AttributePolicyDict = {	
-			# Common and universal attributes
-			'rn': None,
-			'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'at': None,
-			'aa': None,
-			'ast': None,
-
-			# Resource attributes
-			'pv': None,
-			'pvs': None,
-			'adri': None,
-			'apri': None,
-			'airi': None
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 

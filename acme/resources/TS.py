@@ -19,66 +19,13 @@ from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
-from ..resources import Factory		# attn: circular import
+from ..runtime import Factory		# attn: circular import
 
 
 # CSE default:
 #	- peid is set to pei/2 if ommitted, and pei is set
 
 class TS(ContainerResource):
-
-	resourceType = ResourceTypes.TS
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
-								   ResourceTypes.TSI, 
-								   ResourceTypes.SMD, 
-								   ResourceTypes.SUB,
-								   ResourceTypes.TS_LA,
-								   ResourceTypes.TS_OL ]
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'daci': None,
-		'cr': None,
-		'loc': None,
-
-		# Resource attributes
-		'mni': None,
-		'mbs': None,
-		'mia': None,
-		'cni': None,
-		'cbs': None,
-		'pei': None,
-		'peid': None,
-		'mdd': None,
-		'mdn': None,
-		'mdlt': None,
-		'mdc': None,
-		'mdt': None,
-		'cnf': None,
-		'or': None,
-	}
-
 
 	def initialize(self, pi:str, originator:str) -> None:
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided

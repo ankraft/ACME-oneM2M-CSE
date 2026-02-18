@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import ResourceTypes, JSON
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, BAD_REQUEST
 from ..etc.ACMEUtils import getAttributeSize
@@ -17,7 +17,7 @@ from ..etc.DateUtils import getResourceDate
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
-from ..resources import Factory				# attn: circular import
+from ..runtime import Factory				# attn: circular import
 from ..resources.Resource import Resource, internalAttributes, addToInternalAttributes
 from ..resources.ContainerResource import ContainerResource
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
@@ -28,62 +28,6 @@ addToInternalAttributes(Constants.attrHasFCI)	# Add to internal attributes to ig
 
 class FCNT(ContainerResource):
 	""" FlexContainer (FCNT) resource type. """
-
-	resourceType = ResourceTypes.FCNT
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.ACTR, 
-								   ResourceTypes.CNT, 
-								   ResourceTypes.FCNT, 
-								   ResourceTypes.SMD, 
-								   ResourceTypes.SUB, 
-								   ResourceTypes.TS, 
-								   ResourceTypes.FCI,
-								   ResourceTypes.FCNT_LA,
-								   ResourceTypes.FCNT_OL ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'daci': None,
-		'st': None,
-		'cr': None,
-		'loc': None,
-
-		# Resource attributes
-		'cnd': None,
-		'or': None,
-		'cs': None,
-		'nl': None,
-		'mni': None,
-		'mia': None,
-		'mbs': None,
-		'cbs': None,
-		'cni': None,
-		'fcied': None,	# EXPERIMENTAL fcinEnabled
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
 
 	def __init__(self, dct:Optional[JSON]=None, typeShortname:Optional[str]=None, create:Optional[bool]=False) -> None:
 		self.typeShortname = typeShortname

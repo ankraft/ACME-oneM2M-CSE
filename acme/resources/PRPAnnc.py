@@ -1,14 +1,13 @@
 #
-#	SMDAnnc.py
+#	PRPAnnc.py
 #
-#	(c) 2022 by Andreas Kraft
+#	(c) 2026 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	SMD : Announceable variant
+#	PRP : Announceable variant
 #
 
 from .AnnouncedResource import AnnouncedResource
 
-class SMDAnnc(AnnouncedResource):
-
+class PRPAnnc(AnnouncedResource):
 	pass

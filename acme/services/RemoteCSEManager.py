@@ -25,7 +25,7 @@ from ..helpers.TextTools import findXPath, setXPath
 from ..resources.CSR import CSR
 from ..resources.CSEBase import CSEBase, getCSE
 from ..resources.Resource import Resource
-from ..resources.Factory import resourceFromDict
+from ..runtime.Factory import resourceFromDict
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
@@ -1117,15 +1117,3 @@ class RemoteCSEManager(object):
 					target.delAttribute(attr, setNone = False)
 
 
-	#########################################################################
-
-	def assignSOriginator(self, ae: Resource, originator: str) -> str:
-		"""	Assign the S-Originator for an AE resource.
-
-			Args:
-				ae: The AE resource.
-				originator: The original originator.
-			Return:
-				The assigned S-Originator.
-		"""
-		return uniqueAEI('S')

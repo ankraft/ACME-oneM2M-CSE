@@ -14,18 +14,12 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, NOT_FOUND
 from ..runtime import CSE
 from ..resources.Resource import Resource
 
-# TODO DOCs
-
 class VirtualResource(Resource):
 	""" Base class for all oneM2M virtual resource types. 
 		It adds methods for virtual resources.
 	"""
 
-	resourceName:str = None
-	""" Possibility for virtual sub-classes to provide a fixed resource name. """
-
-
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi: str, originator: str) -> None:
 
 		# Virtual resources have a fixed resource name that is provided in the sub-class
 		self.setResourceName(self.resourceName)
@@ -33,10 +27,10 @@ class VirtualResource(Resource):
 		super().initialize(pi, originator)
 
 
-	def retrieveLatestOldest(self, request:CSERequest, 
-								   originator:str, 
-								   typ:ResourceTypes, 
-								   oldest:bool) -> Result:
+	def retrieveLatestOldest(self, request: CSERequest, 
+								   originator: str, 
+								   typ: ResourceTypes, 
+								   oldest: bool) -> Result:
 		""" Retrieve the latest or oldest instance of a container resource.
 
 			Args:
@@ -49,7 +43,7 @@ class VirtualResource(Resource):
 				The result of the operation.
 		"""
 
-		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, typ, oldest = oldest)):
+		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, typ, oldest=oldest)):
 			raise NOT_FOUND(f'no instance for <{"oldest" if oldest else "latest"}>')
 
 		# Take the resource, either a FCIN or self and check whether a blocking RETRIEVE
@@ -57,15 +51,15 @@ class VirtualResource(Resource):
 		# EXPERIMENTAL
 		CSE.notification.checkPerformBlockingRetrieve(resource, 
 													  request, 
-													  finished = lambda: self.dbReloadDict())
+													  finished=lambda: self.dbReloadDict())
 
 		# Then retrieve the latest instance resource again(!) because it might have changed during the 
 		# blocking RETRIEVE
-		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, typ, oldest = oldest)):
+		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, typ, oldest=oldest)):
 			raise NOT_FOUND(f'no instance for <{"oldest" if oldest else "latest"}>')
 		
 		# Do again some checks with the final resource, but no subscription checks! (we did this already)
-		resource.willBeRetrieved(originator, request, subCheck = False)
+		resource.willBeRetrieved(originator, request, subCheck=False)
 		
-		return Result(rsc = ResponseStatusCode.OK, resource = resource)
+		return Result(rsc=ResponseStatusCode.OK, resource=resource)
 
