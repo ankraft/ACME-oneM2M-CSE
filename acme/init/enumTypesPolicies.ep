@@ -482,6 +482,12 @@
 		"1": "Periodic Window",
 		"2": "Sliding Window"
 	},
+	"m2m:triggerPurpose" : {
+		"1": "establishConnection",
+		"2": "registrationRequest",
+		"3": "executeCRUD",
+		"4": "enrolmentRequest"
+	},
 	"dcfg:wifiConnectionStatus" : {
 		"0": "Disconnected",
 		"1": "Connected",

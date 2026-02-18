@@ -3962,7 +3962,7 @@
 	],
 	"regs": [
 		{
-			"rtypes": [ "AE", "AEAnnc" ],
+			"rtypes": [ "AE", "AEAnnc", "REQRESP" ],
 			"lname": "registrationStatus",
 			"ns": "m2m",
 			"type": "string",
@@ -4931,6 +4931,20 @@
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"tpe": [
+		{
+			"rtypes": [ "TGR" ],
+			"lname": "triggerPurpose",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:triggerPurpose",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
 			"od": "O",
 			"annc": "NA"
 		}
