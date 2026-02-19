@@ -32,7 +32,7 @@ from ..runtime.Console import Console
 
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
-from ..services.EventManager import EventManager
+from .EventManager import EventManager
 from ..services.GroupManager import GroupManager
 from ..runtime.Importer import Importer
 from ..services.LocationManager import LocationManager
