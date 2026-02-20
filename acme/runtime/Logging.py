@@ -230,7 +230,7 @@ class Logging:
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
 		Logging._console				= Console()								# Console object
 		Logging._richHandler			= ACMERichLogHandler()
-		Logging.ringBufferHandler		= ACMERingBufferLogHandler()
+		Logging.ringBufferHandler		= ACMERingBufferLogHandler(capacity=1000)
 
 		# Add logging filter
 		Logging._richHandler.addFilter(LogFilter(Logging.filterSources))
