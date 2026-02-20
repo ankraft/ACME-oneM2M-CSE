@@ -74,6 +74,10 @@ class HTTPServerConfiguration(ModuleConfiguration):
 		config.http_root = normalizeURL(config.http_root)
 		config.http_externalRoot = normalizeURL(config.http_externalRoot)
 
+		# Raise an error if TLS and the WSGI server are both enabled, as they are incompatible
+		if config.http_security_useTLS and config.http_wsgi_enable:
+			raise ConfigurationError(r'[i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled. WSGI does not support TLS.')
+
 		# Just in case: check the URL's (http, ws)
 		if config.http_security_useTLS:
 			if config.http_address.startswith('http:'):
