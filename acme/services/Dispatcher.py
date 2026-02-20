@@ -751,7 +751,7 @@ class Dispatcher(object):
 
 		# Create the resource. If this fails we de-register everything
 		try:
-			_resource = self.createLocalResource(newResource, parentResource, originator, request = request)
+			_resource = self.createLocalResource(newResource, parentResource, originator, rvi=request.rvi)
 		except ResponseException as e:
 			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			raise e
@@ -841,7 +841,7 @@ class Dispatcher(object):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
 
 			# Create it locally
-			createdResource = self.createLocalResource(resource, parentResource, originator = originator)
+			createdResource = self.createLocalResource(resource, parentResource, originator=originator)
 
 			resRi = createdResource.ri
 			resCsi = RC.cseCsi
@@ -875,14 +875,14 @@ class Dispatcher(object):
 							resource: Resource,
 							parentResource: Resource,
 							originator: Optional[str]=None,
-							request: Optional[CSERequest]=None) -> Resource:
+							rvi: Optional[str]=None) -> Resource:
 		"""	Create a resource locally.
 
 			Args:
 				resource: The resource to create.
 				parentResource: The parent resource.
 				originator: The originator of the request.
-				request: The request.
+				rvi: The release version identifier. This is only be present in a real CREATE request.
 
 			Return:
 				The created resource.
@@ -897,6 +897,8 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
 				if resource.ty == ResourceTypes.SUB:
+					# This is a special case. The spec requires a different error code
+					# for the case the parent resource is not subscribable. 
 					raise TARGET_NOT_SUBSCRIBABLE(L.logWarn('Parent resource is not subscribable'))
 				else:
 					raise INVALID_CHILD_RESOURCE_TYPE(L.logWarn(f'Invalid child resource type: {ResourceTypes(resource.ty).value}'))
@@ -911,9 +913,9 @@ class Dispatcher(object):
 		# add the resource to storage
 		resource.dbCreate(overwrite = False)
 		
-		# Set release version to the resource, of available
-		if request and request.rvi:
-			resource.setRVI(request.rvi)
+		# Set release version to the resource, if available, ie. passed in a CREATE request.
+		if rvi:
+			resource.setRVI(rvi)
 
 		# Activate the resource
 		# This is done *after* writing it to the DB, because in activate the resource might create or access other
