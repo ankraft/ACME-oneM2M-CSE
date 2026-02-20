@@ -17,7 +17,9 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for new *SP-ID* attribute in &lt;CSEBase> and &lt;remoteCSE> resources.
 - [CSE] Added functionality to disable or enable removing registrations when stopping the CSE. This can be configured via the new configuration setting *cse.registration.unregisterWhenStopping*. By default, registrations are removed when stopping the CSE (the old behavior).
 - [CSE] Added resource type definition file to define the resource types and their attributes in an external JSON file. 
+- [CSE] Increased performance when registering a large number of &lt;AE> resources by adding a database table for registered originators.
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
+
 
 ### Experimental
 - [CSE] Added experimental support for new *spi* and *ici* attributes in &lt;CSEBsae> and &lt;remoteCSE> resources. Both attributes are updated automatically in registree CSEs throughout a oneM2M deployment tree.

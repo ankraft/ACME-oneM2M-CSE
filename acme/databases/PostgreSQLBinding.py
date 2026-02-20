@@ -21,7 +21,7 @@ from psycopg2.extensions import cursor as PsyCursor, connection as PsyConnection
 
 from .DBBinding import DBBinding
 from ..etc.Constants import Constants as C
-from ..etc.Types import JSON, ResourceTypes
+from ..etc.Types import JSON, ResourceTypes, OriginatorType
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from ..runtime.Logging import Logging as L
 
@@ -44,6 +44,9 @@ class PostgreSQLBinding(DBBinding):
 	tableIdentidiers = 'identifiers'
 	"""	The name of the table for identifier mappings. """
 
+	tableOriginators = 'originators'
+	"""	The name of the table for originators. """
+
 	tableRequests = 'requests'
 	"""	The name of the table to store requests and responses. """
 
@@ -60,12 +63,12 @@ class PostgreSQLBinding(DBBinding):
 	"""	The name of the table for subscription mappings. """
 
 
-	def __init__(self,	dbHost:str, 
-			  			dbPort:int,
-						dbUser:str,
-						dbPassword:str,
-						dbDatabase:str,
-						dbSchema:str) -> None:
+	def __init__(self,	dbHost: str, 
+			  			dbPort: int,
+						dbUser: str,
+						dbPassword: str,
+						dbDatabase: str,
+						dbSchema: str) -> None:
 		"""	Initialize the PostgreSQLBinding object.
 
 			Args:
@@ -77,7 +80,7 @@ class PostgreSQLBinding(DBBinding):
 				dbSchema: The schema to use in the database.
 		"""
 		super().__init__()
-	
+
 		# Store the connection parameters
 		self.dbHost = dbHost
 		"""	The hostname of the database server. """
@@ -103,10 +106,11 @@ class PostgreSQLBinding(DBBinding):
 		# Connect to the database
 		self._checkOpenConnection()
 
-		# Create and upgrade the tables if necessary
+		# Create and upgrade the tables if necessary. Prepare the statements.
 		self.createTables()
 		self.upgradeTables()
-	
+		self.prepareStatements()
+
 
 	def closeDB(self) -> None:
 		if self.dbConnection is not None:
@@ -123,6 +127,7 @@ class PostgreSQLBinding(DBBinding):
 				TRUNCATE TABLE {self.tableBatchNotifications};
 				TRUNCATE TABLE {self.tableChildResources};
 				TRUNCATE TABLE {self.tableIdentidiers};
+				TRUNCATE TABLE {self.tableOriginators};
 				TRUNCATE TABLE {self.tableRequests};
 				TRUNCATE TABLE {self.tableResources};
 				TRUNCATE TABLE {self.tableSchedules};
@@ -225,6 +230,13 @@ class PostgreSQLBinding(DBBinding):
 				CREATE TABLE IF NOT EXISTS {self.tableRequests} (
 					ts text PRIMARY KEY,
 					request JSONB NOT NULL
+				)
+			''')
+			# Create the originators table
+			cursor.execute(f'''
+				CREATE TABLE IF NOT EXISTS {self.tableOriginators} (
+					originator TEXT PRIMARY KEY,
+					info JSONB NOT NULL
 				)
 			''')
 
@@ -432,7 +444,7 @@ class PostgreSQLBinding(DBBinding):
 					WHERE ri = $1;
 				PREPARE getSchedulesForParent AS
 					SELECT schedule FROM {self.tableSchedules}
-					 WHERE schedule->>'pi' = $1;
+					WHERE schedule->>'pi' = $1;
 				
 				PREPARE upsertSchedule AS
 					INSERT INTO {self.tableSchedules} (ri, schedule) VALUES ($1, $2)
@@ -441,9 +453,24 @@ class PostgreSQLBinding(DBBinding):
 
 				PREPARE deleteSchedule AS
 					DELETE FROM {self.tableSchedules}
-					 WHERE ri = $1;
+					WHERE ri = $1;
+			''')
+			("prepared")
+
+			# Prepare originator operations
+
+			cur.execute(f'''
+				PREPARE getOriginator AS
+			   		SELECT info FROM {self.tableOriginators}
+					WHERE originator = $1;
+				PREPARE insertOriginator AS
+					INSERT INTO {self.tableOriginators} (originator, info) VALUES ($1, $2);
+				PREPARE deleteOriginator AS
+					DELETE FROM {self.tableOriginators}
+					WHERE originator = $1;
 			''')
 
+				   
 	
 	def _checkOpenConnection(self) -> None:
 		"""	Check if the database connection is open.
@@ -454,22 +481,19 @@ class PostgreSQLBinding(DBBinding):
 		if not self.dbConnection or self.dbConnection.closed:
 			try:
 				# L.isDebug and L.logDebug('Reconnecting to database')
-				self.dbConnection = connect(
-					database = self.dbDatabase,
-					user = self.dbUser,
-					password = self.dbPassword,
-					host = self.dbHost,
-					port = self.dbPort,
-					options = f'-c search_path={self.dbSchema}'	# schema path
+				self.dbConnection=connect(
+					database=self.dbDatabase,
+					user=self.dbUser,
+					password=self.dbPassword,
+					host=self.dbHost,
+					port=self.dbPort,
+					options=f'-c search_path={self.dbSchema}'	# schema path
 				)
 				self.dbConnection.autocommit = True
 				# L.isDebug and L.logDebug(f'Reconnected to database: {self.dbConnection}')
 			except Error:
 				L.logErr(f'Error reconnecting to postgreSQL database at {self.dbHost}:{self.dbPort} as "{self.dbUser}" with database "{self.dbDatabase}"')
 				raise
-
-			# Prepare the statements (again)
-			self.prepareStatements()
 
 
 	def _executePrepared(self, statement:str, args:Tuple, closure:Optional[Callable] = None) -> Any:
@@ -916,3 +940,23 @@ class PostgreSQLBinding(DBBinding):
 	def removeSchedule(self, ri:str) -> bool:
 		# L.isDebug and L.logDebug(f'Removing schedule {ri} from database')
 		return self._executePrepared('deleteSchedule (%s)', (ri,))
+	
+
+	#
+	#	Originator operations
+	#
+
+	def getOriginator(self, originator: str) -> Optional[Tuple[str, OriginatorType]]:
+		# L.isDebug and L.logDebug('Getting originator information from database')
+
+		return self._executePrepared('getOriginator (%s)', (originator,),
+									 lambda c: self._fetchSingleRow(c, False))
+
+
+
+	def addOriginator(self, originatorStructure: JSON, originator: str) -> bool:
+		return self._executePrepared('insertOriginator (%s, %s)', (originator, PsyJson(originatorStructure)))
+
+
+	def removeOriginator(self, originator: str) -> bool:
+		return self._executePrepared('deleteOriginator (%s)', (originator,))

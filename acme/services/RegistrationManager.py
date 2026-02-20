@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Any, Optional
 
-from ..etc.Types import ResourceTypes, JSON, CSEType
+from ..etc.Types import ResourceTypes, JSON, CSEType, OriginatorType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
 from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, uniqueRN, originatorToID
@@ -115,6 +115,8 @@ class RegistrationManager(object):
 				except ResponseException as e:
 					e.dbg = f'cannot register CSEBaseAnnc: {e.dbg}'
 					raise e
+			case ResourceTypes.CSEBase:
+				self.handleCSEBaseRegistration(resource, originator)
 
 		# Test and set creator attribute.
 		self.handleCreator(resource, originator)
@@ -174,6 +176,7 @@ class RegistrationManager(object):
 			case ResourceTypes.CSR:
 				if not self.handleRegistreeCSRDeRegistration(resource):
 					raise BAD_REQUEST('cannot deregister CSR')
+			# We do not CSEBase de-registration. This should never happen
 
 
 	def postResourceDeletion(self, resource:Resource) -> None:
@@ -234,6 +237,10 @@ class RegistrationManager(object):
 		if not parentResource or parentResource.ty != ResourceTypes.CSEBase:
 			raise INVALID_CHILD_RESOURCE_TYPE('Parent must be the CSE')
 
+		# Add the originator to the database
+		# TODO distinguid between C and S originators 
+		CSE.storage.addOriginator(originator, OriginatorType.CAEID)
+
 		return originator
 
 
@@ -248,6 +255,9 @@ class RegistrationManager(object):
 		# Special handling for "S" registrations
 		if ae.aei.startswith('S'):
 			self.deregisterSOriginator(ae)
+
+		# delete the originator from the database
+		CSE.storage.removeOriginator(ae.aei)	
 
 		# Send event
 		self._eventAEHasDeregistered(ae)
@@ -266,8 +276,7 @@ class RegistrationManager(object):
 			Todo:
 				Currently this is done by searching the storage. This should be optimized by using an index for the originator.
 		"""
-		# TODO optimize this by using an index for the originator
-		return len(CSE.storage.searchByFragment({'aei' : originator})) > 0
+		return CSE.storage.getOriginator(originator) is not None	
 
 	#########################################################################
 
@@ -374,6 +383,22 @@ class RegistrationManager(object):
 	def handleREQDeRegistration(self, resource:Resource) -> bool:
 		L.isDebug and L.logDebug(f'DeRegisterung REQ. ri: {resource.ri}')
 		return True
+
+
+	#########################################################################
+
+	#
+	#	Handle CSEBaseregistration
+	#
+
+	def handleCSEBaseRegistration(self, cb:Resource, originator:str) -> None:
+		csi = cb.csi
+		L.isDebug and L.logDebug(f'Registering CSEBase. csi: {cb.csi}')
+		if CSE.storage.getOriginator(csi):
+			raise CONFLICT(L.logDebug(f'CSEBase with csi: {csi} already exists'))
+		
+		# For now only store the csi as originator
+		CSE.storage.addOriginator(csi, OriginatorType.CSEID)
 
 
 	#########################################################################

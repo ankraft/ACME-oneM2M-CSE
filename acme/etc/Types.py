@@ -948,6 +948,19 @@ OperationMonitor:TypeAlias = Dict[str, Tuple[AccessControlOperations, str]]
 """	Operation Monitor. """
 	
 
+class OriginatorType(ACMEIntEnum):
+	""" Originator Types. """
+	UNKNOWN	= 0
+	""" Unknown originator type. """
+	CAEID = 1
+	""" CSE-relative Application Entity ID. """
+	SAEID = 2
+	""" Service-Provider-relative Application Entity ID. """
+	CSEID = 3
+	""" CSE ID. """
+	SPID = 4
+	""" Service Provider ID. """
+
 ##############################################################################
 #
 #	Discovery & Filter

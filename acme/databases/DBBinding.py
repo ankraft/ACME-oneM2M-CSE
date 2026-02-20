@@ -10,10 +10,10 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Callable, Sequence
+from typing import Optional, Callable, Sequence, Tuple
 from abc import ABC, abstractmethod
 
-from ..etc.Types import JSON, ResourceTypes
+from ..etc.Types import JSON, ResourceTypes, OriginatorType
 
 
 class DBBinding(ABC):
@@ -605,5 +605,48 @@ class DBBinding(ABC):
 
 			Return:
 				True if the schedule was removed, False otherwise.
+		"""
+		...
+
+
+	#
+	#	Originator operations
+	#
+
+	@abstractmethod
+	def getOriginator(self, originator: str) -> Optional[Tuple[str, OriginatorType]]:
+		"""	Get an originator and its information from the database.
+ 
+ 			Args:
+ 				originator: The originator to search for.
+
+ 			Return:
+ 				Tuple containing the originator and its type, or None if not found.
+		"""
+		...
+
+	
+	@abstractmethod
+	def addOriginator(self, originatorStructure: JSON, originator: str) -> bool:
+		"""	Add an originator to the database.
+ 
+ 			Args:
+ 				originatorStructure: The originator structure to add.
+ 				originator: The originator to add.
+
+ 			Return:
+ 				Boolean value to indicate success or failure.
+		"""
+		...
+
+	@abstractmethod
+	def removeOriginator(self, originator: str) -> bool:
+		"""	Remove an originator from the database.
+ 
+ 			Args:
+ 				originator: The originator to remove.
+
+ 			Return:
+ 				Boolean value to indicate success or failure.
 		"""
 		...

@@ -21,16 +21,15 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, List, Optional, Sequence
+from typing import Callable, cast, List, Optional, Sequence, Tuple
 
 import os
-from configparser import ConfigParser
 
-from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode
+from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode, OriginatorType
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
 from ..etc.Constants import RuntimeConstants as RC
-from .Configuration import Configuration, ConfigurationError
+from .Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..resources.SCH import SCH
@@ -406,9 +405,9 @@ class Storage(object):
 
 	# TODO split this into two methods (one for resources, one for raw resources)
 		
-	def directChildResources(self, pi:str, 
-								   ty:Optional[ResourceTypes|list[ResourceTypes]] = None, 
-								   raw:Optional[bool] = False) -> list[JSON]|list[Resource]:
+	def directChildResources(self, pi: str, 
+								   ty: Optional[ResourceTypes|list[ResourceTypes]]=None, 
+								   raw: Optional[bool]=False) -> list[JSON]|list[Resource]:
 		"""	Return a list of direct child resources, or an empty list
 
 			Args:
@@ -420,7 +419,10 @@ class Storage(object):
 				Return a list of resources, or a list of raw resource dictionaries.
 		"""
 		if (_ris := self.db.searchChildResourceIDsByParentRIAndType(pi, ty)):
-			docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris]
+			# docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris ]
+			docs = [_r[0] 
+		   			for _ri in _ris 
+					if (_r := self.db.searchResources(ri=_ri))]	# get the resource documents for the child resource IDs, only when they exist
 			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
 	
@@ -920,3 +922,49 @@ class Storage(object):
 		"""
 		return self.db.removeSchedule(schedule.ri)
 
+
+
+	#########################################################################
+	##
+	##	Originators
+	##
+
+	def getOriginator(self, originator: str) -> Optional[Tuple[str, OriginatorType]]:
+		"""	Get an originator and its information from the database.
+
+			Args:
+				originator: The originator to search for.
+
+			Return:
+				Tuple of the originator and its type.
+				
+		"""
+		return self.db.getOriginator(originator)
+	
+
+	def addOriginator(self, originator: str, type: OriginatorType) -> bool:
+		"""	Add an originator to the database.
+
+			Args:
+				originator: The originator to add.
+				type: The type of the originator.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
+		return self.db.addOriginator({
+			'originator': originator,
+			'type': type.value
+		}, originator)
+	
+
+	def removeOriginator(self, originator: str) -> bool:
+		"""	Remove an originator from the database.
+
+			Args:
+				originator: The originator to remove.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
+		return self.db.removeOriginator(originator)

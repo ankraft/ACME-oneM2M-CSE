@@ -203,11 +203,11 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	try:
 		textUI = TextUI()						# Start the textUI
 		console = Console()						# Start the console
+		storage = Storage()						# Initialize the resource storage
 
 		importer = Importer()					# Initialize the importer
 		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
 
-		storage = Storage()						# Initialize the resource storage
 		statistics = Statistics()				# Initialize the statistics system
 		registration = RegistrationManager()	# Initialize the registration manager
 		validator = Validator()					# Initialize the resource validator

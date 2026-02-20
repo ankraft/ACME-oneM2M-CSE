@@ -10,14 +10,14 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Callable, Sequence, cast
+from typing import Optional, Callable, Sequence, Tuple, cast
 
 import shutil, os
 from threading import Lock
 from pathlib import Path
 
 from .DBBinding import DBBinding
-from ..etc.Types import JSON, ResourceTypes
+from ..etc.Types import JSON, ResourceTypes, OriginatorType
 
 from ..runtime.Logging import Logging as L
 
@@ -78,6 +78,7 @@ class TinyDBBinding(DBBinding):
 		'lockActions',
 		'lockRequests',
 		'lockSchedules',
+		'lockOriginators',
 
 		'fileResources',
 		'fileIdentifiers',
@@ -176,39 +177,45 @@ class TinyDBBinding(DBBinding):
 		self.lockSchedules = Lock()
 		""" Lock for the schedules table."""
 
+		self.lockOriginators = Lock()
+		""" Lock for the originators. """
+
 
 		# All databases/tables will use the smart query cache
 		if not self.path:
 			L.isInfo and L.log('DB in memory')
 
-			self.dbResources = TinyDB(storage = MemoryStorage)
+			self.dbResources = TinyDB(storage=MemoryStorage)
 			""" The TinyDB database for the resources table."""
 
-			self.dbIdentifiers = TinyDB(storage = MemoryStorage)
+			self.dbIdentifiers = TinyDB(storage=MemoryStorage)
 			""" The TinyDB database for the identifiers table."""
 
-			self.dbSubscriptions = TinyDB(storage = MemoryStorage)
+			self.dbSubscriptions = TinyDB(storage=MemoryStorage)
 			""" The TinyDB database for the subscriptions table."""
 
-			self.dbBatchNotifications = TinyDB(storage = MemoryStorage)
+			self.dbBatchNotifications = TinyDB(storage=MemoryStorage)
 			""" The TinyDB database for the batchNotifications table."""
 
-			self.dbStatistics = TinyDB(storage = MemoryStorage)
+			self.dbStatistics = TinyDB(storage=MemoryStorage)
 			""" The TinyDB database for the statistics table."""
 
-			self.dbActions = TinyDB(storage = MemoryStorage)
+			self.dbActions = TinyDB(storage=MemoryStorage)
 			""" The TinyDB database for the actions table."""
 
-			self.dbRequests = TinyDB(storage = MemoryStorage)
+			self.dbRequests = TinyDB(storage=MemoryStorage)
 			""" The TinyDB database for the requests table."""
-			#
-			self.dbSchedules = TinyDB(storage = MemoryStorage)
+			
+			self.dbSchedules = TinyDB(storage=MemoryStorage)
 			""" The TinyDB database for the schedules table."""
+
+			self.dbOriginators = TinyDB(storage=MemoryStorage)
+			""" The TinyDB database for the originators table."""
 
 		else:	# path is set
 
 			L.isInfo and L.log('DB in file system. Data directory: ' + self.path)
-			os.makedirs(self.path, exist_ok = True)
+			os.makedirs(self.path, exist_ok=True)
 			
 			#
 			#	Assign file names
@@ -238,77 +245,87 @@ class TinyDBBinding(DBBinding):
 			self.fileSchedules = f'{self.path}/{_schedules}-{postfix}.json'
 			""" Filename for the schedules table."""
 
+			self.fileOriginators = f'{self.path}/originators-{postfix}.json'
+			""" Filename for the originators table."""
+
 			#
 			#	Open/Create databases
 			#
 
-			self.dbResources = TinyDB(self.fileResources, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbResources = TinyDB(self.fileResources, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
 			""" The TinyDB database for the resources table."""
 
-			self.dbIdentifiers = TinyDB(self.fileIdentifiers, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbIdentifiers = TinyDB(self.fileIdentifiers, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
 			""" The TinyDB database for the identifiers table."""
 
-			self.dbSubscriptions = TinyDB(self.fileSubscriptions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbSubscriptions = TinyDB(self.fileSubscriptions, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
 			""" The TinyDB database for the subscriptions table."""
 
-			self.dbBatchNotifications = TinyDB(self.fileBatchNotifications, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbBatchNotifications = TinyDB(self.fileBatchNotifications, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
 			""" The TinyDB database for the batchNotifications table."""
 
-			self.dbStatistics = TinyDB(self.fileStatistics, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbStatistics = TinyDB(self.fileStatistics, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
 			""" The TinyDB database for the statistics table."""
 
-			self.dbActions = TinyDB(self.fileActions, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbActions = TinyDB(self.fileActions, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
 			""" The TinyDB database for the actions table."""
 
-			self.dbRequests = TinyDB(self.fileRequests, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbRequests = TinyDB(self.fileRequests, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
 			""" The TinyDB database for the requests table."""
 
-			self.dbSchedules = TinyDB(self.fileSchedules, storage = TinyDBBufferedStorage, write_delay = self.writeDelay)
+			self.dbSchedules = TinyDB(self.fileSchedules, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
 			""" The TinyDB database for the schedules table."""
+
+			self.dbOriginators = TinyDB(self.fileOriginators, storage=TinyDBBufferedStorage, write_delay=self.writeDelay)
+			""" The TinyDB database for the originators table."""
 
 		
 		#
 		#	Open/Create tables
 		#
-		self.tabResources = self.dbResources.table(_resources, cache_size = self.cacheSize)
+		self.tabResources = self.dbResources.table(_resources, cache_size=self.cacheSize)
 		""" The TinyDB table for the resources table."""
 		TinyDBBetterTable.assign(self.tabResources)
 		
-		self.tabIdentifiers = self.dbIdentifiers.table(_identifiers, cache_size = self.cacheSize)
+		self.tabIdentifiers = self.dbIdentifiers.table(_identifiers, cache_size=self.cacheSize)
 		""" The TinyDB table for the identifiers table."""
 		TinyDBBetterTable.assign(self.tabIdentifiers)
 
-		self.tabChildResources = self.dbIdentifiers.table(_children, cache_size = self.cacheSize)
+		self.tabChildResources = self.dbIdentifiers.table(_children, cache_size=self.cacheSize)
 		""" The TinyDB table for the childResources table."""
 		TinyDBBetterTable.assign(self.tabChildResources)
 
-		self.tabStructuredIDs = self.dbIdentifiers.table('srn', cache_size = self.cacheSize)
+		self.tabStructuredIDs = self.dbIdentifiers.table('srn', cache_size=self.cacheSize)
 		""" The TinyDB table for the structuredIDs table."""
 		TinyDBBetterTable.assign(self.tabStructuredIDs)
 		
-		self.tabSubscriptions = self.dbSubscriptions.table(_subscriptions, cache_size = self.cacheSize)
+		self.tabSubscriptions = self.dbSubscriptions.table(_subscriptions, cache_size=self.cacheSize)
 		""" The TinyDB table for the subscriptions table."""
 		TinyDBBetterTable.assign(self.tabSubscriptions)
 		
-		self.tabBatchNotifications = self.dbBatchNotifications.table(_batchNotifications, cache_size = self.cacheSize)
+		self.tabBatchNotifications = self.dbBatchNotifications.table(_batchNotifications, cache_size=self.cacheSize)
 		""" The TinyDB table for the batchNotifications table."""
 		TinyDBBetterTable.assign(self.tabBatchNotifications)
 		
-		self.tabStatistics = self.dbStatistics.table(_statistics, cache_size = self.cacheSize)
+		self.tabStatistics = self.dbStatistics.table(_statistics, cache_size=self.cacheSize)
 		""" The TinyDB table for the statistics table."""
 		TinyDBBetterTable.assign(self.tabStatistics)
 
-		self.tabActions = self.dbActions.table(_actions, cache_size = self.cacheSize)
+		self.tabActions = self.dbActions.table(_actions, cache_size=self.cacheSize)
 		""" The TinyDB table for the actions table."""
 		TinyDBBetterTable.assign(self.tabActions)
 
-		self.tabRequests = self.dbRequests.table(_requests, cache_size = self.cacheSize)
+		self.tabRequests = self.dbRequests.table(_requests, cache_size=self.cacheSize)
 		""" The TinyDB table for the requests table."""
 		TinyDBBetterTable.assign(self.tabRequests)
 
-		self.tabSchedules = self.dbSchedules.table(_schedules, cache_size = self.cacheSize)
+		self.tabSchedules = self.dbSchedules.table(_schedules, cache_size=self.cacheSize)
 		""" The TinyDB table for the schedules table."""
 		TinyDBBetterTable.assign(self.tabSchedules)
+
+		self.tabOriginators = self.dbOriginators.table('originators', cache_size=self.cacheSize)
+		""" The TinyDB table for the originators table."""
+		TinyDBBetterTable.assign(self.tabOriginators)
 
 		#
 		#	Create the Queries
@@ -335,6 +352,9 @@ class TinyDBBinding(DBBinding):
 		self.schedulesQuery = Query()
 		""" The TinyDB query object for the schedules table."""
 
+		self.originatorsQuery = Query()
+		""" The TinyDB query object for the originators table."""
+
 
 	def closeDB(self) -> None:
 		L.isInfo and L.log('Closing DBs')
@@ -354,6 +374,8 @@ class TinyDBBinding(DBBinding):
 			self.dbRequests.close()
 		with self.lockSchedules:
 			self.dbSchedules.close()
+		with self.lockOriginators:
+			self.dbOriginators.close()
 
 
 	def purgeDB(self) -> None:
@@ -368,6 +390,7 @@ class TinyDBBinding(DBBinding):
 		self.tabActions.truncate()
 		self.tabRequests.truncate()
 		self.tabSchedules.truncate()
+		self.tabOriginators.truncate()
 	
 
 	def backupDB(self, dir:str) -> bool:
@@ -386,13 +409,15 @@ class TinyDBBinding(DBBinding):
 					self.fileStatistics,
 					self.fileActions,
 					self.fileRequests,
-					self.fileSchedules
+					self.fileSchedules,
+					self.fileOriginators
 				  ]:
 			if Path(fn).is_file():
 				shutil.copy2(fn, dir)
 		L.isDebug and L.logDebug('DB backup done')
 		return True
 
+	#########################################################################
 
 	#
 	#	Resources
@@ -761,4 +786,22 @@ class TinyDBBinding(DBBinding):
 			return len(self.tabSchedules.remove(doc_ids = [ri])) > 0	# type:ignore[arg-type, list-item]
 		
 
+
+	#
+	#	Originators
+	#
+
+	def getOriginator(self, originator: str) -> Optional[Tuple[str, OriginatorType]]:
+		with self.lockOriginators:
+			return cast(Optional[Tuple[str, OriginatorType]], self.tabOriginators.get(doc_id=originator))	# type:ignore[arg-type]
+
+
+	def addOriginator(self, originatorStructure: JSON, originator: str) -> bool:
+		with self.lockOriginators:
+			return self.tabOriginators.insert(Document(originatorStructure, doc_id=originator)) is not None 	# type:ignore[arg-type]
+
+	
+	def removeOriginator(self, originator: str) -> bool:
+		with self.lockOriginators:
+			return len(self.tabOriginators.remove(doc_ids=[originator])) > 0	# type:ignore[arg-type, list-item]
 
