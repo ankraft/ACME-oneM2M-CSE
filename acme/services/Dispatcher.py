@@ -702,8 +702,6 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointRsrc.getSrn()}')
 			return fanoutPointRsrc.handleCreateRequest(request, srn, request.originator)
 		
-		# la, ol, pcu, ntsr cannot receive CREATE request
-
 		# Some Resources are not allowed to be created in a request, return immediately
 		if not ResourceTypes.isRequestCreatable(request.ty):
 			raise OPERATION_NOT_ALLOWED(f'CREATE not allowed for type: {request.ty}')
@@ -712,7 +710,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		parentResource = self.retrieveResource(id, request=request)
 
-		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = request.ty, parentResource = parentResource, request=request):
+		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty=request.ty, parentResource = parentResource, request=request):
 			if request.ty == ResourceTypes.AE:
 				raise SECURITY_ASSOCIATION_REQUIRED('security association required')
 			else:
@@ -1011,8 +1009,9 @@ class Dispatcher(object):
 		# Get resource to update
 		resource = self.retrieveResource(id, request=request)
 
+
 		# Some Resources are not allowed to be updated in a request, return immediately
-		if ResourceTypes.isInstanceResource(resource.ty):
+		if not ResourceTypes.isRequestUpdatable(resource.ty):
 			raise OPERATION_NOT_ALLOWED(f'UPDATE not allowed for type: {resource.ty}')
 
 		#
@@ -1156,9 +1155,9 @@ class Dispatcher(object):
 	#	Delete resources
 	#
 
-	def processDeleteRequest(self, request:CSERequest, 
-								   originator:str, 
-								   id:Optional[str] = None) -> Result:
+	def processDeleteRequest(self, request: CSERequest, 
+								   originator: str, 
+								   id: Optional[str]=None) -> Result:
 		"""	Process a DELETE request. Delete resource(s).
 
 			Args:
@@ -1205,7 +1204,11 @@ class Dispatcher(object):
 		# get resource to be removed and check permissions
 		resource = self.retrieveResource(id, request=request)
 
-		if not CSE.security.hasAccess(originator, resource, Permission.DELETE, request = request, resultResource = resource):
+		# Some Resources are not allowed to be deleted in a request, return immediately
+		if not ResourceTypes.isRequestDeletable(resource.ty):
+			raise OPERATION_NOT_ALLOWED(f'DELETE not allowed for type: {resource.ty}')
+
+		if not CSE.security.hasAccess(originator, resource, Permission.DELETE, request=request, resultResource=resource):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator: {originator} has no DELETE privileges for resource: {resource.ri}')
 
 		# Check for virtual resource
@@ -1263,11 +1266,11 @@ class Dispatcher(object):
 		return Result(resource=resultContent, rsc=ResponseStatusCode.DELETED)
 
 
-	def deleteLocalResource(self, resource:Resource, 
-								  originator:Optional[str]=None, 
-								  withDeregistration:Optional[bool]=False, 
-								  parentResource:Optional[Resource]=None, 
-								  doDeleteCheck:Optional[bool]=True) -> None:
+	def deleteLocalResource(self, resource: Resource, 
+								  originator: Optional[str]=None, 
+								  withDeregistration: Optional[bool]=False, 
+								  parentResource: Optional[Resource]=None, 
+								  doDeleteCheck: Optional[bool]=True) -> None:
 		"""	Delete a resource from the CSE. Call deactivate() and deleted() callbacks on the resource.
 
 			Args:
@@ -1312,7 +1315,7 @@ class Dispatcher(object):
 				parentResource.childRemoved(resource, originator)
 
 
-	def deleteResource(self, id:str,  originator:Optional[str] = None) -> None:
+	def deleteResource(self, id: str,  originator: Optional[str]=None) -> None:
 		""" Delete a resource from the CSE. 
 
 			Args:

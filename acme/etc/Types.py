@@ -423,7 +423,7 @@ class ResourceTypes(ACMEIntEnum):
 	
 
 	@classmethod
-	def isRequestCreatable(cls, ty:ResourceTypes) -> bool:
+	def isRequestCreatable(cls, ty: ResourceTypes) -> bool:
 		"""	Test whether a resource type is creatable through a request.
 		
 			Args:
@@ -432,6 +432,30 @@ class ResourceTypes(ACMEIntEnum):
 				*True* if the resource type can be created through a request.
 		"""
 		return ty in _resourceTypesIsRequestCreatable
+
+
+	@classmethod
+	def isRequestUpdatable(cls, ty: ResourceTypes) -> bool:
+		"""	Test whether a resource type is updatable through a request.
+		
+			Args:
+				ty: `ResourceTypes` value to test.
+			Return:
+				*True* if the resource type can be updated through a request.
+		"""
+		return ty in _resourceTypesIsRequestUpdatable
+
+
+	@classmethod
+	def isRequestDeletable(cls, ty: ResourceTypes) -> bool:
+		"""	Test whether a resource type is deletable through a request.
+		
+			Args:
+				ty: `ResourceTypes` value to test.
+			Return:
+				*True* if the resource type can be deleted through a request.
+		"""
+		return ty in _resourceTypesIsRequestDeletable
 
 
 	@classmethod
@@ -513,6 +537,12 @@ _resourceNamesTypes:dict[str, ResourceTypes] = {}
 
 _resourceTypesIsRequestCreatable:list[ResourceTypes] = []
 """	List of resource types that can be created by a request. """
+
+_resourceTypesIsRequestUpdatable:list[ResourceTypes] = []
+"""	List of resource types that can be updated by a request. """
+
+_resourceTypesIsRequestDeletable:list[ResourceTypes] = []
+"""	List of resource types that can be deleted by a request. """
 
 _resourceTypesIsNotificationEntity:list[ResourceTypes] = []
 """	List of resource types that represent an entity that can be a notification target. """

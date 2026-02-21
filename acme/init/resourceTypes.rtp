@@ -278,6 +278,7 @@
 		"type": 4,
 		"isInstanceResource": true,
 		"inheritACP": true,
+		"isRequestUpdatable": false,
 
 		"attributes": [
 			// Common and universal attributes
@@ -317,6 +318,7 @@
 		"type": 10004,
 		"isAnnouncedResource": true,
 		"isInstanceResource": true,
+		"isRequestUpdatable": false,
 		"inheritACP": true,
 
 		"attributes": [
@@ -864,6 +866,7 @@
 		"type": 58,
 		"isInstanceResource": true,
 		"isRequestCreatable": false,
+		"isRequestUpdatable": false,
 		"inheritACP": true,
 		"isSpecializationBaseResource": true,
 
@@ -892,6 +895,7 @@
 		"isAnnouncedResource": true,
 		"isInstanceResource": true,
 		"isRequestCreatable": false,
+		"isRequestUpdatable": false,
 		"inheritACP": true,
 
 		"attributes": [
@@ -2085,6 +2089,7 @@
 		"announcedType": "TSIAnnc",
 		"type": 30,
 		"isInstanceResource": true,
+		"isRequestUpdatable": false,
 		"inheritACP": true,
 
 		"attributes": [
@@ -2117,6 +2122,7 @@
 		"type": 10030,
 		"isAnnouncedResource": true,
 		"isInstanceResource": true,
+		"isRequestUpdatable": false,
 		"inheritACP": true,
 
 		"attributes": [

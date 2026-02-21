@@ -165,6 +165,8 @@ class Importer(object):
 							isMgmtSpecialization=rtDef.get('isMgmtSpecialization', False),
 							isNotificationEntity=rtDef.get('isNotificationEntity', False),
 							isRequestCreatable=rtDef.get('isRequestCreatable', True),
+							isRequestUpdatable=rtDef.get('isRequestUpdatable', True),
+							isRequestDeletable=rtDef.get('isRequestDeletable', True),
 							isSpecializationBaseResource=rtDef.get('isSpecializationBaseResource', False),
 							inheritACP=rtDef.get('inheritACP', False),
 							mgmtType=ResourceTypes(rtDef.get('mgmtType', ResourceTypes.UNKNOWN)),
