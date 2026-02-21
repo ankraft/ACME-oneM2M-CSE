@@ -271,6 +271,36 @@
 		]
 	},
 
+	"ALST": {
+		"typeName": "m2m:alst",
+		"fullName": "AEContactList",
+		"type": 43,
+		"isRequestCreatable": false,
+		"isRequestDeletable": false,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"et",
+			"acpi",
+			"daci",
+			"cust",
+			"ct",
+			"lt",
+			"lbl",
+		
+			// Resource attributes
+			"nic"
+		],
+
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
 	"CIN": {
 		"typeName": "m2m:cin",
 		"fullName": "ContentInstance",
@@ -542,6 +572,7 @@
 		"childResourceTypes": [
 			"ACP",
 			"ACTR", 
+			"ALST",
 			"AE", 
 			"CRS", 
 			"CSR", 

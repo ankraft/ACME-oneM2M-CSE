@@ -30,6 +30,7 @@ from ..resources.ACTR import ACTR
 from ..resources.ACTRAnnc import ACTRAnnc
 from ..resources.AE import AE
 from ..resources.AEAnnc import AEAnnc
+from ..resources.ALST import ALST
 from ..resources.CIN import CIN
 from ..resources.CINAnnc import CINAnnc
 from ..resources.CNT import CNT
@@ -129,6 +130,7 @@ _resourceClassMapping:dict[ResourceTypes, Tuple[Type[Resource], Callable]] = {
 	ResourceTypes.ACTRAnnc		: (ACTRAnnc,	lambda dct, tySN, create : ACTRAnnc(dct, create=create)),
 	ResourceTypes.AE 			: (AE,			lambda dct, tySN, create : AE(dct, create=create)),
 	ResourceTypes.AEAnnc		: (AEAnnc,		lambda dct, tySN, create : AEAnnc(dct, create=create)),
+	ResourceTypes.ALST			: (ALST,		lambda dct, tySN, create : ALST(dct, create=create)),	
 	ResourceTypes.CIN 			: (CIN,			lambda dct, tySN, create : CIN(dct, create=create)),
 	ResourceTypes.CINAnnc 		: (CINAnnc,		lambda dct, tySN, create : CINAnnc(dct, create=create)),
 	ResourceTypes.CNT 			: (CNT,			lambda dct, tySN, create : CNT(dct, create=create)),
@@ -380,6 +382,20 @@ def initResources() -> bool:
 		t
 		for t, d in resourceTypeDetails.items()
 		if d.isRequestCreatable
+	]
+
+	# A list of resource types that can be updated by a request
+	Types._resourceTypesIsRequestUpdatable = [
+		t
+		for t, d in resourceTypeDetails.items()
+		if d.isRequestUpdatable
+	]
+
+	# A list of resource types that can be deleted by a request
+	Types._resourceTypesIsRequestDeletable = [
+		t
+		for t, d in resourceTypeDetails.items()
+		if d.isRequestDeletable
 	]
 
 	# A list of resource types that are notification entities

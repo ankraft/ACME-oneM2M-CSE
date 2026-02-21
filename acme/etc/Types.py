@@ -100,6 +100,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	TimeSeriesInstance resource type. """
 	DAC				= 34
 	"""	DynamicAuthorizationConsultation resource type. """
+	ALST			= 43
+	"""	AEContactList resource type. """
 	TGR				= 47
 	"""	TriggerRequest resource type. """
 	CRS				= 48

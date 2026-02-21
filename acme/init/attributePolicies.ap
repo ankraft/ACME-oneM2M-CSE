@@ -3450,6 +3450,18 @@
 			"annc": "OA"
 		}
 	],
+	"nic": [
+		{
+			"rtypes": [ "ALST", "REQRESP" ],
+			"lname": "numberImpactedCSEs",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP"
+		}
+	],
 	"nid": [
 		{
 			"rtypes": [ "NOD", "REQRESP" ],

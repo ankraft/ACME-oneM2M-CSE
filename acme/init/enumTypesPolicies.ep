@@ -272,6 +272,7 @@
 		"29": "timeSeries",
 		"30": "timeSeriesInstance",
 		"34": "dymamicAuthorizationConsultation",
+		"43": "AEContactList",
 		"47": "triggerRequest",
 		"48": "crossResourceSubscription",
 		"58": "flexContainerInstance",

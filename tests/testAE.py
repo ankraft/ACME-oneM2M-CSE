@@ -210,8 +210,8 @@ class TestAE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByUnknownOriginator(self) -> None:
 		""" Delete <AE> with wrong originator -> Fail """
-		_, rsc = DELETE(aeURL, 'Cwrong')
-		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
+		r, rsc = DELETE(aeURL, 'Cwrong')
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

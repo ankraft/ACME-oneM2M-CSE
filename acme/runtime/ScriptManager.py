@@ -487,7 +487,6 @@ class ACMEPContext(PContext):
 		# config value
 		if (_v := Configuration.get(_key)) is None:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined configuration key: {_key}'))
-		
 		return pcontext.setResult(SSymbol.symbolFromValue(_v))
 
 
