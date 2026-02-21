@@ -136,6 +136,10 @@ class ACMEConfigurationTree(TextualTree):
 
 		# Add all keys as paths recursively to the tree
 		for k in CSE.Configuration.all().keys():
+			if k in ('configParser',):
+				# These are not actual configuration settings, but internal attributes
+				# of the Configuration class. Skip them.
+				continue
 			_addSetting(k.split('.'), 0, self.root)
 
 		# Show root documentation
