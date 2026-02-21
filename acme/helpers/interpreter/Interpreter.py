@@ -1548,7 +1548,7 @@ def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	assertSymbol(pcontext, symbol, minLength=3)
 
-	pcontext, _e = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tT, SType.tList, SType.tListQuote, SType.tString))
+	pcontext, _e = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tT, SType.tList, SType.tListQuote, SType.tString, SType.tNumber))
 	if isinstance(_e, (list, str)):
 		_e = len(_e) > 0
 
