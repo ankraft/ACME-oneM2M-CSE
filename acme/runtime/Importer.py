@@ -118,9 +118,9 @@ class Importer(object):
 	#
 
 	
-	def importResourcePolicies(self) -> bool:
+	def importResourcePolicies(self) -> None:
 
-		def _importResourcePolicies(path: str) -> bool:
+		def _importResourcePolicies(path: str) -> None:
 			"""	Import the resource type policies.
 
 				Args:
@@ -129,8 +129,7 @@ class Importer(object):
 					True if the policies were successfully imported, False otherwise.
 			"""
 			if not os.path.exists(path):
-				L.isWarn and L.logWarn(f'Import directory for resource type policies does not exist: {path}')
-				return False
+				raise RuntimeError(L.logWarn(f'Import directory for resource type policies does not exist: {path}'))
 
 			L.isDebug and L.logDebug('Importing resource type policies')
 			countRP = 0
@@ -144,13 +143,12 @@ class Importer(object):
 
 				# Read the JSON file
 				if not (resourceTypes := cast(JSON, self.readJSONFromFile(fn))):
-					return False
+					raise RuntimeError(f'Error reading resource type policies from file: {fn}')
 			
 				# Add a ResourceDescription for each resource type
 				for rtName, rtDef in resourceTypes.items():
 					if not isinstance(rtDef, dict):
-						L.logErr(f'Wrong or empty resource type definition for resource type: {rtName} in file: {fn}')
-						return False
+						raise RuntimeError(L.logErr(f'Wrong or empty resource type definition for resource type: {rtName} in file: {fn}'))
 					try:
 						resourceTypeDetails[ResourceTypes[rtName]] = ResourceDescription(
 							type=ResourceTypes(rtDef['type']),
@@ -175,26 +173,22 @@ class Importer(object):
 						)
 						countRP += 1
 					except KeyError as e:
-						L.logErr(f'Wrong resource type definition for resource type: {rtName} in file: {fn} - missing or wrong value for: {str(e)}')
-						return False
-
+						raise RuntimeError(L.logErr(f'Wrong resource type definition for resource type: {rtName} in file: {fn} - missing or wrong value for: {str(e)}'))
 
 
 			L.isDebug and L.logDebug(f'Imported {countRP} resource policies')
-			return True
+
 
 		# Resource type policies are the first thing to import, 
 		# because they are needed for the attribute policies and the resource factory initialization.	
-		if not _importResourcePolicies(self.resourcePath):
-			return False
+		_importResourcePolicies(self.resourcePath)
 
 		# Initialize the resource factory, e.g. register resource types and their constructors
 		# This can only be done after the importer has imported the resource type definitions, 
 		# which are used in the resource descriptions for the factory registration
 		if not initResources():
-			return False
+			raise RuntimeError(L.logErr('Failed to initialize resources'))
 
-		return True
 
 
 
@@ -626,7 +620,7 @@ class Importer(object):
 			L.logErr(f'"ns" must be a non-empty string for attribute: {sname} in file: {fn}', showStackTrace=False)
 			return None
 		if not typeShortname:
-			typeShortname = f'{ns}:{sname}'
+			typeShortname = f'{ns}:{sname}' if not sname.startswith(f'{ns}:') else sname
 		
 		#	Get the attribute long name
 		if not (lname := findXPath(attr, 'lname')) or not isinstance(lname, str) or len(lname) == 0:

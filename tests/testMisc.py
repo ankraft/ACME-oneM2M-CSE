@@ -220,6 +220,7 @@ class TestMisc(unittest.TestCase):
 						'rep' : {},
 						'net' : NotificationEventType.resourceUpdate
 					},
+					'sur': 'ignored',	# "sur must be present, but is ignored in this test
 				}
 			}
 
@@ -504,6 +505,7 @@ class TestMisc(unittest.TestCase):
 						'rep' : {},
 						'net' : NotificationEventType.resourceUpdate
 					},
+					'sur': 'ignored',	# "sur must be present, but is ignored in this test
 				}
 			}
 

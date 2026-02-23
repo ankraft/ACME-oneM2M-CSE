@@ -287,43 +287,8 @@ class Validator(object):
 	#	Validate complex types
 	#
 
-	# TODO move this later to the attributePolicies file in init/ directory. Perhaps something along
-	# 		"name" : [ "attribute1", "attribute", ...]
 
-
-	complexAttributePolicies:Dict[str, AttributePolicyDict] = {
-		# Response
-		'rsp' :	{
-			'rsc' : AttributePolicy(type = BasicType.integer,          cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rsp', lname = 'responseStatusCode', namespace = 'm2m', typeShortname = 'm2m:rsc'),
-			'rqi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rqi', lname = 'requestIdentifier', namespace = 'm2m', typeShortname = 'm2m:rqi'),
-			'pc' : AttributePolicy(type = BasicType.dict,              cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'pc', lname = 'primitiveContent', namespace = 'm2m', typeShortname = 'm2m:pc'),
-			'to' : AttributePolicy(type = BasicType.string,            cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'to', lname = 'to', namespace = 'm2m', typeShortname = 'm2m:to'),
-			'fr' : AttributePolicy(type = BasicType.ID,			       cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'fr', lname = 'from', namespace = 'm2m', typeShortname = 'm2m:fr'),
-			'ot' : AttributePolicy(type = BasicType.timestamp,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ot', lname = 'originatingTimestamp', namespace = 'm2m', typeShortname = 'm2m:or'),
-			'rset' : AttributePolicy(type = BasicType.absRelTimestamp, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rset', lname = 'resultExpirationTimestamp', namespace = 'm2m', typeShortname = 'm2m:rset'),
-			'ec' : AttributePolicy(type = BasicType.positiveInteger,   cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ec', lname = 'eventCategory', namespace = 'm2m', typeShortname = 'm2m:ec'),
-			'cnst' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnst', lname = 'contentStatus', namespace = 'm2m', typeShortname = 'm2m:cnst'),
-			'cnot' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnot', lname = 'contentOffset', namespace = 'm2m', typeShortname = 'm2m:cnot'),
-			'ati' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ati', lname = 'assignedTokenIdentifiers', namespace = 'm2m', typeShortname = 'm2m:ati'),
-			'tqf' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'tqf', lname = 'tokenRequestInformation', namespace = 'm2m', typeShortname = 'm2m:tqf'),
-			'asri' : AttributePolicy(type = BasicType.boolean,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'asri', lname = 'authorSignReqInfo', namespace = 'm2m', typeShortname = 'm2m:asri'),
-			'rvi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rvi', lname = 'releaseVersionIndicator', namespace = 'm2m', typeShortname = 'm2m:rvi'),
-			'vsi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'vsi', lname = 'vendorInformation', namespace = 'm2m', typeShortname = 'm2m:vsi'),
-		},
-		# 'm2m:sgn' : {
-		# 	'fr' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', typeShortname='m2m:fr'),
-		# 	'to' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', typeShortname='m2m:to'),
-		# }
-
-	}
-	"""	Some complex attribute policies. 
-	
-		Todo:
-			- move this to the attributePolicies file in init/ directory.
-	"""
-
-
-	def validatePrimitiveContent(self, pc:JSON) -> None:
+	def validatePrimitiveContent(self, pc:JSON, elementName: str) -> None:
 		""" Validate the primitive content.
 		
 			Args:
@@ -337,9 +302,17 @@ class Validator(object):
 		if len(pc.keys()) != 1:	# TODO is this correct?
 			raise BAD_REQUEST(f'primitive content shall contain exactly one element')
 		
-		name,obj = list(pc.items())[0]
-		if ap := self.complexAttributePolicies.get(name):
-			self.validateAttributes(obj, typeShortname = name, attributes=ap)
+		# Only support some types for now, but this can be easily extended later
+		ap = self.getAttributePolicy(None, attr=elementName)
+		if ap:
+			match ap.rtypes[0]:	
+				case ResourceTypes.NOTIFICATION | ResourceTypes.RESPONSE:
+					L.isDebug and L.logDebug(f'validating primitive content: {elementName}')
+					self._validateType(ap.type, pc.get(elementName), convert=True, policy=ap)
+				
+				case _:
+					L.logErr(f'Ignoring validation for primitive content element: {elementName} - No policy found for this element')
+					pass
 		
 
 	#
@@ -653,6 +626,8 @@ class Validator(object):
 		if (ap := attributePolicies.get((ResourceTypes.REQUEST, attr))):
 			return ap
 		if (ap := attributePolicies.get((ResourceTypes.RESPONSE, attr))):
+			return ap
+		if (ap := attributePolicies.get((ResourceTypes.NOTIFICATION, attr))):
 			return ap
 
 		# If it couldn't be found, look whether it has been defined for ALL
@@ -1127,6 +1102,6 @@ class Validator(object):
 			case BasicType.any:
 				return (dataType, value)
 
-		raise BAD_REQUEST(f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
+		raise BAD_REQUEST(f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}, Attribute: {policy.sname if policy else "unknown"}')
 
 

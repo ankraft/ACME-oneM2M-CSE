@@ -81,7 +81,7 @@ class PCH_PCU(VirtualResource):
 			raise BAD_REQUEST(f'Missing content/request in notification')
 		
 		# Validate the response
-		CSE.validator.validatePrimitiveContent(request.pc)
+		CSE.validator.validatePrimitiveContent(request.pc, request.topElememt)
 
 		if (innerPC := cast(JSON, request.pc.get('m2m:rsp'))) is None:
 			raise BAD_REQUEST(L.logDebug(f'Notification to PCU must contain a Response (m2m:rsp)'))

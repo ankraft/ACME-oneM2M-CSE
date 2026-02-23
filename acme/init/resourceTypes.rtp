@@ -3600,6 +3600,13 @@
 		"fullName": "Response Primitive",
 		"type": -6,
 		"isInternalType": true
+	},
+
+	"NOTIFICATION": {
+		"typeName": "notificationPrimitive",
+		"fullName": "Notification Primitive",
+		"type": -7,
+		"isInternalType": true
 	}
 
 }

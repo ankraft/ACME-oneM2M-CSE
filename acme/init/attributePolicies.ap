@@ -410,6 +410,20 @@
 			"annc": "OA"
 		}
 	],
+	"ail": [
+		{
+			"rtypes": [ "ALPC" ],
+			"lname": "AE-IDList",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "ID",
+			"car": "01L",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
 	"air": [
 		{
 			"rtypes": [ "ACTR", "REQRESP" ],
@@ -1278,6 +1292,17 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		},
+		{
+			"rtypes": [ "ALPC" ],
+			"lname": "CSE-ID",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "1",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
 		}
 	],
 	"cst": [
@@ -3405,14 +3430,6 @@
 			"annc": "NA"
 		}
 	],
-	"nev": [
-		{
-			"rtypes": [ "UNKNOWN" ],
-			"lname": "notificationEvent",
-			"ns": "m2m",
-			"type": "any"
-		}
-	],
 	"nfu": [
 		{
 			"rtypes": [ "SUB", "REQRESP" ],
@@ -3999,14 +4016,6 @@
 			"annc": "OA"
 		}
 	],
-	"rep": [
-		{
-			"rtypes": [ "UNKNOWN" ],
-			"lname": "representation",
-			"ns": "m2m",
-			"type": "any"
-		}
-	],
 	"rid": [
 		{
 			"rtypes": [ "REQ", "REQRESP" ],
@@ -4410,14 +4419,6 @@
 			"annc": "OA"
 		}
 	],
-	"m2m:sgn": [
-		{
-			"rtypes": [ "UNKNOWN" ],
-			"lname": "notification",
-			"ns": "m2m",
-			"type": "any"
-		}
-	],
 	"sist": [
 		{
 			"rtypes": [ "SIM", "SIMAnnc", "REQRESP" ],
@@ -4807,15 +4808,6 @@
 			"annc": "NA"
 		}
 	],
-	// "sur": [
-	// 	{
-	// 		"rtypes": [ "UNKNOWN" ],
-	// 		"lname": "subscriptionReference",
-	// 		"ns": "m2m",
-	// 		"type": "any"
-	// 	}
-	// ],
-
 	"subi": [
 		// EXPERIMENTAL
 		{
@@ -5227,14 +5219,6 @@
 			"annc": "OA"
 		}
 	],
-	"vrq": [
-		{
-			"rtypes": [ "UNKNOWN" ],
-			"lname": "verificationRequest",
-			"ns": "m2m",
-			"type": "boolean"
-		}
-	],
 	"wcrds": [
 		{
 			"rtypes": [ "WIFIC", "WIFICAnnc", "REQRESP" ],
@@ -5617,7 +5601,29 @@
 			"od": "O",
 			"annc": "NA"
 		}
+	],
+
+	//
+	//	PrimitiveContent
+	//
+
+	"m2m:rsp": [
+			{
+				"rtypes": [ "RESPONSE" ],
+				"lname": "responsePrimitive",
+				"ns": "m2m",
+				"type": "m2m:responsePrimitive"
+			}
+	],
+	"m2m:sgn": [
+		{
+			"rtypes": [ "NOTIFICATION" ],
+			"lname": "notification",
+			"ns": "m2m",
+			"type": "m2m:notification"
+		}
 	]
+
 }
 
 

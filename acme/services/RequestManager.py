@@ -1508,8 +1508,9 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug(f'Missing primitive content or body in request for operation: {cseRequest.op}'), data=cseRequest)
 			else:
 				cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content
+				cseRequest.topElememt = list(cseRequest.pc.keys())[0] if cseRequest.pc else None
 				try:
-					CSE.validator.validatePrimitiveContent(cseRequest.pc)
+					CSE.validator.validatePrimitiveContent(cseRequest.pc, cseRequest.topElememt)
 				except ResponseException as e:
 					L.isDebug and L.logDebug(e.dbg)
 					e.data = cseRequest
