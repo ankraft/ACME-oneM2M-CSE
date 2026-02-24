@@ -1,13 +1,13 @@
 #
-#	ALST.py
+#	ALPC.py
 #
 #	(c) 2026 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	ResourceType: AEContactList
+#	ResourceType: AEContactListPerCSE
 #
 
-""" AEContactList (ALST) resource type. """
+""" AEContactListPerCSE (ALPC) resource type. """
 
 from __future__ import annotations
 
@@ -17,17 +17,17 @@ from ..resources.Resource import Resource
 from ..etc.Constants import RuntimeConstants as RC
 
 
-class ALST(Resource):
-	""" AEContactList (ALST) resource type. """
+class ALPC(Resource):
+	""" AEContactListPerCSE (ALPC) resource type. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 
 		# Check if we are running on an INCSE
 		if RC.cseType != CSEType.IN:
-			raise OPERATION_NOT_ALLOWED('ALST resource type is only allowed on an IN-CSE')
+			raise OPERATION_NOT_ALLOWED('ALPC resource type is only allowed on an IN-CSE')
 		
-		# Add RO attribute to the resource
-		self.setAttribute('nic', 0, overwrite=False)
-
 		return super().activate(parentResource, originator)
 	pass
+
+
+# Update. check if AE-IDList is empty, if yes, remove attribute

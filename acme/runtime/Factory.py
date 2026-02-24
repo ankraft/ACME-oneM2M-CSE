@@ -30,6 +30,7 @@ from ..resources.ACTR import ACTR
 from ..resources.ACTRAnnc import ACTRAnnc
 from ..resources.AE import AE
 from ..resources.AEAnnc import AEAnnc
+from ..resources.ALPC import ALPC
 from ..resources.ALST import ALST
 from ..resources.CIN import CIN
 from ..resources.CINAnnc import CINAnnc
@@ -130,6 +131,7 @@ _resourceClassMapping:dict[ResourceTypes, Tuple[Type[Resource], Callable]] = {
 	ResourceTypes.ACTRAnnc		: (ACTRAnnc,	lambda dct, tySN, create : ACTRAnnc(dct, create=create)),
 	ResourceTypes.AE 			: (AE,			lambda dct, tySN, create : AE(dct, create=create)),
 	ResourceTypes.AEAnnc		: (AEAnnc,		lambda dct, tySN, create : AEAnnc(dct, create=create)),
+	ResourceTypes.ALPC			: (ALPC,		lambda dct, tySN, create : ALPC(dct, create=create)),	
 	ResourceTypes.ALST			: (ALST,		lambda dct, tySN, create : ALST(dct, create=create)),	
 	ResourceTypes.CIN 			: (CIN,			lambda dct, tySN, create : CIN(dct, create=create)),
 	ResourceTypes.CINAnnc 		: (CINAnnc,		lambda dct, tySN, create : CINAnnc(dct, create=create)),

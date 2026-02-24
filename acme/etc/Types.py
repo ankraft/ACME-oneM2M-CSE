@@ -104,6 +104,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	DynamicAuthorizationConsultation resource type. """
 	ALST			= 43
 	"""	AEContactList resource type. """
+	ALPC			= 44
+	"""	AEContactListPerCSE resource type. """
 	TGR				= 47
 	"""	TriggerRequest resource type. """
 	CRS				= 48

@@ -271,6 +271,33 @@
 		]
 	},
 
+	"ALPC": {
+		"typeName": "m2m:alpc",
+		"fullName": "AEContactListPerCSE",
+		"type": 44,
+		"isRequestCreatable": false,
+		"isRequestDeletable": false,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"et",
+			"acpi",
+			"daci",
+			"cust",
+			"ct",
+			"lt",
+			"lbl",
+		
+			// Resource attributes
+			"csi",
+			"ail"
+		]
+	},
+
 	"ALST": {
 		"typeName": "m2m:alst",
 		"fullName": "AEContactList",
