@@ -105,7 +105,7 @@
 ;;
 ;;	Default <AEContactList> resource, only on the IN-CSE
 ;;
-(if ((get-config "cse.type") 1)
+(if (== (get-config "cse.type") 1)
 	(import-raw 
 		cse-originator
 		{ "m2m:alst": {
