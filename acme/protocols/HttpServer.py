@@ -454,7 +454,8 @@ class HttpServer(object):
 		Operation.RETRIEVE	: requests.get,
 		Operation.UPDATE 	: requests.put,
 		Operation.DELETE 	: requests.delete,
-		Operation.NOTIFY 	: requests.post
+		Operation.NOTIFY 	: requests.post,
+		Operation.DISCOVERY	: requests.get,
 	}
 	""" A mapping of operations to the corresponding HTTP methods. """
 
