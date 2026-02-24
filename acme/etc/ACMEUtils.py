@@ -122,23 +122,35 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 	ri 			= None
 	vrPresent	= None
 
-	# split path
-	idsLen = len(ids := id.split('/'))
-
-	# # Test for empty ID
-	# if (idsLen := len(ids)) == 0:	# There must be something!
-	# 	return None, None, None, 'ID must not be empty'
-
-	# Remove the empty elements in the beginnig of the list (they result from a single "/")
-	# and calculate from that the "level", which indicates CSE relative,
-	# SP relative or absolute
 	lvl = 0
-	while not ids[0]:
-		ids.pop(0)
+	_l = len(id)
+	while lvl < _l and id[lvl] == '/':
 		lvl += 1
-		idsLen -= 1
 	if lvl > 2:						# not more than 2 * / in front
 		return None, None, None, None, 'Too many "/" in front of ID'
+
+	idsLen = len(ids := id[lvl:].split('/'))
+
+	if not ids[-1]:
+		return None, None, None, None, f'{"CSE-relative" if lvl == 0 else "SP-relative" if lvl == 1 else "Absolute"} ID: "{id}" - last path element must not be empty.'
+
+	# # split path
+	# idsLen = len(ids := id.split('/'))
+
+	# # # Test for empty ID
+	# # if (idsLen := len(ids)) == 0:	# There must be something!
+	# # 	return None, None, None, 'ID must not be empty'
+
+	# # Remove the empty elements in the beginnig of the list (they result from a single "/")
+	# # and calculate from that the "level", which indicates CSE relative,
+	# # SP relative or absolute
+	# lvl = 0
+	# while not ids[0]:
+	# 	ids.pop(0)
+	# 	lvl += 1
+	# 	idsLen -= 1
+	# if lvl > 2:						# not more than 2 * / in front
+	# 	return None, None, None, None, 'Too many "/" in front of ID'
 
 	# Remove virtual resource shortname if it is present
 	if ResourceTypes.isVirtualResourceName(ids[-1]):
@@ -161,28 +173,31 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 		case 1:
 			# L.logDebug("SP-Relative")
 			if idsLen < 2:
-				return None, None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
+				return None, None, None, None, f'SP-relative ID is too short: "{id}". Must be /<cseid>/<structured path | unstructured ID>.'
+
 			csi = ids[0]					# extract the csi
 			if csi != RC.cseCsiSlashLess:	# Not for this CSE? retargeting
 				if vrPresent:				# append last path element again
 					ids.append(vrPresent)
 				return id, csi, srn, None, None	# Early return. ri is the (un)structured path
 			# replace placeholder "-", convert in CSE-relative when the target is this CSE
-			if ids[1] == '-' and ids[0] == RC.cseCsiSlashLess:	
+			# if ids[1] == '-' and ids[0] == RC.cseCsiSlashLess:	
+			if ids[1] == '-':	
 				ids[1] = RC.cseRn
 			if ids[1] == RC.cseRn:			# structured
 				srn = '/'.join(ids[1:])		# remove the csi part
 			elif idsLen == 2:				# unstructured
 				ri = ids[1]
 			else:
-				return None, None, None, None, f'Too many "/" level ({idsLen}) for SP-Relative ID: {id}. Perhaps resource name mismatch?'
+				return None, None, None, None, f'Too many "/" level ({idsLen}) for SP-Relative ID: "{id}". Perhaps resource name mismatch?'
 
 
 		# Absolute (2 first elements are /)
 		case 2:
 			# L.logDebug("Absolute")
 			if idsLen < 3:
-				return None, None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
+				return None, None, None, None, 'Absolute ID is too short. Must be //<spid>/<cseid>/<structured path | unstructured ID>.'
+
 			spi = ids[0]
 			csi = ids[1]
 			# if spi != RC.cseSpid:			# Check for SP-ID
@@ -193,14 +208,15 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 				return id, csi, srn, spi, None	# Not for this CSE or SP? retargeting
 
 			# replace placeholder "-", convert in absolute when the target is this CSE
-			if ids[2] == '-' and ids[1] == RC.cseCsiSlashLess:	
+			# if ids[2] == '-' and ids[1] == RC.cseCsiSlashLess:	
+			if ids[2] == '-':	
 				ids[2] = RC.cseRn
 			if ids[2] == RC.cseRn:			# structured
 				srn = '/'.join(ids[2:])
 			elif idsLen == 3:				# unstructured
 				ri = ids[2]
 			else:
-				return None, None, None, None, f'Too many "/" level ({idsLen}) for Absolute ID: {id}. Perhaps resource name mismatch?'
+				return None, None, None, None, f'Too many "/" level ({idsLen}) for Absolute ID: "{id}". Perhaps resource name mismatch?'
 
 	# Now either csi, ri or structured srn is set
 	if ri:

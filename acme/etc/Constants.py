@@ -236,6 +236,9 @@ class RuntimeConstants(object):
 	cseSPid:str = None
 	""" The Service Provider ID. """
 
+	cseSPidSlash:str = None
+	""" The Service Provider ID with an additional trailing /. """
+
 	cseSPIDSlashLess:str = None
 	""" The Service Provider ID without the leading //. """
 

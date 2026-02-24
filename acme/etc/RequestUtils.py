@@ -24,7 +24,7 @@ from ..helpers.MultiDict import MultiDict
 from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..etc.Types import ReqResp
 from ..etc.Constants import RuntimeConstants as RC
-from .IDUtils import uniqueRI
+from .IDUtils import isAbsolute, isSPRelative, uniqueRI
 
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|JSON]:
@@ -195,12 +195,12 @@ def contentAsString(content:bytes|str|Any, ct:ContentSerializationType) -> str:
 	return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
-def requestFromResult(inResult:Result, 
-					  originator:Optional[str] = None, 
-					  ty:Optional[ResourceTypes] = None, 
-					  op:Optional[Operation] = None, 
-					  isResponse:Optional[bool] = False,
-					  originalRequest:Optional[CSERequest] = None) -> Result:
+def requestFromResult(inResult: Result, 
+					  originator: Optional[str]=None, 
+					  ty: Optional[ResourceTypes]=None, 
+					  op: Optional[Operation]=None, 
+					  isResponse: Optional[bool]=False,
+					  originalRequest: Optional[CSERequest]=None) -> Result:
 	"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
 		with the full Response structure. Recursively do this if the *embeddedRequest* is also
 		a full Request or Response.
@@ -221,24 +221,25 @@ def requestFromResult(inResult:Result,
 	from ..runtime import CSE
 
 	req:JSON = {}
+	inRequest = inResult.request	# a bit of optimization to avoid too many accesses to the request attribute
 
 	# Assign the From and to of the request. An assigned originator has priority for this
 	# TO and FROM are optional in a response. So, don't put them in by default.
 	if not isResponse or (isResponse and CSE.request.sendToFromInResponses):
 		if originator:
 			req['fr'] = RC.cseCsi if isResponse else originator
-			req['to'] = inResult.request.id if inResult.request.id else originator
-		elif inResult.request and inResult.request.originator:
-			req['fr'] = RC.cseCsi if isResponse else inResult.request.originator
-			req['to'] = inResult.request.originator if isResponse else inResult.request.id
+			req['to'] = inRequest.id if inRequest.id else originator
+		elif inRequest and inRequest.originator:
+			req['fr'] = RC.cseCsi if isResponse else inRequest.originator
+			req['to'] = inRequest.originator if isResponse else inRequest.id
 		else:
 			req['fr'] = RC.cseCsi
-			req['to'] = inResult.request.id if inResult.request.id else RC.cseCsi
+			req['to'] = inRequest.id if inRequest.id else RC.cseCsi
 
 
 	# Originating Timestamp
-	if inResult.request.ot:
-			req['ot'] = inResult.request.ot
+	if inRequest.ot:
+			req['ot'] = inRequest.ot
 	else:
 		# Always add the OT in a response if not already present
 		if isResponse:
@@ -252,43 +253,43 @@ def requestFromResult(inResult:Result,
 	if not isResponse:
 		if op:
 			req['op'] = int(op)
-		elif inResult.request.op:
-			req['op'] = int(inResult.request.op)
+		elif inRequest.op:
+			req['op'] = int(inRequest.op)
 
 	# Type
 	if ty:
 		req['ty'] = int(ty)
-	elif inResult.request.ty:
-		req['ty'] = int(inResult.request.ty)
+	elif inRequest.ty:
+		req['ty'] = int(inRequest.ty)
 	
 	# Request Identifier 
-	if inResult.request.rqi:					# copy from the original request
-		req['rqi'] = inResult.request.rqi
+	if inRequest.rqi:					# copy from the original request
+		req['rqi'] = inRequest.rqi
 	
 	# Release Version Indicator
 	# TODO handle version 1 correctly
-	if inResult.request.rvi:			# copy from the original request
-		req['rvi'] = inResult.request.rvi
+	if inRequest.rvi:			# copy from the original request
+		req['rvi'] = inRequest.rvi
 	
 	# Vendor Information
-	if inResult.request.vsi:					# copy from the original request
-		req['vsi'] = inResult.request.vsi
+	if inRequest.vsi:					# copy from the original request
+		req['vsi'] = inRequest.vsi
 	
 	# Event Category
-	if inResult.request.ec:
-		req['ec'] = int(inResult.request.ec)
+	if inRequest.ec:
+		req['ec'] = int(inRequest.ec)
 	
 	# Result Content
-	if inResult.request.rcn:
-		req['rcn'] = int(inResult.request.rcn)
+	if inRequest.rcn:
+		req['rcn'] = int(inRequest.rcn)
 
 	# Result Content
-	if inResult.request.drt:
-		req['drt'] = int(inResult.request.drt)
+	if inRequest.drt:
+		req['drt'] = int(inRequest.drt)
 	
 	# Result Expiration Timestamp
-	if inResult.request.rset is not None:
-		req['rset'] = inResult.request.rset
+	if inRequest.rset is not None:
+		req['rset'] = inRequest.rset
 
 
 	# If the response contains a request (ie. for polling), then add that request to the pc
@@ -299,7 +300,7 @@ def requestFromResult(inResult:Result,
 		if inResult.embeddedRequest.originalRequest:
 			pc = inResult.embeddedRequest.originalRequest
 		else:
-			pc = cast(JSON, requestFromResult(Result(request = inResult.embeddedRequest)).data)
+			pc = cast(JSON, requestFromResult(Result(request=inResult.embeddedRequest)).data)
 		# L.isDebug and L.logDebug(pc)
 
 	else:
@@ -311,6 +312,17 @@ def requestFromResult(inResult:Result,
 		if originalRequest and originalRequest.selectedAttributes:
 			_typeShortname = list(pc.keys())[0]
 			pc = { _typeShortname : filterAttributes(pc[_typeShortname], originalRequest.selectedAttributes) }
+
+		scope = 0
+		if originalRequest:
+			if isAbsolute(originalRequest.originalOriginator):
+				scope = 2
+			elif isSPRelative(originalRequest.originalOriginator):
+				scope = 1
+
+		if scope != 0:
+			for k, v in pc.items():
+				pc[k] = CSE.validator.convertIDsToScope(k, v, ResourceTypes.RESPONSE, scope)
 
 
 		# if the request/result is actually an incoming request targeted to the receiver, then the
@@ -329,11 +341,11 @@ def requestFromResult(inResult:Result,
 
 
 	
-	return Result(data = req, 
-				  resource = inResult.resource, 
-				  request = inResult.request, 
-				  embeddedRequest = inResult.embeddedRequest, 
-				  rsc = inResult.rsc)
+	return Result(data= req, 
+				  resource=inResult.resource, 
+				  request=inResult.request, 
+				  embeddedRequest=inResult.embeddedRequest, 
+				  rsc=inResult.rsc)
 
 
 def prepareResultForSending(inResult:Result, 
@@ -353,7 +365,7 @@ def prepareResultForSending(inResult:Result,
 		Return:
 			A tuple with an updated `Result` object and the serialized content.
 	"""
-	result = requestFromResult(inResult, isResponse = isResponse, originalRequest = originalRequest)
+	result = requestFromResult(inResult, isResponse=isResponse, originalRequest=originalRequest)
 	return (result, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
 
 
@@ -367,7 +379,7 @@ def responseFromResult(inResult:Result, originator:Optional[str] = None) -> Resu
 		Return:
 			`Result` object with the response.
 	"""
-	return requestFromResult(inResult, originator, isResponse = True)
+	return requestFromResult(inResult, originator, isResponse=True)
 
 
 def createRawRequest(**kwargs:Any) -> JSON:

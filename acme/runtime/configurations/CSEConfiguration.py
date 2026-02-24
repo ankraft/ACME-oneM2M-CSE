@@ -140,6 +140,7 @@ class CSEConfiguration(ModuleConfiguration):
 		RC.cseCsiSlashLen = len(RC.cseCsiSlash)
 		RC.cseCsiSlashLess = RC.cseCsi[1:]
 		RC.cseSPid = config.cse_serviceProviderID
+		RC.cseSPidSlash = f'{RC.cseSPid}/'
 		RC.cseSPIDSlashLess = RC.cseSPid[2:] 
 		RC.cseSPCsi = f'{RC.cseSPid}{RC.cseCsi}'
 		RC.cseSPCsiSlash = f'{RC.cseSPCsi}/'

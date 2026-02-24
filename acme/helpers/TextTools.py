@@ -620,7 +620,6 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool =
 					while patternIndex < patternLen and pattern[patternIndex] != ']':
 						if pattern[patternIndex] == '\\' and patternIndex < patternLen-1:
 							patternIndex += 1
-							print(f'Skipping escape in char class for {pattern[patternIndex]}')
 						charClass += pattern[patternIndex]
 						patternIndex += 1
 					if patternIndex == patternLen:

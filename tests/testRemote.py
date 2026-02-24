@@ -9,9 +9,11 @@
 #
 
 import unittest, sys
+
+from testDiscovery import TestDiscovery
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, FilterUsage, DesiredIdentifierResultType
 from init import *
 
 csrOriginator = '/Ctest'
@@ -185,8 +187,33 @@ class TestRemote(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_transferDiscoverOnRemoteCSE(self) -> None:
+		""" Discover on remote CSE with remote CSE originator """
+		r, rsc = RETRIEVE(f'{CSEURL}~{REMOTECSEID}/{REMOTECSERN}?fu={int(FilterUsage.discoveryCriteria)}&drt={int(DesiredIdentifierResultType.structured)}', f'{REMOTECSEID}/{ORIGINATOR}')
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uril'), r)
+		uril = findXPath(r, 'm2m:uril')
+		self.assertIsInstance(uril, list, r)
+		self.assertGreater(len(uril), 0, r)
+		for uri in uril:
+			self.assertTrue(uri.startswith(f'{REMOTECSEID}/'), r)
 
-# TODO Transfer requests
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_transferDiscoverOnRemoteCSEWithLocalOriginatorFail(self) -> None:
+		""" Discover on remote CSE with local originator -> Fail"""
+		r, rsc = RETRIEVE(f'{CSEURL}~{REMOTECSEID}/{REMOTECSERN}?fu={int(FilterUsage.discoveryCriteria)}&drt={int(DesiredIdentifierResultType.structured)}', ORIGINATOR)
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Should return an empty list, but at least the uril attribute should be there
+		self.assertIsNotNone(findXPath(r, 'm2m:uril'), r)
+		uril = findXPath(r, 'm2m:uril')
+		self.assertIsInstance(uril, list, r)
+		self.assertEqual(len(uril), 0, r)
+
+
+# TODO more Transfer requests
 
 def run(testFailFast:bool) -> TestResult:
 
@@ -199,6 +226,8 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createCSRmissingCSI',
 		'test_createCSRmissingCB',
 		'test_createCSRsameAsAE',
+		'test_transferDiscoverOnRemoteCSE',
+		'test_transferDiscoverOnRemoteCSEWithLocalOriginatorFail',
 	])
 	
 	# Run tests

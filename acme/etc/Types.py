@@ -661,6 +661,8 @@ class BasicType(ACMEIntEnum):
 	# Special string types
 	ID					= auto()	# m2m:ID
 	"""	oneM2M ID. """
+	IDCSR				= auto()
+	"""	oneM2M ID in only CSE-relative format. """
 	ncname				= auto()	# xs:NCName
 	"""	XML NCName. """
 	imsi				= auto()	# dcfg:imsi
@@ -2473,6 +2475,9 @@ class CSERequest:
 	originator:Optional[str] = None 
 	"""	Request originator (from, X-M2M-Origin). """
 
+	originalOriginator:Optional[str] = None
+	""" The original originator of the request, as received in the request. This is used to keep track of the original originator, even if the request is forwarded or processed internally. """
+
 	rsc:ResponseStatusCode = ResponseStatusCode.UNKNOWN
 	""" Response Status Code. """
 
@@ -2552,6 +2557,9 @@ class CSERequest:
 
 	requestType:RequestType	= RequestType.NOTSET
 	""" The struture is for a request or a response. """
+
+	topElememt: Optional[str] = None
+	""" The top element of the request or response. """
 
 	selectedAttributes:list[str] = field(default_factory = list)
 	""" Selected attributes that filter the resource attributes in the response. This list refers to the resource attributes, ie. one level below the resource. """

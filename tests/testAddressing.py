@@ -65,6 +65,10 @@ class TestAddressing(unittest.TestCase):
 	#########################################################################
 
 
+	#
+	#	CSE-relative addressing tests
+	#
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_cseRelativeStructured(self) -> None:
 		""" Test CSE-relative structured """
@@ -72,6 +76,15 @@ class TestAddressing(unittest.TestCase):
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
+		url = f'{CSEURL}-/{aeRN}/{cntRN}'
+		r, rsc = RETRIEVE(url, TestAddressing.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_cseRelativeStructuredPlaceholder(self) -> None:
+		""" Test CSE-relative structured and placeholder "-" """
 		url = f'{CSEURL}-/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -87,6 +100,11 @@ class TestAddressing(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
 
 
+
+	#
+	#	SP-relative addressing tests
+	#
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_spRelativeStructured(self) -> None:
 		""" Test SP-relative structured """
@@ -94,6 +112,15 @@ class TestAddressing(unittest.TestCase):
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
+		url = f'{CSEURL}{CSEID}/-/{aeRN}/{cntRN}'
+		r, rsc = RETRIEVE(url, TestAddressing.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_spRelativeStructuredPlaceholder(self) -> None:
+		""" Test SP-relative structured and placeholder "-" """
 		url = f'{CSEURL}{CSEID}/-/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -117,6 +144,10 @@ class TestAddressing(unittest.TestCase):
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
+	#
+	#	Absolute addressing tests
+	#
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_absoluteStructured(self) -> None:
 		""" Test absolute structured """
@@ -128,6 +159,14 @@ class TestAddressing(unittest.TestCase):
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_absoluteStructuredPlaceholder(self) -> None:
+		""" Test absolute structured and placeholder "-" """
+		url = f'{CSEURL}//{SPID}{CSEID}/-/{aeRN}/{cntRN}'
+		r, rsc = RETRIEVE(url, TestAddressing.originator)
+		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -163,21 +202,55 @@ class TestAddressing(unittest.TestCase):
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
+	#
+	#	Further tests
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_cseRelativeTrailingSlashFail(self) -> None:
+		""" Test CSE-relative cse-id with trailing slash -> Fail """
+		r, rsc = RETRIEVE(f'{CSEURL}{CSERN}/', TestAddressing.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_spRelativeTrailingSlashFail(self) -> None:
+		""" Test SP-relative cse-id with trailing slash -> Fail """
+		r, rsc = RETRIEVE(f'{CSEURL}{CSEID}/{CSERN}/', TestAddressing.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_absoluteTrailingSlashFail(self) -> None:
+		""" Test Absolute cse-id with trailing slash -> Fail """
+		r, rsc = RETRIEVE(f'{CSEURL}//{SPID}{CSEID}/{CSERN}/', TestAddressing.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
 def run(testFailFast:bool) -> TestResult:
 
 	# Assign tests
 	suite = unittest.TestSuite()
 	addTests(suite, TestAddressing, [
 		'test_cseRelativeStructured',
+		'test_cseRelativeStructuredPlaceholder',
 		'test_cseRelativeUnstructured',
+
 		'test_spRelativeStructured',
+		'test_spRelativeStructuredPlaceholder',
 		'test_spRelativeUnstructured',
 		'test_spRelativeCSEIDFail',
+
+		'test_absoluteStructured',
+		'test_absoluteStructuredPlaceholder',
+		'test_absoluteUnstructured',
 		'test_absoluteStructuredWrongSPIDFail',
 		'test_absoluteUnstructuredWrongSPIDFail',
-		'test_absoluteStructured',
-		'test_absoluteUnstructured',
 		'test_absoluteCSEIDFail',
+
+		'test_cseRelativeTrailingSlashFail',
+		'test_spRelativeTrailingSlashFail',
+		'test_absoluteTrailingSlashFail',
 	])
 	
 	# Run tests

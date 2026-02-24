@@ -26,7 +26,7 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, R
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeContent
-from ..etc.IDUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
+from ..etc.IDUtils import isCSERelative, toCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
 from ..etc.IDUtils import localResourceID, getIdFromOriginator, getSPFromID, toAbsolute
 from ..etc.ACMEUtils import compareIDs, getIDFromPath
 from ..etc.ACMEUtils import isStructured, structuredPathFromRI
@@ -779,25 +779,41 @@ class RequestManager(object):
 		return self.handleSendRequest(request)[0].result	# there should be at least one result
 
 
-	def _originatorAdaptToScope(self, request:CSERequest) -> None:
-		"""	Convert *from* to SP-relative or Absolute format in the request. The *from* is converted in
+	def _originatorAdaptToScope(self, request: CSERequest, simplify: bool=False) -> None:
+		"""	Convert *from* to CSE-relative, SP-relative or Absolute format in the request. The *from* is converted in
 			*request.originator* and *request.originalRequest*, but NOT in 
 			*request.originalData*.
 		
 			See TS-0004, 7.3.2.6, Forwarding
 		"""
-		if request.spid != RC.cseSPid:
-			# If the request is not to the same SP, convert the originator to Absulute format
-			request.originator = toAbsolute(request.originator)
-			if request.originalRequest:
-				setXPath(request.originalRequest, 'fr', request.originator, overwrite = True)	# Also in the original request
-			# Attn: not changed in originatData !
+		if simplify:
 
-		elif isCSERelative(request.originator):
-			request.originator = toSPRelative(request.originator)
-			if request.originalRequest:
-				setXPath(request.originalRequest, 'fr', request.originator, overwrite = True)	# Also in the original request
-			# Attn: not changed in originatData !
+			if isAbsolute(request.originator) and request.originator.startswith(RC.cseSPidSlash):
+				request.originator = toSPRelative(request.originator)
+				if request.originalRequest:
+					setXPath(request.originalRequest, 'fr', request.originator, overwrite=True)	# Also in the original request
+				# Attn: not changed in originatData !
+
+			if isSPRelative(request.originator) and request.originator.startswith(RC.cseCsiSlash):
+				request.originator = toCSERelative(request.originator)
+				if request.originalRequest:
+					setXPath(request.originalRequest, 'fr', request.originator, overwrite=True)	# Also in the original request
+				# Attn: not changed in originatData !
+		
+		else:
+
+			if request.spid and request.spid != RC.cseSPid:
+				# If the request is not to the same SP, convert the originator to Absolute format
+				request.originator = toAbsolute(request.originator)
+				if request.originalRequest:
+					setXPath(request.originalRequest, 'fr', request.originator, overwrite=True)	# Also in the original request
+				# Attn: not changed in originatData !
+
+			elif isCSERelative(request.originator):
+				request.originator = toSPRelative(request.originator)
+				if request.originalRequest:
+					setXPath(request.originalRequest, 'fr', request.originator, overwrite=True)	# Also in the original request
+				# Attn: not changed in originatData !
 
 
 	##############################################################################
@@ -1076,7 +1092,7 @@ class RequestManager(object):
 	#	Sending Requests
 	#
 
-	def handleSendRequest(self, request:CSERequest) -> RequestResponseList:
+	def handleSendRequest(self, request: CSERequest) -> RequestResponseList:
 
 		if request.op is None:
 			raise BAD_REQUEST(L.logErr('request is missing operation attribute'))
@@ -1093,12 +1109,11 @@ class RequestManager(object):
 			# further function is needed.
 			res = self.requestHandlers[request.op].sendRequest(request)
 		except ResponseException as e:
-			res = [ RequestResponse(request, Result(rsc = e.rsc, dbg = e.dbg, request = e.data)) ]
+			res = [ RequestResponse(request, Result(rsc=e.rsc, dbg=e.dbg, request=e.data)) ]
 
 		# Add to requests database
 		for r in res:
 			self.recordRequest(r.request, r.result)
-
 		return res
 
 
@@ -1257,7 +1272,8 @@ class RequestManager(object):
 			# 	raise BAD_REQUEST(L.logDebug('from/originator parameter is mandatory in request'), data = cseRequest)
 			# else:
 			# 	cseRequest.originator = fr
-			cseRequest.originator = gget(cseRequest.originalRequest, 'fr', greedy=False)
+			cseRequest.originator = cseRequest.originalOriginator = gget(cseRequest.originalRequest, 'fr', greedy=False)
+			self._originatorAdaptToScope(cseRequest, True)	# Convert "from" to CSE-relative format if possible
 
 			# RQI - requestIdentifier
 			# Check as early as possible

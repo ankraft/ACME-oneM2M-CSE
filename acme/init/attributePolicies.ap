@@ -21,7 +21,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceID",
 			"ns": "m2m",
-			"type": "ID",
+			"type": "IDCSR",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -34,7 +34,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceName",
 			"ns": "m2m",
-			"type": "string",
+			"type": "IDCSR",
 			"car": "1",
 			"oc": "O",
 			"ou": "NP",
@@ -48,7 +48,7 @@
 						"SWRAnnc" ],
 			"lname": "resourceName",
 			"ns": "m2m",
-			"type": "string",
+			"type": "IDCSR",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -61,7 +61,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "parentID",
 			"ns": "m2m",
-			"type": "ID",
+			"type": "IDCSR",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -930,6 +930,15 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"ch": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "childResource",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "any"
 		}
 	],
 	"chanl": [
@@ -5622,7 +5631,49 @@
 			"ns": "m2m",
 			"type": "m2m:notification"
 		}
+	],
+	"m2m:dbg": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "debugInfo",
+			"ns": "m2m",
+			"type": "string"
+		}
+	],
+	"m2m:rce": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "resoure",
+			"ns": "m2m",
+			"type": "any"
+		}
+	],
+	"m2m:rrl": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "resourceRefList",
+			"ns": "m2m",
+			"type": "m2m:listOfChildResourceRef"
+		}
+	],
+	"m2m:uri": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "ID"
+		}
+	],
+	"m2m:uril": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "URIList",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "ID"
+		}
 	]
+
 
 }
 

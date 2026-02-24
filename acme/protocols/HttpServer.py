@@ -347,9 +347,9 @@ class HttpServer(object):
 		if self.isStopped:
 			# Return an error if the server is stopped
 
-			return self._prepareResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
-												request = dissectResult.request, 
-												dbg = 'http server not running'))
+			return self._prepareResponse(Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+												request=dissectResult.request, 
+												dbg='http server not running'))
 
 		if dissectResult.rsc != ResponseStatusCode.UNKNOWN:	# any other value right now indicates an error condition
 			# Something went wrong during dissection
@@ -730,7 +730,7 @@ class HttpServer(object):
 		#
 		#	Transform request to oneM2M request
 		#
-		outResult = requestFromResult(result, isResponse = True, originalRequest = originalRequest)
+		outResult = requestFromResult(result, isResponse=True, originalRequest=originalRequest)
 
 		#
 		#	Transform oneM2M request to http message
@@ -785,7 +785,7 @@ class HttpServer(object):
 			L.isDebug and L.logDebug(f'<== HTTP Response ({result.rsc}):\nHeaders: {str(headers)}\nBody: {origData["pc"]}')	# might be different serialization
 		else:
 			L.isDebug and L.logDebug(f'<== HTTP Response ({result.rsc}):\nHeaders: {str(headers)}')
-		return Response(response = outResult.data, status = statusCode, content_type = cts, headers = headers)
+		return Response(response=outResult.data, status=statusCode, content_type=cts, headers=headers)
 
 
 	#########################################################################

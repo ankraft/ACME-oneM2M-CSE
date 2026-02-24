@@ -352,6 +352,14 @@
 			"ns": "m2m",
 			"type": "ncname",
 			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:childResourceRef",
+			"lname": "name",
+			"ns": "m2m",
+			"type": "ncname",
+			"car": "1"
 		}
 	],
 	"num": [
@@ -919,6 +927,15 @@
 			"type": "enum",
 			"etype": "m2m:mgmtDefinition",
 			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:childResourceRef",
+			"lname": "type",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:resourceType"	,
+			"car": "1"
 		}
 	],
 	"uri": [
@@ -969,6 +986,14 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:attribute",
+			"lname": "value",
+			"ns": "m2m",
+			"type": "any",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:childResourceRef",
 			"lname": "value",
 			"ns": "m2m",
 			"type": "any",
@@ -1080,6 +1105,14 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:accessControlObjectDetails",
+			"lname": "specializationType",
+			"ns": "m2m",
+			"type": "m2m:specializationType", 
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:childResourceRef",
 			"lname": "specializationType",
 			"ns": "m2m",
 			"type": "m2m:specializationType", 
@@ -1766,6 +1799,23 @@
 			"ns": "m2m",
 			"type": "ipv6Address",
 			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:listOfChildResourceRef
+	//
+
+	"rrf": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:listOfChildResourceRef",
+			"lname": "resourceRef",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:childResourceRef",
+			"car": "1L"
 		}
 	],
 

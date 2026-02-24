@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Optional, Tuple, Any
 
 from copy import deepcopy
-from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolicy, BasicType
+from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
 from ..etc.Types import Announced
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
@@ -130,50 +130,9 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:bool, isRemoteSP:bool) -> JSON:
+	def _createAnnouncedDict(self, attributes: AttributePolicyDict, isCreate: bool, isRemoteSP: bool) -> JSON:
 		"""	Actually create the resource dict.
 		"""
-
-		def _convertIdentifierAttributeToSPRelative(value:Any, typ:BasicType, policy:AttributePolicy) -> Any:
-			"""	Convert an attribute to the SP-relative form if it is an identifier.
-				This is a recursive function that is called for each attribute of a complex attribute
-				(e.g. a list or a complex attribute).
-
-				Args:
-					value: The value to convert.
-					typ: The type of the value.
-					policy: The attribute policy of the value.
-
-				Return:
-					The converted value.
-				
-				TODO:
-					This function could be moved to the utils module.
-			"""
-
-			# Return None if the value is None (e.g. in updates)
-			if value is None:
-				return None
-			
-			# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
-			match typ:
-				case BasicType.ID:
-					# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
-					return toAbsolute(value, spId=RC.cseSPid) if isRemoteSP else toSPRelative(value)
-				case BasicType.list | BasicType.listNE:
-					# L.inspect([ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value])
-					return [ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value]
-				case BasicType.complex:
-					_r = {}
-					typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
-					for k, v in value.items():
-						if not (_policy := CSE.validator.getAttributePolicy(typeName, k)):
-							raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
-						_r[k] = _convertIdentifierAttributeToSPRelative(v, _policy.type, _policy)
-					return _r
-				case _:
-					return value
-
 
 		# Stub
 		if self.ty in (ResourceTypes.FCNT, ResourceTypes.FCI):
@@ -202,7 +161,7 @@ class AnnounceableResource(Resource):
 				ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
 				for attr in announcedAttributes:
 					policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
-					body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
+					body[attr] = CSE.validator.convertIdentifierAttributeToScope(self[attr], policy.type, policy, scope=2 if isRemoteSP else 1)	# convert to Absolute for remote SP, SP-relative for local CSE
 					# body[attr] = self[attr]
 
 				if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list

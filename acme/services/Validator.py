@@ -19,6 +19,7 @@ from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializati
 from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatteryStatus
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.ACMEUtils import pureResource
+from ..etc.IDUtils import toAbsolute, toSPRelative
 from ..etc.Utils import strToBool
 from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
@@ -26,6 +27,7 @@ from ..helpers import TextTools
 from ..resources.Resource import Resource
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
+from ..etc.Constants import RuntimeConstants as RC
 
 
 # TODO AE Not defined yet: ExternalGroupID?
@@ -803,6 +805,8 @@ class Validator(object):
 					return '"<string>"'
 				case BasicType.ID:
 					return '"<ID>"'
+				case BasicType.IDCSR:
+					return '"<ID in CSE-relative format>"'
 				case BasicType.token:
 					return '"<token>"'
 				case BasicType.anyURI:
@@ -980,7 +984,7 @@ class Validator(object):
 			case BasicType.string | BasicType.anyURI if isinstance(value, str):
 				return (dataType, value)
 
-			case BasicType.ID if isinstance(value, str):	# TODO check for valid resourceID
+			case BasicType.ID | BasicType.IDCSR if isinstance(value, str):	# TODO check for valid resourceID
 				return (dataType, value)
 		
 			case BasicType.token if isinstance(value, str):
@@ -1104,4 +1108,68 @@ class Validator(object):
 
 		raise BAD_REQUEST(f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}, Attribute: {policy.sname if policy else "unknown"}')
 
+
+
+	def convertIDsToScope(self, k : str, v: JSON, typ: ResourceTypes, scope: int) -> Any:
+		if (policy := self.getAttributePolicy(typ, k)):
+			return self.convertIdentifierAttributeToScope(v, policy.type, policy, scope)
+
+		elif (ntyp := ResourceTypes.fromTypeShortname(k)):
+			# L.log(f'Processing attribute {k} of type {ntyp}')
+			if isinstance(v, dict):
+				r: dict[str, Any] = {}
+				for attr, item in v.items():
+					r[attr] = self.convertIDsToScope(attr, item, ntyp, scope)
+				return r
+			return v
+
+		else:
+			L.isWarn and L.logWarn(f'No attribute policy found for {k} in type {typ}, cannot convert identifier attributes to scope')
+		return v
+
+
+	def convertIdentifierAttributeToScope(self, value:Any, typ: BasicType, policy: AttributePolicy, scope: Optional[int] = 1) -> Any:
+		"""	Convert an attribute to the Absolute or SP-relative form if it is an identifier.
+			This is a recursive function that is called for each attribute of a complex attribute
+			(e.g. a list or a complex attribute).
+
+			Args:
+				value: The value to convert.
+				typ: The type of the value.
+				policy: The attribute policy of the value.
+				scope: The scope of the conversion. 0 = CSE-relative, 1 = SP-relative, 2 = Absolute.
+
+			Return:
+				The converted value.
+		"""
+
+		# Return None if the value is None (e.g. in updates)
+		if value is None:
+			return None
+		
+		# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
+		match typ:
+			case BasicType.ID:
+				# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
+				match scope:
+					case 0:
+						return value
+					case 1:
+						return toSPRelative(value)
+					case 2:
+						return toAbsolute(value, spId=RC.cseSPid)
+			case BasicType.list | BasicType.listNE:
+				return [ self.convertIdentifierAttributeToScope(v, policy.ltype, policy, scope) for v in value]
+			case BasicType.complex:
+				_r = {}
+				from ..runtime import CSE	# avoid circular import
+				_gap = CSE.validator.getAttributePolicy	# slight optimization to avoid multiple lookups
+				typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
+				for k, v in value.items():
+					if not (_policy := _gap(typeName, k)):
+						raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
+					_r[k] = self.convertIdentifierAttributeToScope(v, _policy.type, _policy, scope)
+				return _r
+			case _:
+				return value
 
