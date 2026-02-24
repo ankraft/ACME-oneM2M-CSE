@@ -50,6 +50,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Request primitive (internal). """
 	RESPONSE		= -6
 	"""	Response primitive (internal). """
+	NOTIFICATION	= -7
+	""" Notification primitive (internal). """
 
 	# Resource Types
 	# NOTE Always apply changes also to the m2m:resourceTypes in attributePolicies.ap etc
