@@ -665,6 +665,10 @@ class BasicType(ACMEIntEnum):
 	# Special string types
 	ID					= auto()	# m2m:ID
 	"""	oneM2M ID. """
+	CSEID				= auto()	# m2m:CSEID
+	"""	oneM2M CSE ID. Must start with a single "/" character. """
+	SPID				= auto()	# m2m:SPID
+	"""	oneM2M Service Provider ID. Must start with two "/" characters. """
 	IDCSR				= auto()
 	"""	oneM2M ID in only CSE-relative format. """
 	ncname				= auto()	# xs:NCName
@@ -2775,7 +2779,6 @@ class CSERegistrar:
 			This is called after the CSERegistrar object is created, so that the attributes
 			are available.
 		"""
-
 		# Set the registrar and local CSR resource name, depending whether this is a remote or local CSR
 		if self.spID is not None and self.spID != RC.cseSPid:
 			self.registrarCSRRN = f'{RC.cseSPIDSlashLess}_{RC.cseCsiSlashLess}'	# prefix: own SP-ID
@@ -2841,7 +2844,6 @@ class CSERegistrar:
 				continue
 			setattr(result, k, deepcopy(v, memo))
 		return result
-
 
 
 	def __str__(self) -> str:

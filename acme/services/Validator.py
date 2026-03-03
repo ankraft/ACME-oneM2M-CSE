@@ -986,7 +986,7 @@ class Validator(object):
 
 			case BasicType.ID | BasicType.IDCSR if isinstance(value, str):	# TODO check for valid resourceID
 				return (dataType, value)
-		
+	
 			case BasicType.token if isinstance(value, str):
 				if any(_c in value for _c in self._tokenDisallowedChars) or '  ' in value:
 					raise BAD_REQUEST(f'invalid token: "{value}" must not contain double spaces or any of ' + ', '.join([f'0x{ord(c):02x}' for c in self._tokenDisallowedChars]))
@@ -1053,6 +1053,16 @@ class Validator(object):
 					return (dataType, value)
 				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
 			
+			case BasicType.SPID if isinstance(value, str):
+				if len(value) < 3 or not value.startswith('//') or value[2] == '/':
+					raise BAD_REQUEST(f'invalid SPID type: {value} must be in the format "//<SPID>"')
+				return (dataType, value)
+		
+			case BasicType.CSEID if isinstance(value, str):
+				if len(value) < 2 or not value.startswith('/') or value.startswith('//'):
+					raise BAD_REQUEST(f'invalid CSEID type: {value} must be in the format "/<CSEID>"')
+				return (dataType, value)
+
 			case BasicType.float:
 				if isinstance(value, (float, int)):
 					return (dataType, value)
