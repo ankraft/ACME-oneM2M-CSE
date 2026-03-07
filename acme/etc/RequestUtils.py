@@ -14,7 +14,7 @@ from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode, 
 
 from .DateUtils import getResourceDate
 from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode
-from .Types import Result, ResourceTypes, Operation, CSERequest
+from .Types import Result, ResourceTypes, Operation, CSERequest, IdentifierScope
 from ..etc.ResponseStatusCodes import BAD_REQUEST, UNSUPPORTED_MEDIA_TYPE
 from .Constants import Constants
 from ..runtime.Logging import Logging as L
@@ -313,14 +313,14 @@ def requestFromResult(inResult: Result,
 			_typeShortname = list(pc.keys())[0]
 			pc = { _typeShortname : filterAttributes(pc[_typeShortname], originalRequest.selectedAttributes) }
 
-		scope = 0
+		scope = IdentifierScope.CSERelative
 		if originalRequest:
 			if isAbsolute(originalRequest.originalOriginator):
-				scope = 2
+				scope = IdentifierScope.Absolute
 			elif isSPRelative(originalRequest.originalOriginator):
-				scope = 1
+				scope = IdentifierScope.SPRelative
 
-		if scope != 0:
+		if scope != IdentifierScope.CSERelative:
 			for k, v in pc.items():
 				pc[k] = CSE.validator.convertIDsToScope(k, v, ResourceTypes.RESPONSE, scope)
 

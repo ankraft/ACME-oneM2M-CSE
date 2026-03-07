@@ -16,10 +16,10 @@ import isodate
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType, GeoSpatialFunctionType
-from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatteryStatus
+from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatteryStatus, IdentifierScope
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.ACMEUtils import pureResource
-from ..etc.IDUtils import toAbsolute, toSPRelative
+from ..etc.IDUtils import toCSERelative, toAbsolute, toSPRelative, isValidAEI, isCSERelative, isSPRelative, isAbsolute
 from ..etc.Utils import strToBool
 from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
@@ -1062,6 +1062,11 @@ class Validator(object):
 				if len(value) < 2 or not value.startswith('/') or value.startswith('//'):
 					raise BAD_REQUEST(f'invalid CSEID type: {value} must be in the format "/<CSEID>"')
 				return (dataType, value)
+			
+			case BasicType.AEID if isinstance(value, str):
+				if not isValidAEI(value):
+					raise BAD_REQUEST(f'invalid AEID type: {value} is not a valid AEID.')
+				return (dataType, value)
 
 			case BasicType.float:
 				if isinstance(value, (float, int)):
@@ -1120,7 +1125,7 @@ class Validator(object):
 
 
 
-	def convertIDsToScope(self, k : str, v: JSON, typ: ResourceTypes, scope: int) -> Any:
+	def convertIDsToScope(self, k : str, v: JSON, typ: ResourceTypes, scope: IdentifierScope) -> Any:
 		if (policy := self.getAttributePolicy(typ, k)):
 			return self.convertIdentifierAttributeToScope(v, policy.type, policy, scope)
 
@@ -1138,7 +1143,7 @@ class Validator(object):
 		return v
 
 
-	def convertIdentifierAttributeToScope(self, value:Any, typ: BasicType, policy: AttributePolicy, scope: Optional[int] = 1) -> Any:
+	def convertIdentifierAttributeToScope(self, value:Any, typ: BasicType, policy: AttributePolicy, scope: Optional[IdentifierScope]=IdentifierScope.SPRelative) -> Any:
 		"""	Convert an attribute to the Absolute or SP-relative form if it is an identifier.
 			This is a recursive function that is called for each attribute of a complex attribute
 			(e.g. a list or a complex attribute).
@@ -1147,7 +1152,7 @@ class Validator(object):
 				value: The value to convert.
 				typ: The type of the value.
 				policy: The attribute policy of the value.
-				scope: The scope of the conversion. 0 = CSE-relative, 1 = SP-relative, 2 = Absolute.
+				scope: The scope of the conversion
 
 			Return:
 				The converted value.
@@ -1162,11 +1167,11 @@ class Validator(object):
 			case BasicType.ID:
 				# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
 				match scope:
-					case 0:
+					case IdentifierScope.CSERelative:
 						return value
-					case 1:
+					case IdentifierScope.SPRelative:
 						return toSPRelative(value)
-					case 2:
+					case IdentifierScope.Absolute:
 						return toAbsolute(value, spId=RC.cseSPid)
 			case BasicType.list | BasicType.listNE:
 				return [ self.convertIdentifierAttributeToScope(v, policy.ltype, policy, scope) for v in value]
@@ -1180,6 +1185,24 @@ class Validator(object):
 						raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
 					_r[k] = self.convertIdentifierAttributeToScope(v, _policy.type, _policy, scope)
 				return _r
+			case BasicType.AEID:
+				match scope:
+
+					case IdentifierScope.CSERelative if isCSERelative(value):
+						return value
+					case IdentifierScope.CSERelative:
+						return toCSERelative(value)
+
+					case IdentifierScope.SPRelative if isSPRelative(value) or value.startswith('S'):
+						return value
+			
+					case IdentifierScope.SPRelative:
+						return toSPRelative(value)
+					
+					case IdentifierScope.Absolute if isAbsolute(value):
+						return value
+					case IdentifierScope.Absolute:
+						return toAbsolute(value)
 			case _:
 				return value
 

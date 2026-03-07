@@ -389,7 +389,7 @@
 			"rtypes": [ "AE", "AEAnnc" ],
 			"lname": "AE-ID",
 			"ns": "m2m",
-			"type": "ID",
+			"type": "AEID",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",

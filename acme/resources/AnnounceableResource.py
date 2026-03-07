@@ -12,7 +12,7 @@ from typing import Optional, Tuple, Any
 
 from copy import deepcopy
 from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
-from ..etc.Types import Announced
+from ..etc.Types import Announced, IdentifierScope
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.IDUtils import isAbsolute, toAbsolute, toSPRelative
@@ -161,7 +161,10 @@ class AnnounceableResource(Resource):
 				ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
 				for attr in announcedAttributes:
 					policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
-					body[attr] = CSE.validator.convertIdentifierAttributeToScope(self[attr], policy.type, policy, scope=2 if isRemoteSP else 1)	# convert to Absolute for remote SP, SP-relative for local CSE
+					body[attr] = CSE.validator.convertIdentifierAttributeToScope(self[attr], 
+																				 policy.type, 
+																				 policy, 
+																				 scope=IdentifierScope.Absolute if isRemoteSP else IdentifierScope.SPRelative)	# convert to Absolute for remote SP, SP-relative for local CSE
 					# body[attr] = self[attr]
 
 				if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list

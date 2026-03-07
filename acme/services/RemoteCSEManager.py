@@ -1055,6 +1055,7 @@ class RemoteCSEManager(object):
 				forOwnCSR: If *True* then the copy is for the own CSR, otherwise it is for a remote CSR.
 		"""
 
+
 		# Don't just copy but assign a new value
 		# TODO check whether this is really necessary. There is no attribute "csb"
 
@@ -1108,12 +1109,11 @@ class RemoteCSEManager(object):
 		for attr in [ 'acpi' ]:
 			if attr in target:
 				target.delAttribute(attr, setNone = False)
-		
+
 		# Remove attributes in updates
 		if isUpdate:
 			# rm some attributes
 			for attr in [ 'ri', 'rn', 'ct', 'lt', 'ty', 'cst', 'cb', 'csi']:
 				if attr in target:
 					target.delAttribute(attr, setNone = False)
-
 

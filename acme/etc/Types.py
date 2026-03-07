@@ -669,6 +669,8 @@ class BasicType(ACMEIntEnum):
 	"""	oneM2M CSE ID. Must start with a single "/" character. """
 	SPID				= auto()	# m2m:SPID
 	"""	oneM2M Service Provider ID. Must start with two "/" characters. """
+	AEID				= auto()	# m2m:AEID
+	""" oneM2M AE ID. The stem either starts with "S" or "C". It can have different scopes. """
 	IDCSR				= auto()
 	"""	oneM2M ID in only CSE-relative format. """
 	ncname				= auto()	# xs:NCName
@@ -3102,6 +3104,18 @@ class TreeMode(ACMEIntEnum):
 		"""
 		return list(cls.__members__.keys())
 	
+
+class IdentifierScope(ACMEIntEnum):
+	""" Scope of an identifier.
+	"""
+
+	CSERelative = auto()
+	""" Identifier is relative to the CSE. """
+	SPRelative = auto()
+	""" Identifier is relative to the service provider. """
+	Absolute = auto()
+	""" Identifier is absolute. """
+
 
 Parameters:TypeAlias = Dict[str, str]
 """	Type definition for a dictionary of parameters. """
