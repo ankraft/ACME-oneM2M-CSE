@@ -20,6 +20,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Increased performance when registering a large number of &lt;AE> resources by adding a database table for registered originators.
 - [CSE] Added validation of received response, e.g. in transfer rerequests. 
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
+- [TUI] Added support for displaying the originator of a resource in the text UI. The originator is now shown in the resource subtitle in the resource view. Clicking on it copies the originator to the clipboard.
 
 
 ### Experimental

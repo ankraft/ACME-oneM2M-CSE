@@ -187,7 +187,7 @@ class ACMEResourceTree(TextualTree):
 
 		# Update the header
 		self.parentContainer.setResourceHeader(f'{resource.rn} ({_getResourceTypeAsString(resource)})' if resource else '')
-		self.parentContainer.setResourceSubtitle(f'{resource.getSrn()} ({resource.ri})' if resource else '')
+		self.parentContainer.setResourceSubtitle(f'{resource.getSrn()} ({resource.ri}) | {resource.getOriginator()}' if resource else '')
 
 		# Set the visibility of the tabs
 		try:
@@ -431,10 +431,14 @@ class ACMEContainerTree(Container):
 			if event.y == _cnt.outer_size.height-1:
 				v = self.currentResource.getSrn()
 				ri = self.currentResource.ri
+				originator = self.currentResource.getOriginator()
 				t = 'Structured Resource Identifier Copied'
 				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(ri):
 					v = ri
 					t = 'Resource Identifier Copied'
+				elif event.x > len(v) + 6 + len(ri) + 2 and event.x < len(v) + 6 + len(ri) + 2 + len(originator) + 1:
+					v = originator
+					t = 'Originator Copied'
 				if self._app.copyToClipboard(v):
 					self._app.showNotification(v, t, 'information')
 
