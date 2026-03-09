@@ -388,7 +388,7 @@ class Dispatcher(object):
 			Raises:
 				NOT_FOUND: If the resource cannot be found.
 		"""
-		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator}')
+		L.isDebug and L.logDebug(f'Retrieving local resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
 			resource = CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID

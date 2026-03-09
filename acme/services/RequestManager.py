@@ -1713,7 +1713,7 @@ class RequestManager(object):
 				targetResource = CSE.remote.registrarConfig._registrarCSEBaseResource
 				isForwardedRequest = True
 
-		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarded request to: {uri}')
+		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarding request to: {uri}')
 
 		# If not found: The uri is an indirect resource with poa, retrieve one or more URIs from it
 		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri)):
