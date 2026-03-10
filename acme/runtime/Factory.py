@@ -442,7 +442,6 @@ def resourceFromDict(resDict: Optional[JSON]={},
 					 ty: Optional[ResourceTypes]=None, 
 					 create: Optional[bool]=False, 
 					 template: Optional[bool]=False,
-					 originator: Optional[str]=None,
 					 trusted: bool=True) -> Resource:
 	""" Create a resource from a dictionary structure.
 
@@ -456,7 +455,6 @@ def resourceFromDict(resDict: Optional[JSON]={},
 			create: The resource will be newly created.
 			isImported: True when the resource is imported, or created by the `ScriptManager`. In this case some checks may not be performed.
 			template: True when the resource is used as a template. In this case some checks may not be performed.
-			originator: The originator of the resource creation request. This is used for setting the creator attribute in the resource.
 			trusted: True when the resource is created from a trusted source, such as an internal process, or was already validated.
 
 		Return:
@@ -506,8 +504,8 @@ def resourceFromDict(resDict: Optional[JSON]={},
 	newResource = cast(Resource, factory(resDict, typeShortname, create))
 
 	if create:
+		newResource.initialize(pi)	# This is not the activation of the resource. That must done separately
 		# L.inspect(newResource)
-		newResource.initialize(pi, originator)
 
 	return newResource
 

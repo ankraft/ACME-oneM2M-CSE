@@ -44,13 +44,13 @@ class FCNT(ContainerResource):
 		super().__init__(dct, create=create)
 
 
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi: str) -> None:
 		self.setAttribute('cs', 0, overwrite=False)
 		self.setAttribute('st', 0, overwrite=False)
 
 		self.setAttribute(Constants.attrHasFCI, False, False)	# stored in DB
 
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -342,7 +342,7 @@ class FCNT(ContainerResource):
 		if self.loc:
 			dct['loc'] = self.loc
 
-		
+		# Copy the rest of the custom attributes
 		for attr in self.dict:
 			if attr not in self.nonCustomAttributes:
 				dct[attr] = self[attr]
@@ -364,16 +364,15 @@ class FCNT(ContainerResource):
 		dct['org'] = originator
 		dct['st'] = self.st
 		dct['cs'] = self.cs
-		fciRes = Factory.resourceFromDict(resDict = { self.typeShortname : dct }, 
-										  pi = self.ri, 
-										  ty = ResourceTypes.FCI,
-										  create = True,
-										  originator = originator)
-		fciRes.setAttribute(Constants.attrIsManuallyInstantiated, True)	# Mark as instantiated to avoid validation
 
+		# Create the FCI resource
+		# For a FCIN, we need to provide both the shortname (for the specialization) and the resource type
+		fciRes = self.createChildResourceFromDict({ self.typeShortname : dct }, 
+												  ty=ResourceTypes.FCI,
 
-
-		CSE.dispatcher.createLocalResource(fciRes, self, originator = originator)
+												  # Mark as instantiated to avoid validation. This needs to be done before the resource is created and stored
+												  preCreateCB=lambda res: res.setAttribute(Constants.attrIsManuallyInstantiated, True) 
+												 )
 
 
 	def prepareForInstances(self) -> None:
@@ -388,22 +387,11 @@ class FCNT(ContainerResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = Factory.resourceFromDict({ 'et': self.et }, 
-											pi = self.ri, 
-											ty = ResourceTypes.FCNT_LA,
-											create = True,
-											originator = self.getOriginator())	# rn is assigned by resource itself
-		resource = CSE.dispatcher.createLocalResource(resource, self)
+		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.FCNT_LA)	# rn is assigned by resource itself
 		self.setLatestRI(resource.ri)
 
-
 		# add oldest
-		resource = Factory.resourceFromDict({ 'et': self.et }, 
-											pi = self.ri, 
-											ty = ResourceTypes.FCNT_OL,
-											create = True,
-											originator = self.getOriginator())	# rn is assigned by resource itself
-		resource = CSE.dispatcher.createLocalResource(resource, self)
+		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.FCNT_OL)	# rn is assigned by resource itself
 		self.setOldestRI(resource.ri)
 		
 		# Set the hasFCI attribute to indicate that the virtual resources are present

@@ -25,11 +25,11 @@ class CIN(AnnounceableResource):
 	""" ContentInstance resource type.
 	"""
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 	# 	# Initializations must happen just after the resource is created
 	# 	# because the parent resource checks some of the attributes
 		self.setAttribute('cs', getAttributeSize(self.con))
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

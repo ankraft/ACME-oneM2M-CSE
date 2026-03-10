@@ -28,9 +28,9 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 class PCH_PCU(VirtualResource):
 
 
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi:str) -> None:
 		self.setAttribute(Constants.attrPCUAggregate, False, overwrite=False)
-		super().initialize(pi, originator)
+		super().initialize(pi)
 		
 	
 	def handleRetrieveRequest(self, request: Optional[CSERequest]=None, 

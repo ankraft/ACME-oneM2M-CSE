@@ -34,7 +34,7 @@ class LCP(AnnounceableResource):
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
-		# Creating extra <container> resource
+		# Creating extra <container> resource under the parent
 		# Set the li attribute to the LCP's ri afterwards
 		_cnt:JSON = {
 			'mni': Configuration.resource_lcp_mni,
@@ -43,22 +43,18 @@ class LCP(AnnounceableResource):
 		if self.lon is not None:	# add container's resourcename if provided
 			_cnt['rn'] = self.lon
 
-		container = Factory.resourceFromDict(_cnt,
-											 pi = parentResource.ri, 
-											 ty = ResourceTypes.CNT,
-											 create = True,
-											 originator = originator)
 		try:
-			container = CSE.dispatcher.createLocalResource(container, parentResource, originator)
+			container = parentResource.createChildResourceFromDict(_cnt,
+																   ty=ResourceTypes.CNT,
+																   originator=originator)
 		except Exception as e:
-			L.isWarn and L.logWarn(f'Could not create container for LCP: {e}')
-			raise BAD_REQUEST(f'Could not create container for LCP. Resource name: {self.lon} already exists?')
+			raise BAD_REQUEST(L.logWarn(f'Could not create container for LCP: {e}. Resource name: {self.lon} already exists?'))
+		
 		# set internal attributes afterwards (after validation)
 		container.setLCPLink(self.ri)
 
 		# Set backlink to container in LCP
 		self.setAttribute('loi', container.ri)
-
 
 		# Register the LCP for periodic positioning procedure
 		CSE.location.addLocationPolicy(self)

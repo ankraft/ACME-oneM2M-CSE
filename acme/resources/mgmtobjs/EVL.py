@@ -18,10 +18,10 @@ from ...helpers.TextTools import findXPath
 class EVL(MgmtObj):
 
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 		self.setAttribute('lga', True)
 		self.setAttribute('lgo', True)
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	def update(self, dct: Optional[JSON]=None, 

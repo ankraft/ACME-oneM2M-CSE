@@ -18,9 +18,9 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 class TSI(AnnounceableResource):
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 		self.setAttribute('cs', getAttributeSize(self['con']))       # Set contentSize
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	# Forbid updating

@@ -82,19 +82,11 @@ class SUB(Resource):
 		# L.logWarn(f'Incremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
 
 		L.isDebug and L.logDebug(f'Registering <NTSR> for: {self.ri}')
-		dct = {
-			'm2m:ntsr' : {
-				'rn' : 'ntsr'
-			}
-		}
-		pcu = Factory.resourceFromDict(dct, 
-								 	   pi = self.ri, 
-									   ty = ResourceTypes.NTSR,
-									   create = True,
-									   originator = originator)	# rn is assigned by resource itself
-		
-		resource = CSE.dispatcher.createLocalResource(pcu, self, originator = originator)
-
+		self.createChildResourceFromDict(
+				{ 'rn' : 'ntsr' }, 
+				ty=ResourceTypes.NTSR, 
+				originator=originator		# rn is assigned by resource itself	
+		)
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:

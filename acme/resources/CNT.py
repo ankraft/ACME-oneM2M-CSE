@@ -34,11 +34,11 @@ class CNT(ContainerResource):
 		""" Semaphore to prevent recursive validation of children. """
 
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 		self.setAttribute('cni', 0, overwrite=False)
 		self.setAttribute('cbs', 0, overwrite=False)
 		self.setAttribute('st', 0, overwrite=False)
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -54,21 +54,11 @@ class CNT(ContainerResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Factory.resourceFromDict({ 'et': self.et }, 
-													pi=self.ri, 
-													ty=ResourceTypes.CNT_LA,
-													create=True,
-													originator=originator)		# rn is assigned by resource itself
-		resource = CSE.dispatcher.createLocalResource(latestResource, self)
+		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.CNT_LA, originator=originator)		# rn is assigned by resource itself
 		self.setLatestRI(resource.ri)
 
 		# add oldest
-		oldestResource = Factory.resourceFromDict({ 'et': self.et }, 
-													pi=self.ri, 
-													ty=ResourceTypes.CNT_OL,
-													create=True,
-													originator=originator)		# rn is assigned by resource itself
-		resource = CSE.dispatcher.createLocalResource(oldestResource, self)
+		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.CNT_OL, originator=originator)		# rn is assigned by resource itself
 		self.setOldestRI(resource.ri)
 
 

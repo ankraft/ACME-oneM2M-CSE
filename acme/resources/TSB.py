@@ -36,9 +36,9 @@ class TSB(AnnounceableResource):
 #  good would be that, if not present, the CSE provides a value. Add to TS-0004 procedures
 
 
-	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite = False)
-		super().initialize(pi, originator)
+	def initialize(self, pi:str) -> None:
+		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite=False)
+		super().initialize(pi)
 
 
 # TODO activate: add to interval updater

@@ -38,9 +38,9 @@ class SMD(AnnounceableResource):
 # TODO SOE cannot be retrieved. Also in Updates?
 # TODO clarify: or is RW or WO?
 
-	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute(Constants.attrDecodedDsp, None, overwrite = False)	
-		super().initialize(pi, originator)
+	def initialize(self, pi: str) -> None:
+		self.setAttribute(Constants.attrDecodedDsp, None, overwrite=False)	
+		super().initialize(pi)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

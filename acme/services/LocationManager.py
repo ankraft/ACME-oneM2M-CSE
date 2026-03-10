@@ -280,7 +280,7 @@ class LocationManager(object):
 				lcpRi: The resource ID of the location policy
 		"""
 
-		def addEventContentInstance(info:LocationInformation, eventType:GeofenceEventCriteria) -> None:
+		def addEventContentInstance(info: LocationInformation, eventType: GeofenceEventCriteria) -> None:
 			"""	Add a new event content instance to the location policy's container resource.
 			
 				Args:
@@ -289,12 +289,7 @@ class LocationManager(object):
 			"""
 			L.isDebug and L.logDebug(f'Position: {eventType}')
 			cnt = CSE.dispatcher.retrieveResource(info.locationContainerID)
-			cin = Factory.resourceFromDict({ 'con': eventType.value },
-										   pi = info.locationContainerID, 
-										   ty = ResourceTypes.CIN,
-										   create = True,
-										   originator = cnt.getOriginator())
-			CSE.dispatcher.createLocalResource(cin, cnt)
+			cnt.createChildResourceFromDict({ 'con': eventType.value }, ty=ResourceTypes.CIN)
 
 		
 		if (info := self.locationPolicyInfos.get(lcpRi)) is None:

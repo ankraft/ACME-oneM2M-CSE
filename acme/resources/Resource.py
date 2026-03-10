@@ -10,7 +10,7 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, cast, Optional, List
+from typing import Any, Callable, cast, Optional, List
 
 from copy import deepcopy
 
@@ -105,7 +105,7 @@ class Resource(object):
 
 
 
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi: str) -> None:
 		""" This method is called when a new resource is created and before written to the database.
 
 			Args:
@@ -116,7 +116,7 @@ class Resource(object):
 		self.setAttribute(Constants.attrRtype, self.typeShortname)
 
 		# Set the parent resource ID
-		self.setAttribute('pi', pi if pi is not None else '', overwrite = False) # test for None bc pi might be '' (for cse). pi is used subsequently here
+		self.setAttribute('pi', pi if pi is not None else '', overwrite=False) # test for None bc pi might be '' (for cse). pi is used subsequently here
 
 		# if not already set: determine and add the srn
 		self.setResourceID()
@@ -160,7 +160,8 @@ class Resource(object):
 		self.setAttribute('ct', ts, overwrite = False)
 		self.setAttribute('lt', ts, overwrite = False)
 
-		# Set the internal
+		# Set the internal originator that creates the resource.
+		self.setOriginator(originator, overwrite=True)
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
@@ -173,11 +174,8 @@ class Resource(object):
 											 createdInternally=self.isCreatedInternally(), 
 											 isAnnounced=self.isAnnounced())
 
-		# Set the internal originator that creates the resource.
-		self.setOriginator(originator, overwrite = False)
-
 		# validate the resource logic
-		self.validate(originator, parentResource = parentResource)
+		self.validate(originator, parentResource=parentResource)
 		self.dbUpdate()
 		
 		# Various ACPI handling
@@ -1076,6 +1074,26 @@ class Resource(object):
 				Document of the parent resource
 		"""
 		return CSE.storage.retrieveResourceRaw(self.pi)
+	
+
+	def createChildResourceFromDict(self, dct: JSON, 
+								 		  ty: Optional[ResourceTypes]=None, 
+										  originator: Optional[str]=None,
+										  preCreateCB: Optional[Callable[[Resource], None]]=None
+									) -> Resource:
+		from ..runtime.Factory import resourceFromDict
+
+		resource = resourceFromDict(dct, 
+						   			pi=self.ri, 
+									ty=ty,
+									create=True)
+	
+		# Perform some checks and adjustments before creating the resource, if necessary
+		if preCreateCB:
+			preCreateCB(resource)
+
+		# Store the new resource
+		return CSE.dispatcher.createLocalResource(resource, self, originator=originator)
 
 
 	def getOriginator(self) -> str:
@@ -1101,7 +1119,7 @@ class Resource(object):
 		return self.getOriginator()
 
 
-	def setOriginator(self, originator:str, overwrite:Optional[bool] = True) -> None:
+	def setOriginator(self, originator: str, overwrite: Optional[bool]=True) -> None:
 		"""	Set a resource's originator.
 
 			This is the originator that created the resource. It is stored internally within the resource.
@@ -1109,7 +1127,7 @@ class Resource(object):
 			Args:
 				originator: The originator to assign to a resource.
 		"""
-		self.setAttribute(Constants.attrOriginator, originator, overwrite = overwrite)
+		self.setAttribute(Constants.attrOriginator, originator, overwrite=overwrite)
 	
 	
 	def setResourceName(self, rn:str) -> None:

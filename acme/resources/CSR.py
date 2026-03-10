@@ -23,14 +23,14 @@ from ..runtime import CSE
 class CSR(AnnounceableResource):
 	""" RemoteCSE resource class."""
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
 			self.setAttribute('ri', originatorToID(self.csi))	# overwrite ri (only after /'s')
 			self.setResourceName(originatorToID(self.csi))				# set the resource name to the csi of the remote CSE
 
-		self.setAttribute('rr', False, overwrite = False)
-		super().initialize(pi, originator)
+		self.setAttribute('rr', False, overwrite=False)
+		super().initialize(pi)
 
 
 	def validate(self, originator: Optional[str]=None, 

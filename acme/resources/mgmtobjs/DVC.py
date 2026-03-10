@@ -21,14 +21,14 @@ from ..Resource import Resource
 class DVC(MgmtObj):
 	""" [DeviceCapability] (DVC) management object specialization """
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 		self.setAttribute('can', 'unknown', overwrite=False)
 		self.setAttribute('att', False, overwrite=False)
 		self.setAttribute('cas', {	"acn" : "unknown", "sus" : 0 }, overwrite=False)
 		self.setAttribute('cus', False, overwrite=False)
 		self.setAttribute('ena', True, overwrite=True)	# always True
 		self.setAttribute('dis', True, overwrite=True)	# always True
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 	#
 	#	Handling the special behaviour for ena and dis attributes in 

@@ -20,10 +20,10 @@ from ...helpers.TextTools import findXPath
 class RBO(MgmtObj):
 	""" MgmtObj:Reboot (RBO) resource type. """
 	
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 		self.setAttribute('rbo', False, overwrite=True)	# always False
 		self.setAttribute('far', False, overwrite=True)	# always False
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	#

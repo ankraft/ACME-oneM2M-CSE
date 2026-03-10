@@ -19,12 +19,12 @@ class VirtualResource(Resource):
 		It adds methods for virtual resources.
 	"""
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 
 		# Virtual resources have a fixed resource name that is provided in the sub-class
 		self.setResourceName(self.resourceName)
 
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	def retrieveLatestOldest(self, request: CSERequest, 

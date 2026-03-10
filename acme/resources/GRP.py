@@ -20,14 +20,14 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class GRP(AnnounceableResource):
 	""" Represents the Group resource. """
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 		self.setAttribute('mt', int(ResourceTypes.MIXED), overwrite=False)
 		self.setAttribute('ssi', False, overwrite=True)
 		self.setAttribute('cnm', 0, overwrite=False)	# calculated later
 		self.setAttribute('mid', [], overwrite=False)			
 		self.setAttribute('mtv', False, overwrite=False)
 		self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite=False)
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 		# These attributes are not provided by default: mnm (no default), macp (no default)
 		# optional set: spty, gn, nar
@@ -37,13 +37,9 @@ class GRP(AnnounceableResource):
 		super().activate(parentResource, originator)
 		
 		# add fanOutPoint
-		ri = self.ri
-		L.isDebug and L.logDebug(f'Registering fanOutPoint resource for: {ri}')
-		fanOutPointResource = Factory.resourceFromDict(pi=ri, 
-												 	   ty=ResourceTypes.GRP_FOPT,
-													   create=True,
-													   originator=originator)
-		CSE.dispatcher.createLocalResource(fanOutPointResource, self, originator)
+		L.isDebug and L.logDebug(f'Registering fanOutPoint resource for: {self.ri}')
+		self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.GRP_FOPT, originator=originator)		# rn is assigned by resource itself
+
 
 
 	def validate(self, originator: Optional[str]=None, 

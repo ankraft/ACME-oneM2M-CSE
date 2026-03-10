@@ -66,7 +66,7 @@ class TestCNT(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

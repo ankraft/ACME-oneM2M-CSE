@@ -726,7 +726,6 @@ class Dispatcher(object):
 								 	   pi=parentResource.ri, 
 									   ty=request.ty, 
 									   create=True,
-									   originator=originator,
 									   trusted=False)
 
 		# Check whether the parent allows the adding
@@ -831,7 +830,6 @@ class Dispatcher(object):
 							   			ty=ty, 
 										pi=pID,
 										create=True,
-										originator=originator,
 										trusted=False)
 
 			# Check Permission

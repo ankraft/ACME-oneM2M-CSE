@@ -22,13 +22,11 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 
 		# Initialize default values
-		if not self.hasAttribute('aei'):
-			# small optimization: do not overwrite (and do calculations) the aei if it is already set
-			self.setAttribute('aei', uniqueAEI(), overwrite = False)
-		self.setAttribute('rr', False, overwrite = False)
+		self.setAttribute('aei', uniqueAEI(), overwrite=False)
+		self.setAttribute('rr', False, overwrite=False)
 
 		super().activate(parentResource, originator)
 
@@ -48,9 +46,9 @@ class AE(AnnounceableResource):
 				raise BAD_REQUEST('only one PCH per AE is allowed')
 
 
-	def validate(self, originator:Optional[str] = None,
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator: Optional[str]=None,
+					   dct: Optional[JSON]=None, 
+					   parentResource: Optional[Resource]=None) -> None:
 		# Inherited
 		super().validate(originator, dct, parentResource)
 		self._normalizeURIAttribute('poa')

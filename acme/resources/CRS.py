@@ -37,9 +37,9 @@ class CRS(Resource):
 	"""	This class implements the <crossResourceSubscription> resource type. """
 
 
-	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute(Constants.attrSubSratRIs, {}, overwrite = False)	
-		super().initialize(pi, originator)
+	def initialize(self, pi: str) -> None:
+		self.setAttribute(Constants.attrSubSratRIs, {}, overwrite=False)	
+		super().initialize(pi)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

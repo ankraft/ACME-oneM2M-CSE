@@ -21,9 +21,9 @@ from ..resources.Resource import Resource
 
 class NOD(AnnounceableResource):
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 		self.setAttribute('ni', uniqueID(), overwrite=False)
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	def deactivate(self, originator: str, parentResource: Resource) -> None:

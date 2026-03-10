@@ -26,7 +26,7 @@ from ..etc.Constants import RuntimeConstants as RC
 class CSEBase(AnnounceableResource):
 	""" CSEBase (CSEBase) resource type. """
 
-	def initialize(self, pi: str, originator: str) -> None:
+	def initialize(self, pi: str) -> None:
 
 		self.setAttribute('ri', 'cseid', overwrite=False)
 		self.setAttribute('rn', 'cse', overwrite=False)
@@ -39,9 +39,9 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('srv', RC.supportedReleaseVersions)			# This must be a list
 
 		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	
-		self.delAttribute('et', setNone = False)	
+		self.delAttribute('et', setNone=False)	
 
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

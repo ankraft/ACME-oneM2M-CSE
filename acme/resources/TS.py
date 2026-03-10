@@ -27,19 +27,19 @@ from ..runtime import Factory		# attn: circular import
 
 class TS(ContainerResource):
 
-	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
-		self.setAttribute('cni', 0, overwrite = False)
-		self.setAttribute('cbs', 0, overwrite = False)
-		self.setAttribute('mdc', 0, overwrite = False)
+	def initialize(self, pi: str) -> None:
+		self.setAttribute('mdd', False, overwrite=False)	# Default is False if not provided
+		self.setAttribute('cni', 0, overwrite=False)
+		self.setAttribute('cbs', 0, overwrite=False)
+		self.setAttribute('mdc', 0, overwrite=False)
 		if Configuration.resource_ts_enableLimits:	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.resource_ts_mni, overwrite = False)
-			self.setAttribute('mbs', Configuration.resource_ts_mbs, overwrite = False)
-			self.setAttribute('mdn', Configuration.resource_ts_mdn, overwrite = False)
+			self.setAttribute('mni', Configuration.resource_ts_mni, overwrite=False)
+			self.setAttribute('mbs', Configuration.resource_ts_mbs, overwrite=False)
+			self.setAttribute('mdn', Configuration.resource_ts_mdn, overwrite=False)
 
 		self.__validating = False	# semaphore for validating
 		
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -51,21 +51,11 @@ class TS(ContainerResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = Factory.resourceFromDict({ 'et': self.et }, 
-										    pi = self.ri, 
-										    ty = ResourceTypes.TS_LA,
-											create = True,
-											originator = originator)	# rn is assigned by resource itself
-		CSE.dispatcher.createLocalResource(resource, self)
+		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.TS_LA, originator=originator)		# rn is assigned by resource itself
 		self.setLatestRI(resource.ri)	# Set the latest resource ID
 
 		# add oldest
-		resource = Factory.resourceFromDict({ 'et': self.et }, 
-										    pi = self.ri, 
-										    ty = ResourceTypes.TS_OL,
-											create = True,
-											originator = originator)	# rn is assigned by resource itself
-		CSE.dispatcher.createLocalResource(resource, self)
+		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.TS_OL, originator=originator)		# rn is assigned by resource itself
 		self.setOldestRI(resource.ri)	# Set the oldest resource ID
 
 		# Set mni, mbn and mia to the default values if not present
