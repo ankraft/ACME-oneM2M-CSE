@@ -777,8 +777,14 @@ class SecurityManager(object):
 		if not originator or not allowedOriginators:
 			return False
 
+		# Special handling for SP-Relative originators that end with /S, which is the case for AE S-Registration. 
+		if isSPRelative(originator) and originator.endswith('/S'):
+			L.isDebug and L.logDebug(f'Originator: {originator} is SP-Relative and ends with /S (AE S-Registration). Removing /S for the check.')
+			originator = originator[:-2]
+
 		# _originator = getIdFromOriginator(originator) if not isAbsolute(originator) else originator
 		L.isDebug and L.logDebug(f'Originator: {originator} - allowed originators: {allowedOriginators}')
+
 		
 		# Always allow for the hosting CSE
 		if originator in [RC.cseCsi, RC.cseSPRelative] :
