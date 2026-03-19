@@ -1979,7 +1979,44 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:ae': {
 					'lbl': [ 'test' ]
 				}}
-		r, rsc = UPDATE(aeURL, TestSUB.originator, dct)
+		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+
+		n = getLastNotification(wait=notificationDelay)
+		self.assertIsNotNone(n)
+		self.assertIsNotNone(findXPath(n, 'm2m:sgn/cr'), n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/cr'), ORIGINATOR, n)
+
+		# delete resource
+		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	def test_testSUBwithEnableEventNotificationOriginatorAndCreator(self) -> None:
+		"""	Test a SUB with enableEventNotificationOriginator set to True and present creator"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'cr' : None,
+					'eeno': True,
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/eeno'))
+		self.assertTrue(findXPath(r, 'm2m:sub/eeno'))
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/cr'))
+		self.assertEqual(findXPath(r, 'm2m:sub/cr'), TestSUB.originator)
+
+		# Wait for the notification and ignore it
+		testSleep(notificationDelay)
+		clearLastNotification()	# clear the notification first
+
+		# Send an UPDATE
+		dct = 	{ 'm2m:ae': {
+					'lbl': [ 'test' ]
+				}}
+		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.UPDATED, r)
 
 		n = getLastNotification(wait = notificationDelay)
@@ -2185,6 +2222,7 @@ def run(testFailFast:bool) -> TestResult:
 		
 		# Test enableEventNotificationOriginator attribute
 		'test_testSUBwithEnableEventNotificationOriginator',
+		'test_testSUBwithEnableEventNotificationOriginatorAndCreator',
 
 		# Test defaults
 		'test_createSUBnoNCTwrongNETFail',

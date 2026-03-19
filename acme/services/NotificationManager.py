@@ -1241,7 +1241,7 @@ class NotificationManager(object):
 
 			# Add the originator that caused the event to the notificaton
 			# See SDS-2023-0096 and SDS-2023-0143
-			if originator and sub.get('eeno'):
+			if not creator and originator and sub.get('eeno'):
 				setXPath(notificationRequest, 'm2m:sgn/cr', originator)
 
 			# Check for batch notifications
