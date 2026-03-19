@@ -622,7 +622,7 @@ class RemoteCSEManager(object):
 		csrResource = CSR()
 		csrResource.setAttribute('rr', True)
 		self._copyCSE2CSR(registrarConfig, csrResource, remoteCSE)
-		csrResource.initialize(localCSE.ri, RC.cseOriginator)	# remoteCSE.csi as name!
+		csrResource.initialize(localCSE.ri)	# remoteCSE.csi as name!
 
 		# add local CSR and ACP's
 		try:
