@@ -87,8 +87,9 @@ class PluginInfo:
 
 	def start(self) -> None:
 		""" Start the plugin. """
-		if self.state in (PluginState.INITIALIZED, PluginState.STOPPED) and self.startMethod:
-			self.startMethod(self.instance)
+		if self.state in (PluginState.INITIALIZED, PluginState.STOPPED):
+			if self.startMethod:
+				self.startMethod(self.instance)
 			self.state = PluginState.RUNNING
 	
 	def stop(self) -> None:
@@ -272,12 +273,14 @@ class PluginManager(metaclass=Singleton.Singleton):
 		for pluginName in sorted(pluginNames, key=lambda name: self.plugins[name].priority, reverse=True):
 			plugin = self.plugins[pluginName]
 
+			# Finalize plugin (which also stops it if running)
+			plugin.finalize()
+
 			# Remove instance attribute from PluginManager
 			if plugin.instanceAttributeName:	
 				delattr(self, plugin.instanceAttributeName)
 
 			plugin.instance = None	# release instance reference
-			plugin.finalize()
 			del self.plugins[pluginName]
 
 			# TODO unload module from interpreter
