@@ -80,7 +80,7 @@ python-dotenv==1.2.1
     # via acmecse-dev (setup.py)
 rdflib==7.1.4
     # via acmecse-dev (setup.py)
-requests==2.32.4
+requests==2.33.0
     # via acmecse-dev (setup.py)
 rich==14.1.0
     # via
