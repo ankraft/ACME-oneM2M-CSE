@@ -8,7 +8,7 @@ blinker==1.9.0
     # via flask
 cachetools==6.1.0
     # via acmecse-dev (setup.py)
-cbor2==5.8.0
+cbor2==5.9.0
     # via acmecse-dev (setup.py)
 certifi==2025.8.3
     # via requests
