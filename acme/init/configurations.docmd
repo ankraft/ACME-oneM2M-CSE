@@ -915,6 +915,18 @@ This setting specifies the CSE's console resource tree mode.
 The default value is `normal`.
 
 
+# console.type
+
+This setting specifies the CSE's console type.
+
+The `rich` console provides a more advanced user interface, while the `simple` console provides only a minimal functionality.
+
+**Allowed values**: `simple`, `rich`
+
+The default value is `rich`.
+
+
+
 # database
 
 This section contains settings that control the CSE's database setup.
@@ -2144,6 +2156,13 @@ The default value is `False`.
 This section contains settings that control the CSE's web user interface.
 
 Settings in this section are listed under the `[webui]` section.
+
+
+# webui.enable
+
+This setting enables or disables the CSE's web user interface.
+
+The default value is `true`.
 
 
 
