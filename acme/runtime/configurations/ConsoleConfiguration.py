@@ -22,6 +22,7 @@ class ConsoleConfiguration(ModuleConfiguration):
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 		#	Console
+		config.console_type = parser.get('console', 'type', fallback='rich')
 		config.console_confirmQuit = parser.getboolean('console', 'confirmQuit', fallback=False)
 		config.console_headless = parser.getboolean('console', 'headless', fallback=False)
 		config.console_hideResources = parser.getlist('console', 'hideResources', fallback=[])		# type: ignore[attr-defined]
@@ -39,6 +40,9 @@ class ConsoleConfiguration(ModuleConfiguration):
 			Configuration.console_theme = Configuration._args_lightScheme  # Override console theme 
 
 		# Console settings
+
+		if config.console_type not in [ 'rich', 'simple' ]:
+			raise ConfigurationError(fr'[i]\[console]:type[/i] must be "rich" or "simple"')
 
 		if config.console_refreshInterval <= 0.0:
 			raise ConfigurationError(r'[i]\[console]:refreshInterval[/i] must be > 0.0')

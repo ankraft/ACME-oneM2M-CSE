@@ -15,7 +15,8 @@ from textual.containers import VerticalScroll
 from textual.widgets import Static
 from rich.style import Style
 from ..runtime.Logging import fontDark, fontLight
-from ..runtime import CSE
+from ..runtime.Management import getRegistrationsRich
+
 
 
 class ACMEContainerRegistrations(VerticalScroll):
@@ -67,6 +68,6 @@ class ACMEContainerRegistrations(VerticalScroll):
 	def registrationsUpdate(self) -> None:
 		"""	Update the registrations view.
 		"""
-		self.registrationView.update(CSE.console.getRegistrationsRich(style = Style(color = self.app.get_css_variables()['primary']),
-													   		   		  textStyle = Style(color = fontDark if self._app.dark else fontLight)))
+		self.registrationView.update(getRegistrationsRich(style=Style(color=self.app.get_css_variables()['primary']),
+													   	  textStyle=Style(color=fontDark if self._app.dark else fontLight)))
 

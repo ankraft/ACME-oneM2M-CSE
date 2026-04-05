@@ -9,10 +9,11 @@
 from __future__ import annotations
 
 from typing import Optional
-from ..runtime import CSE
-from ..runtime.Logging import Logging as L
-from ..helpers.PluginManager import pluginClass, start, configure
-from ..runtime.Configuration import Configuration
+from ....runtime import CSE
+from ....runtime.Management import getStructurePuml, getResourceTreeText
+from ....runtime.Logging import Logging as L
+from ....helpers.PluginManager import pluginClass, start, configure
+from ....runtime.Configuration import Configuration
 
 
 @pluginClass('httpStructure')
@@ -47,8 +48,8 @@ class HttpStructure:
 				return Response('Service not available', status=503)
 			lvl = request.args.get('lvl', default=0, type=int)
 			if path == 'puml':
-				return Response(response=CSE.statistics.getStructurePuml(lvl), headers=CSE.httpServer._responseHeaders)
+				return Response(response=getStructurePuml(lvl), headers=CSE.httpServer._responseHeaders)
 			if path == 'text':
-				return Response(response=CSE.console.getResourceTreeText(lvl), headers=CSE.httpServer._responseHeaders)
+				return Response(response=getResourceTreeText(lvl), headers=CSE.httpServer._responseHeaders)
 			return Response(response='unsupported', status=422, headers=CSE.httpServer._responseHeaders)
 

@@ -253,7 +253,8 @@ def initResources() -> bool:
 				  ResourceTypes.REQRESP, 
 				  ResourceTypes.COMPLEX,
 				  ResourceTypes.REQUEST, 
-				  ResourceTypes.RESPONSE, 
+				  ResourceTypes.RESPONSE,
+				  ResourceTypes.NOTIFICATION,
 				  ResourceTypes.UNKNOWN):
 			continue	# skip special types
 		resourceClass = getResourceClassForType(ty)

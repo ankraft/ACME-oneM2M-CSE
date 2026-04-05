@@ -10,15 +10,15 @@ from __future__ import annotations
 
 from typing import Optional
 from flask import Response
-from ..runtime import CSE
-from ..runtime.Logging import Logging as L
-from ..etc.Utils import renameThread
-from ..etc.Types import ResponseStatusCode, ContentSerializationType, AuthorizationResult
-from ..helpers.PluginManager import pluginClass, start, configure
-from ..helpers.interpreter.Interpreter import SType
-from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.RequestUtils import prepareResultForSending
-from ..runtime.Configuration import Configuration
+from ....runtime import CSE
+from ....runtime.Logging import Logging as L
+from ....etc.Utils import renameThread
+from ....etc.Types import ResponseStatusCode, ContentSerializationType, AuthorizationResult
+from ....helpers.PluginManager import pluginClass, start, configure
+from ....helpers.interpreter.Interpreter import SType
+from ....etc.ResponseStatusCodes import ResponseException
+from ....etc.RequestUtils import prepareResultForSending
+from ....runtime.Configuration import Configuration
 
 
 @pluginClass

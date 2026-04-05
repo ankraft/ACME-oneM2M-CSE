@@ -9,12 +9,12 @@
 from __future__ import annotations
 
 from typing import Optional
-from ..runtime import CSE
-from ..runtime.Logging import Logging as L
-from ..etc.Types import LogLevel, AuthorizationResult
-from ..helpers.PluginManager import pluginClass, start, configure
-from ..runtime.Configuration import Configuration
-from ..runtime import Management as Mgmt
+from ....runtime import CSE
+from ....runtime.Logging import Logging as L
+from ....etc.Types import LogLevel, AuthorizationResult
+from ....helpers.PluginManager import pluginClass, start, configure
+from ....runtime.Configuration import Configuration
+from ....runtime import Management as Mgmt
 
 
 @pluginClass
@@ -111,6 +111,9 @@ help          Show this help message
 							match param.lower():
 								case 'enable' | 'on' | 'disable' | 'off' | 'status':
 									return Response(response=Mgmt.setRequestRecording(param), headers=CSE.httpServer._responseHeaders)
+								case 'puml':
+									_, puml = Mgmt.getRequestsRich()
+									return Response(response=puml, headers=CSE.httpServer._responseHeaders)
 								case 'help':
 									return Response(response='''ACME oneM2M CSE Management Requests Commands
 							
@@ -118,6 +121,8 @@ help          Show this help message
 enable        Enable request recording
 disable       Disable request recording
 status        Get the current request recording status
+puml		  Get a UML sequence diagram of the recorded requests
+help          Show this help message
 ''',
 										status=200,
 										headers=CSE.httpServer._responseHeaders)

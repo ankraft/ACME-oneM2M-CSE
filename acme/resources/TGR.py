@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..etc.Types import AttributePolicyDict,CSEType, EvalMode, ResourceTypes, JSON, TriggerStatus
-from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
+from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, NOT_IMPLEMENTED
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
 from ..runtime import CSE
@@ -64,16 +64,25 @@ class TGR(AnnounceableResource):
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 
+		# Check whether the TriggerRequestManager plugin is available
+		if not (triggerManager := CSE.pluginManager.triggerRequestManager):
+			raise NOT_IMPLEMENTED(L.logWarn('TriggerRequestManager plugin not available'))
+
 		# Check whether the CSE is an IN-CSE, otherwise send an error
 		if not RC.cseType == CSEType.IN:
 			raise BAD_REQUEST(L.logWarn('TriggerRequests can only be created on an IN-CSE'))
 		
-		# TODO  Implement test for IN & NON-IN CSE
-		
-		super().activate(parentResource, originator)
+		# Check whether the target is an AE or a remoteCSE, and the triggerEnable attribute is set to true
+		# Otherwise, reject the request with TRIGGERING_DISABLED_FOR_RECIPIENT
+		if (tri := self.tri):
+			try:
+				targetResource = CSE.dispatcher.retrieveResource(tri, originator)
+				if (tren := targetResource.tren) is not None and tren == False:
+					raise BAD_REQUEST(L.logWarn(f'Triggering is disabled for the target resource: {tri}'))
+			except NOT_FOUND:
+				targetResource = None
 
 
-		# Check whether the target is an AE or a remoteCSE, and the
 
 		# TODO If the Originator specifies a Trigger-Recipient-ID value in the Create primitive for a 
 		# Registree AE or CSE, and the triggerEnable attribute of the Registree's <AE> or <remoteCSE>
@@ -100,6 +109,10 @@ class TGR(AnnounceableResource):
 
 
 
+		super().activate(parentResource, originator)
+
+
+
 
 	def update(self, dct: JSON=None,
 					 originator: Optional[str]=None, 
@@ -111,3 +124,8 @@ class TGR(AnnounceableResource):
 	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		# Unschedule the action
 		return super().deactivate(originator, parentResource)
+
+
+# TODO tests
+# - Test TriggerEnabled on target resource
+# - Implement test for IN & NON-IN CSE

@@ -22,7 +22,7 @@ class CSEConfiguration(ModuleConfiguration):
 	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-			#	CSE
+		#	CSE
 
 		config.cse_asyncSubscriptionNotifications = parser.getboolean('cse', 'asyncSubscriptionNotifications', fallback=True)
 		config.cse_checkExpirationsInterval = parser.getint('cse', 'checkExpirationsInterval', fallback=60)		# Seconds
@@ -61,6 +61,13 @@ class CSEConfiguration(ModuleConfiguration):
 		#	CSE Operation : Plugins
 		config.cse_operation_plugins_disabledPlugins = parser.getlist('cse.operation.plugins', 'disabledPlugins', fallback=[])  # type: ignore [attr-defined]
 		config.cse_operation_plugins_replace = parser.getboolean('cse.operation.plugins', 'replace', fallback=False)
+
+		# Derive enabled components from the configuration. This is used to determine which plugins to load.
+		# Create a dictionary with names starting and ending with _ to avoid conflicts with actual configuration options. 
+		# The _ are stripped when checking the configuration in the PluginManager.
+		config._cse_operation_plugins_enabledComponents = { o[1:-1] : parser.getboolean('cse.operation.plugins', o) 
+														    for o in parser.options('cse.operation.plugins') 
+														    if '_' == o[0] == o[-1] }
 		
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
@@ -168,3 +175,7 @@ class CSEConfiguration(ModuleConfiguration):
 		
 		# Other configuration values
 		RC.idLength = Configuration.cse_idLength
+
+		# Add some configurations here that will not be set because the plugins will not be loaded
+		if not hasattr(config, 'cse_statistics_enable'):
+			config.cse_statistics_enable = False

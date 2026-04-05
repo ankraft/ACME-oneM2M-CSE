@@ -19,7 +19,7 @@ import time
 from inspect import getmembers
 from dotenv import load_dotenv, find_dotenv
 
-from rich.console import Console
+from rich.console import Console as RichConsole
 
 
 from ..etc.Constants import Constants as C
@@ -92,6 +92,9 @@ class Configuration(object):
 	coap_security_verifyCertificate:bool
 	"""	Enable or disable certificate verification for CoAP. """
 
+
+	console_type:str
+	"""	The type of the console. Allowed values: "rich", "simple". """
 
 	console_confirmQuit:bool
 	"""	Confirm quitting the console. """
@@ -210,6 +213,9 @@ class Configuration(object):
 
 	cse_operation_plugins_replace:bool
 	"""	Replace existing plugins with the same name. """
+
+	_cse_operation_plugins_enabledComponents:dict[str, bool]
+	"""	An internal dictionary of enabled plugins. The keys are the component names, the values are booleans indicating whether the corresponding plugin is enabled. """
 
 
 	cse_registrars:dict[str, CSERegistrar] = {}
@@ -687,7 +693,7 @@ class Configuration(object):
 				markup: If True, then the message is printed with markup. If False, then the message is printed without markup.
 		"""
 		if not Configuration._args_headless:
-			Console().print(msg, markup=markup)	# Print error message to console
+			RichConsole().print(msg, markup=markup)	# Print error message to console
 
 
 	@staticmethod
@@ -771,7 +777,7 @@ class Configuration(object):
 			"""
 			try:
 				if Configuration._args_headless:
-					Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
+					RichConsole().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
 					return False
 				
 				# load onboarding module and create user config file.
@@ -790,7 +796,7 @@ class Configuration(object):
 				if _baseDirectory:
 					Configuration.baseDirectory = pathlib.Path(_baseDirectory)
 			except Exception as e:
-				Console().print(e)
+				RichConsole().print(e)
 				raise e
 			return True
 
@@ -891,6 +897,7 @@ class Configuration(object):
 
 							'logLevel'				: 'debug',										# The main secret key for the CSE. 
 							'consoleTheme'			: 'dark',										# The theme for the console.
+							'consoleType'			: 'rich',										# The type of the console. Allowed values: "rich", "simple".
 							'secret'				: os.getenv('ACME_SECURITY_SECRET', 'acme'),	# The main secret key for the CSE. 
 						}
 					}
@@ -1153,7 +1160,6 @@ from ..runtime.configurations.RemoteCSEServiceConfiguration import RemoteCSEServ
 from ..runtime.configurations.REQResourceConfiguration import REQResourceConfiguration
 from ..runtime.configurations.ScriptingConfiguration import ScriptingConfiguration
 from ..runtime.configurations.SecurityServiceConfiguration import SecurityServiceConfiguration
-from ..runtime.configurations.StatisticsConfiguration import StatisticsConfiguration
 from ..runtime.configurations.StorageConfiguration import StorageConfiguration
 from ..runtime.configurations.SUBResourceConfiguration import SUBResourceConfiguration
 from ..runtime.configurations.TextUIConfiguration import TextUIConfiguration
@@ -1173,7 +1179,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 	ConsoleConfiguration(),
 	LoggingConfiguration(), # must get its config after the Console !
 	ScriptingConfiguration(),
-	StatisticsConfiguration(),
 
 	# Service configurations
 	AnnouncementServiceConfiguration(),

@@ -277,3 +277,7 @@ class RuntimeConstants(object):
 
 	cseIDs:list[str] = []
 	""" List of CSE IDs in SP-relative and Absolute format. """
+
+	startupTime:float = None
+	"""	The time when the CSE was started. This is set during the startup process. """
+

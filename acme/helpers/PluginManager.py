@@ -12,7 +12,6 @@ from dataclasses import dataclass
 import os, importlib, importlib.util, inspect
 from types import ModuleType
 from enum import IntEnum
-from .TextTools import simpleMatch
 
 try:
 	import Singleton	# type: ignore
@@ -53,6 +52,9 @@ class PluginInfo:
 
 	module: ModuleType | None = None
 	""" The loaded plugin module. """
+
+	doc:str = ''
+	""" The docstring of the plugin module. """
 
 	pluginClass: Any | None = None
 	""" A reference to the plugin class. """
@@ -136,7 +138,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 
 	def loadPlugins(self, directory: str, 
 				 		  packagePath: str, 
-						  disabledPlugins: list[str]=[], 
+						  pluginFilter: Optional[Callable[[str], bool]]=None,
 						  replace: bool=False, 
 						  *args: Any, **kwargs: Any) -> None:
 		""" Load plugins from the specified directory. 
@@ -146,7 +148,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Args:
 				directory: The directory from which to load plugins.
 				packagePath: The package path to use for the plugins.
-				disabledPlugins: A list of plugin name patterns to disable. A pattern may include simple wildcards.
+				pluginFilter: A callback function to filter plugins. The function should take a plugin name as input and return True if the plugin should be loaded, False otherwise.
 				replace: Whether to replace already loaded plugins.
 				*args: Positional arguments to pass to the plugin init methods.
 				**kwargs: Keyword arguments to pass to the plugin init methods.
@@ -183,14 +185,16 @@ class PluginManager(metaclass=Singleton.Singleton):
 							raise KeyError(f'Plugin "{pluginName}" is already loaded.')
 					
 					# check disabled plugins
-					if any(pattern for pattern in disabledPlugins if simpleMatch(pluginName, pattern)):
+					if pluginFilter and not pluginFilter(pluginName):
 						continue
 
 					# Load the module into the interpreter
 					spec.loader.exec_module(module)
 
-					# self.plugins[pluginName] = PluginInfo(name=pluginName, module=module, fileName=fileName)
-					newPlugins[pluginName] = PluginInfo(name=pluginName, module=module, fileName=fileName)
+					newPlugins[pluginName] = PluginInfo(name=pluginName, 
+										 				module=module, 
+														doc=module.__doc__.strip() if module.__doc__ else '',
+														fileName=fileName)
 
 				except Exception as e:
 					# print(f"Failed to load plugin {pluginName}: {e}")

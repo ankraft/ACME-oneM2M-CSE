@@ -20,14 +20,13 @@ from threading import Lock
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Constants import Constants as C, RuntimeConstants as RC
-from ..etc.DateUtils import waitFor
+from ..etc.DateUtils import waitFor, utcTime
 from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, LogLevel
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import ResponseException
 from ..services.ActionManager import ActionManager
 from ..runtime.Configuration import Configuration
-from ..runtime.Console import Console
 
 
 from ..services.Dispatcher import Dispatcher
@@ -38,12 +37,12 @@ from ..runtime.Importer import Importer
 from ..services.LocationManager import LocationManager
 from ..services.NotificationManager import NotificationManager
 from ..runtime.PluginManager import PluginManager
+from ..runtime.ConsoleBase import ConsoleBase
 from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
 from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..services.SemanticManager import SemanticManager
-from ..runtime.Statistics import Statistics
 from ..runtime.Storage import Storage
 from ..runtime.TextUI import TextUI
 from ..services.TimeManager import TimeManager
@@ -70,7 +69,7 @@ announce:AnnouncementManager = None
 coapServer:CoAPServer = None
 """	Runtime instance of the `CoAPServer`. """
 
-console:Console = None
+console:ConsoleBase = None
 """ Runtime instance of the `Console`. """
 
 dispatcher:Dispatcher = None
@@ -118,9 +117,6 @@ security:SecurityManager = None
 semantic:SemanticManager = None
 """	Runtime instance of the `SemanticManager`. """
 
-statistics:Statistics = None
-"""	Runtime instance of the `Statistics`. """
-
 storage:Storage = None
 """	Runtime instance of the `Storage`. """
 
@@ -139,8 +135,6 @@ validator:Validator = None
 webSocketServer:WebSocketServer	= None
 """	Runtime instance of the `WebSocketServer`. """
 
-
-
 # Global variables to hold various (configuation) values.
 
 _cseResetLock = Lock()
@@ -158,9 +152,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, coapServer, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
+	global action, announce, coapServer, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
 	global notification, pluginManager, registration, remote, request, script, security, semantic
-	global statistics, storage, textUI, time, timeSeries, validator, webSocketServer
+	global storage, textUI, time, timeSeries, validator, webSocketServer
 
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
@@ -196,19 +190,17 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	# this and other redirect functions to determine the correct file / linenumber
 	# in the log output
 	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l, m, stackOffset = 2))
-	BackgroundWorkerPool.setJobBalance(	balanceTarget = Configuration.cse_operation_jobs_balanceTarget,
-										balanceLatency = Configuration.cse_operation_jobs_balanceLatency,
-										balanceReduceFactor = Configuration.cse_operation_jobs_balanceReduceFactor)
+	BackgroundWorkerPool.setJobBalance(	balanceTarget=Configuration.cse_operation_jobs_balanceTarget,
+										balanceLatency=Configuration.cse_operation_jobs_balanceLatency,
+										balanceReduceFactor=Configuration.cse_operation_jobs_balanceReduceFactor)
 
 	try:
 		textUI = TextUI()						# Start the textUI
-		console = Console()						# Start the console
 		storage = Storage()						# Initialize the resource storage
 
 		importer = Importer()					# Initialize the importer
 		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
 
-		statistics = Statistics()				# Initialize the statistics system
 		registration = RegistrationManager()	# Initialize the registration manager
 		validator = Validator()					# Initialize the resource validator
 		dispatcher = Dispatcher()				# Initialize the resource dispatcher
@@ -292,13 +284,15 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		"""	Internal function to print the CSE startup message after a delay
 		"""
 		RC.cseStatus = CSEStatus.RUNNING
+		RC.startupTime = utcTime()	# Set the startup time when the CSE is fully started and running
+
 		# Send an event that the CSE startup finished
 		event.cseStartup()	# type: ignore
 
 		L.console('CSE started')
 		L.log('CSE started')
 
-	BackgroundWorkerPool.newActor(_startUpFinished, delay = C.cseStartupDelay if RC.isHeadless else C.cseStartupDelay / 2.0, name = 'Delayed_startup_message' ).start()
+	BackgroundWorkerPool.newActor(_startUpFinished, delay=C.cseStartupDelay if RC.isHeadless else C.cseStartupDelay / 2.0, name='Delayed_startup_message').start()
 	
 	return True
 
@@ -345,7 +339,6 @@ def _shutdown() -> None:
 	pluginManager and pluginManager.shutdown()
 
 	textUI and textUI.shutdown()
-	console and console.shutdown()
 	time and time.shutdown()
 	location and location.shutdown()
 	semantic and semantic.shutdown()
@@ -364,7 +357,6 @@ def _shutdown() -> None:
 	security and security.shutdown()
 	validator and validator.shutdown()
 	registration and registration.shutdown()
-	statistics and statistics.shutdown()
 	event and event.shutdown()
 	storage  and storage.shutdown()
 	
@@ -447,6 +439,7 @@ def resetCSE() -> None:
 		event.cseRestarted()	# type: ignore [attr-defined]   
 
 		RC.cseStatus = CSEStatus.RUNNING
+		RC.startupTime = utcTime()	# Set the startup time when the CSE is fully started and running
 		L.isWarn and L.logWarn('Resetting CSE finished')
 
 
@@ -457,7 +450,8 @@ def restartCSE() -> None:
 		L.logErr('CSE is not running, cannot restart')
 		return
 	L.isWarn and L._log(LogLevel.WARNING, 'Restarting CSE', immediate=True)
-	console.stop()
+	if console:
+		console.stop()
 	_shutdown()
 	RC.cseStatus = CSEStatus.SHUTTINGDOWNRESTART
 

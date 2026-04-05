@@ -10,7 +10,7 @@
 ; THE CSE STARTS A DIALOG WHEN RUN FOR THE FIRST TIME OR WITH A NON-EXISTING ;
 ; CONFIGURATION FILE.                                                        ;
 ; OTHERWISE COPY THIS FILE TO A NEW FILE NAMED "acme.ini", WHICH IS THE      ;
-; DEFAULT CONFIGURATION FILE.  
+; DEFAULT CONFIGURATION FILE.                                                ;
 ;                                                                            ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -150,6 +150,21 @@ disabledPlugins=
 ; Replace existing plugins with the same name.
 ; Default: False
 replace=false
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                                                                                                  ;
+; The following options in this section are used by the PluginManager to determine which sub-system is enabled and ;
+; thus which plugins to load. They are not intended to be set by the user, but are derived from other settings.    ;
+; They are prefixed with _ to avoid conflicts with actual configuration options. The _ are stripped when checking  ;
+; the configuration in the PluginManager.                                                                          ;
+;                                                                                                                  ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_http_enableManagementEndpoint_=${http:enableManagementEndpoint}
+_http_enableStructureEndpoint_=${http:enableStructureEndpoint}
+_http_enableUpperTesterEndpoint_=${http:enableUpperTesterEndpoint}
+_statistics_enable_=${cse.statistics:enable}
+_webui_enable_=${webui:enable}
 
 
 ;
@@ -778,6 +793,8 @@ bcnt=10.0
 ;
 
 [webui]
+; Enable the web UI. Default: True
+enable=true
 ; Root path of the web UI. Default: /webui
 root=${http:root}webui
 
@@ -787,6 +804,9 @@ root=${http:root}webui
 ;
 
 [console]
+; Specify the console type. Allowed values: "rich", "simple".
+; Default: rich
+type=${basic.config:consoleType}
 ; Interval for continuously refreshing information displays. Must be > 0.0. 
 ; Default: 2.0 seconds.
 refreshInterval=2.0

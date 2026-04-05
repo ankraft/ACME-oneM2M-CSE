@@ -10,132 +10,126 @@
 """	Statistics Module for internal statistics.
 """
 from __future__ import annotations
-from typing import Dict, Union, Optional
+from typing import Dict, Union
 
-import datetime
-from urllib.parse import urlparse
-from copy import deepcopy
 from threading import Lock
 
-from ..etc.Types import CSEType, ResourceTypes
-from ..etc.DateUtils import utcTime, toISO8601Date
-from ..etc.Constants import RuntimeConstants as RC
-from ..runtime import CSE
-from ..runtime.Configuration import Configuration
-from ..resources.Resource import Resource
-from ..resources.CSEBase import getCSE
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..runtime.Logging import Logging as L
+from ...etc.Types import JSON
+from ...helpers.BackgroundWorker import BackgroundWorkerPool
+from ...runtime import CSE
+from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime.Logging import Logging as L
+from ...helpers.PluginManager import pluginClass, init, start, stop, restart, configure, validate
 
 
-coRetrieves			= 'coqRet'
+coRetrieves	= 'coqRet'
 """ Attribute name for number of CoAP RETRIEVE requests. """
-coCreates			= 'coCre'
+coCreates = 'coCre'
 """ Attribute name for number of CoAP CREATE requests. """
-coUpdates			= 'coUpd'
+coUpdates = 'coUpd'
 """ Attribute name for number of CoAP UPDATE requests. """
-coDeletes			= 'coDel'
+coDeletes = 'coDel'
 """ Attribute name for number of CoAP DELETE requests. """
-coNotifies			= 'coNot'
+coNotifies = 'coNot'
 """ Attribute name for number of CoAP NOTIFY requests. """
-coSendRetrieves		= 'coSRt'
+coSendRetrieves = 'coSRt'
 """ Attribute name for number of CoAP SEND RETRIEVE requests. """
-coSendCreates		= 'coSCr'
+coSendCreates = 'coSCr'
 """ Attribute name for number of CoAP SEND CREATE requests. """
-coSendUpdates		= 'coSUp'
+coSendUpdates = 'coSUp'
 """ Attribute name for number of CoAP SEND UPDATE requests. """
-coSendDeletes		= 'coSDl'
+coSendDeletes = 'coSDl'
 """ Attribute name for number of CoAP SEND DELETE requests. """
-coSendNotifies		= 'coSNo'
+coSendNotifies = 'coSNo'
 """ Attribute name for number of CoAP SEND NOTIFY requests. """
-retrievedResources	= 'rRes'
+retrievedResources = 'rRes'
 """ Attribute name for number of retrieved resources in the storage. """
-deletedResources	= 'rmRes'
+deletedResources = 'rmRes'
 """ Attribute name for number of deleted resources in the storage. """
-createdResources	= 'crRes'
+createdResources = 'crRes'
 """ Attribute name for number of created resources in the storage. """
-updatedResources	= 'upRes'
+updatedResources = 'upRes'
 """ Attribute name for number of updated resources in the storage. """
-expiredResources 	= 'exRes'
+expiredResources = 'exRes'
 """ Attribute name for number of expired resources in the storage. """
-httpRetrieves		= 'htRet'
+httpRetrieves = 'htRet'
 """ Attribute name for number of HTTP RETRIEVE requests. """
-httpCreates			= 'htCre'
+httpCreates = 'htCre'
 """ Attribute name for number of HTTP CREATE requests. """
-httpUpdates			= 'htUpd'
+httpUpdates = 'htUpd'
 """ Attribute name for number of HTTP UPDATE requests. """
-httpDeletes			= 'htDel'
+httpDeletes = 'htDel'
 """ Attribute name for number of HTTP DELETE requests. """
-httpNotifies		= 'htNot'
+httpNotifies = 'htNot'
 """ Attribute name for number of HTTP NOTIFY requests. """
-httpSendRetrieves	= 'htSRt'
+httpSendRetrieves = 'htSRt'
 """ Attribute name for number of HTTP SEND RETRIEVE requests. """
-httpSendCreates		= 'htSCr'
+httpSendCreates = 'htSCr'
 """ Attribute name for number of HTTP SEND CREATE requests. """
-httpSendUpdates		= 'htSUp'
+httpSendUpdates = 'htSUp'
 """ Attribute name for number of HTTP SEND UPDATE requests. """
-httpSendDeletes		= 'htSDl'
+httpSendDeletes = 'htSDl'
 """ Attribute name for number of HTTP SEND DELETE requests. """
-httpSendNotifies	= 'htSNo'
+httpSendNotifies = 'htSNo'
 """ Attribute name for number of HTTP SEND NOTIFY requests. """
-mqttRetrieves		= 'mqRet'
+mqttRetrieves = 'mqRet'
 """ Attribute name for number of MQTT RETRIEVE requests. """
-mqttCreates			= 'mqCre'
+mqttCreates = 'mqCre'
 """ Attribute name for number of MQTT CREATE requests. """
-mqttUpdates			= 'mqUpd'
+mqttUpdates = 'mqUpd'
 """ Attribute name for number of MQTT UPDATE requests. """
-mqttDeletes			= 'mqDel'
+mqttDeletes = 'mqDel'
 """ Attribute name for number of MQTT DELETE requests. """
-mqttNotifies		= 'mqNot'
+mqttNotifies = 'mqNot'
 """ Attribute name for number of MQTT NOTIFY requests. """
-mqttSendRetrieves	= 'mqSRt'
+mqttSendRetrieves = 'mqSRt'
 """ Attribute name for number of MQTT SEND RETRIEVE requests. """
-mqttSendCreates		= 'mqSCr'
+mqttSendCreates = 'mqSCr'
 """ Attribute name for number of MQTT SEND CREATE requests. """
-mqttSendUpdates		= 'mqSUp'
+mqttSendUpdates = 'mqSUp'
 """ Attribute name for number of MQTT SEND UPDATE requests. """
-mqttSendDeletes		= 'mqSDl'
+mqttSendDeletes = 'mqSDl'
 """ Attribute name for number of MQTT SEND DELETE requests. """
-mqttSendNotifies	= 'mqSNo'
+mqttSendNotifies = 'mqSNo'
 """ Attribute name for number of MQTT SEND NOTIFY requests. """
-wsRetrieves			= 'wsqRet'
+wsRetrieves = 'wsqRet'
 """ Attribute name for number of WS RETRIEVE requests. """
-wsCreates			= 'wsCre'
+wsCreates = 'wsCre'
 """ Attribute name for number of WS CREATE requests. """
-wsUpdates			= 'wsUpd'
+wsUpdates = 'wsUpd'
 """ Attribute name for number of WS UPDATE requests. """
-wsDeletes			= 'wsDel'
+wsDeletes = 'wsDel'
 """ Attribute name for number of WS DELETE requests. """
-wsNotifies			= 'wsNot'
+wsNotifies = 'wsNot'
 """ Attribute name for number of WS NOTIFY requests. """
-wsSendRetrieves		= 'wsSRt'
+wsSendRetrieves = 'wsSRt'
 """ Attribute name for number of WS SEND RETRIEVE requests. """
-wsSendCreates		= 'wsSCr'
+wsSendCreates = 'wsSCr'
 """ Attribute name for number of WS SEND CREATE requests. """
-wsSendUpdates		= 'wsSUp'
+wsSendUpdates = 'wsSUp'
 """ Attribute name for number of WS SEND UPDATE requests. """
-wsSendDeletes		= 'wsSDl'
+wsSendDeletes = 'wsSDl'
 """ Attribute name for number of WS SEND DELETE requests. """
-wsSendNotifies		= 'wsSNo'
+wsSendNotifies = 'wsSNo'
 """ Attribute name for number of WS SEND NOTIFY requests. """
-notifications		= 'notif'
+notifications = 'notif'
 """ Attribute name for number of notifications. """
-logErrors			= 'lgErr'
+logErrors = 'lgErr'
 """ Attribute name for number of log errors. """
-logWarnings			= 'lgWrn'
+logWarnings = 'lgWrn'
 """ Attribute name for number of log warnings. """
-cseStartUpTime		= 'cseSU'
-""" Attribute name for CSE startup time. """
-cseUpTime			= 'cseUT'
+cseUpTime = 'cseUT'
 """ Attribute name for CSE uptime. """
-resourceCount		= 'ctRes'
+resourceCount = 'ctRes'
 """ Attribute name for number of resources in the storage. """
+
 
 # TODO  restartcount, 
 
 StatsT = Dict[str, Union[str, int, float]]
 """ Type for statistics records. """
 
+@pluginClass(property='statistics')
 class Statistics(object):
 	"""	Statistics class. Handles all internal statistics.
 
@@ -150,8 +144,9 @@ class Statistics(object):
 	)
 	""" Slots of class attributes. """
 
-
-	def __init__(self) -> None:
+	@init
+	def initStatistics(self) -> None:
+		L.isDebug and L.logDebug('Initializing Statistics plugin')
 
 		# create lock
 		self.statLock = Lock()
@@ -159,12 +154,11 @@ class Statistics(object):
 		# retrieve or create statistics record, even when statistics are disabled
 		self.stats = self.setupStats()
 
+
+	@start
+	def start(self) -> None:
+
 		if Configuration.cse_statistics_enable:
-
-			# Start background worker to handle writing to DB
-			L.isInfo and L.log('Starting statistics DB thread')
-			BackgroundWorkerPool.newWorker(Configuration.cse_statistics_writeInterval, self.statisticsDBWorker, 'statsDBWorker').start()
-
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
 			CSE.event.addHandler(CSE.event.retrieveResource, lambda n, _: self._handleStatsEvent(retrievedResources))	# type: ignore
@@ -213,17 +207,19 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.wsSendDelete, lambda n: self._handleStatsEvent(wsSendDeletes))				# type: ignore
 			CSE.event.addHandler(CSE.event.wsSendNotify, lambda n: self._handleStatsEvent(wsSendNotifies))				# type: ignore
 			CSE.event.addHandler(CSE.event.notification, lambda n: self._handleStatsEvent(notifications))				# type: ignore
-			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)											# type: ignore
 			CSE.event.addHandler(CSE.event.logError, lambda n: self._handleStatsEvent(logErrors))						# type: ignore
 			CSE.event.addHandler(CSE.event.logWarning, lambda n: self._handleStatsEvent(logWarnings))					# type: ignore
 
 			# Also do some internal handling
-			CSE.event.addHandler(CSE.event.cseReset, self.reset)														# type: ignore
+			#CSE.event.addHandler(CSE.event.cseReset, self.reset)														# type: ignore
 
-		L.isInfo and L.log('Statistics initialized')
+			# Start background worker to handle writing to DB
+			L.isDebug and L.logDebug('Starting statistics DB thread')
+			BackgroundWorkerPool.newWorker(Configuration.cse_statistics_writeInterval, self.statisticsDBWorker, 'statsDBWorker').start()
 
 
-	def shutdown(self) -> bool:
+	@stop
+	def stop(self) -> bool:
 		"""	Shutdown the statistics service.
 
 			Return:
@@ -240,18 +236,39 @@ class Statistics(object):
 		L.isInfo and L.log('Statistics shut down')
 		return True
 	
-	
-	def reset(self, name:str) -> None:
-		"""	Reset the statistics data.
 
-			Args:
-				name:	The name of the event that triggered the reset.
+	@restart
+	def restart(self) -> None:
+		"""	Reset the statistics data.
 		"""
 		self.purgeDBStatistics()
 		self.stats = self.setupStats()
-		self.handleCseStartup(None)
 		L.isDebug and L.logDebug('Statistics resetted')
 
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		"""	Configure the statistics plugin. This is called when the configuration is loaded or reloaded.
+
+			Args:
+				config: The configuration object.
+		"""
+		parser = config.configParser
+
+		config.cse_statistics_enable = parser.getboolean('cse.statistics', 'enable', fallback=True)
+		config.cse_statistics_writeInterval = parser.getint('cse.statistics', 'writeInterval', fallback=60)		# Seconds
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		"""	Validate the configuration for the statistics plugin.
+
+			Args:
+				config: The configuration object.
+		"""
+		if config.cse_statistics_writeInterval <= 0:
+			raise ConfigurationError(r'[i]\[cse.statistics]:writeInterval[/i] must be > 0')
+		
 
 	def setupStats(self) -> StatsT:
 		"""	Setup the statistics dictionary.
@@ -262,6 +279,7 @@ class Statistics(object):
 		if (stats := self.retrieveDBStatistics()):
 			return stats
 		return {
+			retrievedResources: 0,
 			deletedResources: 0,
 			createdResources: 0,
 			updatedResources: 0,
@@ -307,27 +325,106 @@ class Statistics(object):
 			wsSendUpdates: 0,
 			wsSendDeletes: 0,
 			wsSendNotifies: 0,
-			cseStartUpTime: 0.0,
 			logErrors: 0,
 			logWarnings: 0
 		}
 
 
-	# Return stats
-	def getStats(self) -> StatsT:
-		"""	Return the current statistics.
-
-			Return:
-				The statistics dictionary.
+	def statsAsDict(self) -> Dict[str, JSON]:
+		"""	Return the current statistics as a dictionary.
+		 
+			Returns: A dictionary containing the current statistics. 
 		"""
-		s = deepcopy(self.stats)
+		status:JSON = {
 
-		# Calculate some stats
-		# s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.now(datetime.timezone.utc).timestamp() - int(s[cseStartUpTime]))))
-		s[cseUpTime] = str(datetime.timedelta(seconds=int(utcTime() - int(s[cseStartUpTime]))))
-		s[cseStartUpTime] = toISO8601Date(float(s[cseStartUpTime]))
-		s[resourceCount] = int(s[createdResources]) - int(s[deletedResources])
-		return s
+			'logging': {
+				'errors': self.stats.get(logErrors, 0),
+				'warnings': self.stats.get(logWarnings, 0),
+			},
+			'requests': {
+				'http': {
+					'received': {
+						'create': self.stats[httpCreates],
+						'retrieve': self.stats[httpRetrieves],
+						'update': self.stats[httpUpdates],
+						'delete': self.stats[httpDeletes],
+						'notify': self.stats[httpNotifies],
+					},
+					'sent': {
+						'create': self.stats[httpSendCreates],
+						'retrieve': self.stats[httpSendRetrieves],
+						'update': self.stats[httpSendUpdates],
+						'delete': self.stats[httpSendDeletes],
+						'notify': self.stats[httpSendNotifies],
+					}
+				},
+				'mqtt': {
+					'received': {
+						'create': self.stats[mqttCreates],
+						'retrieve': self.stats[mqttRetrieves],
+						'update': self.stats[mqttUpdates],
+						'delete': self.stats[mqttDeletes],
+						'notify': self.stats[mqttNotifies],
+					},
+					'sent': {
+						'create': self.stats[mqttSendCreates],
+						'retrieve': self.stats[mqttSendRetrieves],
+						'update': self.stats[mqttSendUpdates],
+						'delete': self.stats[mqttSendDeletes],
+						'notify': self.stats[mqttSendNotifies],
+					}
+				},
+				'ws': {
+					'received': {
+						'create': self.stats[wsCreates],
+						'retrieve': self.stats[wsRetrieves],
+						'update': self.stats[wsUpdates],
+						'delete': self.stats[wsDeletes],
+						'notify': self.stats[wsNotifies],
+					},
+					'sent': {
+						'create': self.stats[wsSendCreates],
+						'retrieve': self.stats[wsSendRetrieves],
+						'update': self.stats[wsSendUpdates],
+						'delete': self.stats[wsSendDeletes],
+						'notify': self.stats[wsSendNotifies],
+					}
+				},
+				'coap': {
+					'received': {
+						'create': self.stats[coCreates],
+						'retrieve': self.stats[coRetrieves],
+						'update': self.stats[coUpdates],
+						'delete': self.stats[coDeletes],
+						'notify': self.stats[coNotifies],
+					},
+					'sent': {
+						'create': self.stats[coSendCreates],
+						'retrieve': self.stats[coSendRetrieves],
+						'update': self.stats[coSendUpdates],
+						'delete': self.stats[coSendDeletes],
+						'notify': self.stats[coSendNotifies],
+					}
+				},
+			},
+			'operations': {
+				'created': self.stats[createdResources],
+				'retrieved': self.stats[retrievedResources], 
+				'updated': self.stats[updatedResources], 
+				'deleted': self.stats[deletedResources], 
+				'notified': self.stats[notifications], 
+				'expired': self.stats[expiredResources],
+			},
+			'resources': {
+				'counts': {
+					'createdResources': self.stats[createdResources],
+					'deletedResources': self.stats[deletedResources],
+					'total': int(self.stats[createdResources]) - int(self.stats[deletedResources])
+				}
+			}
+
+		}
+		return status
 
 
 	#########################################################################
@@ -349,17 +446,6 @@ class Statistics(object):
 			# the we might just add this event as the first entry
 			with self.statLock:
 				self.stats[eventType] = 1		# type: ignore
-
-
-	def handleCseStartup(self, name:str) -> None:
-		"""	Assign the CSE's startup time.
-
-			Args:
-				name:	The name of the event that triggered function.
-		"""
-		with self.statLock:
-			# self.stats[cseStartUpTime] = datetime.datetime.now(datetime.timezone.utc).timestamp()
-			self.stats[cseStartUpTime] = utcTime()
 
 
 	#########################################################################
@@ -410,135 +496,3 @@ class Statistics(object):
 			CSE.storage.purgeStatistics()
 
 	
-	#########################################################################
-	#
-	#	CSE Structure handling
-
-	def getStructurePuml(self, maxLevel:Optional[int] = 0) -> str:
-		"""	This function will generate a PlanUML graph of a CSE's structure, including:
-				- The CSE, Type, http, port
-				- The CSE's resource tree
-				- The Registrar CSE (if any)
-				- A list of descendant CSE's (if any)
-			
-			This function calls itself recursively to generate the tree structure.
-			
-			Args:
-				maxLevel:	The maximum level of the tree to print. 0 means all levels.
-			
-			Return:
-				The PlanUML graph as a string.
-		"""
-
-		def getChildren(res:Resource, level:int) -> str:
-			""" Find and print the children in the tree structure. """
-			result = ''
-			if maxLevel > 0 and level == maxLevel:
-				return result
-			chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
-			for ch in chs:
-				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {ResourceTypes(ch.ty).typeShortname()} ></color>\n'
-				result += getChildren(ch, level+1)
-			return result
-
-		result = """@startuml
-!define lightgrey eeeeee
-skinparam defaultTextAlignment center
-skinparam note {
-    BorderColor grey
-    backgroundColor lightgrey
-    RoundCorner 25
-    TextAlignment left
-    FontSize 10
-}
-skinparam rectangle {
-	Shadowing<< CSE >> false
-	bordercolor<< CSE >> #cccccc
-}
-skinparam linetype ortho
-"""
-
-		# Own CSE node & http interface
-		result += 'rectangle << CSE >> {\n'
-		address = urlparse(Configuration.http_address)
-		(ip, _) = tuple(address.netloc.split(':'))
-		result += f'node CSE as "<color:green>{RC.cseCsi[1:]}</color> ({RC.cseType.name})\\n{ip}" #white\n'
-
-		# Own http interface
-		http = 'https' if Configuration.http_security_useTLS else 'http'
-		result += f'interface "{http}\\n{Configuration.http_port}" as http_own #white\n'
-
-		# MQTT broker connection
-		if Configuration.mqtt_enable:
-			mqtt = 'mqtts' if Configuration.mqtt_security_useTLS else 'mqtt'
-			result += f'interface "{mqtt}\\n{mqtt}://{Configuration.mqtt_address}:{Configuration.mqtt_port}" as mqtt_own #white\n'
-		
-		# Own CoAP interface
-		if Configuration.coap_enable:
-			result += f'interface "coap\\n{Configuration.coap_port}" as coap_own #white\n'
-
-		# Own WS interface
-		if Configuration.websocket_enable:
-			ws = 'wss' if Configuration.websocket_security_useTLS else 'ws'
-			result += f'interface "{ws}\\n{Configuration.websocket_port}" as ws_own #white\n'
-
-		# Build Resource Tree
-		result += 'note left of CSE\n'
-		result += '**Resource Tree**\n\n'
-		cse = getCSE()
-		result += f'{cse.rn}\n'
-		result += getChildren(cse, 0)
-		result += 'end note\n'
-
-		# Build Own
-		result += 'http_own -[norank]- [CSE] #lightblue\n'
-		if Configuration.mqtt_enable:
-			result += 'mqtt_own -[norank]- [CSE] #lightblue\n'
-		if Configuration.coap_enable:
-			result += 'coap_own -[norank]- [CSE] #lightblue\n'
-		if Configuration.websocket_enable:
-			result += 'ws_own -[norank]- [CSE] #lightblue\n'
-		result += '}\n' # rectangle
-
-		# Has parent Registrar CSE?
-		if len(Configuration.cse_registrars) > 0:
-			for index, registrar in enumerate(Configuration.cse_registrars.values()):
-				registrarCSE = registrar._registrarCSEBaseResource
-				bg = 'white' if registrarCSE else 'lightgrey'
-				color = 'green' if registrarCSE else 'black'
-				address = urlparse(registrar.address)
-				(ip, port) = tuple(address.netloc.split(':'))
-				registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
-				result += f'cloud PARENT_{index} as "<color:{color}>{registrar.cseID[1:] if registrar.spID != RC.cseSPid else registrar.spID + registrar.cseID}</color> ({registrarType})\\n{registrar.address}" #{bg}\n'
-				result += f'CSE -UP- PARENT_{index}\n'
-
-		
-		# Has CSE descendants?
-		if RC.cseType != CSEType.ASN:
-			cnt = 0
-			connections = {}
-			for desc in CSE.remote.descendantCSR.keys():
-				csi = desc[1:]
-				(csr, atCsi) = CSE.remote.descendantCSR[desc]
-				poa = f'\\n{csr.poa}' if csr else ''
-				typeShortname = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
-				shape = 'node' if csr else 'rectangle'
-				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{typeShortname}{poa}" #white\n'
-				connections[desc] = (cnt, atCsi)
-				cnt += 1
-			
-			for key in connections.keys():
-				connection = connections[key]
-				nodeNr = connection[0]
-				atCsi = connection[1]
-				if atCsi == RC.cseCsi:
-					result += f'd{nodeNr} -UP- CSE\n'
-				else:
-					if atCsi in connections:
-						subcon = connections[atCsi]
-						result += f'd{connection[0]} -UP- d{subcon[0]}\n'
-
-		# end
-		result += '@enduml'
-		return result
-

@@ -15,9 +15,9 @@ from textual.containers import VerticalScroll
 from textual.widgets import Static
 from textual.timer import Timer
 from rich.style import Style
-from ..runtime import CSE
 from ..runtime.Logging import fontDark, fontLight
 from ..runtime.Configuration import Configuration
+from ..runtime.Management import getStatusRich
 from ..textui import ACMETuiApp
 
 class ACMEContainerInfo(VerticalScroll):
@@ -87,6 +87,6 @@ class ACMEContainerInfo(VerticalScroll):
 				force:	Force the update.
 		"""
 		if force or self._app.tabs.active == ACMETuiApp.tabInfo:
-			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self.app.get_css_variables()['primary']), 
-																textStyle = Style(color = fontDark if self._app.dark else fontLight)))
+			self.statsView.update(getStatusRich(style=Style(color=self.app.get_css_variables()['primary']), 
+													textStyle=Style(color=fontDark if self._app.dark else fontLight)))
 

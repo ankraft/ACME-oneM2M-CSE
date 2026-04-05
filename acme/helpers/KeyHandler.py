@@ -502,14 +502,14 @@ def _getKey(nextKeyCB:Callable) -> str|FunctionKey:
 
 
 def loop(commands:Commands, 
-		 quit:Optional[str] = None, 
-		 catchKeyboardInterrupt:Optional[bool] = False, 
-		 headless:Optional[bool] = False, 
-		 ignoreException:Optional[bool] = True,
-		 catchAll:Optional[Callable] = None,
-		 nextKey:Optional[str] = None,
-		 postCommandHandler:Optional[Callable] = None,
-		 exceptionHandler:Optional[Callable] = None) -> None:
+		 quit:Optional[str]=None, 
+		 catchKeyboardInterrupt:Optional[bool]=False, 
+		 headless:Optional[bool]=False, 
+		 ignoreException:Optional[bool]=True,
+		 catchAll:Optional[Callable]=None,
+		 nextKey:Optional[str]=None,
+		 postCommandHandler:Optional[Callable]=None,
+		 exceptionHandler:Optional[Callable]=None) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
 		a handler function for that key (from the dictionary *commands*).
 
@@ -529,7 +529,11 @@ def loop(commands:Commands,
 			postCommandHandler: A handler callback that is called after running a command.
 			exceptionHandler: A handler callback that is called in case an exception happened during the execution of a command.
 	"""
-	
+	global _stopLoop
+	_stopLoop = False
+	if not commands:
+		commands = { FunctionKey.CTRL_C: lambda ch: stopLoop() }	# default command to stop the loop with ^C
+
 	# main loop
 	ch:str = None
 	while True:	
@@ -587,7 +591,7 @@ def loop(commands:Commands,
 				raise
 			except KeyboardInterrupt:
 				if catchKeyboardInterrupt:
-					nextKey = '\x03'
+					nextKey = FunctionKey.CTRL_C
 			except Exception as e:
 				if exceptionHandler:
 					exceptionHandler(ch)
@@ -638,7 +642,8 @@ def waitForKeypress(s:float) -> Optional[str]:
 		try:
 			ch = getch()	# returns after _timeout s
 		except KeyboardInterrupt as e:
-			ch = '\x03'
+			ch = FunctionKey.CTRL_C
+			break
 		except Exception:
 			return None
 		if ch is not None:
