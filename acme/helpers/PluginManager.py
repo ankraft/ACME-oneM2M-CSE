@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import os, importlib, importlib.util, inspect
 from types import ModuleType
 from enum import IntEnum
+from ..helpers.TextTools import simpleMatch
 
 try:
 	import Singleton	# type: ignore
@@ -22,6 +23,7 @@ except ImportError:
 _tagType = '_pm_type'
 _tagInstanceName = '_pm_instance_name'
 _tagInstancePriority = '_pm_instance_priority'
+_tagInstanceTags = '_pm_instance_tags'
 
 
 class PluginState(IntEnum):
@@ -29,6 +31,7 @@ class PluginState(IntEnum):
 	LOADED		= 0
 	INITIALIZED	= 1
 	RUNNING		= 2
+	PAUSED		= 3
 	STOPPED		= 3
 	ERROR		= 4
 
@@ -43,6 +46,9 @@ class PluginInfo:
 
 	priority: int = 50
 	""" Priority of the plugin. The priority determines the order in which plugins are started, etc. Lower values mean higher priority, but stopping and finalizing happen in reverse order. """
+
+	tags: list[str] = None
+	""" Optional list of tags to attach to the plugin for easier identification and filtering. """
 
 	state: PluginState = PluginState.LOADED
 	""" Internal state of the plugin. """
@@ -80,6 +86,12 @@ class PluginInfo:
 	stopMethod: Callable | None = None
 	""" The stop method of the plugin. This method, if set, is called when the plugin is stopped. """
 
+	pauseMethod: Callable | None = None
+	""" The pause method of the plugin. This method, if set, is called when the plugin is paused. """
+
+	unpauseMethod: Callable | None = None
+	""" The unpause method of the plugin. This method, if set, is called when the plugin is unpaused. """
+
 	configureMethod: Callable | None = None
 	""" The configure method of the plugin. This method, if set, is called during the plugin configuration phase. """
 	
@@ -94,31 +106,52 @@ class PluginInfo:
 				self.startMethod(self.instance)
 			self.state = PluginState.RUNNING
 	
+
 	def stop(self) -> None:
 		""" Stop the plugin. """
-		if self.state == PluginState.RUNNING:
+		if self.state in (PluginState.RUNNING, PluginState.PAUSED):
 			if self.stopMethod:
 				self.stopMethod(self.instance)
 			self.state = PluginState.STOPPED
 
+
 	def restart(self) -> None:
 		""" Restart the plugin. """
-		if self.state == PluginState.RUNNING:
+		if self.state in (PluginState.RUNNING, PluginState.PAUSED):
 			if self.restartMethod:
 				self.restartMethod(self.instance)
 			self.state = PluginState.RUNNING
 
+
+	def pause(self) -> None:
+		""" Pause the plugin. """
+		if self.state in (PluginState.RUNNING,):
+			if self.pauseMethod:
+				self.pauseMethod(self.instance)
+			self.state = PluginState.PAUSED
+
+
+	def unpause(self) -> None:
+		""" Unpause the plugin. """
+		if self.state in (PluginState.PAUSED,):
+			if self.unpauseMethod:
+				self.unpauseMethod(self.instance)
+			self.state = PluginState.RUNNING
+
+
 	def configure(self, *args: Any, **kwargs: Any) -> None:
 		""" Configure the plugin. """
-		if self.state in (PluginState.INITIALIZED, PluginState.RUNNING, PluginState.STOPPED):
+		if self.state in (PluginState.INITIALIZED,):
 			if self.configureMethod:
 				self.configureMethod(self.instance, *args, **kwargs)
 
+
 	def validate(self, *args: Any, **kwargs: Any) -> None:
 		""" Validate the plugin configuration. """
-		if self.state in (PluginState.INITIALIZED, PluginState.RUNNING, PluginState.STOPPED):
+		if self.state in (PluginState.INITIALIZED,):
 			if self.validateMethod:
 				self.validateMethod(self.instance, *args, **kwargs)
+
 
 	def finalize(self) -> None:
 		""" Finalize the plugin. """
@@ -134,6 +167,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 	"""
 
 	plugins: dict[str, PluginInfo] = {}
+	_pluginInstances: dict[str, Any] = {}
 
 
 	def loadPlugins(self, directory: str, 
@@ -197,7 +231,6 @@ class PluginManager(metaclass=Singleton.Singleton):
 														fileName=fileName)
 
 				except Exception as e:
-					# print(f"Failed to load plugin {pluginName}: {e}")
 					raise e
 
 		# After loading all plugins, gather plugin classes and plugin methods
@@ -219,6 +252,10 @@ class PluginManager(metaclass=Singleton.Singleton):
 									plugin.restartMethod = method
 								case 'stop':
 									plugin.stopMethod = method
+								case 'pause':
+									plugin.pauseMethod = method
+								case 'unpause':
+									plugin.unpauseMethod = method
 								case 'configure':
 									plugin.configureMethod = method
 								case 'validate':
@@ -237,6 +274,10 @@ class PluginManager(metaclass=Singleton.Singleton):
 			# Store priority
 			if (p := getattr(plugin.pluginClass, _tagInstancePriority, None)) is not None:
 				plugin.priority = p
+			
+			# Store tags
+			if (t := getattr(plugin.pluginClass, _tagInstanceTags, None)) is not None:
+				plugin.tags = t
 
 
 		# Instantiate class and execute init methods of now registered plugins
@@ -250,7 +291,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 
 			# Add plugin as attribute of the plugin manager
 			if plugin.instanceAttributeName:
-				setattr(self, plugin.instanceAttributeName, plugin.instance)
+				self._pluginInstances[plugin.instanceAttributeName] = plugin.instance
 			plugin.state = PluginState.INITIALIZED
 	
 		# Add new plugins to the main plugin list
@@ -297,11 +338,13 @@ class PluginManager(metaclass=Singleton.Singleton):
 	def _action(self, 
 				pluginNames: str|list[str]|None, 
 				action: Callable[[PluginInfo], None],
-				reverse: bool=False) -> None:
+				tags: Optional[str|list[str]] = None,
+				reverse: bool = False) -> None:
 		""" Transition the state of a plugin.
 
 			Args:
-				pluginName: The name of the plugin to transition.
+				pluginName: The name of the plugin to transition. If None, all plugins are transitioned. If a string is provided, it is treated as a pattern to match plugin names.
+				tags: The tags to match for the plugins to transition. If None, all plugins are transitioned.
 				action: The action to perform during the state transition.
 				reverse: Whether to process the plugins in reverse order.
 		"""
@@ -309,102 +352,161 @@ class PluginManager(metaclass=Singleton.Singleton):
 			case None:
 				pluginNames = list(self.plugins.keys())
 			case str():
-				pluginNames = [pluginNames]
+				# Treat pluginNames as a pattern to match plugin names
+				pluginNames = [ name for name in self.plugins.keys() if simpleMatch(name, pluginNames)] # filter out non-matching plugins
 			case _:
 				pass # already a list
+
+		# Make a list from a single tag string if necessary
+		if isinstance(tags, str):
+			tags = [tags]
 		
 		for name in sorted(pluginNames, key=lambda name: self.plugins[name].priority, reverse=reverse):
-			action(self.plugins[name])
+			plugin = self.plugins[name]
+			if tags:
+				if not plugin.tags:	# Plugin must have tags to match, if it has no tags, it does not match
+					continue
+				# Check if the plugin has any of the specified tags
+				if not any(tag in self.plugins[name].tags for tag in tags):
+					continue
+				# fall through if tags match
+			action(plugin)
 			
 
-	def startPlugins(self, pluginNames: Optional[str|list[str]]=None) -> None:
+	def startPlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None) -> None:
 		""" Start the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to start. Start all if None.
+				tags: The tags of the plugins to match. Match all if None.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.start())
+		self._action(pluginNames, lambda plugin: plugin.start(), tags=tags)
 
 
-	def stopPlugins(self, pluginNames: Optional[str|list[str]]=None) -> None:
-		""" Shutdown the specified plugins.
+	def stopPlugins(self, pluginNames: Optional[str|list[str]]=None, tags: Optional[str|list[str]] = None) -> None:
+		""" Shutdown the specified plugins. Plugins are stopped in reverse order of their priority.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to shutdown. Shutdown all if None.
+				tags: The tags of the plugins to match. Match all if None.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.stop(), reverse=True)
+		self._action(pluginNames, lambda plugin: plugin.stop(), tags=tags, reverse=True)
 
-	
-	def restartPlugins(self, pluginNames: Optional[str|list[str]]=None) -> None:
+	def restartPlugins(self, pluginNames: Optional[str|list[str]] =None, tags: Optional[str|list[str]] = None) -> None:
 		""" Restart the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to restart. Restart all if None.
+				tags: The tags of the plugins to match. Match all if None.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.restart())
+		self._action(pluginNames, lambda plugin: plugin.restart(), tags=tags)
 
 
-	def configurePlugins(self, pluginNames: Optional[str|list[str]]=None, *args: Any, **kwargs: Any) -> None:
+	def pausePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None) -> None:
+		""" Pause the specified plugins.
+
+			Args:
+				pluginNames: The name(s) of the plugin(s) to pause. Pause all if None.
+				tags: The tags of the plugins to match. Match all if None. 
+
+			Raises:
+				KeyError: If a specified plugin is not found.
+		"""
+		self._action(pluginNames, lambda plugin: plugin.pause(), tags=tags)
+
+
+	
+	def unpausePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None) -> None:
+		""" Unpause the specified plugins. Plugins are unpaused in reverse order of their priority.
+
+			Args:
+				pluginNames: The name(s) of the plugin(s) to unpause. Unpause all if None.
+				tags: The tags of the plugins to match. Match all if None.
+
+			Raises:
+				KeyError: If a specified plugin is not found.
+		"""
+		self._action(pluginNames, lambda plugin: plugin.unpause(), tags=tags, reverse=True)
+
+
+	def configurePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None, *args: Any, **kwargs: Any) -> None:
 		""" Configure the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to configure. Configure all if None.
+				tags: The tags of the plugins to match. Match all if None.
 				*args: Positional arguments to pass to the configure method.
 				**kwargs: Keyword arguments to pass to the configure method.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.configure(*args, **kwargs))
+		self._action(pluginNames, lambda plugin: plugin.configure(*args, **kwargs), tags=tags)
 
 
-	def validatePlugins(self, pluginNames: Optional[str|list[str]]=None, *args: Any, **kwargs: Any) -> None:
+	def validatePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None, *args: Any, **kwargs: Any) -> None:
 		""" Validate the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to validate.
+				tags: The tags of the plugins to match. Match all if None.
 				*args: Positional arguments to pass to the validate method.
 				**kwargs: Keyword arguments to pass to the validate method.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.validate(*args, **kwargs))
+		self._action(pluginNames, lambda plugin: plugin.validate(*args, **kwargs), tags=tags)
 	
 
 	def __getattr__(self, name:str) -> Any:
-		""" Get the plugin by name.
+		""" Get the instance or plugin by name.
 
 			Args:
-				name: The name of the plugin.
+				name: The name of the instance orplugin.
 			Returns:
-				The plugin module.
-			Raises:
-				AttributeError: If the plugin is not found.
+				The instance or plugin module, or None if not found.
 		"""
+		if name in self._pluginInstances:
+			return self._pluginInstances[name]
 		if name in self.plugins:
 			return self.plugins[name]
-		raise AttributeError(f"'PluginManager' object has no attribute '{name}'")
+		#raise AttributeError(f"'PluginManager' object has no attribute '{name}'")
+		return None
 	
 
 	def __delattr__(self, name:str) -> None:
 		""" Delete the plugin by name.
 		"""
-		if name in self.plugins:
+		if name in self._pluginInstances:
+			del self._pluginInstances[name]
+			return
+		elif name in self.plugins:
 			self.unloadPlugins(name)
-		elif hasattr(self, name):
-			super().__delattr__(name)
+		# elif hasattr(self, name):
+		# 	super().__delattr__(name)
 		else:
 			raise AttributeError(f'"PluginManager" object has no attribute "{name}"')
+		
+	
+	def has(self, instanceName: str) -> bool:
+		""" Check if a plugin instance with the given name exists.
+
+			Args:
+				instanceName: The name of the plugin instance to check.
+			Returns:
+				True if a plugin instance with the given name exists, False otherwise.
+		"""
+		return hasattr(self, instanceName)
 
 #
 #	Decorators for plugin methods and classes
@@ -452,6 +554,16 @@ def restart(func: Callable) -> Callable: # type: ignore
 	return _wrap(func, 'restart')
 
 
+def pause(func: Callable) -> Callable: # type: ignore
+	""" Decorator to mark pause functions in plugins. """
+	return _wrap(func, 'pause')
+
+
+def unpause(func: Callable) -> Callable: # type: ignore
+	""" Decorator to mark unpause functions in plugins. """
+	return _wrap(func, 'unpause')
+
+
 def configure(func: Callable) -> Callable: # type: ignore
 	""" Decorator to mark configuration functions in plugins. """
 	return _wrap(func, 'configure')
@@ -462,12 +574,13 @@ def validate(func: Callable) -> Callable: # type: ignore
 	return _wrap(func, 'validate')
 
 
-def pluginClass(property: str|ClassVar=None, priority: int=50) -> ClassVar: # type: ignore
+def pluginClass(property: str|ClassVar=None, priority: int = 50, tags: list[str] = []) -> ClassVar: # type: ignore
 	""" Decorator to mark plugin classes in plugins.
 
 		Args:
 			property: Optional name for the plugin instance. If a class is given here, it is treated directly as the class to decorate.
 			priority: The priority of the plugin. It determines the order in which plugins are started, stopped, etc. Lower values mean higher priority.
+			tags: Optional list of tags to attach to the plugin for easier identification and filtering.
 
 		Returns:
 			The class with the plugin class tag set.
@@ -492,6 +605,7 @@ def pluginClass(property: str|ClassVar=None, priority: int=50) -> ClassVar: # ty
 		if property: # If name is given, set it as instance name
 			setattr(cls, _tagInstanceName, property)
 		setattr(cls, _tagInstancePriority, priority)
+		setattr(cls, _tagInstanceTags, tags)
 		return cls
 	
 	return decorator

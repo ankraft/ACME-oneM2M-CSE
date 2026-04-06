@@ -93,8 +93,8 @@ class PluginManager(PM):
 		L.isInfo and L.log(f'Loaded plugins: {", ".join(self.plugins.keys())}')
 
 		# Configure, validate and start plugins
-		self.configurePlugins(None, Configuration)
-		self.validatePlugins(None, Configuration)
+		self.configurePlugins(None, None, Configuration)
+		self.validatePlugins(None, None, Configuration)
 		self.startPlugins()
 		L.isInfo and L.log('Plugins configured and started')
 
