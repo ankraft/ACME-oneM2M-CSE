@@ -19,6 +19,7 @@ from ..helpers.TextTools import simpleMatch
 class PluginManager(PM):
 
 	_pluginChecks:dict[str, Callable] = {
+		'acme.plugins.bindings.CoAPServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),
 		'acme.plugins.bindings.http.HttpManagement':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableManagementEndpoint', False),
 		'acme.plugins.bindings.http.HttpStructure':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableStructureEndpoint', False),
 		'acme.plugins.bindings.http.HttpUpperTester':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableUpperTesterEndpoint', False),

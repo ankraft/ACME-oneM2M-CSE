@@ -160,6 +160,7 @@ replace=false
 ;                                                                                                                  ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+_coap_enable_=${coap:enable}
 _http_enableManagementEndpoint_=${http:enableManagementEndpoint}
 _http_enableStructureEndpoint_=${http:enableStructureEndpoint}
 _http_enableUpperTesterEndpoint_=${http:enableUpperTesterEndpoint}

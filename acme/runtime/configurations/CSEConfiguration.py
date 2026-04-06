@@ -170,7 +170,7 @@ class CSEConfiguration(ModuleConfiguration):
 			RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
 		if Configuration.websocket_enable:
 			RC.csePOA.append(Configuration.websocket_address)
-		if Configuration.coap_enable:
+		if hasattr(Configuration, 'coap_enable') and Configuration.coap_enable:
 			RC.csePOA.append(Configuration.coap_address)
 		
 		# Other configuration values

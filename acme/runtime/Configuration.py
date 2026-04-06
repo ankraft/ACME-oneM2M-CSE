@@ -1144,7 +1144,6 @@ from ..runtime.configurations.ACPResourceConfiguration import ACPResourceConfigu
 from ..runtime.configurations.ACTRResourceConfiguration import ACTRResourceConfiguration
 from ..runtime.configurations.AnnouncementServiceConfiguration import AnnouncementServiceConfiguration
 from ..runtime.configurations.CNTResourceConfiguration import CNTResourceConfiguration
-from ..runtime.configurations.CoAPServerConfiguration import CoAPServerConfiguration
 from ..runtime.configurations.ConsoleConfiguration import ConsoleConfiguration
 from ..runtime.configurations.CSEConfiguration import CSEConfiguration
 from ..runtime.configurations.FCNTResourceConfiguration import FCNTResourceConfiguration
@@ -1193,7 +1192,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 	TinyDBBindingConfiguration(),
 
 	# Binding configurations
-	CoAPServerConfiguration(),
 	HTTPServerConfiguration(),
 	MQTTConfiguration(),
 	WebSocketConfiguration(),

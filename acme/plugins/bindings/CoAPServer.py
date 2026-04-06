@@ -6,35 +6,42 @@
 #
 """ CoAP Server binding to the ACME CSE. """
 
+# TODO Move responseStatusCoder for CoAP to this module. Those ccodes are only used here, 
+# but create a dependancy when they are in the ResponseStatusCodes module. 
+
+
 from __future__ import annotations
 from typing import Optional, Any, cast
-import os, logging, urllib, socket
+
+import logging, urllib, socket, os
 import isodate
 
-from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.ResponseStatusCodes import BAD_REQUEST, REQUEST_TIMEOUT, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, INTERNAL_SERVER_ERROR, NO_CONTENT
 
-from ..etc.Types import Operation, Result, CSERequest, JSON, ContentSerializationType, ResponseType
-from ..etc.Types import ResponseType, ResultContentType, DesiredIdentifierResultType, RequestType
-from ..etc.Utils import renameThread
-from ..etc.DateUtils import getResourceDate, timeUntilAbsRelTimestamp
-from ..etc.IDUtils import uniqueRI
-from ..etc.RequestUtils import fromHttpURL, requestFromResult, serializeData, createRequestResultFromURI, fillRequestWithArguments
-from ..etc.RequestUtils import toCoAPPath, contentAsString, createPositiveResponseResult, deserializeData
-from ..etc.ResponseStatusCodes import ResponseStatusCode
-from ..helpers.TextTools import toHex
-from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ..helpers.TextTools import findXPath
-from ..helpers.MultiDict import MultiDict
-from ..helpers.CoAPthonTools import registerOneM2MContentTypes, registerOneM2MOptions, newCoAPOption, operationsMethodsMap
-from ..helpers.ACMELRUCache import ACMELRUCache
-from ..runtime.Configuration import Configuration
-from ..runtime.Logging import Logging as L
-from ..runtime import CSE
-from ..etc.Constants import RuntimeConstants as RC
+from ...etc.Types import Operation, Result, CSERequest, JSON, ContentSerializationType, ResponseType
+from ...etc.Types import ResponseType, ResultContentType, DesiredIdentifierResultType, RequestType
+from ...etc.Utils import renameThread
+from ...etc.DateUtils import getResourceDate, timeUntilAbsRelTimestamp
+from ...etc.IDUtils import uniqueRI
+from ...etc.RequestUtils import fromHttpURL, requestFromResult, serializeData, createRequestResultFromURI, fillRequestWithArguments
+from ...etc.RequestUtils import toCoAPPath, contentAsString, createPositiveResponseResult, deserializeData
+from ...etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
+from ...etc.ResponseStatusCodes import BAD_REQUEST, REQUEST_TIMEOUT, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, INTERNAL_SERVER_ERROR, NO_CONTENT
+from ...helpers.TextTools import toHex
+from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
+from ...helpers.NetworkTools import isValidPort, isValidateHostname, isValidateIpAddress
+from ...helpers.TextTools import findXPath
+from ...helpers.MultiDict import MultiDict
+from ...helpers.CoAPthonTools import registerOneM2MContentTypes, registerOneM2MOptions, newCoAPOption, operationsMethodsMap
+from ...helpers.ACMELRUCache import ACMELRUCache
+from ...helpers.PluginManager import pluginClass, init, start, stop, pause, unpause, configure, validate
+from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime.Logging import Logging as L
+from ...runtime import CSE
+from ...etc.Constants import RuntimeConstants as RC
 
 from coapthon import defines
 from coapthon.client.helperclient import HelperClient
+from coapthon.defines import Content_types as CoAPContentTypes
 from coapthon.server.coap import CoAP
 from coapthon.layers.requestlayer import RequestLayer as CoapthonRequestLayer
 from coapthon.messages.request import Request as CoaptthonRequest
@@ -43,12 +50,13 @@ from coapthon.messages.option import Option as CoapthonOption
 
 from coapthon.transaction import Transaction as CoapthonTransaction
 
+
+
 # TODO  support DTLS sockets
 # TODO Add R5 support (FETCH requests)
 # TODO log requests for error cases. Perhaps non necessary here
 
-
-class ACMECoAPHandler(object):
+class ACMECoAPHandler():
 	"""	ACME CoAP request handler.
 	"""
 
@@ -60,11 +68,12 @@ class ACMECoAPHandler(object):
 		'_eventCoAPNotify',
 		'_eventCoAPUpdate',
 		'_eventCoAPDelete',
+		'_coapServer',
 	)
 	"""	Slots of the ACME CoAP Handler. """
 
 
-	def __init__(self, coapServer:ACMECoAPServer = None) -> None:
+	def __init__(self, coapServer: ACMECoAPServer = None) -> None:
 		"""	Initialization of the ACME CoAP Resource.
 		
 			Args:
@@ -82,9 +91,11 @@ class ACMECoAPHandler(object):
 		"""	Event to trigger when a CoAP update request is received. """
 		self._eventCoAPDelete = CSE.event.coapDelete				# type: ignore [attr-defined]
 		"""	Event to trigger when a CoAP delete request is received. """
+		self.coapServer = coapServer
+		"""	The CoAP server object. """
 
 
-	def handleGET(self, request:CoaptthonRequest, response:CoapthonResponse, options:MultiDict) -> None:
+	def handleGET(self, request: CoaptthonRequest, response: CoapthonResponse, options: MultiDict) -> None:
 		"""	Handle a GET request.
 
 			Args:
@@ -95,10 +106,10 @@ class ACMECoAPHandler(object):
 		L.enableScreenLogging and renameThread('CO_R')
 		L.isDebug and L.logDebug('CoAP GET request received')
 		self._eventCoAPRetrieve()
-		self._handleRequest(request, response, Operation.RETRIEVE, options = options)
+		self._handleRequest(request, response, Operation.RETRIEVE, options=options)
 
 
-	def handleFETCH(self, request:CoaptthonRequest, response:CoapthonResponse, options:MultiDict) -> None:
+	def handleFETCH(self, request: CoaptthonRequest, response: CoapthonResponse, options: MultiDict) -> None:
 		"""	Handle a FETCH request.
 
 			Args:
@@ -162,7 +173,7 @@ class ACMECoAPHandler(object):
 		self._handleRequest(request, response, Operation.DELETE, options = options)
 
 
-	def _handleRequest(self, request:CoaptthonRequest, response:CoapthonResponse, operation:Operation, options:Optional[MultiDict] = None) -> CoapthonResponse:
+	def _handleRequest(self, request: CoaptthonRequest, response: CoapthonResponse, operation: Operation, options: Optional[MultiDict] = None) -> CoapthonResponse:
 		"""	Handle a CoAP request.
 
 			Args:
@@ -187,17 +198,17 @@ class ACMECoAPHandler(object):
 		try:
 			dissectResult = self._dissectRequest(request, operation, options)
 		except ResponseException as e:
-			return self._prepareResponse(Result(rsc = e.rsc, 
-									   	 request = e.data, 
-										 dbg = e.dbg), 
+			return self._prepareResponse(Result(rsc=e.rsc, 
+									   	 request=e.data, 
+										 dbg=e.dbg), 
 										response)
 		
 		# Send and error message when the CSE is shutting down, or the coap server is stopped
-		if CSE.coapServer.isPaused:
+		if self.coapServer._isPaused:
 			# Return an error if the server is stopped
-			return self._prepareResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
-												request = dissectResult.request, 
-												dbg = 'CoAP server not running'),
+			return self._prepareResponse(Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+												request=dissectResult.request, 
+												dbg='CoAP server not running'),
 										 response)
 
 		# Handle the request. Returns a Result object. 
@@ -208,15 +219,15 @@ class ACMECoAPHandler(object):
 
 		# Prepare the response and return it
 		try:
-			return self._prepareResponse(responseResult, response, originalRequest = dissectResult.request)
+			return self._prepareResponse(responseResult, response, originalRequest=dissectResult.request)
 		except ResponseException as e:
-			return self._prepareResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
-												request = dissectResult.request, 
-												dbg = e.dbg),
+			return self._prepareResponse(Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+												request=dissectResult.request, 
+												dbg=e.dbg),
 										response)
 	
 
-	def _dissectRequest(self, request:CoaptthonRequest, operation:Operation, options:Optional[MultiDict] = None) -> Result:
+	def _dissectRequest(self, request: CoaptthonRequest, operation: Operation, options: Optional[MultiDict] = None) -> Result:
 		"""	Dissect a CoAP request.
 
 			Args:
@@ -410,7 +421,7 @@ class ACMECoAPHandler(object):
 		response.code = result.rsc.coapStatusCode().number
 		
 		# Assign and encode content accordingly
-		response.add_option(newCoAPOption(defines.OptionRegistry.CONTENT_TYPE.number, result.request.ct.toCoAPContentType()))
+		response.add_option(newCoAPOption(defines.OptionRegistry.CONTENT_TYPE.number, toCoAPContentType(result.request.ct)))
 
 		# From hereon, data is a string or byte string
 		origData:JSON = cast(JSON, outResult.data)
@@ -516,7 +527,7 @@ class ACMECoAPRequestLayer(CoapthonRequestLayer):
 		return transaction
 
 
-class ACMECoAPServer(CoAP):
+class 	ACMECoAPServer(CoAP):
 	"""	ACME CoAP Server. 
 		
 		It is used to setup the CoAPthon library to handle CoAP requests according to the ACME CSE requirements.
@@ -528,6 +539,7 @@ class ACMECoAPServer(CoAP):
 		'_requestHandler',
 		'_requestLayer',
 		'_eventResponseReceived',
+		'_isPaused',
 	)
 	"""	Slots of the ACME CoAP Server. """
 
@@ -574,6 +586,9 @@ class ACMECoAPServer(CoAP):
 
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
 		"""	The event to trigger when a response is received. """
+
+		self._isPaused = False
+		"""	Flag whether the server is paused. If the server is paused, it will not handle any requests and return an error. """
 
 		# Redirect the CoAPthon logging to the ACME logging
 		_logger = logging.getLogger('coapthon')
@@ -636,7 +651,7 @@ class ACMECoAPServer(CoAP):
 				client.close()
 
 		# Check if the CoAP server is running, otherwise return an errors
-		if CSE.coapServer.isPaused:
+		if self._isPaused:
 			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
 						  dbg = 'CoAP client is not running')
 
@@ -697,7 +712,7 @@ class ACMECoAPServer(CoAP):
 			coapRequest.uri_path = toCoAPPath(req.to)
 			# Content-type
 			ct = request.ct if request.ct else RC.defaultSerialization
-			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.CONTENT_TYPE.number, ct.toCoAPContentType()))
+			coapRequest.add_option(newCoAPOption(defines.OptionRegistry.CONTENT_TYPE.number, toCoAPContentType(ct)))
 			# Resource type
 			if request.ty:
 				coapRequest.add_option(newCoAPOption(defines.OptionRegistry.oneM2M_TY.number, request.ty.value))	# type:ignore[attr-defined]
@@ -863,7 +878,8 @@ class ACMECoAPServer(CoAP):
 			_closeClient()
 
 
-class CoAPServer(object):
+@pluginClass(property='coapServer', tags=['binding'])
+class CoAPServer():
 	"""	CoAPServer Server implementation.
 	"""
 
@@ -876,15 +892,16 @@ class CoAPServer(object):
 	""" Define slots for instance variables. """
 
 
-	def __init__(self) -> None:
+	@init
+	def initCoAPServer(self) -> None:
 		"""	Initialization of the CoAP Server.
 		"""
-
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self._configUpdate)			# type: ignore
 
 		self.isPaused = False
 		"""	Flag whether the server is currently paused. Requests are not handled when the server is paused. """
+
 
 		self.coapServer:Optional[ACMECoAPServer] = None
 		"""	The CoAP server object. """
@@ -905,6 +922,7 @@ class CoAPServer(object):
 		L.isInfo and L.log('CoAP server initialized')
 
 
+	@stop
 	def shutdown(self) -> bool:
 		"""	Shutdown the CoAP server.
 
@@ -937,6 +955,7 @@ class CoAPServer(object):
 		self.run()		# Restart the server
 
 
+	@start
 	def run(self) -> bool:
 		"""	Initialize and run the CoAP server as a BackgroundWorker/Actor.
 
@@ -974,19 +993,104 @@ class CoAPServer(object):
 			self.actor = None
 
 
+	@pause
 	def pause(self) -> None:
 		"""	Stop handling requests.
 		"""
 		L.isInfo and L.log('CoAP server paused')
 		self.isPaused = True
-		
+		self.coapServer._isPaused = True
 	
+
+	@unpause
 	def unpause(self) -> None:
 		"""	Continue handling requests.
 		"""
 		L.isInfo and L.log('CoAP server unpaused')
 		self.isPaused = False
+		self.coapServer._isPaused = False
 	
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		"""	Configure the CoAP server.
+
+			Args:
+				config: The configuration object to read the configuration from.
+		"""
+		parser = config.configParser
+
+		if Configuration._args_coapEnabled is not None:
+			Configuration.coap_enable = Configuration._args_coapEnabled
+
+		# CoAP configs
+		config.coap_enable = parser.getboolean('coap', 'enable', fallback=False)
+		config.coap_listenIF = parser.get('coap', 'listenIF', fallback='0.0.0.0')
+		config.coap_port = parser.getint('coap', 'port', fallback=None) 	# Default will be determined later (s.b.)
+		config.coap_address = parser.get('coap', 'address', fallback='coap://127.0.0.1:5683') 	# Default will be determined later (s.b.)
+		config.coap_timeout = parser.getfloat('coap', 'timeout', fallback=10.0)
+		config.coap_clientConnectionCacheSize = parser.getint('coap', 'clientConnectionCacheSize', fallback=100)
+
+		#	CoAP Client Security
+
+		config.coap_security_caCertificateFile = parser.get('coap.security', 'caCertificateFile', fallback=None)
+		config.coap_security_caPrivateKeyFile = parser.get('coap.security', 'caPrivateKeyFile', fallback=None)
+		config.coap_security_dtlsVersion = parser.get('coap.security', 'dtlsVersion', fallback='auto')
+		config.coap_security_useDTLS = parser.getboolean('coap.security', 'useDTLS', fallback=False)
+		config.coap_security_verifyCertificate = parser.getboolean('coap.security', 'verifyCertificate', fallback=False)
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		"""	Validate the CoAP server configuration.
+
+			Args:
+				config: The configuration object to validate.
+		"""
+		if config.coap_security_useDTLS:
+			if (val := config.coap_address).startswith('coap:'):
+				Configuration._warning(r'Changing "coap" to "coaps" in [i]\[coap]:address[/i]')
+				config.coap_address = val.replace('coap:', 'coaps:')
+			# registrar might still be accessible via another protocol
+		else: 
+			if (val := config.coap_address).startswith('coaps:'):
+				Configuration._warning(r'Changing "coaps" to "coap" in [i]\[coap]:address[/i]')
+				config.coap_address = val.replace('coaps:', 'coap:')
+			# registrar might still be accessible via another protocol
+
+		if not isValidPort(config.coap_port):
+			raise ConfigurationError(fr'Invalid port number for [i]\[coap]:port[/i]: {config.websocket_port}')
+		if not (isValidateHostname(config.coap_listenIF) or isValidateIpAddress(config.coap_listenIF)):
+			raise ConfigurationError(fr'Invalid hostname or IP address for [i]\[coap]:listenIF[/i]: {config.coap_listenIF}')
+		if config.coap_timeout < 0.0:
+			raise ConfigurationError(fr'Invalid timeout value for [i]\[coap]:timeout[/i]: {config.coap_timeout}')
+		if config.coap_clientConnectionCacheSize < 0:
+			raise ConfigurationError(fr'Invalid value for [i]\[coap]:clientConnectionCacheSize[/i]: {config.coap_clientConnectionCacheSize}')
+
+		# COAP TLS & certificates
+		if not config.coap_security_useDTLS:	# clear certificates configuration if not in use
+			config.coap_security_verifyCertificate = False
+			config.coap_security_dtlsVersion = 'auto'
+			config.coap_security_caCertificateFile = ''
+			config.coap_security_caPrivateKeyFile = ''
+		else:
+			if not (val := config.coap_security_dtlsVersion).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+				raise ConfigurationError(fr'Unknown value for [i]\[coap.security]:dtlsVersion[/i]: {val}')
+			config.coap_security_dtlsVersion = val # lower case
+			if not (val := config.coap_security_caCertificateFile):
+				raise ConfigurationError(r'[i]\[coap.security]:caCertificateFile[/i] must be set when DTLS is enabled')
+			if not os.path.exists(val):
+				raise ConfigurationError(fr'[i]\[coap.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
+			if not (val := config.coap_security_caPrivateKeyFile):
+				raise ConfigurationError(r'[i]\[coap.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
+			if not os.path.exists(val):
+				raise ConfigurationError(fr'[i]\[coap.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
+			
+		# Warning if security is enabled, because it is not supported yet.
+		# Remove this warning when security is supported
+		if config.coap_security_useDTLS:
+			Configuration._warning(r'CoAP security is not yet supported. Security settings will be ignored.')
+
 
 	def sendCoAPRequest(self, request:CSERequest, url:str, isDirectURL:bool = False) -> Result:
 		"""	Send a CoAP request to a URL.
@@ -1002,6 +1106,7 @@ class CoAPServer(object):
 		if self.coapServer is None:
 			raise INTERNAL_SERVER_ERROR('CoAP server not running')
 		return self.coapServer.sendRequest(request, url, isDirectURL)
+
 
 
 ##########################################################################
@@ -1037,3 +1142,22 @@ def dissectOptions(options:list[CoapthonOption]) -> MultiDict:
 	for opt in options:
 		opts[opt.number] = opt.value
 	return opts
+
+
+def toCoAPContentType(ct: ContentSerializationType) -> int:
+	"""	Return the CoAP content header for an enum value.
+
+		Return:
+			The number for the CoAP content type.
+	"""
+	# TODO hard code values for performance reasons
+	match ct:
+		case ContentSerializationType.JSON:	
+			return CoAPContentTypes['application/json']
+		case ContentSerializationType.CBOR:	
+			return CoAPContentTypes['application/cbor']
+		case ContentSerializationType.XML:	
+			return CoAPContentTypes['application/xml']
+		case _:
+			return None
+

@@ -49,7 +49,6 @@ from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from ..protocols.HttpServer import HttpServer
-from ..protocols.CoAPServer import CoAPServer
 from ..protocols.MQTTClient import MQTTClient
 from ..protocols.WebSocketServer import WebSocketServer
 from ..services.AnnouncementManager import AnnouncementManager
@@ -65,9 +64,6 @@ action:ActionManager = None
 
 announce:AnnouncementManager = None
 """	Runtime instance of the `AnnouncementManager`. """
-
-coapServer:CoAPServer = None
-"""	Runtime instance of the `CoAPServer`. """
 
 console:ConsoleBase = None
 """ Runtime instance of the `Console`. """
@@ -152,7 +148,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, coapServer, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
+	global action, announce, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
 	global notification, pluginManager, registration, remote, request, script, security, semantic
 	global storage, textUI, time, timeSeries, validator, webSocketServer
 
@@ -207,7 +203,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		request = RequestManager()				# Initialize the request manager
 		security = SecurityManager()			# Initialize the security manager
 		httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
-		coapServer = CoAPServer()				# Initialize the CoAP server
 		mqttClient = MQTTClient()				# Initialize the MQTT client
 		webSocketServer = WebSocketServer()		# Initialize the WebSocket server
 		notification = NotificationManager()	# Initialize the notification manager
@@ -241,12 +236,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			L.logErr('Terminating', showStackTrace = False)
 			RC.cseStatus = CSEStatus.STOPPED
 			return False 					
-
-		# Start the CoAP server
-		if not coapServer.run():					# This does return
-			L.logErr('Terminating', showStackTrace = False)
-			RC.cseStatus = CSEStatus.STOPPED
-			return False
 
 		# Start the MQTT client
 		if not mqttClient.run():				# This does return
@@ -343,7 +332,6 @@ def _shutdown() -> None:
 	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
-	coapServer and coapServer.shutdown()
 	webSocketServer and webSocketServer.shutdown()
 	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()
@@ -411,7 +399,12 @@ def resetCSE() -> None:
 		httpServer.pause()
 		mqttClient.pause()
 		webSocketServer.shutdown()	# WS Server needs to be shutdown to close connections
-		coapServer.pause()
+
+		# Pause all binding plugins to stop receiving requests during reset.
+		pluginManager.pausePlugins(tags='binding')	
+		# pluginManager.coapServer and pluginManager.coapServer.pause()
+
+
 
 		storage.purge()
 
@@ -427,7 +420,10 @@ def resetCSE() -> None:
 			sys.exit()	# what else can we do?
 		remote.restart()
 
-		coapServer.unpause()
+
+		# Unpause all binding plugins to start receiving requests again after reset.
+		pluginManager.unpausePlugins(tags='binding')	
+		# pluginManager.coapServer and pluginManager.coapServer.unpause()
 		webSocketServer.run()	# WS Server restart
 		mqttClient.unpause()
 		httpServer.unpause()

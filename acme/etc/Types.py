@@ -9,19 +9,16 @@
 """
 
 from __future__ import annotations
-from http.client import PROCESSING
 from typing import Tuple, cast, Dict, Any, List, Union, Sequence, Callable, Optional, Type, TypeAlias, NamedTuple, TYPE_CHECKING
 
 from copy import deepcopy
-import traceback, logging, sys, base64, json
+import traceback, logging, sys, base64
 from dataclasses import dataclass, field, astuple
 from enum import auto
 from ..helpers.ACMEIntEnum import ACMEIntEnum
 from ..helpers.EventManager import Event
-from ..etc.ResponseStatusCodes import ResponseStatusCode, INTERNAL_SERVER_ERROR
+from ..etc.ResponseStatusCodes import ResponseStatusCode
 from ..etc.DateUtils import utcTime, getResourceDate
-from coapthon.defines import Content_types_numbers as CoAPContentTypesNumbers
-from coapthon.defines import Content_types as CoAPContentTypes
 from ..etc.Constants import RuntimeConstants as RC
 
 if TYPE_CHECKING:
@@ -1276,26 +1273,6 @@ class ContentSerializationType(ACMEIntEnum):
 				return 'oneM2M.xml'
 			case _:
 				return None
-	
-
-	def toCoAPContentType(self) -> int:
-		"""	Return the CoAP content header for an enum value.
-
-			Return:
-				The number for the CoAP content type.
-		"""
-		# TODO hard code values for performance reasons
-		match self.value:
-			case self.JSON:	
-				return CoAPContentTypes['application/json']
-			case self.CBOR:	
-				return CoAPContentTypes['application/cbor']
-			case self.XML:	
-				return CoAPContentTypes['application/xml']
-			case _:
-				return None
-
-		return self.toHttpContentType()
 	
 
 	def toSimple(self) -> str:

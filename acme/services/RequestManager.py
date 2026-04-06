@@ -1178,8 +1178,12 @@ class RequestManager(object):
 					continue
 
 				case _ if isCoAPUrl(url):
+					if not CSE.pluginManager.coapServer:
+						L.logErr(f'Cannot send CoAP request, because no CoAP server is configured')
+						results.append( RequestResponse(_request, Result(rsc=ResponseStatusCode.TARGET_NOT_REACHABLE, dbg='No CoAP server configured')) )
+						continue
 					self.requestHandlers[_request.op].coapEvent()	# send event
-					results.append( RequestResponse(_request, CSE.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
+					results.append( RequestResponse(_request, CSE.pluginManager.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
 					continue
 
 				case _ if isWSUrl(url):
