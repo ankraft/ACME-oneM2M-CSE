@@ -12,19 +12,21 @@ from typing import Tuple, cast, Dict, Optional, Any
 
 from urllib.parse import unquote
 
-from ..etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes
-from ..etc.Types import Result, ResponseStatusCode, ResourceTypes, ResponseType
-from ..etc.ResponseStatusCodes import ResponseException
-from ..etc.RequestUtils import prepareResultForSending, createRequestResultFromURI
-from ..etc.DateUtils import waitFor
-from ..etc.IDUtils import getIdFromOriginator
-from ..etc.Utils import renameThread
-from ..etc.Constants import RuntimeConstants as RC
-from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
-from ..helpers import TextTools
-from ..runtime.Configuration import Configuration
-from ..runtime import CSE
-from ..runtime.Logging import Logging as L
+from ...etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes
+from ...etc.Types import Result, ResponseStatusCode, ResourceTypes, ResponseType
+from ...etc.ResponseStatusCodes import ResponseException
+from ...etc.RequestUtils import prepareResultForSending, createRequestResultFromURI
+from ...etc.DateUtils import waitFor
+from ...etc.IDUtils import getIdFromOriginator
+from ...etc.Utils import renameThread
+from ...etc.Constants import RuntimeConstants as RC
+from ...helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
+from ...helpers.NetworkTools import isValidPort
+from ...helpers import TextTools
+from ...helpers.PluginManager import pluginClass, init, start, stop, pause, unpause, configure, validate
+from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime import CSE
+from ...runtime.Logging import Logging as L
 
 
 class MQTTClientHandler(MQTTHandler):
@@ -299,6 +301,7 @@ class MQTTClientHandler(MQTTHandler):
 ##############################################################################
 
 
+@pluginClass(property='mqttClient', tags=['binding'], noRestartWhilePaused=True)
 class MQTTClient(object):
 	"""	The general MQTT manager for this CSE.
 	"""
@@ -315,7 +318,8 @@ class MQTTClient(object):
 
 	# TODO move config handling to event handler
 
-	def __init__(self) -> None:
+	@init
+	def init(self) -> None:
 		"""	Initialize the MQTT client.
 		"""
 
@@ -328,19 +332,22 @@ class MQTTClient(object):
 		self.mqttConnections:Dict[Tuple[str, int], MQTTConnection]	= {}
 		""" Dictionary of MQTT connections. """
 
-		self.mqttConnection = self.connectToMqttBroker(address=Configuration.mqtt_address,
-													   port=Configuration.mqtt_port,
-													   useTLS=Configuration.mqtt_security_useTLS,
-													   username=Configuration.mqtt_security_username,
-													   password=Configuration.mqtt_security_password)
+		self.mqttConnection: Optional[MQTTConnection] = None
 		""" The MQTT connection. """
 
 		L.isInfo and L.log('MQTT Client initialized')
 	
 
+	@start
 	def run(self) -> bool:
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
+		self.mqttConnection = self.connectToMqttBroker(address=Configuration.mqtt_address,
+													   port=Configuration.mqtt_port,
+													   useTLS=Configuration.mqtt_security_useTLS,
+													   username=Configuration.mqtt_security_username,
+													   password=Configuration.mqtt_security_password)
+
 		if not Configuration.mqtt_enable or not self.mqttConnection:
 			L.isInfo and L.log('MQTT: client NOT enabled')
 			return True
@@ -351,14 +358,15 @@ class MQTTClient(object):
 		return True
 
 
+	@stop
 	def shutdown(self) -> bool:
 		"""	Shutdown the MQTTClient.
 		"""
-		L.isInfo and L.log('MQTT client shut down')
 		self.isStopped = True
 		for id in list(self.mqttConnections):
 			self.disconnectFromMqttBroker(id[0], id[1])	# 0 = address, 1 = port
 		self.mqttConnection = None
+		L.isInfo and L.log('MQTT client shut down')
 		return True
 	
 
@@ -393,18 +401,20 @@ class MQTTClient(object):
 		self.run()
 		
 
+	@pause
 	def pause(self) -> None:
 		"""	Stop handling requests.
 		"""
-		L.isInfo and L.log('MqttClient paused')
 		self.isStopped = True
+		L.isInfo and L.log('MqttClient paused')
 		
 	
+	@unpause
 	def unpause(self) -> None:
 		"""	Continue handling requests.
 		"""
-		L.isInfo and L.log('MqttClient unpaused')
 		self.isStopped = False
+		L.isInfo and L.log('MqttClient unpaused')
 
 
 	#
@@ -570,6 +580,75 @@ class MQTTClient(object):
 		response, responseTopic = CSE.request.waitForResponse(preq.request.rqi, Configuration.mqtt_timeout) # type: ignore
 		logRequest(response, None, responseTopic, isResponse = True, isIncoming = True)
 		return response
+
+
+
+	#########################################################################
+	#
+	# Configuration handling
+	#
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		"""	Configure the MQTT client.
+
+			Args:
+				config: The configuration object to update with the MQTT client configuration.
+		"""
+		parser = config.configParser
+
+		#	MQTT Client
+		config.mqtt_address = parser.get('mqtt', 'address', fallback='127.0.0.1')
+		config.mqtt_enable = parser.getboolean('mqtt', 'enable', fallback=False)
+		config.mqtt_keepalive = parser.getint('mqtt', 'keepalive', fallback=60)
+		config.mqtt_listenIF = parser.get('mqtt', 'listenIF', fallback='0.0.0.0')
+		config.mqtt_port = parser.getint('mqtt', 'port', fallback=None)			# Default will be determined later
+		config.mqtt_timeout = parser.getfloat('mqtt', 'timeout', fallback=10.0)
+		config.mqtt_topicPrefix = parser.get('mqtt', 'topicPrefix', fallback='')
+
+		#	MQTT Client Security
+		config.mqtt_security_allowedCredentialIDs = parser.getlist('mqtt.security', 'allowedCredentialIDs', fallback=[])	# type: ignore [attr-defined]
+		config.mqtt_security_caCertificateFile = parser.get('mqtt.security', 'caCertificateFile', fallback=None)
+		config.mqtt_security_password = parser.get('mqtt.security', 'password', fallback='')
+		config.mqtt_security_username = parser.get('mqtt.security', 'username', fallback='')
+		config.mqtt_security_useTLS = parser.getboolean('mqtt.security', 'useTLS', fallback=False)
+		config.mqtt_security_verifyCertificate = parser.getboolean('mqtt.security', 'verifyCertificate', fallback=False)
+
+		# MQTT Websocket Support
+		config.mqtt_websocket_enable = parser.getboolean('mqtt.websocket', 'enable', fallback=False)
+		config.mqtt_websocket_port = parser.getint('mqtt.websocket', 'port', fallback=8080)
+		config.mqtt_websocket_path = parser.get('mqtt.websocket', 'path', fallback='')
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		"""	Validate the MQTT client configuration.
+
+			Args:
+				config: The configuration object to validate.
+		"""
+
+		# override configuration with command line arguments
+		if Configuration._args_mqttEnabled is not None:
+			Configuration.mqtt_enable = Configuration._args_mqttEnabled
+
+		#	MQTT client
+		if not config.mqtt_port:	# set the default port depending on whether to use TLS
+			config.mqtt_port = 8883 if config.mqtt_security_useTLS else 1883
+		if not config.mqtt_security_username != (not config.mqtt_security_password):	# Hack: != -> either both are empty, or both are set
+			raise ConfigurationError(fr'Username or password missing for [i]\[mqtt.security][/i]')
+	
+		#	MQTT Websocket
+		if isValidPort(config.mqtt_websocket_port) is False:
+			raise ConfigurationError(fr'Invalid port number {config.mqtt_websocket_port} for [i]\[mqtt.websocket].port[/i]')
+		
+		# remove empty cid from the list
+		config.mqtt_security_allowedCredentialIDs = [ cid for cid in config.mqtt_security_allowedCredentialIDs if len(cid) ]
+
+		# Add the MQTT server address to the list of CSE POA addresses if the server is enabled
+		if Configuration.mqtt_enable:
+			RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
+
 
 
 ##############################################################################

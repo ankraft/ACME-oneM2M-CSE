@@ -166,8 +166,6 @@ class CSEConfiguration(ModuleConfiguration):
 
 		# Set the CSE's point-of-access
 		RC.csePOA = [ Configuration.http_address ]
-		if Configuration.mqtt_enable:
-			RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
 		
 		# Other configuration values
 		RC.idLength = Configuration.cse_idLength

@@ -1152,7 +1152,6 @@ from ..runtime.configurations.HTTPServerConfiguration import HTTPServerConfigura
 from ..runtime.configurations.LCPResourceConfiguration import LCPResourceConfiguration
 from ..runtime.configurations.LoggingConfiguration import LoggingConfiguration
 from ..runtime.configurations.ModuleConfiguration import ModuleConfiguration
-from ..runtime.configurations.MQTTConfiguration import MQTTConfiguration
 from ..runtime.configurations.PostgreSQLBindingConfiguration import PostgreSQLBindingConfiguration
 from ..runtime.configurations.RegistrationServiceConfiguration import RegistrationServiceConfiguration
 from ..runtime.configurations.RemoteCSEServiceConfiguration import RemoteCSEServiceConfiguration
@@ -1192,7 +1191,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 
 	# Binding configurations
 	HTTPServerConfiguration(),
-	MQTTConfiguration(),
 
 	# Resource configurations
 	ACPResourceConfiguration(),

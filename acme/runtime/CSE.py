@@ -49,7 +49,6 @@ from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from ..protocols.HttpServer import HttpServer
-from ..protocols.MQTTClient import MQTTClient
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
 
@@ -84,9 +83,6 @@ importer:Importer = None
 
 location:LocationManager = None
 """	Runtime instance of the `LocationManager`. """
-
-mqttClient:MQTTClient = None
-"""	Runtime instance of the `MQTTClient`. """
 
 notification:NotificationManager = None
 """	Runtime instance of the `NotificationManager`. """
@@ -144,7 +140,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
+	global action, announce, dispatcher, event, groupResource, httpServer, importer, location
 	global notification, pluginManager, registration, remote, request, script, security, semantic
 	global storage, textUI, time, timeSeries, validator
 
@@ -198,7 +194,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		request = RequestManager()				# Initialize the request manager
 		
 		httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
-		mqttClient = MQTTClient()				# Initialize the MQTT client
 
 		# Initialize the plugin manager
 		# This loads, configures and runs the plugins as well
@@ -236,12 +231,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			L.logErr('Terminating', showStackTrace = False)
 			RC.cseStatus = CSEStatus.STOPPED
 			return False 					
-
-		# Start the MQTT client
-		if not mqttClient.run():				# This does return
-			L.logErr('Terminating', showStackTrace = False)
-			RC.cseStatus = CSEStatus.STOPPED
-			return False 
 
 	
 	except ResponseException as e:
@@ -327,7 +316,6 @@ def _shutdown() -> None:
 	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
-	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()
 	script and script.shutdown()
 	announce and announce.shutdown()
@@ -391,7 +379,6 @@ def resetCSE() -> None:
 		L.queueOff()	# Disable log queuing for restart
 		
 		httpServer.pause()
-		mqttClient.pause()
 
 		# Pause all binding plugins to stop receiving requests during reset.
 		pluginManager.pausePlugins(tags='binding')	
@@ -415,7 +402,6 @@ def resetCSE() -> None:
 
 		# Unpause all binding plugins to start receiving requests again after reset.
 		pluginManager.unpausePlugins(tags='binding')	
-		mqttClient.unpause()
 		httpServer.unpause()
 
 		# Enable log queuing again

@@ -20,6 +20,7 @@ class PluginManager(PM):
 
 	_pluginChecks:dict[str, Callable] = {
 		'acme.plugins.bindings.CoAPServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),
+		'acme.plugins.bindings.MQTTClient':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('mqtt_enable', False),
 		'acme.plugins.bindings.WebSocketServer':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('websocket_enable', False),
 		'acme.plugins.bindings.http.HttpManagement':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableManagementEndpoint', False),
 		'acme.plugins.bindings.http.HttpStructure':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableStructureEndpoint', False),

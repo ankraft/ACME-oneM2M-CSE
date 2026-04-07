@@ -1175,8 +1175,10 @@ class RequestManager(object):
 						continue
 				
 					case _ if isMQTTUrl(url):
+						if not CSE.pluginManager.mqttClient:
+							raise NotImplementedError(f'MQTT client not configured. Cannot send MQTT request to url: {url}')
 						self.requestHandlers[_request.op].mqttEvent()	# send event
-						results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
+						results.append( RequestResponse(_request, CSE.pluginManager.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
 						continue
 
 					case _ if isCoAPUrl(url):
