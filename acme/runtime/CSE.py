@@ -50,7 +50,6 @@ from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from ..protocols.HttpServer import HttpServer
 from ..protocols.MQTTClient import MQTTClient
-from ..protocols.WebSocketServer import WebSocketServer
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
 
@@ -128,9 +127,6 @@ timeSeries:TimeSeriesManager = None
 validator:Validator = None
 """	Runtime instance of the `Validator`. """
 
-webSocketServer:WebSocketServer	= None
-"""	Runtime instance of the `WebSocketServer`. """
-
 # Global variables to hold various (configuation) values.
 
 _cseResetLock = Lock()
@@ -150,7 +146,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	"""
 	global action, announce, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
 	global notification, pluginManager, registration, remote, request, script, security, semantic
-	global storage, textUI, time, timeSeries, validator, webSocketServer
+	global storage, textUI, time, timeSeries, validator
 
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
@@ -196,15 +192,20 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 
 		importer = Importer()					# Initialize the importer
 		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
-
 		registration = RegistrationManager()	# Initialize the registration manager
 		validator = Validator()					# Initialize the resource validator
 		dispatcher = Dispatcher()				# Initialize the resource dispatcher
 		request = RequestManager()				# Initialize the request manager
-		security = SecurityManager()			# Initialize the security manager
+		
 		httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
 		mqttClient = MQTTClient()				# Initialize the MQTT client
-		webSocketServer = WebSocketServer()		# Initialize the WebSocket server
+
+		# Initialize the plugin manager
+		# This loads, configures and runs the plugins as well
+		pluginManager = PluginManager()	
+
+		security = SecurityManager()			# Initialize the security manager
+
 		notification = NotificationManager()	# Initialize the notification manager
 		groupResource = GroupManager()					# Initialize the group manager
 		timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
@@ -216,6 +217,8 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		script = ScriptManager()				# Initialize the script manager
 		action = ActionManager()				# Initialize the action manager
 
+		pluginManager.start()					# Start the plugins after all components are initialized. This is important, because some plugins might depend on the components to be initialized before they can start. For example, the WebSocket plugin needs the request manager to be initialized before it can start.
+
 		# Import attribute, flexContainer and enum policies, and configuration documentation
 		#
 		# After this, the CSE reads the scripts from the default and runtime init directories.
@@ -226,9 +229,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			RC.cseStatus = CSEStatus.STOPPED
 			return False
 		
-		# Initialize the plugin manager
-		# This loads, configures and runs the plugins as well
-		pluginManager = PluginManager()	
 
 
 		# Start the HTTP server
@@ -243,11 +243,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			RC.cseStatus = CSEStatus.STOPPED
 			return False 
 
-		# Start the WebSocket server
-		if not webSocketServer.run():			# This does return
-			L.logErr('Terminating', showStackTrace = False)
-			RC.cseStatus = CSEStatus.STOPPED
-			return False
 	
 	except ResponseException as e:
 		L.logErr(f'Error during startup: {e.dbg}')
@@ -332,7 +327,6 @@ def _shutdown() -> None:
 	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
-	webSocketServer and webSocketServer.shutdown()
 	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()
 	script and script.shutdown()
@@ -398,11 +392,9 @@ def resetCSE() -> None:
 		
 		httpServer.pause()
 		mqttClient.pause()
-		webSocketServer.shutdown()	# WS Server needs to be shutdown to close connections
 
 		# Pause all binding plugins to stop receiving requests during reset.
 		pluginManager.pausePlugins(tags='binding')	
-		# pluginManager.coapServer and pluginManager.coapServer.pause()
 
 
 
@@ -423,8 +415,6 @@ def resetCSE() -> None:
 
 		# Unpause all binding plugins to start receiving requests again after reset.
 		pluginManager.unpausePlugins(tags='binding')	
-		# pluginManager.coapServer and pluginManager.coapServer.unpause()
-		webSocketServer.run()	# WS Server restart
 		mqttClient.unpause()
 		httpServer.unpause()
 

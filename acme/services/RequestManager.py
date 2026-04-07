@@ -1165,42 +1165,50 @@ class RequestManager(object):
 				continue		
 			_request.ct = ct
 
-			# Otherwise send it via one of the bindings
-			match url:
-				case _ if isHttpUrl(url):
-					self.requestHandlers[_request.op].httpEvent()	# send event
-					results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
-					continue
-			
-				case _ if isMQTTUrl(url):
-					self.requestHandlers[_request.op].mqttEvent()	# send event
-					results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
-					continue
+			try:
 
-				case _ if isCoAPUrl(url):
-					if not CSE.pluginManager.coapServer:
-						L.logErr(f'Cannot send CoAP request, because no CoAP server is configured')
-						results.append( RequestResponse(_request, Result(rsc=ResponseStatusCode.TARGET_NOT_REACHABLE, dbg='No CoAP server configured')) )
+				# Otherwise send it via one of the bindings
+				match url:
+					case _ if isHttpUrl(url):
+						self.requestHandlers[_request.op].httpEvent()	# send event
+						results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
 						continue
-					self.requestHandlers[_request.op].coapEvent()	# send event
-					results.append( RequestResponse(_request, CSE.pluginManager.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
-					continue
+				
+					case _ if isMQTTUrl(url):
+						self.requestHandlers[_request.op].mqttEvent()	# send event
+						results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
+						continue
 
-				case _ if isWSUrl(url):
-					self.requestHandlers[_request.op].wsEvent()	# send event
-					try:
-						results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
-					except TARGET_NOT_REACHABLE as e:
-						L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
-					continue
+					case _ if isCoAPUrl(url):
+						if not CSE.pluginManager.coapServer:
+							raise NotImplementedError(f'CoAP server not configured. Cannot send CoAP request to url: {url}')
+						self.requestHandlers[_request.op].coapEvent()	# send event
+						results.append( RequestResponse(_request, CSE.pluginManager.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
+						continue
 
-				# Special handling for ACME internal events.
-				# This might be more generalize when other opeations are supported as well
-				case _ if isAcmeUrl(url) and request.op == Operation.NOTIFY:
-					self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
-					results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
-					continue
+					case _ if isWSUrl(url):
+						if not CSE.pluginManager.webSocketServer:
+							raise NotImplementedError(f'WebSocket server not configured. Cannot send WS request to url: {url}')
+						self.requestHandlers[_request.op].wsEvent()	# send event
+						try:
+							results.append( RequestResponse(_request, CSE.pluginManager.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
+						except TARGET_NOT_REACHABLE as e:
+							L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
+						continue
 
+					# Special handling for ACME internal events.
+					# This might be more generalize when other opeations are supported as well
+					case _ if isAcmeUrl(url) and request.op == Operation.NOTIFY:
+						self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
+						results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
+						continue
+
+			except NotImplementedError as e:
+				results.append(RequestResponse(_request, 
+								   			   Result(rsc=ResponseStatusCode.TARGET_NOT_REACHABLE, dbg=L.logWarn(str(e.message)))))
+				return results
+
+			# Fall-through if no case matched
 			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
 		
 		if not len(results):

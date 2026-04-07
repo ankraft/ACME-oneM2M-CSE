@@ -959,8 +959,9 @@ class SecurityManager(object):
 	def _initAuthInformation(self) -> None:
 		self._readHttpBasicAuthFile()
 		self._readHttpTokenAuthFile()
-		self._readWSBasicAuthFile()
-		self._readWSTokenAuthFile()
+		if CSE.pluginManager.websocketServer:
+			self._readWSBasicAuthFile()
+			self._readWSTokenAuthFile()
 		self.allowedCSIOriginators = [ r.cseID for r in Configuration.cse_registrars.values() ]
 
 

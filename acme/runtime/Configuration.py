@@ -1165,7 +1165,6 @@ from ..runtime.configurations.TextUIConfiguration import TextUIConfiguration
 from ..runtime.configurations.TinyDBBindingConfiguration import TinyDBBindingConfiguration
 from ..runtime.configurations.TSBResourceConfiguration import TSBResourceConfiguration
 from ..runtime.configurations.TSResourceConfiguration import TSResourceConfiguration
-from ..runtime.configurations.WebSocketConfiguration import WebSocketConfiguration
 
 
 # Instantiate all configuration modules here, in a specfic order.
@@ -1194,7 +1193,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 	# Binding configurations
 	HTTPServerConfiguration(),
 	MQTTConfiguration(),
-	WebSocketConfiguration(),
 
 	# Resource configurations
 	ACPResourceConfiguration(),

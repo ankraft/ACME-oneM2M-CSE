@@ -41,7 +41,7 @@ class LoggingConfiguration(ModuleConfiguration):
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 
 		# Loglevel and various overrides from command line
-		logLevel = Configuration._args_loglevel if Configuration._args_loglevel else config.websocket_loglevel
+		logLevel = Configuration._args_loglevel if Configuration._args_loglevel else config.logging_level
 		logLevel = cast(LogLevel, logLevel).name if isinstance(logLevel, LogLevel) else logLevel
 		if isinstance(logLevel, str):
 			if (ll := LogLevel.toLogLevel(logLevel)) is None:

@@ -20,6 +20,7 @@ class PluginManager(PM):
 
 	_pluginChecks:dict[str, Callable] = {
 		'acme.plugins.bindings.CoAPServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),
+		'acme.plugins.bindings.WebSocketServer':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('websocket_enable', False),
 		'acme.plugins.bindings.http.HttpManagement':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableManagementEndpoint', False),
 		'acme.plugins.bindings.http.HttpStructure':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableStructureEndpoint', False),
 		'acme.plugins.bindings.http.HttpUpperTester':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableUpperTesterEndpoint', False),
@@ -50,7 +51,7 @@ class PluginManager(PM):
 			"""
 			if pluginName in self._pluginChecks:
 				allowed = self._pluginChecks[pluginName]()
-				L.isDebug and L.logDebug(f'Plugin {pluginName} is {"enabled" if allowed else "not enabled"}')
+				L.isDebug and L.logDebug(f'Plugin {pluginName} is {"enabled" if allowed else "disabled"}')
 				return allowed
 			
 			# Check every pattern in the disabled plugins list, if any matches, the plugin is not allowed
@@ -96,9 +97,12 @@ class PluginManager(PM):
 		# Configure, validate and start plugins
 		self.configurePlugins(None, None, Configuration)
 		self.validatePlugins(None, None, Configuration)
-		self.startPlugins()
 		L.isInfo and L.log('Plugins configured and started')
 
+	def start(self) -> None:
+		"""	Start the PluginManager service. This is called when the CSE is started. """
+		self.startPlugins()
+		L.isInfo and L.log('PluginManager started')
 
 	def restart(self, _: str) -> None:
 		"""	Restart the PluginManager service.

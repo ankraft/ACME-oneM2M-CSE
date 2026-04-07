@@ -11,7 +11,7 @@ from typing import Any, Callable, ClassVar, Optional
 from dataclasses import dataclass
 import os, importlib, importlib.util, inspect
 from types import ModuleType
-from enum import IntEnum
+from enum import IntEnum, auto
 from ..helpers.TextTools import simpleMatch
 
 try:
@@ -24,16 +24,17 @@ _tagType = '_pm_type'
 _tagInstanceName = '_pm_instance_name'
 _tagInstancePriority = '_pm_instance_priority'
 _tagInstanceTags = '_pm_instance_tags'
+_tagNoRestartWhilePaused = '_pm_no_restart_while_paused'
 
 
 class PluginState(IntEnum):
 	"""	Plugin states. """
-	LOADED		= 0
-	INITIALIZED	= 1
-	RUNNING		= 2
-	PAUSED		= 3
-	STOPPED		= 3
-	ERROR		= 4
+	LOADED		= auto()
+	INITIALIZED	= auto()
+	RUNNING		= auto()
+	PAUSED		= auto()
+	STOPPED		= auto()
+	ERROR		= auto()
 
 
 @dataclass
@@ -49,6 +50,9 @@ class PluginInfo:
 
 	tags: list[str] = None
 	""" Optional list of tags to attach to the plugin for easier identification and filtering. """
+
+	noRestartWhilePaused: bool = False
+	""" Flag to indicate whether the plugin should not restart requests while paused. """
 
 	state: PluginState = PluginState.LOADED
 	""" Internal state of the plugin. """
@@ -117,10 +121,13 @@ class PluginInfo:
 
 	def restart(self) -> None:
 		""" Restart the plugin. """
-		if self.state in (PluginState.RUNNING, PluginState.PAUSED):
-			if self.restartMethod:
-				self.restartMethod(self.instance)
-			self.state = PluginState.RUNNING
+		match self.state:
+			case PluginState.PAUSED if self.noRestartWhilePaused:
+				return
+			case PluginState.RUNNING | PluginState.PAUSED:
+				if self.restartMethod:
+					self.restartMethod(self.instance)
+				self.state = PluginState.RUNNING
 
 
 	def pause(self) -> None:
@@ -278,6 +285,10 @@ class PluginManager(metaclass=Singleton.Singleton):
 			# Store tags
 			if (t := getattr(plugin.pluginClass, _tagInstanceTags, None)) is not None:
 				plugin.tags = t
+
+			# Store noRestartWhilePaused flag
+			if (i := getattr(plugin.pluginClass, _tagNoRestartWhilePaused, None)) is not None:
+				plugin.noRestartWhilePaused = i
 
 
 		# Instantiate class and execute init methods of now registered plugins
@@ -574,13 +585,17 @@ def validate(func: Callable) -> Callable: # type: ignore
 	return _wrap(func, 'validate')
 
 
-def pluginClass(property: str|ClassVar=None, priority: int = 50, tags: list[str] = []) -> ClassVar: # type: ignore
+def pluginClass(property: str|ClassVar = None,						 # type: ignore
+				priority: int = 50, 
+				tags: list[str] = [], 
+				noRestartWhilePaused: bool = False) -> ClassVar: # type: ignore
 	""" Decorator to mark plugin classes in plugins.
 
 		Args:
 			property: Optional name for the plugin instance. If a class is given here, it is treated directly as the class to decorate.
 			priority: The priority of the plugin. It determines the order in which plugins are started, stopped, etc. Lower values mean higher priority.
 			tags: Optional list of tags to attach to the plugin for easier identification and filtering.
+			noRestartWhilePaused: Flag to indicate whether the plugin should not restart while paused.
 
 		Returns:
 			The class with the plugin class tag set.
@@ -606,6 +621,7 @@ def pluginClass(property: str|ClassVar=None, priority: int = 50, tags: list[str]
 			setattr(cls, _tagInstanceName, property)
 		setattr(cls, _tagInstancePriority, priority)
 		setattr(cls, _tagInstanceTags, tags)
+		setattr(cls, _tagNoRestartWhilePaused, noRestartWhilePaused)
 		return cls
 	
 	return decorator
