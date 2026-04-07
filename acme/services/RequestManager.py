@@ -1205,7 +1205,7 @@ class RequestManager(object):
 
 			except NotImplementedError as e:
 				results.append(RequestResponse(_request, 
-								   			   Result(rsc=ResponseStatusCode.TARGET_NOT_REACHABLE, dbg=L.logWarn(str(e.message)))))
+								   			   Result(rsc=ResponseStatusCode.TARGET_NOT_REACHABLE, dbg=L.logWarn(str(e)))))
 				return results
 
 			# Fall-through if no case matched
