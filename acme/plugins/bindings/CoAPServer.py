@@ -1091,6 +1091,10 @@ class CoAPServer():
 		if config.coap_security_useDTLS:
 			Configuration._warning(r'CoAP security is not yet supported. Security settings will be ignored.')
 
+		# Add the CoAP server address to the list of CSE POA addresses if the server is enabled
+		if Configuration.coap_enable:
+			RC.csePOA.append(Configuration.coap_address)
+
 
 	def sendCoAPRequest(self, request:CSERequest, url:str, isDirectURL:bool = False) -> Result:
 		"""	Send a CoAP request to a URL.
