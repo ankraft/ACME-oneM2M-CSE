@@ -113,7 +113,7 @@ class Event(list):	# type:ignore[type-arg]
 			Return:
 				String representation of the event.
 		"""
-		return f'Event({list.__repr__(self)})' 
+		return f'Event(name={self.name}, handlers={list.__repr__(self)})' 
 
 
 
@@ -207,6 +207,8 @@ class EventManager(object):
 				event: Either a single `Event` instance or a list of `Event` instances.
 				func: The function callback to call when the event is raised.
 		"""
+		if func is None or not callable(func):
+			raise RuntimeError('Event handler must be a callable function, but got: ' + str(func))
 		list(map(lambda e: e.append(func), [event] if isinstance(event, Event) else event))
 	
 
