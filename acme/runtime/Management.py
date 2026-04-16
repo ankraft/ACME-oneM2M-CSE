@@ -1168,7 +1168,7 @@ def getResourceTreeText(maxLevel: int = 0) -> str:
 
 	console = RichConsole(color_system=None)
 	console.begin_capture()
-	console.print(getResourceTreeRich(withProgress=False))
+	console.print(getResourceTreeRich(maxLevel=maxLevel, withProgress=False))
 	return '\n'.join([item.rstrip() for item in console.end_capture().splitlines()])
 
 
