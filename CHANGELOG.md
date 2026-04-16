@@ -19,15 +19,18 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added resource type definition file to define the resource types and their attributes in an external JSON file. 
 - [CSE] Increased performance when registering a large number of &lt;AE> resources by adding a database table for registered originators.
 - [CSE] Added validation of received response, e.g. in transfer rerequests. 
+- [CSE] Added a minimal console with only a few basic commands. This can be used when the CSE is running in headless mode or where access to the console is not possible.
+- [CSE] Added support for new *spi* and *ici* attributes in &lt;CSEBsae> and &lt;remoteCSE> resources. Both attributes are updated automatically in registree CSEs throughout a oneM2M deployment tree. This is an ESTIMED project contribution.
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
 - [TUI] Added support for displaying the originator of a resource in the text UI. The originator is now shown in the resource subtitle in the resource view. Clicking on it copies the originator to the clipboard.
 
 
 ### Experimental
-- [CSE] Added experimental support for new *spi* and *ici* attributes in &lt;CSEBsae> and &lt;remoteCSE> resources. Both attributes are updated automatically in registree CSEs throughout a oneM2M deployment tree.
 
 ### Changed
 - [CSE] Moved various HTTP server extensions to plugins: Upper Tester, Web UI, management & structure interfaces. These plugins are now loaded via the new plugin manager.
+- [CSE] Moved all bindings to plugins. The HTTP binding can now be enabled or disabled via configuration settings. 
+- [CSE] Moved statistics to plugins.
 - [CSE] For location handling the *content* attributes of &lt;contentInstance> resources support now now integer or JSON objects, not strings anymore. The work-around using a string representation was necessary because the *content* attribute was only supporting string values before.
 - [CSE] Internal restructuring how resource types are configured. The resource types are now defined by an external JSON file that is loaded during CSE initialization.
 - [CSE] Changed the internal handling of resource instantiation and optimized the resource factory.

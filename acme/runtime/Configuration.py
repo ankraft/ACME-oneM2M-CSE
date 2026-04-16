@@ -58,7 +58,7 @@ class Configuration(object):
 	configParser:ACMEConfiguration = None
 	"""	The ACMEConfiguration instance holding the configuration values. """
 
-	coap_enable:bool
+	coap_enable:bool = None
 	"""	Enable or disable the CoAP server. """
 
 	coap_listenIF:str
@@ -292,6 +292,9 @@ class Configuration(object):
 	http_allowPatchForDelete:bool
 	"""	Allow PATCH for DELETE operations. """
 
+	http_enable:bool = None
+	"""	Enable or disable the HTTP server. """
+
 	http_enableStructureEndpoint:bool
 	"""	Enable the structure endpoint. """
 
@@ -402,7 +405,7 @@ class Configuration(object):
 	mqtt_address:str
 	"""	The address to listen on for the MQTT server. """
 
-	mqtt_enable:bool
+	mqtt_enable:bool = None
 	"""	Enable or disable the MQTT server. """
 
 	mqtt_keepalive:int
@@ -568,7 +571,7 @@ class Configuration(object):
 	"""	The root path for the web UI. """
 
 
-	websocket_enable:bool
+	websocket_enable:bool = None
 	"""	Enable or disable the WebSocket server. """
 
 
@@ -1025,6 +1028,12 @@ class Configuration(object):
 						if isinstance(v2, CSERegistrar):
 							# Convert the CSERegistrar to a dict
 							attr[k2] = v2.toDict()
+				case ACMEConfiguration():
+					# Ignore
+					continue
+				case None:
+					# Don't handle None values
+					continue
 
 			# Replace underscores with dots in the key names
 			result[k.replace('_', '.')] = attr
@@ -1148,7 +1157,6 @@ from ..runtime.configurations.ConsoleConfiguration import ConsoleConfiguration
 from ..runtime.configurations.CSEConfiguration import CSEConfiguration
 from ..runtime.configurations.FCNTResourceConfiguration import FCNTResourceConfiguration
 from ..runtime.configurations.GroupServiceConfiguration import GroupServiceConfiguration
-from ..runtime.configurations.HTTPServerConfiguration import HTTPServerConfiguration
 from ..runtime.configurations.LCPResourceConfiguration import LCPResourceConfiguration
 from ..runtime.configurations.LoggingConfiguration import LoggingConfiguration
 from ..runtime.configurations.ModuleConfiguration import ModuleConfiguration
@@ -1188,9 +1196,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 	StorageConfiguration(),
 	PostgreSQLBindingConfiguration(),
 	TinyDBBindingConfiguration(),
-
-	# Binding configurations
-	HTTPServerConfiguration(),
 
 	# Resource configurations
 	ACPResourceConfiguration(),

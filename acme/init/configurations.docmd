@@ -1087,6 +1087,13 @@ This is useful for constraint devices that only support "http/1.0", which doesn'
 The default value is `False`.
 
 
+# http.enable
+
+This setting enables or disables the CSE's HTTP binding.
+
+The default value is `True`.
+
+
 # http.enableManagementEndpoint
 
 This setting enables or disables the CSE's HTTP server's management endpoint.  
@@ -1095,6 +1102,8 @@ This allows to manage the CSE and retrieve information about its operation via H
 The management endpoint is available at the URL path `/__mgmt__`.
 
 **ATTENTION**: Enabling this feature may expose sensitive information. It may also lead to a total loss of data.
+
+This endpoint can only be enabled when the *http.enable* setting is enabled.
 
 The default value is `False`.
 
@@ -1111,6 +1120,8 @@ The structure endpoint can queried by a http GET request with the following URL 
 
 **ATTENTION**: Enabling this feature exposes various potentially sensitive information.
 
+This endpoint can only be enabled when the *http.enable* setting is enabled.
+
 The default value is `False`.
 
 
@@ -1125,6 +1136,8 @@ The Upper tester endpoint is available at the URL path `/__ut__`.
 **ATTENTION**: Enabling this feature may exposes various potentially sensitive information and also may lead to a total loss of data.
 
 Remember, that this endpoint only accepts *POST* requests.
+
+This endpoint can only be enabled when the *http.enable* setting is enabled.
 
 The default value is `False`.
 

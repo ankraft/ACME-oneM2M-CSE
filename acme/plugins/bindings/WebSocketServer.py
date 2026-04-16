@@ -28,14 +28,14 @@ from ...etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TA
 from ...helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ...helpers.ThreadSafeCounter import ThreadSafeCounter
 from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ...helpers.PluginManager import  pluginClass, init, start, stop, pause, unpause, configure, validate
+from ...helpers.PluginManager import  plugin, init, start, stop, pause, unpause, configure, validate
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
 from ...resources.Resource import Resource
 from ...runtime.Logging import Logging as L
 
 
-@pluginClass(property='webSocketServer', tags=['binding'], noRestartWhilePaused=True)
+@plugin(property='webSocketServer', tags=['binding'], noRestartWhilePaused=True)
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.
 	"""

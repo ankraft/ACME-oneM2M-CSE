@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Any, Callable, cast, Optional
 
-import logging, sys, urllib3, re
+import logging, sys, urllib3, re, os
 
 from flask import Flask, Request, request
 
@@ -22,25 +22,25 @@ from flask_cors import CORS
 import requests
 import isodate
 
-from ..etc.Constants import Constants
-from ..etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials, AuthorizationResult
-from ..etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
-from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
-from ..etc.IDUtils import uniqueRI, toSPRelative, isCSERelative
-from ..etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl
-from ..helpers.TextTools import findXPath
-from ..helpers.MultiDict import MultiDict
-from ..etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
-from ..etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
-from ..etc.RequestUtils import createPositiveResponseResult, fromHttpURL, contentAsString, fillRequestWithArguments
-from ..helpers.NetworkTools import isTCPPortAvailable
-from ..runtime.Configuration import Configuration
-from ..runtime import CSE
-from ..helpers import TextTools as TextTools
-from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..helpers.PerfTimer import perfTimer
-from ..runtime.Logging import Logging as L
-from ..etc.Constants import RuntimeConstants as RC
+from ...etc.Constants import Constants
+from ...etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials, AuthorizationResult
+from ...etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
+from ...etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
+from ...etc.IDUtils import uniqueRI, toSPRelative, isCSERelative
+from ...etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl, normalizeURL
+from ...etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
+from ...etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
+from ...etc.RequestUtils import createPositiveResponseResult, fromHttpURL, contentAsString, fillRequestWithArguments
+from ...helpers.TextTools import findXPath
+from ...helpers.MultiDict import MultiDict
+from ...helpers.NetworkTools import isTCPPortAvailable, isValidPort, isValidateIpAddress, isValidateHostname
+from ...helpers import TextTools as TextTools
+from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime import CSE
+from ...runtime.Logging import Logging as L
+from ...etc.Constants import RuntimeConstants as RC
+from ...helpers.PluginManager import plugin, init, start, stop, pause, unpause, configure, validate
 
 
 #
@@ -57,6 +57,7 @@ FlaskHandler = 	Callable[[str], Response]
 #	HTTP Server
 #
 
+@plugin(property='httpServer', tags=['binding'], priority=20)
 class HttpServer(object):
 	""" The HTTP server for the CSE.
 	"""
@@ -78,23 +79,12 @@ class HttpServer(object):
 	)
 	""" The slots for the HttpServer class to optimize memory usage. """
 
-	def __init__(self) -> None:
-		"""	Initialize the HTTP server.
+	@init
+	def init(self) -> None:
+		"""	Start the HTTP server.
 			This sets up the Flask application, configures CORS, adds endpoints,
 			and initializes the web UI.
 		"""
-
-		# Initialize the http server
-		# Meaning defaults are automatically provided.
-		# Also prevent flask from registering the static endpoint
-		self.flaskApp = Flask(RC.cseCsi, static_folder=None)
-		""" The Flask application instance. """
-
-		# Get the configuration settings
-		self._assignConfig()
-
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
 
 		self.isStopped = False
 		""" Whether the HTTP server is stopped. """
@@ -108,36 +98,12 @@ class HttpServer(object):
 		self._responseHeaders = {'Server' : self.serverID}
 		""" Additional headers for HTTP responses. """
 
-		L.isInfo and L.log(f'Registering http server root at: {Configuration.http_root}')
-		if Configuration.http_security_useTLS:
-			L.isInfo and L.log('TLS enabled. HTTP server serves via https.')
-		# Add CORS support for flask
-		if Configuration.http_cors_enable:
-			logging.getLogger('flask_cors').level = logging.DEBUG	# switch on flask-cors internal logging
-			L.isInfo and L.log('CORS is enabled for the HTTP server.')
-			CORS(self.flaskApp, resources = Configuration.http_cors_resources)
-		else:
-			L.isDebug and L.logDebug('CORS is NOT enabled for the HTTP server.')
-
-		# Add endpoints
-		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleGET, methods=['GET'])
-		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePOST, methods=['POST'])
-		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePUT, methods=['PUT'])
-		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
-
 		self.httpActor:Optional[BackgroundWorker] = None
 		""" The background worker for the HTTP server. """
-
-		# Allow to use PATCH as a replacement for the DELETE method
-		if Configuration.http_allowPatchForDelete:
-			self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler = self.handlePATCH, methods = ['PATCH'])
 
 		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(LogLevel.WARNING)
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
-		if not Configuration.http_security_verifyCertificate:	# only when we also verify  certificates
-			urllib3.disable_warnings()
-		L.isInfo and L.log('HTTP Server initialized')
 
 		# Optimize event handling
 		self._eventHttpRetrieve =  CSE.event.httpRetrieve			# type: ignore [attr-defined]
@@ -158,62 +124,58 @@ class HttpServer(object):
 		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
 		""" Event for HTTP response received. """
 
-		# L.log(self.getEndpoints())
 
-	def _assignConfig(self) -> None:
-		"""	Assign the configuration values to the http server.
-		"""
-		pass
-
-
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None,
-						   value:Any = None) -> None:
-		"""	Handle configuration updates.
-
-			Args:
-				name: The name of the configuration section.
-				key: The key of the configuration value.
-				value: The new value.
-		"""
-		if key not in ( 'http.root', 
-						'http.address',
-						'http.listenIF',
-						'http.port',
-						'http.allowPatchForDelete',
-						'http.timeout',
-						'http.cors.enable',
-						'http.cors.resources',
-						'http.wsgi.enable',
-						'http.wsgi.threadPoolSize',
-						'http.wsgi.connectionLimit',
-						'http.security.enableBasicAuth',
-						'http.security.enableTokenAuth'
-					  ):
-			return
-		self._assignConfig()
-		# TODO restart with delay
-
-
-	def run(self) -> bool:
+	@start
+	def run(self) -> None:
 		"""	Run the http server in a separate thread.
 		"""
-		if isTCPPortAvailable(Configuration.http_port):
-			self.httpActor = BackgroundWorkerPool.newActor(self._run, name='HTTPServer')
-			self.httpActor.start()
-			return True
-		L.logErr(f'Cannot start HTTP server. Port: {Configuration.http_port} already in use.', showStackTrace = False)
-		return False
+
+		# Initialize the http server
+		# Meaning defaults are automatically provided.
+		# Also prevent flask from registering the static endpoint
+		self.flaskApp = Flask(RC.cseCsi, static_folder=None)
+		""" The Flask application instance. """
+		L.isInfo and L.log(f'Registering http server root at: {Configuration.http_root}')
+		if Configuration.http_security_useTLS:
+			L.isInfo and L.log('TLS enabled. HTTP server serves via https.')
+		# Add CORS support for flask
+		if Configuration.http_cors_enable:
+			logging.getLogger('flask_cors').level = logging.DEBUG	# switch on flask-cors internal logging
+			L.isInfo and L.log('CORS is enabled for the HTTP server.')
+			CORS(self.flaskApp, resources=Configuration.http_cors_resources)
+		else:
+			L.isDebug and L.logDebug('CORS is NOT enabled for the HTTP server.')
+
+		# Add endpoints
+		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleGET, methods=['GET'])
+		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePOST, methods=['POST'])
+		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePUT, methods=['PUT'])
+		self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
+
+		# Allow to use PATCH as a replacement for the DELETE method
+		if Configuration.http_allowPatchForDelete:
+			self.addEndpoint(f'{Configuration.http_root}/<path:path>', handler=self.handlePATCH, methods=['PATCH'])
+
+		if not Configuration.http_security_verifyCertificate:	# only when we also verify  certificates
+			urllib3.disable_warnings()
+		L.isInfo and L.log('HTTP Server initialized')
+
+		# Start the http server in a separate thread. This is necessary to not block the main thread, which runs the CSE.
+		if not isTCPPortAvailable(Configuration.http_port):
+			raise RuntimeError(L.logErr(f'Cannot start HTTP server. Port: {Configuration.http_port} already in use.'))
+		self.httpActor = BackgroundWorkerPool.newActor(self._run, name='HTTPServer')
+		self.httpActor.start()
 	
 
-	def shutdown(self) -> bool:
+	@stop
+	def shutdown(self) -> None:
 		"""	Shutting down the http server.
 		"""
 		L.isInfo and L.log('HttpServer shut down')
 		self.isStopped = True
-		return True
 	
 
+	@pause
 	def pause(self) -> None:
 		"""	Stop handling requests.
 		"""
@@ -221,6 +183,7 @@ class HttpServer(object):
 		self.isStopped = True
 		
 	
+	@unpause
 	def unpause(self) -> None:
 		"""	Continue handling requests.
 		"""
@@ -247,10 +210,10 @@ class HttpServer(object):
 				if Configuration.http_wsgi_enable:
 					L.isInfo and L.log(f'HTTP server listening on {Configuration.http_listenIF}:{Configuration.http_port} (wsgi)')
 					serve(self.flaskApp, 
-		   				  host = Configuration.http_listenIF, 
-						  port = Configuration.http_port, 
-						  threads = Configuration.http_wsgi_threadPoolSize,
-						  connection_limit = Configuration.http_wsgi_connectionLimit)
+		   				  host=Configuration.http_listenIF, 
+						  port=Configuration.http_port, 
+						  threads=Configuration.http_wsgi_threadPoolSize,
+						  connection_limit=Configuration.http_wsgi_connectionLimit)
 				else:
 					L.isInfo and L.log(f'HTTP server listening on {Configuration.http_listenIF}:{Configuration.http_port} (flask http)')
 					self.flaskApp.run(host=Configuration.http_listenIF, 
@@ -900,6 +863,134 @@ class HttpServer(object):
 				True if the request has a content type that is supported, False otherwise.
 		"""
 		return (ct := request.content_type) is not None and any(re.match(self._hdrArgument, s) is not None for s in ct.split(';'))
+
+
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+
+		parser = config.configParser
+
+		#	HTTP Server
+		config.http_enable = parser.getboolean('http', 'enable', fallback=True)
+		config.http_address = parser.get('http', 'address', fallback='http://127.0.0.1:8080')
+		config.http_allowPatchForDelete = parser.getboolean('http', 'allowPatchForDelete', fallback=False)
+		config.http_listenIF = parser.get('http', 'listenIF', fallback='0.0.0.0')
+		config.http_port = parser.getint('http', 'port', fallback=8080)
+		config.http_root = parser.get('http', 'root', fallback='')
+		config.http_externalRoot = parser.get('http', 'externalRoot', fallback=config.http_root)
+		config.http_timeout = parser.getfloat('http', 'timeout', fallback=10.0)
+
+		#	HTTP Server CORS
+		config.http_cors_enable = parser.getboolean('http.cors', 'enable', fallback=False)
+		config.http_cors_resources = parser.getlist('http.cors', 'resources', fallback=[ r'/*' ])	# type: ignore[attr-defined]
+
+		#	HTTP Server Security
+		config.http_security_caCertificateFile = parser.get('http.security', 'caCertificateFile', fallback=None)
+		config.http_security_caPrivateKeyFile = parser.get('http.security', 'caPrivateKeyFile', fallback=None)
+		config.http_security_tlsVersion = parser.get('http.security', 'tlsVersion', fallback='auto')
+		config.http_security_useTLS = parser.getboolean('http.security', 'useTLS', fallback=False)
+		config.http_security_verifyCertificate = parser.getboolean('http.security', 'verifyCertificate', fallback=False)
+		config.http_security_enableBasicAuth = parser.getboolean('http.security', 'enableBasicAuth', fallback=False)
+		config.http_security_enableTokenAuth = parser.getboolean('http.security', 'enableTokenAuth', fallback=False)
+		config.http_security_basicAuthFile = parser.get('http.security', 'basicAuthFile', fallback='./certs/http_basic_auth.txt')
+		config.http_security_tokenAuthFile = parser	.get('http.security', 'tokenAuthFile', fallback='./certs/http_token_auth.txt')
+
+		#	HTTP Server WSGI
+		config.http_wsgi_enable = parser.getboolean('http.wsgi', 'enable', fallback=False)
+		config.http_wsgi_connectionLimit = parser.getint('http.wsgi', 'connectionLimit', fallback=100)
+		config.http_wsgi_threadPoolSize = parser.getint('http.wsgi', 'threadPoolSize', fallback=100)
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		# override configuration with command line arguments
+		if Configuration._args_httpAddress is not None:
+			Configuration.http_address = Configuration._args_httpAddress
+		if Configuration._args_httpPort is not None:
+			Configuration.http_port = Configuration._args_httpPort
+		if Configuration._args_listenIF is not None:
+			Configuration.http_listenIF = Configuration._args_listenIF
+		if Configuration._args_runAsHttps is not None:
+			Configuration.http_security_useTLS = Configuration._args_runAsHttps
+		if Configuration._args_runAsHttpWsgi is not None:
+			Configuration.http_wsgi_enable = Configuration._args_runAsHttpWsgi
+
+		if not config.http_root.endswith('/'):
+			raise ConfigurationError(fr'[i]\[http]:root[/i] must end with a trailing slash (/): {config.http_root}')
+		if not config.http_externalRoot.endswith('/'):
+			raise ConfigurationError(fr'[i]\[http]:externalRoot[/i] must end with a trailing slash (/): {config.http_externalRoot}')
+		
+		config.http_address = normalizeURL(config.http_address)
+		config.http_root = normalizeURL(config.http_root)
+		config.http_externalRoot = normalizeURL(config.http_externalRoot)
+
+		# Raise an error if TLS and the WSGI server are both enabled, as they are incompatible
+		if config.http_security_useTLS and config.http_wsgi_enable:
+			raise ConfigurationError(r'[i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled. WSGI does not support TLS.')
+
+		# Just in case: check the URL's (http, ws)
+		if config.http_security_useTLS:
+			if config.http_address.startswith('http:'):
+				Configuration._warning(r'Changing "http" to "https" in [i]\[http]:address[/i]')
+				config.http_address = config.http_address.replace('http:', 'https:')
+			# registrar might still be accessible via another protocol
+		else: 
+			if config.http_address.startswith('https:'):
+				Configuration._warning(r'Changing "https" to "http" in [i]\[http]:address[/i]')
+				config.http_address = config.http_address.replace('https:', 'http:')
+			# registrar might still be accessible via another protocol
+
+		# HTTP server
+		if not isValidPort(config.http_port):
+			raise ConfigurationError(fr'Invalid port number for [i]\[http]:port[/i]: {config.http_port}')
+		if not (isValidateHostname(config.http_listenIF) or isValidateIpAddress(config.http_listenIF)):
+			raise ConfigurationError(fr'Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {config.http_listenIF}')
+		if config.http_timeout < 0.0:
+			raise ConfigurationError(fr'Invalid timeout value for [i]\[http]:timeout[/i]: {config.http_timeout}')
+		
+		# HTTP TLS & certificates
+		if not config.http_security_useTLS:	# clear certificates configuration if not in use
+			config.http_security_verifyCertificate = False
+			config.http_security_tlsVersion = 'auto'
+			config.http_security_caCertificateFile = ''
+			config.http_security_caPrivateKeyFile = ''
+		else:
+			if not (val := config.http_security_tlsVersion).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+				raise ConfigurationError(fr'Unknown value for [i]\[http.security]:tlsVersion[/i]: {val}')
+			if not (val := config.http_security_caCertificateFile):
+				raise ConfigurationError(r'[i]\[http.security]:caCertificateFile[/i] must be set when TLS is enabled')
+			if not os.path.exists(val):
+				raise ConfigurationError(fr'[i]\[http.security]:caCertificateFile[/i] does not exists or is not accessible: {val}')
+			if not (val := config.http_security_caPrivateKeyFile):
+				raise ConfigurationError(r'[i]\[http.security]:caPrivateKeyFile[/i] must be set when TLS is enabled')
+			if not os.path.exists(val):
+				raise ConfigurationError(fr'[i]\[http.security]:caPrivateKeyFile[/i] does not exists or is not accessible: {val}')
+		# HTTP Security
+		Configuration.http_security_tlsVersion = Configuration.http_security_tlsVersion.lower()
+
+		# HTTP CORS
+		if config.http_cors_enable and not config.http_security_useTLS:
+			Configuration._warning(r'[i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
+
+		# HTTP authentication
+		if config.http_security_enableBasicAuth and not config.http_security_basicAuthFile:
+			raise ConfigurationError(r'[i]\[http.security]:basicAuthFile[/i] must be set when HTTP Basic Auth is enabled')
+		if config.http_security_enableTokenAuth and not config.http_security_tokenAuthFile:
+			raise ConfigurationError(r'[i]\[http.security]:tokenAuthFile[/i] must be set when HTTP Token Auth is enabled')
+
+		# HTTP WSGI
+		if config.http_wsgi_enable and config.http_security_useTLS:
+			# WSGI and TLS cannot both be enabled
+			raise ConfigurationError(r'[i]\[http.security].useTLS[/i] (https) cannot be enabled when [i]\[http.wsgi].enable[/i] is enabled (WSGI and TLS cannot both be enabled).')
+		if config.http_wsgi_threadPoolSize < 1:
+			raise ConfigurationError(r'[i]\[http.wsgi]:threadPoolSize[/i] must be > 0')
+		if config.http_wsgi_connectionLimit < 1:
+			raise ConfigurationError(r'[i]\[http.wsgi]:connectionLimit[/i] must be > 0')
+
+		# Add the HTTP server address to the list of CSE POA addresses if the server is enabled
+		if Configuration.http_enable:
+			RC.csePOA.append(Configuration.http_address)
 
 
 ##########################################################################

@@ -33,7 +33,7 @@ from ...helpers.TextTools import findXPath
 from ...helpers.MultiDict import MultiDict
 from ...helpers.CoAPthonTools import registerOneM2MContentTypes, registerOneM2MOptions, newCoAPOption, operationsMethodsMap
 from ...helpers.ACMELRUCache import ACMELRUCache
-from ...helpers.PluginManager import pluginClass, init, start, stop, pause, unpause, configure, validate
+from ...helpers.PluginManager import plugin, init, start, stop, pause, unpause, configure, validate, requires
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.Logging import Logging as L
 from ...runtime import CSE
@@ -878,7 +878,7 @@ class 	ACMECoAPServer(CoAP):
 			_closeClient()
 
 
-@pluginClass(property='coapServer', tags=['binding'])
+@plugin(property='coapServer', tags=['binding'])
 class CoAPServer():
 	"""	CoAPServer Server implementation.
 	"""
@@ -956,7 +956,7 @@ class CoAPServer():
 
 
 	@start
-	def run(self) -> bool:
+	def run(self) -> None:
 		"""	Initialize and run the CoAP server as a BackgroundWorker/Actor.
 
 			Returns:
@@ -964,13 +964,12 @@ class CoAPServer():
 		"""
 		if not Configuration.coap_enable:	# type:ignore[attr-defined]
 			L.isInfo and L.log('CoAP: server NOT enabled')
-			return True
+			return
 		
 		# Actually start the actor to run the WebSocket Server as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._run, name = 'CoAPServer').start()
 
 		L.isInfo and L.log('Start CoAP server')
-		return True
 
 
 	def _run(self) -> None:

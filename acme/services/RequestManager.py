@@ -16,6 +16,7 @@ import urllib.parse
 from copy import deepcopy
 from threading import Lock
 
+
 from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, ResourceTypes
 from ..etc.Types import FilterUsage, Operation, RequestCallback, RequestType
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
@@ -35,6 +36,7 @@ from ..etc.Utils import isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath
 from ..helpers.RingBuffer import RingBuffer
+from ..helpers.PluginManager import requires, on_resolved, on_unresolved, Dependency
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..resources.Resource import Resource
@@ -60,6 +62,10 @@ TargetDetails = List[ 						#type: ignore[misc]
 # This factor determines how often the monitor looks for expired request resources
 expirationCheckFactor = 2.0
 
+@requires(httpServer='acme.plugins.bindings.HttpServer', required=False)
+@requires(coapServer='acme.plugins.bindings.CoAPServer', required=False)
+@requires(mqttClient='acme.plugins.bindings.MQTTClient', required=False)
+@requires(websocketServer='acme.plugins.bindings.WebSocketServer', required=False)
 class RequestManager(object):
 	"""	RequestManager class.
 	"""
@@ -71,9 +77,7 @@ class RequestManager(object):
 		'_pcWorker',
 		'_receivedResponses',
 		'_receivedResponsesLock',
-		
-
-
+	
 		'requestHandlers',
 		'flexBlockingBlocking',
 		'requestExpirationDelta',
@@ -106,6 +110,30 @@ class RequestManager(object):
 		'_eventWsSendNotify',
 		'_eventAcmeSendNotify',
 	)
+
+	httpServer: Any = None	# type: ignore
+	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
+	coapServer: Any = None	# type: ignore
+	"""	The CoAPServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the CoAPServer plugin is loaded. """
+	mqttClient: Any = None	# type: ignore
+	"""	The MQTTClient plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the MQTTClient plugin is loaded. """
+	websocketServer: Any = None	# type: ignore
+	"""	The WebSocketServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the WebSocketServer plugin is loaded. """
+
+
+	@on_resolved
+	def onResolvedHandler(self, dependencies:list[Dependency]) -> None:
+		for dep in dependencies:
+			if dep.resolved:
+				L.isDebug and L.logDebug(f'{dep.pluginName} binding is now resolved.')
+
+
+	@on_unresolved
+	def onUnresolvedHandler(self, dependencies:list[Dependency]) -> None:
+		for dep in dependencies:
+			if not dep.resolved:
+				L.isDebug and L.logDebug(f'{dep.pluginName} binding is now unresolved.')
+
 
 	def __init__(self) -> None:
 
@@ -1170,30 +1198,32 @@ class RequestManager(object):
 				# Otherwise send it via one of the bindings
 				match url:
 					case _ if isHttpUrl(url):
+						if not self.httpServer:
+							raise NotImplementedError(f'HTTP server not activated. Cannot send HTTP request to url: {url}')
 						self.requestHandlers[_request.op].httpEvent()	# send event
-						results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
+						results.append( RequestResponse(_request, self.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
 						continue
 				
 					case _ if isMQTTUrl(url):
-						if not CSE.pluginManager.mqttClient:
-							raise NotImplementedError(f'MQTT client not configured. Cannot send MQTT request to url: {url}')
+						if not self.mqttClient:
+							raise NotImplementedError(f'MQTT client not activated. Cannot send MQTT request to url: {url}')
 						self.requestHandlers[_request.op].mqttEvent()	# send event
-						results.append( RequestResponse(_request, CSE.pluginManager.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
+						results.append( RequestResponse(_request, self.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
 						continue
 
 					case _ if isCoAPUrl(url):
-						if not CSE.pluginManager.coapServer:
-							raise NotImplementedError(f'CoAP server not configured. Cannot send CoAP request to url: {url}')
+						if not self.coapServer:
+							raise NotImplementedError(f'CoAP server not activated. Cannot send CoAP request to url: {url}')
 						self.requestHandlers[_request.op].coapEvent()	# send event
-						results.append( RequestResponse(_request, CSE.pluginManager.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
+						results.append( RequestResponse(_request, self.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
 						continue
 
 					case _ if isWSUrl(url):
-						if not CSE.pluginManager.webSocketServer:
-							raise NotImplementedError(f'WebSocket server not configured. Cannot send WS request to url: {url}')
+						if not self.websocketServer:
+							raise NotImplementedError(f'WebSocket server not activated. Cannot send WS request to url: {url}')
 						self.requestHandlers[_request.op].wsEvent()	# send event
 						try:
-							results.append( RequestResponse(_request, CSE.pluginManager.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
+							results.append( RequestResponse(_request, self.websocketServer.sendWSRequest(_request, url, isDirectURL)) )
 						except TARGET_NOT_REACHABLE as e:
 							L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
 						continue

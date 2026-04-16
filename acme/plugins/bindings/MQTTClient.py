@@ -23,7 +23,7 @@ from ...etc.Constants import RuntimeConstants as RC
 from ...helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ...helpers.NetworkTools import isValidPort
 from ...helpers import TextTools
-from ...helpers.PluginManager import pluginClass, init, start, stop, pause, unpause, configure, validate
+from ...helpers.PluginManager import plugin, init, start, stop, pause, unpause, configure, validate
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
@@ -301,7 +301,7 @@ class MQTTClientHandler(MQTTHandler):
 ##############################################################################
 
 
-@pluginClass(property='mqttClient', tags=['binding'], noRestartWhilePaused=True)
+@plugin(property='mqttClient', tags=['binding'], noRestartWhilePaused=True)
 class MQTTClient(object):
 	"""	The general MQTT manager for this CSE.
 	"""

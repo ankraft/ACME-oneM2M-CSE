@@ -22,6 +22,7 @@ from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
 from ..helpers.TextTools import findXPath, simpleMatch
+from ..helpers.PluginManager import requires
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource, isInternalAttribute
@@ -40,6 +41,9 @@ class ACPResult():
 	authenticated:bool = False
 
 
+@requires(httpServer='acme.plugins.bindings.HttpServer', 
+		  websocketServer='acme.plugins.bindings.WebSocketServer',
+		  required=False)
 class SecurityManager(object):
 	"""	This manager entity handles access to resources and requests.
 	"""
@@ -52,6 +56,10 @@ class SecurityManager(object):
 		'requestCredentials',
 		'allowedCSIOriginators',
 	)
+
+	httpServer: Any = None	# type: ignore
+	websocketServer: Any = None	# type: ignore
+
 
 
 	def __init__(self) -> None:
@@ -959,7 +967,8 @@ class SecurityManager(object):
 	def _initAuthInformation(self) -> None:
 		self._readHttpBasicAuthFile()
 		self._readHttpTokenAuthFile()
-		if CSE.pluginManager.websocketServer:
+		# if CSE.pluginManager.websocketServer:
+		if self.websocketServer:
 			self._readWSBasicAuthFile()
 			self._readWSTokenAuthFile()
 		self.allowedCSIOriginators = [ r.cseID for r in Configuration.cse_registrars.values() ]
@@ -973,18 +982,20 @@ class SecurityManager(object):
 		"""
 		self.httpBasicAuthData = {}
 		# We need to access the configuration directly, since the http server is not yet initialized
-		if Configuration.http_security_enableBasicAuth and Configuration.http_security_basicAuthFile:
-			try:
-				with open(Configuration.http_security_basicAuthFile, 'r') as f:
-					for line in f:
-						if line.startswith('#'):
-							continue
-						if len(line.strip()) == 0:
-							continue
-						(username, password) = line.strip().split(':')
-						self.httpBasicAuthData[username] = password.strip()
-			except Exception as e:
-				L.logErr(f'Error reading basic authentication file: {e}')
+		# if CSE.pluginManager.httpServer:
+		if self.httpServer:
+			if Configuration.http_security_enableBasicAuth and Configuration.http_security_basicAuthFile:
+				try:
+					with open(Configuration.http_security_basicAuthFile, 'r') as f:
+						for line in f:
+							if line.startswith('#'):
+								continue
+							if len(line.strip()) == 0:
+								continue
+							(username, password) = line.strip().split(':')
+							self.httpBasicAuthData[username] = password.strip()
+				except Exception as e:
+					L.logErr(f'Error reading basic authentication file: {e}')
 
 
 	def _readHttpTokenAuthFile(self) -> None:
@@ -995,17 +1006,19 @@ class SecurityManager(object):
 		"""
 		self.httpTokenAuthData = []
 		# We need to access the configuration directly, since the http server is not yet initialized
-		if Configuration.http_security_enableTokenAuth and Configuration.http_security_tokenAuthFile:
-			try:
-				with open(Configuration.http_security_tokenAuthFile, 'r') as f:
-					for line in f:
-						if line.startswith('#'):
-							continue
-						if len(line.strip()) == 0:
-							continue
-						self.httpTokenAuthData.append(line.strip())
-			except Exception as e:
-				L.logErr(f'Error reading token authentication file: {e}')
+		# if CSE.pluginManager.httpServer:
+		if self.httpServer:
+			if Configuration.http_security_enableTokenAuth and Configuration.http_security_tokenAuthFile:
+				try:
+					with open(Configuration.http_security_tokenAuthFile, 'r') as f:
+						for line in f:
+							if line.startswith('#'):
+								continue
+							if len(line.strip()) == 0:
+								continue
+							self.httpTokenAuthData.append(line.strip())
+				except Exception as e:
+					L.logErr(f'Error reading token authentication file: {e}')
 
 
 	def _readWSBasicAuthFile(self) -> None:

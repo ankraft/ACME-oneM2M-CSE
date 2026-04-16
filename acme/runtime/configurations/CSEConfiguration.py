@@ -163,9 +163,6 @@ class CSEConfiguration(ModuleConfiguration):
 
 		RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
 		RC.releaseVersion = Configuration.cse_releaseVersion
-
-		# Set the CSE's point-of-access
-		RC.csePOA = [ Configuration.http_address ]
 		
 		# Other configuration values
 		RC.idLength = Configuration.cse_idLength
@@ -173,3 +170,11 @@ class CSEConfiguration(ModuleConfiguration):
 		# Add some configurations here that will not be set because the plugins will not be loaded
 		if not hasattr(config, 'cse_statistics_enable'):
 			config.cse_statistics_enable = False
+		
+		# Check whether any binding is enabled, if not, raise an error
+		if not any([config._cse_operation_plugins_enabledComponents['http_enable'],
+		   			config._cse_operation_plugins_enabledComponents['mqtt_enable'],
+		   			config._cse_operation_plugins_enabledComponents['websocket_enable'],
+		   			config._cse_operation_plugins_enabledComponents['coap_enable']]):
+			raise ConfigurationError('At least one binding must be enabled (http, mqtt, websocket, or coap)')
+		

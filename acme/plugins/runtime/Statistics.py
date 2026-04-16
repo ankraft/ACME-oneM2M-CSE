@@ -19,7 +19,7 @@ from ...helpers.BackgroundWorker import BackgroundWorkerPool
 from ...runtime import CSE
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.Logging import Logging as L
-from ...helpers.PluginManager import pluginClass, init, start, stop, restart, configure, validate
+from ...helpers.PluginManager import plugin, init, start, stop, restart, configure, validate
 
 
 coRetrieves	= 'coqRet'
@@ -129,7 +129,7 @@ resourceCount = 'ctRes'
 StatsT = Dict[str, Union[str, int, float]]
 """ Type for statistics records. """
 
-@pluginClass(property='statistics')
+@plugin(property='statistics')
 class Statistics(object):
 	"""	Statistics class. Handles all internal statistics.
 

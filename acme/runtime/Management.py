@@ -134,6 +134,40 @@ def getCSEStatus() -> str:
 	return json.dumps(d, indent=4)
 
 
+def getPlugins() -> str:
+	"""Get the current loaded plugins of the CSE.
+
+		Returns:
+			The loaded plugins of the CSE in JSON format.
+	"""
+	dg = CSE.pluginManager.dependencyGraph()
+	return json.dumps([ {
+							'name': p.name,
+							'instanceClass': p.instance.__class__.__name__,
+							'instanceName': p.instanceAttributeName,
+							'filename': p.fileName,
+							'dependencies': [{	'module': d.pluginName, 
+						 						'attribute': d.attributeName, 
+												'required': d.required, 
+												'resolved': d.resolved } 
+											  for d in dg.get(p.name, [])],
+							'required-by': [{	'module': k, 
+											  'attribute': d.attributeName, 
+											  'required': d.required, 
+											  'resolved': d.resolved } 
+											  for k, deps in dg.items() 
+											  	for d in deps if d.pluginName == p.name],
+							'priority': p.priority,
+							'tags': p.tags,
+							'noRestartWhilePaused': p.noRestartWhilePaused,
+							'state': p.state.name,
+							'doc': p.doc,
+						}
+						for p in CSE.pluginManager.plugins.values()
+					  ],
+					  indent=4)
+
+
 def getCSEStatusAsDict() -> JSON:
 	"""	Get the status, statistics, and runtime information of the CSE.
 
@@ -225,16 +259,6 @@ def getCSEStatusAsDict() -> JSON:
 							'runs': w.numberOfRuns if w.interval > 0.0 else None,
 						}
 						for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()) 
-			],
-			'plugins': [ {
-							'module': p.name,
-							'filename': p.fileName,
-							'instanceClass': p.instance.__class__.__name__,
-							'priority': p.priority,
-							'state': p.state.name,
-							'doc': p.doc,
-						}
-						for p in CSE.pluginManager.plugins.values()
 			]
 		}
 		status['logging'].update({

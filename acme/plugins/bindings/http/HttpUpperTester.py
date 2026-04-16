@@ -14,26 +14,31 @@ from ....runtime import CSE
 from ....runtime.Logging import Logging as L
 from ....etc.Utils import renameThread
 from ....etc.Types import ResponseStatusCode, ContentSerializationType, AuthorizationResult
-from ....helpers.PluginManager import pluginClass, start, configure
+from ....helpers.PluginManager import plugin, start, configure, requires
 from ....helpers.interpreter.Interpreter import SType
 from ....etc.ResponseStatusCodes import ResponseException
 from ....etc.RequestUtils import prepareResultForSending
 from ....runtime.Configuration import Configuration
 
 
-@pluginClass
+@plugin
+@requires(httpServer='acme.plugins.bindings.HttpServer')
 class HttpUpperTester:
 	"""	Plugin class to add the Upper Tester functionality to the HTTP server.
 
 		See TS-0019 for details about the Upper Tester specification.
 	"""
 
+	# "httpServer" is injected by the PluginManager, only if the HttpServer plugin is loaded and the dependency can be resolved.
+	httpServer: Any = None	# type: ignore
+	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
+
 	@start
 	def startUpperTester(self) -> None:
 		L.isDebug and L.logDebug('Starting Upper Tester plugin')
 		# Enable the upper tester endpoint
 		if Configuration.http_enableUpperTesterEndpoint:
-			path = CSE.httpServer.addEndpoint('__ut__', handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
+			path = self.httpServer.addEndpoint('__ut__', handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
 			L.isInfo and L.log(f'Registered upper tester endpoint at: {path}')
 
 
@@ -52,18 +57,18 @@ class HttpUpperTester:
 			Return:
 				A response object.
 		"""
-		with CSE.httpServer.flaskApp.app_context():
+		with self.httpServer.flaskApp.app_context():
 			from flask import Response, request
 
-			if CSE.httpServer.isStopped:
+			if self.httpServer.isStopped:
 				return Response('Service not available', status=503)
 
 			# Check, when authentication is enabled, the user is authorized, else return status 401
-			if CSE.httpServer.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			if self.httpServer.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
 				return Response(status=401)
 
 
-			def prepareUTResponse(rcs:ResponseStatusCode, result:Optional[str]=None, body:Optional[str|bytes]=None) -> Response:
+			def prepareUTResponse(rcs: ResponseStatusCode, result: Optional[str] = None, body: Optional[str|bytes] = None) -> Response:
 				"""	Prepare the Upper Tester Response.
 
 					Args:
@@ -74,7 +79,7 @@ class HttpUpperTester:
 						The response object.
 				"""
 				headers = {}
-				headers['Server'] = CSE.httpServer.serverID
+				headers['Server'] = self.httpServer.serverID
 				headers['X-M2M-RSC'] = str(rcs.value)	# Set the ResponseStatusCode accordingly
 				if result:								# Return an optional return value
 					headers['X-M2M-UTRSP'] = result

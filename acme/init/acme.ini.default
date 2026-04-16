@@ -161,8 +161,9 @@ replace=false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 _coap_enable_=${coap:enable}
-_websocket_enable_=${websocket:enable}
+_http_enable_=${http:enable}
 _mqtt_enable_=${mqtt:enable}
+_websocket_enable_=${websocket:enable}
 _http_enableManagementEndpoint_=${http:enableManagementEndpoint}
 _http_enableStructureEndpoint_=${http:enableStructureEndpoint}
 _http_enableUpperTesterEndpoint_=${http:enableUpperTesterEndpoint}
@@ -175,6 +176,9 @@ _webui_enable_=${webui:enable}
 ;
 
 [http]
+; Enable the HTTP binding. 
+; Default: true
+enable=true
 ; Port to listen to. Default: 8080
 port=${basic.config:httpPort}
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 

@@ -9,9 +9,10 @@
 from __future__ import annotations
 from typing import Any, Callable, ClassVar, Optional
 from dataclasses import dataclass
-import os, importlib, importlib.util, inspect
+import os, importlib, importlib.util, inspect, sys, copy
 from types import ModuleType
 from enum import IntEnum, auto
+
 from ..helpers.TextTools import simpleMatch
 
 try:
@@ -27,14 +28,55 @@ _tagInstanceTags = '_pm_instance_tags'
 _tagNoRestartWhilePaused = '_pm_no_restart_while_paused'
 
 
+#
+#	Exceptions
+#
+class PluginError(RuntimeError):
+	""" Base class for all plugin system errors. """
+	pass
+
+
+class DependencyError(PluginError):
+	""" Raised when a dependency resolution fails. """
+	pass
+
+class PluginConfigurationError(PluginError):
+	""" Raised when a plugin is not configured correctly. """
+	pass
+
 class PluginState(IntEnum):
 	"""	Plugin states. """
 	LOADED		= auto()
 	INITIALIZED	= auto()
+	RESOLVED	= auto()
 	RUNNING		= auto()
 	PAUSED		= auto()
 	STOPPED		= auto()
+	UNRESOLVED	= auto()
+	FINALIZED	= auto()
 	ERROR		= auto()
+
+@dataclass
+class Dependency:
+	""" Dataclass to hold information about a dependency. """
+	attributeName: str
+	pluginName: str
+	required: bool
+	resolved: bool = False
+
+DependencyGraph = dict[type|str, list[Dependency]]
+""" Type alias for a dependency graph. The keys are (plugin) classes or names, and the values are lists of dependencies. """
+
+dependencies: DependencyGraph = {}
+"""	Dictionary to hold the dependencies of plugin and other classes. """
+
+dependentClasses: dict[type, tuple[str, bool]] = {}
+"""	Dictionary to hold the classes that depend on a plugin or other class. 
+	These are classes that have a @requires decorator attached. 
+
+	The keys are the classes, the values are tuples containing the names of the plugins they depend
+	 on and a boolean indicating whether the dependency is resolved.
+"""
 
 
 @dataclass
@@ -102,10 +144,25 @@ class PluginInfo:
 	validateMethod: Callable | None = None
 	""" The validate method of the plugin. This method, if set, is called during the plugin validation phase, after the configuration phase. """
 
+	onResolvedMethod: Callable | None = None
+	""" The on_resolved method of the plugin. This method, if set, is called when the plugin is resolved. """
+
+	onUnresolvedMethod: Callable | None = None
+	""" The on_unresolved method of the plugin. This method, if set, is called when the plugin is unresolved. """
+
+
+	def resolve(self) -> None:
+		""" Set the state of the plugin to resolved.
+		"""
+		if self.state in (PluginState.INITIALIZED, ):
+			self.state = PluginState.RESOLVED
+			if self.onResolvedMethod:
+				self.onResolvedMethod(self.instance, copy.deepcopy(dependencies.get(self.pluginClass, [])))
 
 	def start(self) -> None:
 		""" Start the plugin. """
-		if self.state in (PluginState.INITIALIZED, PluginState.STOPPED):
+		if self.state in (PluginState.RESOLVED, PluginState.STOPPED):
+			# Start the plugin normally					
 			if self.startMethod:
 				self.startMethod(self.instance)
 			self.state = PluginState.RUNNING
@@ -160,12 +217,23 @@ class PluginInfo:
 				self.validateMethod(self.instance, *args, **kwargs)
 
 
+	def unresolve(self) -> None:
+		""" Set the state of the plugin to unresolved.
+		"""
+		if self.state in (PluginState.STOPPED, ):
+			self.state = PluginState.UNRESOLVED
+			if self.onUnresolvedMethod:
+				self.onUnresolvedMethod(self.instance, copy.deepcopy(dependencies.get(self.pluginClass, [])))
+
+
 	def finalize(self) -> None:
 		""" Finalize the plugin. """
 		self.stop()
-		if self.state in (PluginState.INITIALIZED, PluginState.STOPPED):
+		self.unresolve()
+		if self.state in (PluginState.INITIALIZED, PluginState.UNRESOLVED):
 			if self.finishMethod:
 				self.finishMethod(self.instance)
+
 
 class PluginManager(metaclass=Singleton.Singleton):
 	"""	PluginManager class.
@@ -196,7 +264,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				NotADirectoryError: If the directory does not exist.
 				KeyError: If a plugin is already loaded.
-				ValueError: If the plugin is not valid.
+				PluginConfigurationError: If the plugin is not valid.
 		"""
 		# Check that the directory exists and is a directory
 		if not os.path.isdir(directory):
@@ -243,36 +311,46 @@ class PluginManager(metaclass=Singleton.Singleton):
 		# After loading all plugins, gather plugin classes and plugin methods
 		for plugin in newPlugins.values():
 			for _, obj in inspect.getmembers(plugin.module):
-				match getattr(obj, _tagType, None):
+				try:
+					match getattr(obj, _tagType, None):
 
-					case 'pluginClass' if not plugin.pluginClass:
-						plugin.pluginClass = obj
-						for _, method in inspect.getmembers(obj):
-							match getattr(method, _tagType, None):
-								case 'init':
-									plugin.initMethod = method
-								case 'finish':
-									plugin.finishMethod = method
-								case 'start':
-									plugin.startMethod = method
-								case 'restart':
-									plugin.restartMethod = method
-								case 'stop':
-									plugin.stopMethod = method
-								case 'pause':
-									plugin.pauseMethod = method
-								case 'unpause':
-									plugin.unpauseMethod = method
-								case 'configure':
-									plugin.configureMethod = method
-								case 'validate':
-									plugin.validateMethod = method
+						case 'pluginClass' if not plugin.pluginClass:
+							plugin.pluginClass = obj
+							for _, method in inspect.getmembers(obj):
+								match getattr(method, _tagType, None):
+									case 'init':
+										plugin.initMethod = method
+									case 'finish':
+										plugin.finishMethod = method
+									case 'start':
+										plugin.startMethod = method
+									case 'restart':
+										plugin.restartMethod = method
+									case 'stop':
+										plugin.stopMethod = method
+									case 'pause':
+										plugin.pauseMethod = method
+									case 'unpause':
+										plugin.unpauseMethod = method
+									case 'configure':
+										plugin.configureMethod = method
+									case 'validate':
+										plugin.validateMethod = method
+									case 'on_resolved':
+										plugin.onResolvedMethod = method
+									case 'on_unresolved':
+										plugin.onUnresolvedMethod = method
 
-					case 'pluginClass' if plugin.pluginClass:
-						raise ValueError(f'Plugin "{plugin.name}" has multiple plugin classes.')
+						case 'pluginClass' if plugin.pluginClass:
+							raise PluginConfigurationError(f'Plugin "{plugin.name}" has multiple plugin classes.')
+						
+				except RuntimeError as e:
+					# Catch runtime errors that can occur when accessing attributes of modules that 
+					# want to protect against access before initialization. We can ignore these errors for now.
+					continue
 
 			if not plugin.pluginClass:
-				raise ValueError(f'Plugin "{plugin.name}" has no plugin class.')
+				raise PluginConfigurationError(f'Plugin "{plugin.name}" has no plugin class.')
 			
 			# Store instance attribute name
 			if (n := getattr(plugin.pluginClass, _tagInstanceName, None)):
@@ -290,21 +368,21 @@ class PluginManager(metaclass=Singleton.Singleton):
 			if (i := getattr(plugin.pluginClass, _tagNoRestartWhilePaused, None)) is not None:
 				plugin.noRestartWhilePaused = i
 
-
 		# Instantiate class and execute init methods of now registered plugins
 		# Sorted by priority
 		for plugin in sorted(newPlugins.values(), key=lambda p: p.priority):
+
+			# Add plugin as attribute of the plugin manager
+			if plugin.instanceAttributeName:
+				self._pluginInstances[plugin.instanceAttributeName] = plugin.instance
 
 			# Instantiate plugin class
 			plugin.instance = plugin.pluginClass()
 			if plugin.initMethod:
 				plugin.initMethod(plugin.instance, *args, **kwargs)
 
-			# Add plugin as attribute of the plugin manager
-			if plugin.instanceAttributeName:
-				self._pluginInstances[plugin.instanceAttributeName] = plugin.instance
 			plugin.state = PluginState.INITIALIZED
-	
+
 		# Add new plugins to the main plugin list
 		self.plugins.update(newPlugins)
 
@@ -317,6 +395,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If the plugin is not found.
 		"""
+
 		match pluginNames:
 			case None:
 				pluginNames = list(self.plugins.keys())
@@ -324,6 +403,10 @@ class PluginManager(metaclass=Singleton.Singleton):
 				pluginNames = [pluginNames]
 			case _:
 				pass # already a list
+
+		# Stop plugins first to ensure proper shutdown and cleanup of resources. This includes
+		# unresolving dependencies to clean up injected dependencies.
+		self.stopPlugins(pluginNames)
 
 		# Sort the plugin names by priority to unload in correct reverse order, then iterate
 		for pluginName in sorted(pluginNames, key=lambda name: self.plugins[name].priority, reverse=True):
@@ -335,23 +418,23 @@ class PluginManager(metaclass=Singleton.Singleton):
 			# Remove instance attribute from PluginManager
 			if plugin.instanceAttributeName:	
 				delattr(self, plugin.instanceAttributeName)
-
 			plugin.instance = None	# release instance reference
 			del self.plugins[pluginName]
 
-			# TODO unload module from interpreter
-			# import sys
-			# if pluginName in sys.modules.keys():
-			# 	del sys.modules[pluginName]
+			# unload module from interpreter
+			if pluginName in sys.modules.keys():
+				del sys.modules[pluginName]
 
 
+	def _transition(self, 
+					pluginNames: str|list[str]|None, 
+					action: Callable[[PluginInfo], None],
+					tags: Optional[str|list[str]] = None,
+					reverse: bool = False) -> None:
+		""" Transition the state of a plugin. This will happen in the order of the plugin priority, 
+			but can be reversed if necessary (e.g. for stopping plugins, which should happen in reverse order of starting).
 
-	def _action(self, 
-				pluginNames: str|list[str]|None, 
-				action: Callable[[PluginInfo], None],
-				tags: Optional[str|list[str]] = None,
-				reverse: bool = False) -> None:
-		""" Transition the state of a plugin.
+			Plugins can be filtered by name, pattern and/or tags. If no filters are provided, the action will be applied to all plugins.
 
 			Args:
 				pluginName: The name of the plugin to transition. If None, all plugins are transitioned. If a string is provided, it is treated as a pattern to match plugin names.
@@ -394,7 +477,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.start(), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.start(), tags=tags)
 
 
 	def stopPlugins(self, pluginNames: Optional[str|list[str]]=None, tags: Optional[str|list[str]] = None) -> None:
@@ -407,7 +490,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.stop(), tags=tags, reverse=True)
+		self._transition(pluginNames, lambda plugin: plugin.stop(), tags=tags, reverse=True)
 
 	def restartPlugins(self, pluginNames: Optional[str|list[str]] =None, tags: Optional[str|list[str]] = None) -> None:
 		""" Restart the specified plugins.
@@ -419,7 +502,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.restart(), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.restart(), tags=tags)
 
 
 	def pausePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None) -> None:
@@ -432,10 +515,9 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.pause(), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.pause(), tags=tags)
 
 
-	
 	def unpausePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None) -> None:
 		""" Unpause the specified plugins. Plugins are unpaused in reverse order of their priority.
 
@@ -446,7 +528,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.unpause(), tags=tags, reverse=True)
+		self._transition(pluginNames, lambda plugin: plugin.unpause(), tags=tags, reverse=True)
 
 
 	def configurePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None, *args: Any, **kwargs: Any) -> None:
@@ -461,7 +543,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.configure(*args, **kwargs), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.configure(*args, **kwargs), tags=tags)
 
 
 	def validatePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None, *args: Any, **kwargs: Any) -> None:
@@ -476,8 +558,78 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._action(pluginNames, lambda plugin: plugin.validate(*args, **kwargs), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.validate(*args, **kwargs), tags=tags)
 	
+
+	def resolvePlugins(self) -> None:
+		""" Resolve the dependencies of all plugins and other classes.
+			This is called before starting the plugins to ensure that all dependencies are resolved 
+			and the plugin instances have all the required attributes injected.
+
+			Raises:
+				DependencyError: If a required dependency cannot be resolved.
+		"""
+		for cls, deps in dependencies.items():
+			# Resolve all dependency for all registered dependents.
+			# This includes plugins and other clases that have dependencies injected via the @requires decorator. 
+			for dep in deps:
+				if dep.pluginName in self.plugins and self.plugins[dep.pluginName].instance:
+					setattr(cls, dep.attributeName, self.plugins[dep.pluginName].instance)
+					deps[deps.index(dep)] = Dependency(dep.attributeName, dep.pluginName, dep.required, True)
+				elif dep.required:
+					raise DependencyError(f'Class "{cls}" requires the plugin "{dep.pluginName}" which could not be resolved. Is it disabled?')
+				# Otherwise, the dependency is not resolved, but it is not required, so we can ignore it for now. 
+
+		# Set all plugins (not other classes) to "resolved" state even if they have no dependencies.
+		for plugin in self.plugins.values():
+			plugin.resolve()
+		
+		# Do we have any fullfilled classes (not plugins)? If so, we should call the fulfilled callbacks on them.
+		for cls, (moduleName, resolved) in dependentClasses.items():
+			if moduleName not in self.plugins and not resolved:
+				# find the callback method in the class. Not ideal, but we have to do it this way because the class
+				# itself does not have any tag to identify the callback method, so we have to look for it here.
+				for _, method in inspect.getmembers(cls):
+					if getattr(method, _tagType, None) == 'on_resolved':
+						resolvedCallback = method
+						break
+				else:
+					continue
+				resolvedCallback(cls, copy.deepcopy(dependencies.get(cls, [])))
+				dependentClasses[cls] = (moduleName, True)	# Mark as resolved	
+		
+
+	def unresolvePlugins(self) -> None:
+		""" Unresolve the plugins. This is called when plugins are unloaded to clean up the injected dependencies 
+			and set the plugin instances to None.
+		"""
+
+		for cls, deps in dependencies.items():
+			# Unresolve all dependency for all registered dependents. This means
+			# to set all attributes that were injected to None and set the resolved flag to False. 
+			for dep in deps:
+				if dep.pluginName in self.plugins and dep.resolved and hasattr(cls, dep.attributeName):
+					setattr(cls, dep.attributeName, None)
+					deps[deps.index(dep)] = Dependency(dep.attributeName, dep.pluginName, dep.required, False)
+
+		# Set all plugins (not other classes) to "unresolved" state even if they have no dependencies.
+		for plugin in self.plugins.values():
+			plugin.unresolve()
+		
+		# Do we have any fullfilled classes (not plugins)? If so, we should call the fulfilled callbacks on them.
+		for cls, (moduleName, resolved) in dependentClasses.items():
+			if moduleName not in self.plugins:
+				# find the callback method in the class. Not ideal, but we have to do it this way because the class
+				# itself does not have any tag to identify the callback method, so we have to look for it here.
+				for _, method in inspect.getmembers(cls):
+					if getattr(method, _tagType, None) == 'on_unresolved':
+						resolvedCallback = method
+						break
+				else:
+					continue
+				resolvedCallback(cls, copy.deepcopy(dependencies.get(cls, [])))
+				dependentClasses[cls] = (moduleName, False)	# Mark as resolved	
+
 
 	def __getattr__(self, name:str) -> Any:
 		""" Get the instance or plugin by name.
@@ -491,7 +643,6 @@ class PluginManager(metaclass=Singleton.Singleton):
 			return self._pluginInstances[name]
 		if name in self.plugins:
 			return self.plugins[name]
-		#raise AttributeError(f"'PluginManager' object has no attribute '{name}'")
 		return None
 	
 
@@ -503,8 +654,6 @@ class PluginManager(metaclass=Singleton.Singleton):
 			return
 		elif name in self.plugins:
 			self.unloadPlugins(name)
-		# elif hasattr(self, name):
-		# 	super().__delattr__(name)
 		else:
 			raise AttributeError(f'"PluginManager" object has no attribute "{name}"')
 		
@@ -518,6 +667,28 @@ class PluginManager(metaclass=Singleton.Singleton):
 				True if a plugin instance with the given name exists, False otherwise.
 		"""
 		return hasattr(self, instanceName)
+	
+
+	def dependencyGraph(self, name: Optional[str] = None) -> dict[str, list[Dependency]]:
+		""" Get the dependency graph of the plugins and other classes.
+
+			Args:
+				name: Optional name of the plugin to get the dependency graph for. If None, returns the entire graph.
+			Returns:
+				The dependency graph as a dictionary where the keys are the class names and the values are lists of dependencies (module name, optional instance name).
+		"""
+		graph: dict[str, list[Dependency]] = {}
+		for cls, deps in dependencies.items():
+			for pluginName, plugin in self.plugins.items():
+				if plugin.pluginClass == cls:
+					graph[pluginName] = copy.deepcopy(deps)
+					break
+			else:
+				graph[cls.__module__] = copy.deepcopy(deps)
+		if name:
+			return {name: graph[name] if name in graph else []}
+		return graph
+
 
 #
 #	Decorators for plugin methods and classes
@@ -585,10 +756,20 @@ def validate(func: Callable) -> Callable: # type: ignore
 	return _wrap(func, 'validate')
 
 
-def pluginClass(property: str|ClassVar = None,						 # type: ignore
-				priority: int = 50, 
-				tags: list[str] = [], 
-				noRestartWhilePaused: bool = False) -> ClassVar: # type: ignore
+def on_resolved(func: Callable) -> Callable:
+	""" Decorator to mark a method as a callback to be called when the plugin or class becomes resolved. """
+	return _wrap(func, 'on_resolved')
+
+
+def on_unresolved(func: Callable) -> Callable:
+	""" Decorator to mark a method as a callback to be called when the plugin or class becomes unresolved. """
+	return _wrap(func, 'on_unresolved')
+
+
+def plugin(property: str|ClassVar = None,						 # type: ignore
+		   priority: int = 50, 
+		   tags: list[str] = [], 
+		   noRestartWhilePaused: bool = False) -> ClassVar: # type: ignore
 	""" Decorator to mark plugin classes in plugins.
 
 		Args:
@@ -601,9 +782,22 @@ def pluginClass(property: str|ClassVar = None,						 # type: ignore
 			The class with the plugin class tag set.
 	"""
 
+	# Check types of the parameters
+	if not isinstance(property, (str, type, type(None))):
+		raise ValueError(f'Invalid value for "property" parameter in "plugin" decorator. Expected a string or a class, got {type(property)}')
+	if not isinstance(priority, int):
+		raise ValueError(f'Invalid value for "priority" parameter in "plugin" decorator. Expected an integer, got {type(priority)}')
+	if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
+		raise ValueError(f'Invalid value for "tags" parameter in "plugin" decorator. Expected a list of strings, got {type(tags)} with elements of types {[type(tag) for tag in tags]}')
+	if not isinstance(noRestartWhilePaused, bool):
+		raise ValueError(f'Invalid value for "noRestartWhilePaused" parameter in "plugin" decorator. Expected a boolean, got {type(noRestartWhilePaused)}')
+
 	# if property is a class, set the tagType in the class and return it immediately.
 	if inspect.isclass(property):
 		setattr(property, _tagType, 'pluginClass')
+		setattr(property, _tagInstanceTags, tags)
+		setattr(property, _tagNoRestartWhilePaused, noRestartWhilePaused)
+		setattr(property, _tagInstancePriority, priority)
 		return property
 
 	# else treat name as extra parameter for an instance name
@@ -616,13 +810,71 @@ def pluginClass(property: str|ClassVar = None,						 # type: ignore
 			Returns:
 				The class with the plugin class tag set.
 		"""
+			
 		setattr(cls, _tagType, 'pluginClass')
 		if property: # If name is given, set it as instance name
 			setattr(cls, _tagInstanceName, property)
-		setattr(cls, _tagInstancePriority, priority)
 		setattr(cls, _tagInstanceTags, tags)
 		setattr(cls, _tagNoRestartWhilePaused, noRestartWhilePaused)
+		setattr(cls, _tagInstancePriority, priority)
 		return cls
 	
 	return decorator
+
+
+def requires(*args:Any, **kwargs:Any) -> Callable:
+	""" Class decorator to mark plugin and other classes with dependencies. 
+
+		Args:
+			*args: Positional arguments to pass to the plugin decorator.
+			**kwargs: Keyword arguments to pass to the plugin decorator.
+		Returns:
+			The class.
+	"""
+		
+	def decorator(cls: type) -> type:
+		""" Decorator to get the dependencies of plugin classes and other classes.
+			The dependencies are stores and injected later.
+
+			Args:
+				cls: The class to mark with dependencies.
+			Returns:
+				The class.
+			Raises:
+				ValueError: If the required flag is not a boolean, or if the keys or values
+		"""
+
+		# Get dependencies
+		isRequired = kwargs.get('required', True)
+		if not isinstance(isRequired, bool):
+			raise ValueError(f'Invalid value for "required" flag in "requires" decorator. Expected a boolean.')
+
+		# Add to depdencies dictionary and tag it
+		# These classes may be plugins, but they can also be other classes that want
+		# to have dependencies injected.
+		if cls not in dependentClasses:
+			dependentClasses[cls] = (cls.__module__, False)
+			if not hasattr(cls, _tagType): # Don't override. But may be overridden later when analyzing plugins, but this is intentional
+				setattr(cls, _tagType, 'dependentClass')
+
+		for attributeName, pluginName in kwargs.items():
+			if attributeName == 'required':
+				continue
+			if not isinstance(attributeName, str):
+				raise ValueError(f'Invalid key for "requires" decorator. Expected a string, got {type(attributeName)}')
+			if not isinstance(pluginName, str):
+				raise ValueError(f'Invalid value for "requires" decorator "{attributeName}". Expected a string, got {type(pluginName)}')
+
+			# Add the dependency to the dependencies dictionary for that class
+			if cls not in dependencies:
+				dependencies[cls] = []
+			dependencies[cls].append(Dependency(attributeName=attributeName, 
+												pluginName=pluginName, 
+												required=isRequired, 
+												resolved=False))
+
+		return cls
+	return decorator
+
+
 

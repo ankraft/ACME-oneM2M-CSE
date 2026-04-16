@@ -9,19 +9,24 @@
 from __future__ import annotations
 
 from typing import Optional
-from ....runtime import CSE
 from ....runtime.Logging import Logging as L
 from ....etc.Constants import Constants
 from ....etc.Constants import RuntimeConstants as RC
-from ....helpers.PluginManager import pluginClass, start, configure, validate
+from ....helpers.PluginManager import plugin, start, configure, validate, requires
 from ....runtime.Configuration import Configuration
 from ....webui.webUI import WebUI
 
 
-@pluginClass
+@plugin
+@requires(httpServer='acme.plugins.bindings.HttpServer')
 class HttpWebUI:
 	"""	Plugin class to add the Web UI functionality to the HTTP server.
 	"""
+
+	# "httpServer" is injected by the PluginManager, only if the HttpServer plugin is loaded and the dependency can be resolved.
+	httpServer: Any = None	# type: ignore
+	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
+
 
 	webuiDirectory:Optional[str] = None
 	""" The directory where the web UI is located. """
@@ -35,7 +40,7 @@ class HttpWebUI:
 		L.isDebug and L.logDebug('Starting Web UI plugin')
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
-		self.webui = WebUI(CSE.httpServer.flaskApp, 
+		self.webui = WebUI(self.httpServer.flaskApp, 
 						   defaultRI=RC.cseRi, 
 						   defaultOriginator=RC.cseOriginator, 
 						   root=Configuration.webui_root,

@@ -36,7 +36,7 @@ from ..services.GroupManager import GroupManager
 from ..runtime.Importer import Importer
 from ..services.LocationManager import LocationManager
 from ..services.NotificationManager import NotificationManager
-from ..runtime.PluginManager import PluginManager
+from ..runtime.PluginManager import PluginManager, DependencyError
 from ..runtime.ConsoleBase import ConsoleBase
 from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
@@ -48,7 +48,7 @@ from ..runtime.TextUI import TextUI
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
-from ..protocols.HttpServer import HttpServer
+# from ..protocols.HttpServer import HttpServer
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
 
@@ -75,7 +75,7 @@ event:EventManager = None
 groupResource:GroupManager = None
 """	Runtime instance of the `GroupManager`. """
 
-httpServer:HttpServer = None
+# httpServer:HttpServer = None
 """	Runtime instance of the `HttpServer`. """
 
 importer:Importer = None
@@ -140,7 +140,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, dispatcher, event, groupResource, httpServer, importer, location
+	global action, announce, dispatcher, event, groupResource, importer, location
 	global notification, pluginManager, registration, remote, request, script, security, semantic
 	global storage, textUI, time, timeSeries, validator
 
@@ -193,7 +193,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		dispatcher = Dispatcher()				# Initialize the resource dispatcher
 		request = RequestManager()				# Initialize the request manager
 		
-		httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
+		# httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
 
 		# Initialize the plugin manager
 		# This loads, configures and runs the plugins as well
@@ -224,15 +224,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			RC.cseStatus = CSEStatus.STOPPED
 			return False
 		
-
-
-		# Start the HTTP server
-		if not httpServer.run(): 						# This does return (!)
-			L.logErr('Terminating', showStackTrace = False)
-			RC.cseStatus = CSEStatus.STOPPED
-			return False 					
-
-	
 	except ResponseException as e:
 		L.logErr(f'Error during startup: {e.dbg}')
 		RC.cseStatus = CSEStatus.STOPPED
@@ -241,7 +232,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		L.logErr(f'Error during startup: {e}')
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
-
+	except (DependencyError, ValueError) as e:
+		RC.cseStatus = CSEStatus.STOPPED
+		return False
 	except Exception as e:
 		L.logErr(f'Error during startup: {e}', exc=e)
 		RC.cseStatus = CSEStatus.STOPPED
@@ -316,7 +309,7 @@ def _shutdown() -> None:
 	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
-	httpServer and httpServer.shutdown()
+	# httpServer and httpServer.shutdown()
 	script and script.shutdown()
 	announce and announce.shutdown()
 	timeSeries and timeSeries.shutdown()
@@ -378,11 +371,8 @@ def resetCSE() -> None:
 		L.setLogLevel(cast(LogLevel, Configuration.logging_level))
 		L.queueOff()	# Disable log queuing for restart
 		
-		httpServer.pause()
-
 		# Pause all binding plugins to stop receiving requests during reset.
 		pluginManager.pausePlugins(tags='binding')	
-
 
 
 		storage.purge()
@@ -402,7 +392,6 @@ def resetCSE() -> None:
 
 		# Unpause all binding plugins to start receiving requests again after reset.
 		pluginManager.unpausePlugins(tags='binding')	
-		httpServer.unpause()
 
 		# Enable log queuing again
 		L.queueOn()

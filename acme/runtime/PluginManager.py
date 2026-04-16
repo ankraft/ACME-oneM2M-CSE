@@ -8,10 +8,10 @@
 """	Plugin manager to manage plugins. """
 
 from __future__ import annotations
+import sys
 from typing import Callable
-from ..helpers.PluginManager import PluginManager as PM
+from ..helpers.PluginManager import PluginManager as PM, PluginState, DependencyError
 from ..runtime.Configuration import Configuration
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..helpers.TextTools import simpleMatch
 
@@ -20,6 +20,7 @@ class PluginManager(PM):
 
 	_pluginChecks:dict[str, Callable] = {
 		'acme.plugins.bindings.CoAPServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),
+		'acme.plugins.bindings.HttpServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enable', False),
 		'acme.plugins.bindings.MQTTClient':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('mqtt_enable', False),
 		'acme.plugins.bindings.WebSocketServer':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('websocket_enable', False),
 		'acme.plugins.bindings.http.HttpManagement':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableManagementEndpoint', False),
@@ -35,9 +36,6 @@ class PluginManager(PM):
 	def __init__(self) -> None:
 		"""	Runtime instance of the `PluginManager`. """
 		super().__init__()
-
-		# Add handler for restart event
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 
 		L.isDebug and L.logDebug('Initializing PluginManager')
 
@@ -80,8 +78,9 @@ class PluginManager(PM):
 			except NotADirectoryError:
 				# Ignore if the directory does not exist
 				L.isDebug and L.logDebug(f'Plugin directory not found: {directory}')
-				pass
-
+			except ValueError as e:
+				L.logErr(f'Error loading plugin : "{sys.exc_info()[2].tb_frame.f_code.co_filename}": {e}')
+				raise
 
 		# Load system plugins
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/runtime', 'acme.plugins.runtime')
@@ -100,10 +99,23 @@ class PluginManager(PM):
 		self.validatePlugins(None, None, Configuration)
 		L.isInfo and L.log('Plugins configured and started')
 
+
 	def start(self) -> None:
 		"""	Start the PluginManager service. This is called when the CSE is started. """
-		self.startPlugins()
+
+		L.isDebug and L.logDebug('Resolving and starting plugins')
+		try:
+			self.resolvePlugins() # Resolve dependencies before starting the plugins. 
+			self.startPlugins()
+		except DependencyError as e:
+			L.logErr(f'Failed to resolve plugin dependencies: {e}')
+			L.logErr('A plugin cannot be started due to unresolved dependencies. Please check the configuration and the enabled plugins.')
+			raise
+
+		if (ps := [plugin.name for plugin in self.plugins.values() if plugin.state != PluginState.RUNNING]):
+			L.logWarn(f'Not all plugins could be started: {", ".join(ps)}')
 		L.isInfo and L.log('PluginManager started')
+
 
 	def restart(self, _: str) -> None:
 		"""	Restart the PluginManager service.
@@ -117,6 +129,8 @@ class PluginManager(PM):
 		"""
 		# Shutdown plugins
 		L.isInfo and L.log('Shutting down and unloading plugins')
+		self.stopPlugins()
+		self.unresolvePlugins()	# Unresolve plugins after stopping them to clean up injected dependencies and set plugin instances to None
 		self.unloadPlugins()	# This implicitly stops the plugins as well
 		L.isInfo and L.log('Plugins stopped and unloaded')
 		return True

@@ -34,7 +34,7 @@ import plotext
 
 from ...runtime import CSE
 
-from ...helpers.PluginManager import pluginClass, init, restart
+from ...helpers.PluginManager import plugin, init, restart
 from ...helpers.KeyHandler import FunctionKey, loop, waitForKeypress, Commands
 from ...helpers.interpreter.PContext import PContext
 from ...helpers.interpreter.Types import PError
@@ -54,7 +54,7 @@ from ...runtime.Logging import Logging as L
 ##############################################################################
 
 
-@pluginClass
+@plugin
 class Console(ConsoleBase):
 	"""	Console Manager class.
 	
