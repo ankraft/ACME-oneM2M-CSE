@@ -878,7 +878,7 @@ class 	ACMECoAPServer(CoAP):
 			_closeClient()
 
 
-@plugin(property='coapServer', tags=['binding'])
+@plugin(property='coapServer', tags=['binding', 'core'], noRestartWhilePaused=True)
 class CoAPServer():
 	"""	CoAPServer Server implementation.
 	"""

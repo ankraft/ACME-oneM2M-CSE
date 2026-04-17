@@ -57,7 +57,7 @@ FlaskHandler = 	Callable[[str], Response]
 #	HTTP Server
 #
 
-@plugin(property='httpServer', tags=['binding'], priority=20)
+@plugin(property='httpServer', tags=['binding', 'core'], priority=20, noRestartWhilePaused=True)
 class HttpServer(object):
 	""" The HTTP server for the CSE.
 	"""
