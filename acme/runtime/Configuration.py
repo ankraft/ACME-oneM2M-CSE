@@ -567,6 +567,9 @@ class Configuration(object):
 	"""	Enable or disable text editor syntax highlighting for the text UI. """
 
 
+	webui_enable:bool = None
+	"""	Enable or disable the web UI. """
+	
 	webui_root:str
 	"""	The root path for the web UI. """
 
