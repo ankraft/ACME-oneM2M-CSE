@@ -182,6 +182,7 @@ def getCSEStatusAsDict() -> JSON:
 			status = {
 				'resources': {},
 				'logging': {},
+				'operations': {},
 			}
 			# For example if statistics plugin is not loaded 
 			# return None

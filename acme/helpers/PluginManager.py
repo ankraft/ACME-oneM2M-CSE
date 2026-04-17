@@ -372,12 +372,14 @@ class PluginManager(metaclass=Singleton.Singleton):
 		# Sorted by priority
 		for plugin in sorted(newPlugins.values(), key=lambda p: p.priority):
 
+			# Instantiate plugin class
+			plugin.instance = plugin.pluginClass()
+
 			# Add plugin as attribute of the plugin manager
 			if plugin.instanceAttributeName:
 				self._pluginInstances[plugin.instanceAttributeName] = plugin.instance
 
-			# Instantiate plugin class
-			plugin.instance = plugin.pluginClass()
+			# Call init method if it exists
 			if plugin.initMethod:
 				plugin.initMethod(plugin.instance, *args, **kwargs)
 
