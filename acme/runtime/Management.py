@@ -150,12 +150,12 @@ def getPlugins() -> str:
 						 						'attribute': d.attributeName, 
 												'required': d.required, 
 												'resolved': d.resolved } 
-											  for d in dg.get(p.name, [])],
-							'required-by': [{	'module': k, 
-											  'attribute': d.attributeName, 
-											  'required': d.required, 
-											  'resolved': d.resolved } 
-											  for k, deps in dg.items() 
+												 for d in dg.get(p.name, [])],
+							'requiredBy': [{'module': k, 
+											'attribute': d.attributeName, 
+											'required': d.required, 
+											'resolved': d.resolved } 
+											for k, deps in dg.items() 
 											  	for d in deps if d.pluginName == p.name],
 							'priority': p.priority,
 							'tags': p.tags,
@@ -182,6 +182,7 @@ def getCSEStatusAsDict() -> JSON:
 			status = {
 				'resources': {},
 				'logging': {},
+				'operations': {},
 			}
 			# For example if statistics plugin is not loaded 
 			# return None
@@ -259,7 +260,15 @@ def getCSEStatusAsDict() -> JSON:
 							'runs': w.numberOfRuns if w.interval > 0.0 else None,
 						}
 						for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()) 
-			]
+			],
+			'uis': {
+				'headless': Configuration.console_headless,
+				'console': Configuration.console_type,
+				#'textUI': Configuration.textUI_enable,
+				'webUI': Configuration.webui_enable if Configuration.webui_enable else False,	# webui_enable could be None
+			},
+			'numberOfPlugins': len(CSE.pluginManager.plugins),
+			'numberOfPythonModules': len(sys.modules),
 		}
 		status['logging'].update({
 				'level': L.logLevel.name,

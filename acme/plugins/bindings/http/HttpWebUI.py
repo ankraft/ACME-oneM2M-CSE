@@ -55,6 +55,7 @@ class HttpWebUI:
 	def configure(self, config: Configuration) -> None:
 		parser = config.configParser
 		config.webui_root = parser.get('webui', 'root', fallback='/webui')
+		config.webui_enable = parser.getboolean('webui', 'enable', fallback=True)
 
 
 	@validate
