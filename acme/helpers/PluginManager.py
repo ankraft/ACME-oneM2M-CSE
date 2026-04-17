@@ -432,6 +432,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 					pluginNames: str|list[str]|None, 
 					action: Callable[[PluginInfo], None],
 					tags: Optional[str|list[str]] = None,
+					exceptTags: Optional[str|list[str]] = None,
 					reverse: bool = False) -> None:
 		""" Transition the state of a plugin. This will happen in the order of the plugin priority, 
 			but can be reversed if necessary (e.g. for stopping plugins, which should happen in reverse order of starting).
@@ -441,6 +442,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Args:
 				pluginName: The name of the plugin to transition. If None, all plugins are transitioned. If a string is provided, it is treated as a pattern to match plugin names.
 				tags: The tags to match for the plugins to transition. If None, all plugins are transitioned.
+				exceptTags: The tags to exclude from the plugins to transition. If None, no plugins are excluded.
 				action: The action to perform during the state transition.
 				reverse: Whether to process the plugins in reverse order.
 		"""
@@ -459,6 +461,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 		
 		for name in sorted(pluginNames, key=lambda name: self.plugins[name].priority, reverse=reverse):
 			plugin = self.plugins[name]
+
 			if tags:
 				if not plugin.tags:	# Plugin must have tags to match, if it has no tags, it does not match
 					continue
@@ -466,101 +469,134 @@ class PluginManager(metaclass=Singleton.Singleton):
 				if not any(tag in self.plugins[name].tags for tag in tags):
 					continue
 				# fall through if tags match
+
+			if exceptTags:
+				if not plugin.tags:	# Plugin must have tags to match, if it has no tags, it does not match, so it does not get excluded
+					pass
+				# Check if the plugin has any of the specified exceptTags, if it does, skip it
+				elif any(tag in self.plugins[name].tags for tag in exceptTags):
+					continue
+				# fall through if exceptTags do not match
+
 			action(plugin)
 			
 
-	def startPlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None) -> None:
+	def startPlugins(self, pluginNames: Optional[str|list[str]] = None, 
+				  		   tags: Optional[str|list[str]] = None,
+						   exceptTags: Optional[str|list[str]] = None) -> None:
 		""" Start the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to start. Start all if None.
 				tags: The tags of the plugins to match. Match all if None.
+				exceptTags: The tags of the plugins to exclude. Exclude none if None.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._transition(pluginNames, lambda plugin: plugin.start(), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.start(), tags=tags, exceptTags=exceptTags)
 
 
-	def stopPlugins(self, pluginNames: Optional[str|list[str]]=None, tags: Optional[str|list[str]] = None) -> None:
+	def stopPlugins(self, pluginNames: Optional[str|list[str]] = None, 
+				 		  tags: Optional[str|list[str]] = None,
+						  exceptTags: Optional[str|list[str]] = None) -> None:
 		""" Shutdown the specified plugins. Plugins are stopped in reverse order of their priority.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to shutdown. Shutdown all if None.
 				tags: The tags of the plugins to match. Match all if None.
+				exceptTags: The tags of the plugins to exclude. Exclude none if None.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._transition(pluginNames, lambda plugin: plugin.stop(), tags=tags, reverse=True)
+		self._transition(pluginNames, lambda plugin: plugin.stop(), tags=tags, exceptTags=exceptTags, reverse=True)
 
-	def restartPlugins(self, pluginNames: Optional[str|list[str]] =None, tags: Optional[str|list[str]] = None) -> None:
+
+	def restartPlugins(self, pluginNames: Optional[str|list[str]] = None, 
+							 tags: Optional[str|list[str]] = None,
+							 exceptTags: Optional[str|list[str]] = None) -> None:
 		""" Restart the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to restart. Restart all if None.
 				tags: The tags of the plugins to match. Match all if None.
+				exceptTags: The tags of the plugins to exclude. Exclude none if None.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._transition(pluginNames, lambda plugin: plugin.restart(), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.restart(), tags=tags, exceptTags=exceptTags)
 
 
-	def pausePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None) -> None:
+	def pausePlugins(self, pluginNames: Optional[str|list[str]] = None, 
+				  		   tags: Optional[str|list[str]] = None,
+						   exceptTags: Optional[str|list[str]] = None) -> None:
 		""" Pause the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to pause. Pause all if None.
 				tags: The tags of the plugins to match. Match all if None. 
+				exceptTags: The tags of the plugins to exclude. Exclude none if None.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._transition(pluginNames, lambda plugin: plugin.pause(), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.pause(), tags=tags, exceptTags=exceptTags)
 
 
-	def unpausePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None) -> None:
+	def unpausePlugins(self, pluginNames: Optional[str|list[str]] = None, 
+							 tags: Optional[str|list[str]] = None, 
+							 exceptTags: Optional[str|list[str]] = None) -> None:
 		""" Unpause the specified plugins. Plugins are unpaused in reverse order of their priority.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to unpause. Unpause all if None.
 				tags: The tags of the plugins to match. Match all if None.
+				exceptTags: The tags of the plugins to exclude. Exclude none if None.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._transition(pluginNames, lambda plugin: plugin.unpause(), tags=tags, reverse=True)
+		self._transition(pluginNames, lambda plugin: plugin.unpause(), tags=tags, exceptTags=exceptTags, reverse=True)
 
 
-	def configurePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None, *args: Any, **kwargs: Any) -> None:
+	def configurePlugins(self, pluginNames: Optional[str|list[str]] = None, 
+					  		   tags: Optional[str|list[str]] = None, 
+							   exceptTags: Optional[str|list[str]] = None,
+							   *args: Any, **kwargs: Any) -> None:
 		""" Configure the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to configure. Configure all if None.
 				tags: The tags of the plugins to match. Match all if None.
+				exceptTags: The tags of the plugins to exclude. Exclude none if None.
 				*args: Positional arguments to pass to the configure method.
 				**kwargs: Keyword arguments to pass to the configure method.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._transition(pluginNames, lambda plugin: plugin.configure(*args, **kwargs), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.configure(*args, **kwargs), tags=tags, exceptTags=exceptTags)
 
 
-	def validatePlugins(self, pluginNames: Optional[str|list[str]] = None, tags: Optional[str|list[str]] = None, *args: Any, **kwargs: Any) -> None:
+	def validatePlugins(self, pluginNames: Optional[str|list[str]] = None, 
+					 		  tags: Optional[str|list[str]] = None, 
+							  exceptTags: Optional[str|list[str]] = None, 
+							  *args: Any, **kwargs: Any) -> None:
 		""" Validate the specified plugins.
 
 			Args:
 				pluginNames: The name(s) of the plugin(s) to validate.
 				tags: The tags of the plugins to match. Match all if None.
+				exceptTags: The tags of the plugins to exclude. Exclude none if None.
 				*args: Positional arguments to pass to the validate method.
 				**kwargs: Keyword arguments to pass to the validate method.
 
 			Raises:
 				KeyError: If a specified plugin is not found.
 		"""
-		self._transition(pluginNames, lambda plugin: plugin.validate(*args, **kwargs), tags=tags)
+		self._transition(pluginNames, lambda plugin: plugin.validate(*args, **kwargs), tags=tags, exceptTags=exceptTags)
 	
 
 	def resolvePlugins(self) -> None:
