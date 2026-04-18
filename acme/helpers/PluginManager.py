@@ -242,6 +242,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 	"""
 
 	plugins: dict[str, PluginInfo] = {}
+	unloadedPlugins: list[str] = []
 	_pluginInstances: dict[str, Any] = {}
 
 
@@ -295,7 +296,13 @@ class PluginManager(metaclass=Singleton.Singleton):
 					
 					# check disabled plugins
 					if pluginFilter and not pluginFilter(pluginName):
+						self.unloadedPlugins.append(pluginName)
 						continue
+					
+					# If the plugin was previously unloaded or filtered out, remove 
+					# it from the unloaded plugins list, since it is now being loaded. 
+					if pluginName in self.unloadedPlugins:
+						del self.unloadedPlugins[self.unloadedPlugins.index(pluginName)]
 
 					# Load the module into the interpreter
 					spec.loader.exec_module(module)

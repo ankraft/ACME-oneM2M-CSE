@@ -141,31 +141,33 @@ def getPlugins() -> str:
 			The loaded plugins of the CSE in JSON format.
 	"""
 	dg = CSE.pluginManager.dependencyGraph()
-	return json.dumps([ {
-							'name': p.name,
-							'instanceClass': p.instance.__class__.__name__,
-							'instanceName': p.instanceAttributeName,
-							'filename': p.fileName,
-							'dependencies': [{	'module': d.pluginName, 
-						 						'attribute': d.attributeName, 
-												'required': d.required, 
-												'resolved': d.resolved } 
-												 for d in dg.get(p.name, [])],
-							'requiredBy': [{'module': k, 
-											'attribute': d.attributeName, 
-											'required': d.required, 
-											'resolved': d.resolved } 
-											for k, deps in dg.items() 
-											  	for d in deps if d.pluginName == p.name],
-							'priority': p.priority,
-							'tags': p.tags,
-							'noRestartWhilePaused': p.noRestartWhilePaused,
-							'state': p.state.name,
-							'doc': p.doc,
-						}
-						for p in CSE.pluginManager.plugins.values()
-					  ],
-					  indent=4)
+	return json.dumps(
+		{ 	'unloadedPlugins': CSE.pluginManager.unloadedPlugins,
+			'loadedPlugins': [ {
+				'name': p.name,
+				'instanceClass': p.instance.__class__.__name__,
+				'instanceName': p.instanceAttributeName,
+				'filename': p.fileName,
+				'dependencies': [{	'module': d.pluginName, 
+									'attribute': d.attributeName, 
+									'required': d.required, 
+									'resolved': d.resolved } 
+										for d in dg.get(p.name, [])],
+				'requiredBy': [{'module': k, 
+								'attribute': d.attributeName, 
+								'required': d.required, 
+								'resolved': d.resolved } 
+								for k, deps in dg.items() 
+									for d in deps if d.pluginName == p.name],
+				'priority': p.priority,
+				'tags': p.tags,
+				'noRestartWhilePaused': p.noRestartWhilePaused,
+				'state': p.state.name,
+				'doc': p.doc,
+			}
+			for p in CSE.pluginManager.plugins.values()
+			],
+		}, indent=4)
 
 
 def getCSEStatusAsDict() -> JSON:
