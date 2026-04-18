@@ -17,7 +17,7 @@ from ....runtime.Configuration import Configuration
 from ....runtime import Management as Mgmt
 
 
-@plugin
+@plugin(tags=['core'])
 @requires(httpServer='acme.plugins.bindings.HttpServer') 
 class HttpManagement:
 	"""	Plugin class to add the Management functionality to the HTTP server.

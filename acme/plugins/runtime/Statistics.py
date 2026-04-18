@@ -129,7 +129,7 @@ resourceCount = 'ctRes'
 StatsT = Dict[str, Union[str, int, float]]
 """ Type for statistics records. """
 
-@plugin(property='statistics')
+@plugin(property='statistics', tags=['core'])
 class Statistics(object):
 	"""	Statistics class. Handles all internal statistics.
 

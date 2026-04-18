@@ -54,7 +54,7 @@ from ...runtime.Logging import Logging as L
 ##############################################################################
 
 
-@plugin
+@plugin(tags=['core'])
 class Console(ConsoleBase):
 	"""	Console Manager class.
 	
