@@ -30,6 +30,7 @@ class PluginManager(PM):
 		'acme.plugins.runtime.Console':					lambda : Configuration.console_type == 'rich',
 		'acme.plugins.runtime.MinimalConsole':			lambda : Configuration.console_type == 'simple',
 		'acme.plugins.runtime.Statistics':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('statistics_enable', False),
+		'acme.plugins.runtime.TextUI':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('textui_enable', False),	
 	}
 	"""	Dictionary of plugin checks. The keys are the plugin names, the values are callables that take the plugin name as an argument and return a boolean indicating whether the plugin should be loaded. This is used to determine which plugins to load based on the configuration. """
 
@@ -95,8 +96,8 @@ class PluginManager(PM):
 		L.isInfo and L.log(f'Loaded plugins: {", ".join(self.plugins.keys())}')
 
 		# Configure, validate and start plugins
-		self.configurePlugins(None, None, Configuration)
-		self.validatePlugins(None, None, Configuration)
+		self.configurePlugins(None, None, None, Configuration)
+		self.validatePlugins(None, None, None, Configuration)
 		L.isInfo and L.log('Plugins configured and started')
 
 

@@ -36,7 +36,6 @@ from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..etc.Types import ResourceTypes
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..etc.Utils import openFileWithDefaultApplication
 
 tabResources = 'tab-resources'
 """ The ID of the resource tab. """
@@ -78,7 +77,7 @@ class ACMETuiQuitReason(IntEnum):
 class ACMETuiApp(App):
 	"""A Textual app to manage the ACME text UI."""
 
-	from ..runtime import TextUI
+	# from ..plugins.runtime import TextUI
 
 	CSS_PATH = 'ACMETUI.tcss'
 	"""	The path to the app's CSS file. """

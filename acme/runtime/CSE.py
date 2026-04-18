@@ -44,11 +44,9 @@ from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..services.SemanticManager import SemanticManager
 from ..runtime.Storage import Storage
-from ..runtime.TextUI import TextUI
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
-# from ..protocols.HttpServer import HttpServer
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
 
@@ -111,9 +109,6 @@ semantic:SemanticManager = None
 storage:Storage = None
 """	Runtime instance of the `Storage`. """
 
-textUI:TextUI = None
-"""	Runtime instance of the `TextUI`. """
-
 time:TimeManager = None
 """	Runtime instance of the `TimeManager`. """
 
@@ -142,7 +137,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	"""
 	global action, announce, dispatcher, event, groupResource, importer, location
 	global notification, pluginManager, registration, remote, request, script, security, semantic
-	global storage, textUI, time, timeSeries, validator
+	global storage, time, timeSeries, validator
 
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
@@ -183,7 +178,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 										balanceReduceFactor=Configuration.cse_operation_jobs_balanceReduceFactor)
 
 	try:
-		textUI = TextUI()						# Start the textUI
 		storage = Storage()						# Initialize the resource storage
 
 		importer = Importer()					# Initialize the importer
@@ -304,12 +298,10 @@ def _shutdown() -> None:
 	# shutdown the services
 	pluginManager and pluginManager.shutdown()
 
-	textUI and textUI.shutdown()
 	time and time.shutdown()
 	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
-	# httpServer and httpServer.shutdown()
 	script and script.shutdown()
 	announce and announce.shutdown()
 	timeSeries and timeSeries.shutdown()
@@ -345,8 +337,9 @@ def forceShutdown() -> None:
 	_platform = platform.system()
 	L.isDebug and L.logDebug(f'Forcing CSE shutdown (Platform: {_platform})')
 
-	if textUI and textUI.tuiApp:	# Shutdown the TextUI first
-		textUI.shutdown()	
+	
+	if pluginManager.textUI and pluginManager.textUI.tuiApp:	# Shutdown the TextUI first
+		pluginManager.textUI.shutdown()	
 		import time as _time
 		_time.sleep(1)	 			# Give the TextUI a moment to shutdown
 
@@ -372,8 +365,9 @@ def resetCSE() -> None:
 		L.queueOff()	# Disable log queuing for restart
 		
 		# Pause all binding plugins to stop receiving requests during reset.
-		pluginManager.pausePlugins(tags='binding')	
-
+		pluginManager.pausePlugins(tags='binding')
+		# Restart all plugins, except core plugins. They are restarted via an event
+		pluginManager.restartPlugins(exceptTags='core')	
 
 		storage.purge()
 
@@ -384,7 +378,7 @@ def resetCSE() -> None:
 		# We only import policies, documentation and scripts during restart
 		# But we don't import the resource policies again.
 		if not importer.importPolicies() or not importer.importScripts():
-			textUI and textUI.shutdown()
+			pluginManager.textUI and pluginManager.textUI.shutdown()
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
 		remote.restart()

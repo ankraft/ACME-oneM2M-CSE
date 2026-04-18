@@ -1949,9 +1949,16 @@ The default value is `False`.
 
 # textui
 
-This section contains settings that control the CSE's terminal user interface.
+This section contains settings that control the CSE's terminal text user interface.
 
 Settings in this section are listed under the `[textui]` section.
+
+
+# textui.enable
+
+This setting enables or disables the CSE's text user interface.
+
+The default value is `True`.
 
 
 # textui.enableTextEditorSyntaxHighlighting

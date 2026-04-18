@@ -6,19 +6,23 @@
 #
 """	Base class for console plugins. """
 
-from typing import Optional
+from typing import Optional, Any
 import sys
 
 from ..helpers.KeyHandler import FunctionKey, stopLoop, waitForKeypress
+from ..helpers.PluginManager import requires
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
 
 
+@requires(textUI='acme.plugins.runtime.TextUI', required=False)
 class ConsoleBase:
 	"""	Base class for console plugins. 
 	"""
+
+	textUI: Any = None	# type: ignore
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the *Console* instance.
@@ -48,10 +52,13 @@ class ConsoleBase:
 			) -> None:
 		"""	Open the text UI.
 		"""
-		if not CSE.textUI.runUI():
-			# If the TUI was closed with an error or when shutting down, 
-			# stop the console loop and raise a KeyboardInterrupt to stop the CSE.
-			raise KeyboardInterrupt() 
+		if self.textUI:
+			if not self.textUI.runUI():
+				# If the TUI was closed with an error or when shutting down, 
+				# stop the console loop and raise a KeyboardInterrupt to stop the CSE.
+				raise KeyboardInterrupt() 
+		else:
+			L.console('Text UI not enabled', isError=True)
 
 
 	def shutdownCSE(self, key:str) -> None:

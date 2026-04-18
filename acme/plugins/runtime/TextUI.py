@@ -14,13 +14,14 @@ from __future__ import annotations
 from typing import Optional, Any, Literal
 import asyncio
 
-from ..runtime import CSE
-from ..runtime.Logging import Logging as L
-from ..resources.Resource import Resource
-from ..etc.Types import CSEStatus
-from ..etc.Constants import RuntimeConstants as RC
+from ...runtime import CSE
+from ...runtime.Logging import Logging as L
+from ...helpers.PluginManager import plugin, start, stop, restart, configure, validate
+from ...runtime.Configuration import Configuration, ConfigurationError
+from ...etc.Types import CSEStatus
+from ...etc.Constants import RuntimeConstants as RC
 
-from ..textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
+from ...textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 
 
 # TODO Delete resource? After better dialog option is available
@@ -30,7 +31,7 @@ from ..textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 _textUI:TextUI = None
 """	Active textUI instance """
 
-
+@plugin(property='textUI', tags=['core'])
 class TextUI(object):
 
 	__slots__ = (
@@ -38,8 +39,12 @@ class TextUI(object):
 	)
 	
 	def __init__(self) -> None:
-		global _textUI
 		self.tuiApp:ACMETuiApp = None
+
+
+	@start
+	def start(self) -> None:
+		global _textUI
 
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
@@ -51,7 +56,7 @@ class TextUI(object):
 							  CSE.event.aeHasDeregistered, 									# type:ignore[attr-defined]
 							  CSE.event.registreeCSEHasRegistered,							# type:ignore[attr-defined]
 							  CSE.event.registreeCSEHasDeregistered,						# type:ignore[attr-defined]
-							  CSE.event.csrUpdated,  								# type:ignore[attr-defined]
+							  CSE.event.csrUpdated,  										# type:ignore[attr-defined]
 							  CSE.event.registeredToRegistrarCSE, 							# type:ignore[attr-defined]
 							  CSE.event.deregisteredFromRegistrarCSE, 						# type:ignore[attr-defined]
 							  CSE.event.registeredToRemoteCSE], self.registrationUpdate)	# type:ignore[attr-defined]
@@ -60,6 +65,7 @@ class TextUI(object):
 		L.isInfo and L.log('TextUI initialized')
 
 		
+	@stop
 	def shutdown(self) -> bool:
 		global _textUI
 		if _textUI.tuiApp:
@@ -69,6 +75,7 @@ class TextUI(object):
 		return True
 
 
+	@restart
 	def restart(self) -> None:
 		"""	Restart the TextUI service.
 		"""
@@ -222,3 +229,44 @@ class TextUI(object):
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptVisualBell(scriptName)
+
+
+	#########################################################################
+	#
+	#	Configuration
+	#
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		parser = config.configParser
+
+		#	Text UI
+		config.textui_enable = parser.getboolean('textui', 'enable', fallback=True)
+		config.textui_refreshInterval = parser.getfloat('textui', 'refreshInterval', fallback=2.0)
+		config.textui_startWithTUI = parser.getboolean('textui', 'startWithTUI', fallback=False)
+		config.textui_theme = parser.get('textui', 'theme', fallback='dark')
+		config.textui_maxRequestSize = parser.getint('textui', 'maxRequestSize', fallback=10000)
+		config.textui_notificationTimeout = parser.getfloat('textui', 'notificationTimeout', fallback=2.0)
+		config.textui_enableTextEditorSyntaxHighlighting = parser.getboolean('textui', 'enableTextEditorSyntaxHighlighting', fallback=False)
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+
+		# override configuration with command line arguments
+		if Configuration._args_lightScheme is not None:
+			Configuration.textui_theme = Configuration._args_lightScheme
+		if Configuration._args_textUI is not None:
+			Configuration.textui_startWithTUI = Configuration._args_textUI
+
+		# Text UI settings
+		if config.textui_maxRequestSize <= 0:
+			raise ConfigurationError(r'[i]\[textui]:maxRequestSize[/i] must be > 0s')
+		config.textui_theme = config.textui_theme.lower()
+		if config.textui_theme not in [ 'dark', 'light' ]:
+			raise ConfigurationError(fr'[i]\[textui]:theme[/i] must be "light" or "dark"')
+		if config.textui_maxRequestSize < 0:
+			raise ConfigurationError(fr'[i]\[textui]:maxRequestSize[/i] must be >= 0')
+		if config.textui_notificationTimeout < 0.0:
+			raise ConfigurationError(fr'[i]\[textui]:notificationTimeout[/i] must be >= 0')
+

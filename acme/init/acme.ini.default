@@ -168,6 +168,7 @@ _http_enableManagementEndpoint_=${http:enableManagementEndpoint}
 _http_enableStructureEndpoint_=${http:enableStructureEndpoint}
 _http_enableUpperTesterEndpoint_=${http:enableUpperTesterEndpoint}
 _statistics_enable_=${cse.statistics:enable}
+_textui_enable_=${textui:enable}
 _webui_enable_=${webui:enable}
 
 
@@ -844,6 +845,8 @@ headless=False
 ;   Text UI settings
 ;
 [textui]
+; Enable the text UI. Default: True
+enable=true
 ; Start directly with the TUI
 startWithTUI=True
 ; Set the color theme for the text UI. Allowed values are "dark" and "light".

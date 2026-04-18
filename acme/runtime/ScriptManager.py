@@ -37,6 +37,7 @@ from ..helpers.interpreter.Types import PFuncCallable, PError, PState, \
 from ..helpers.interpreter.Exceptions import PUndefinedError, PInvalidArgumentError, \
 	PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
 from ..helpers.interpreter.PContext import PContext
+from ..helpers.PluginManager import requires
 
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
@@ -87,7 +88,7 @@ _httpMethods = {
 """	Internal mapping between http methods and function callbacks. """
 
 
-
+@requires(textUI='acme.plugins.runtime.TextUI', required=False)
 class ACMEPContext(PContext):
 	"""	Child class of the `PContext` context class that adds further functions and details.
 	"""
@@ -99,6 +100,7 @@ class ACMEPContext(PContext):
 	)
 	""" Slots of class attributes. """
 
+	textUI:Any = None	# type: ignore
 
 	def __init__(self, 
 				 script:str, 
@@ -216,7 +218,7 @@ class ACMEPContext(PContext):
 		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			CSE.textUI.scriptLog(pcontext.scriptName, line)	# Additionally print to the text UI script console
+			self.textUI and self.textUI.scriptLog(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			L.isDebug and L.logDebug(line, stackOffset=1)
 
 
@@ -231,7 +233,7 @@ class ACMEPContext(PContext):
 		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			CSE.textUI.scriptLogError(pcontext.scriptName, line)	# Additionally print to the text UI script console
+			self.textUI and self.textUI.scriptLogError(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			L.isWarn and L.logWarn(line, stackOffset=1)
 
 
@@ -245,8 +247,8 @@ class ACMEPContext(PContext):
 		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			if CSE.textUI.tuiApp:
-				CSE.textUI.scriptPrint(pcontext.scriptName, line)	# Additionally print to the text UI script console
+			if self.textUI and self.textUI.tuiApp:
+				self.textUI.scriptPrint(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			else:
 				# L.console(line, nl = not len(line))
 				L.console(Text.from_markup(line))
@@ -305,7 +307,7 @@ class ACMEPContext(PContext):
 		"""
 		assertSymbol(pcontext, symbol, 1)
 		if not RC.isHeadless:
-			CSE.textUI.scriptClearConsole(pcontext.scriptName) # Additionally clear the text UI script console
+			self.textUI and self.textUI.scriptClearConsole(pcontext.scriptName) # Additionally clear the text UI script console
 			L.consoleClear()
 		return pcontext.setResult(SNilSymbol(parent=symbol))
 
@@ -1143,7 +1145,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result, ie. a boolean value.
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		return pcontext.setResult(SBooleanSymbol(CSE.textUI.tuiApp is not None, symbol))
+		return pcontext.setResult(SBooleanSymbol(self.textUI and self.textUI.tuiApp is not None, symbol))
 
 
 	def doScheduleNextScript(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1429,7 +1431,7 @@ class ACMEPContext(PContext):
 			pcontext, cancelButtonText = valueFromArgument(pcontext, symbol, 4, SType.tString, optional=True, default='Cancel')
 
 			# show the confirmation dialog
-			result = CSE.textUI.scriptShowConfirmation(text, title, confirmButtonText, cancelButtonText)
+			result = self.textUI.scriptShowConfirmation(text, title, confirmButtonText, cancelButtonText) if self.textUI else None
 
 			if result is None:
 				# User cancelled the confirmation, neither confirm nor cancel was pressed
@@ -1480,7 +1482,7 @@ class ACMEPContext(PContext):
 		pcontext, timeout = valueFromArgument(pcontext, symbol, 4, SType.tNumber, optional=True)
 
 		# show the notification
-		CSE.textUI.scriptShowNotification(value, title, severity, float(timeout) if timeout is not None else None)
+		self.textUI and self.textUI.scriptShowNotification(value, title, severity, float(timeout) if timeout is not None else None)
 
 		return pcontext.setResult(SNilSymbol())
 
@@ -1502,7 +1504,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object.
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		CSE.textUI.refreshResources()
+		self.textUI and self.textUI.refreshResources()
 		return pcontext
 
 
@@ -1522,7 +1524,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object.
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		CSE.textUI.scriptVisualBell(pcontext.scriptName)
+		self.textUI and self.textUI.scriptVisualBell(pcontext.scriptName)
 		return pcontext
 
 
@@ -1718,6 +1720,7 @@ class ACMEPContext(PContext):
 #	Script Manager
 #
 
+@requires(textUI='acme.plugins.runtime.TextUI', required=False)
 class ScriptManager(object):
 	"""	This manager entity handles script execution in the CSE.
 	"""
@@ -1732,6 +1735,10 @@ class ScriptManager(object):
 	)
 	""" Slots of class attributes. """
 
+	textUI: Any = None
+	""" The TextUI plugin, if available. """
+
+	
 	def __init__(self) -> None:
 		"""	Initializer for the ScriptManager class.
 		"""
@@ -2149,7 +2156,7 @@ class ScriptManager(object):
 			pcontext.setMaxRuntime(Configuration.scripting_maxRuntime)
 
 			# Set environemt
-			environment['tui.theme'] = SStringSymbol(Configuration.textui_theme)
+			environment['tui.theme'] = SStringSymbol(Configuration.textui_theme) if self.textUI else SNilSymbol()
 			pcontext.setEnvironment(environment)
 
 			# Handle arguments

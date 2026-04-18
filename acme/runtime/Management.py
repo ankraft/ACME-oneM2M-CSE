@@ -264,7 +264,7 @@ def getCSEStatusAsDict() -> JSON:
 			'uis': {
 				'headless': Configuration.console_headless,
 				'console': Configuration.console_type,
-				#'textUI': Configuration.textUI_enable,
+				'textUI': Configuration.textui_enable if Configuration.textui_enable is not None else False,	# textUI_enable could be None
 				'webUI': Configuration.webui_enable if Configuration.webui_enable else False,	# webui_enable could be None
 			},
 			'numberOfPlugins': len(CSE.pluginManager.plugins),

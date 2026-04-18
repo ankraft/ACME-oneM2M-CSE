@@ -548,10 +548,13 @@ class Configuration(object):
 	"""	The write interval for statistics. """
 
 
+	textui_enable:bool = None
+	"""	Enable or disable the text UI. """
+
 	textui_refreshInterval:float
 	"""	The refresh interval for the text UI. """
 
-	textui_startWithTUI:bool
+	textui_startWithTUI:bool = None
 	"""	Start with the text UI. """
 
 	textui_theme:str
@@ -1171,7 +1174,6 @@ from ..runtime.configurations.ScriptingConfiguration import ScriptingConfigurati
 from ..runtime.configurations.SecurityServiceConfiguration import SecurityServiceConfiguration
 from ..runtime.configurations.StorageConfiguration import StorageConfiguration
 from ..runtime.configurations.SUBResourceConfiguration import SUBResourceConfiguration
-from ..runtime.configurations.TextUIConfiguration import TextUIConfiguration
 from ..runtime.configurations.TinyDBBindingConfiguration import TinyDBBindingConfiguration
 from ..runtime.configurations.TSBResourceConfiguration import TSBResourceConfiguration
 from ..runtime.configurations.TSResourceConfiguration import TSResourceConfiguration
@@ -1183,7 +1185,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 
 	# Runtime configurations
 	CSEConfiguration(),
-	TextUIConfiguration(), # must get its config before the Console !
 	ConsoleConfiguration(),
 	LoggingConfiguration(), # must get its config after the Console !
 	ScriptingConfiguration(),
