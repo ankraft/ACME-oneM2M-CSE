@@ -41,7 +41,6 @@ from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
 from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
-from ..services.SemanticManager import SemanticManager
 from ..runtime.Storage import Storage
 from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
@@ -99,9 +98,6 @@ script:ScriptManager = None
 security:SecurityManager = None
 """	Runtime instance of the `SecurityManager`. """
 
-semantic:SemanticManager = None
-"""	Runtime instance of the `SemanticManager`. """
-
 storage:Storage = None
 """	Runtime instance of the `Storage`. """
 
@@ -132,7 +128,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			False if the CSE couldn't initialized and started. 
 	"""
 	global action, announce, dispatcher, event, groupResource, importer
-	global notification, pluginManager, registration, remote, request, script, security, semantic
+	global notification, pluginManager, registration, remote, request, script, security
 	global storage, time, timeSeries, validator
 
 	# Set status
@@ -196,8 +192,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 		remote = RemoteCSEManager()				# Initialize the remote CSE manager
 		announce = AnnouncementManager()		# Initialize the announcement manager
-		semantic = SemanticManager()			# Initialize the semantic manager
-		time = TimeManager()					# Initialize the time mamanger
+		time = TimeManager()					# Initialize the time manager
 		script = ScriptManager()				# Initialize the script manager
 		action = ActionManager()				# Initialize the action manager
 
@@ -294,7 +289,6 @@ def _shutdown() -> None:
 	pluginManager and pluginManager.shutdown()
 
 	time and time.shutdown()
-	semantic and semantic.shutdown()
 	remote and remote.shutdown()
 	script and script.shutdown()
 	announce and announce.shutdown()

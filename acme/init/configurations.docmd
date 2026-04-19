@@ -264,6 +264,15 @@ The default value is `True`.
 
 
 
+# cse.service.semantic.enable
+
+This setting enables or disables the semantic service.
+This includes the SemanticManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+
 # cse.sortDiscoveredResources
 
 This setting turns on the sorting of discovery resources. Otherwise the order is non-deterministic.

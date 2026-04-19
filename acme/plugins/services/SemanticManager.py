@@ -16,12 +16,14 @@ from abc import ABC, abstractmethod
 from xml.etree import ElementTree
 import base64, binascii
 
-from ..resources.SMD import SMD
-from ..resources.Resource import Resource
-from ..runtime import CSE
-from ..etc.Types import Permission, ResourceTypes, Result, SemanticFormat, ContentSerializationType
-from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
-from ..runtime.Logging import Logging as L
+from ...resources.SMD import SMD
+from ...resources.Resource import Resource
+from ...etc.Types import Permission, ResourceTypes, Result, SemanticFormat, ContentSerializationType
+from ...etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
+from ...helpers.PluginManager import plugin, init, start, stop, restart, configure
+from ...runtime import CSE
+from ...runtime.Configuration import Configuration
+from ...runtime.Logging import Logging as L
 
 
 class SemanticHandler(ABC):
@@ -117,6 +119,7 @@ class SemanticHandler(ABC):
 		...
 
 
+@plugin(property='semanticManager', tags=['core'])
 class SemanticManager(object):
 	"""	This class implements semantic service and helper functions.
 
@@ -136,35 +139,43 @@ class SemanticManager(object):
 	)
 
 	# TODO: configurable store
-	# TODO Update graph
-	def __init__(self) -> None:
-		"""	Initialization of the SemanticManager module. This includes re-building of the
-			semantic graph in memory from the existing resources.
+
+	@init
+	def init(self) -> None:
+		"""	Initialization of the SemanticManager plugin. 
 		"""
 		self.semanticHandler = RdfLibHandler()
 		# TODO determine the format
 		self.defaultFormat = SemanticFormat.FF_RdfXml	# TODO configurable
+		L.isInfo and L.log('SemanticManager initialized')
+
+
+	@start
+	def start(self) -> None:
+		"""	Start of the SemanticManager plugin. This includes re-building of the
+			semantic graph in memory from the existing resources.
+		"""
 
 		# Re-Build graph in memory from <SMD> resources.
 		for smd in cast(Sequence[SMD], CSE.dispatcher.retrieveResourcesByType(ResourceTypes.SMD)):
 			self.addDescriptor(smd)
-
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
-		L.isInfo and L.log('SemanticManager initialized')
+		L.isInfo and L.log('SemanticManager started')
 
 
-	def shutdown(self) -> bool:
+
+	@stop
+	def stop(self) -> bool:
 		"""	Shutdown the Semantic Manager.
 		
 			Returns:
 				Boolean that indicates the success of the operation
 		"""
-		L.isInfo and L.log('SemanticManager shut down')
+		L.isInfo and L.log('SemanticManager stopped')
 		return True
 
 
-	def restart(self, name:str) -> None:
+	@restart
+	def restart(self) -> None:
 		"""	Restart the Semantic Manager.
 		"""
 		self.semanticHandler.reset()
@@ -437,6 +448,25 @@ class SemanticManager(object):
 
 				# Recursively check relations
 				self._buildLinkedBasedGraphIDs(resource.rels, originator, graphIDs)
+
+
+
+	#########################################################################
+	#
+	# Configuration handling
+	#
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		"""	Configure the WebSocket server.
+
+			Args:
+				config: The configuration object to update with the semantic manager configuration.
+		"""
+		parser = config.configParser
+
+		# Basic configs
+		config.cse_service_semantic_enable = parser.getboolean('cse.service.semantic', 'enable', fallback=True)
 
 
 

@@ -15,9 +15,8 @@ from typing import Any, Dict, Tuple, Optional, cast, Set
 
 import configparser, argparse, os, os.path, pathlib
 from copy import deepcopy
-import time
 from inspect import getmembers
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 
 from rich.console import Console as RichConsole
 
@@ -250,6 +249,8 @@ class Configuration(object):
 	cse_service_location_enable:bool = False
 	"""	Enable or disable the location service. This includes the LocationManager plugin and the related features in the CSE. """
 
+	cse_service_semantic_enable:bool = False
+	"""	Enable or disable the semantic service. This includes the SemanticManager plugin and the related features in the CSE. """
 
 
 	database_type:str

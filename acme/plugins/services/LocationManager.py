@@ -399,7 +399,7 @@ class LocationManager(object):
 		"""	Configure the WebSocket server.
 
 			Args:
-				config: The configuration object to update with the WebSocket server configuration.
+				config: The configuration object to update with the location manager configuration.
 		"""
 		parser = config.configParser
 

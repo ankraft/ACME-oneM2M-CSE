@@ -12,12 +12,13 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Any
 
 from ..etc.Types import JSON, CSERequest
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
 from ..helpers.TextTools import findXPath
+from ..helpers.PluginManager import requires
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime import Factory as Factory
@@ -29,11 +30,13 @@ from ..resources.AnnounceableResource import AnnounceableResource
 addToInternalAttributes(Constants.attrDecodedDsp)
 
 
+@requires(semanticManager='acme.plugins.services.SemanticManager', required=False)
 class SMD(AnnounceableResource):
 	""" The <semanticDescriptor> resource is used to store a semantic description pertaining to a
 		resource and potentially subresources.
 	"""
 
+	semanticManager: Optional[Any] = None
 
 # TODO SOE cannot be retrieved. Also in Updates?
 # TODO clarify: or is RW or WO?
@@ -49,7 +52,10 @@ class SMD(AnnounceableResource):
 		# Validation of CREATE is done in self.validate()
 		
 		# Perform Semantic validation process and add descriptor
-		CSE.semantic.addDescriptor(self)
+		if self.semanticManager:
+			self.semanticManager.addDescriptor(self)
+		else:
+			L.isWarn and L.logWarn('SemanticManager is disabled, cannot add descriptor to graph')
 		self.setAttribute('svd', True)
 
 
@@ -70,7 +76,10 @@ class SMD(AnnounceableResource):
 		
 		# If soe exists then validate it
 		if soeNew:
-			CSE.semantic.validateSPARQL(soeNew)
+			if self.semanticManager:
+				self.semanticManager.validateSPARQL(soeNew)
+			else:
+				L.isWarn and L.logWarn('SemanticManager is disabled, cannot validate SPARQL query for soe attribute')
 
 		# Generic update and validation (with semantic procdures)
 		super().update(dct, originator, doValidateAttributes)
@@ -84,7 +93,10 @@ class SMD(AnnounceableResource):
 
 	
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
-		CSE.semantic.removeDescriptor(self)
+		if self.semanticManager:
+			self.semanticManager.removeDescriptor(self)
+		else:
+			L.isWarn and L.logWarn('SemanticManager is disabled, cannot remove descriptor from graph')
 		return super().deactivate(originator, parentResource)
 
 
@@ -95,17 +107,26 @@ class SMD(AnnounceableResource):
 		super().validate(originator, dct, parentResource)
 		
 		# Validate validationEnable attribute
-		CSE.semantic.validateValidationEnable(self)
+		if self.semanticManager:
+			self.semanticManager.validateValidationEnable(self)
+		else:
+			L.isWarn and L.logWarn('SemanticManager is disabled, cannot validate vlde attribute')
 
 		# Validate descriptor attribute
 		try:
-			CSE.semantic.validateDescriptor(self)
+			if self.semanticManager:
+				self.semanticManager.validateDescriptor(self)
+			else:
+				L.isWarn and L.logWarn('SemanticManager is disabled, cannot validate dcrp attribute')
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 		
 		# Perform Semantic validation process and add descriptor
 		if findXPath(dct, 'm2m:smd/dsp') or dct is None:	# only on create or when descriptor is present in the UPDATE request
-			CSE.semantic.addDescriptor(self)
+			if self.semanticManager:
+				self.semanticManager.addDescriptor(self)
+			else:
+				L.isWarn and L.logWarn('SemanticManager is disabled, cannot add descriptor to graph')
 		self.setAttribute('svd', True)
 		
 		# The above procedures might have updated this instance.		

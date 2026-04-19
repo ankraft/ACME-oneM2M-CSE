@@ -28,7 +28,7 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exc
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BAD_REQUEST
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
-from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
+from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, NOT_IMPLEMENTED
 from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI, isUniqueRI
 from ..etc.IDUtils import localResourceID, isSPRelative, isAbsolute, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
@@ -49,6 +49,7 @@ from ..runtime.Logging import Logging as L
 # TODO NOTIFY optimize local resource notifications
 # TODO handle config update
 @requires(locationManager='acme.plugins.services.LocationManager', required=False)
+@requires(semanticManager='acme.plugins.services.SemanticManager', required=False)
 class Dispatcher(object):
 	""" Dispatcher class. Handles all requests and dispatches them to the
 		appropriate handlers. This includes requests for resources, requests
@@ -56,6 +57,7 @@ class Dispatcher(object):
 	"""
 
 	locationManager: Any = None	# type: ignore
+	semanticManager: Any = None	# type: ignore
 
 	__slots__ = (
 		'K',
@@ -208,16 +210,19 @@ class Dispatcher(object):
 		rcn = request.rcn
 		# Check semantic discovery (sqi present and False)
 		if request.sqi is not None and not request.sqi:
+			if self.semanticManager is None:
+				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot execute semantic discovery'))
+			
 			# Get all accessible semanticDescriptors
-			_resources = self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))
+			_resources = self.discoverResources(id, originator, filterCriteria=FilterCriteria(ty=[ResourceTypes.SMD]))
 			L.isDebug and L.logDebug(f'Direct discovered SMD: {_resources}')
 
 			# Execute semantic resource discovery
-			_resources = CSE.semantic.executeSemanticDiscoverySPARQLQuery(originator, 
+			_resources = self.semanticManager.executeSemanticDiscoverySPARQLQuery(originator, 
 																 		  request.fc.smf,
 																		  cast(Sequence[SMD], _resources),
 																		  request.ct)
-			return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(_resources, request.drt))
+			return Result(rsc=ResponseStatusCode.OK, resource=self._resourcesToURIList(_resources, request.drt))
 
 		else:
 
@@ -270,18 +275,22 @@ class Dispatcher(object):
 					#	Semantic query request
 					#	This is indicated by rcn = semantic content
 					L.isDebug and L.logDebug('Performing semantic discovery / query')
+
+					if self.semanticManager is None:
+						raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot execute semantic discovery'))
+					
 					# Validate SPARQL in semanticFilter
-					CSE.semantic.validateSPARQL(request.fc.smf)
+					self.semanticManager.validateSPARQL(request.fc.smf)
 
 					# Get all accessible semanticDescriptors
-					resources = self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))
+					resources = self.discoverResources(id, originator, filterCriteria=FilterCriteria(ty=[ResourceTypes.SMD]))
 					
 					# Execute semantic query
-					res = CSE.semantic.executeSPARQLQuery(request.fc.smf, 
+					res = self.semanticManager.executeSPARQLQuery(request.fc.smf, 
 										   				  cast(Sequence[SMD], resources),
 														  request.ct)
 					L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
-					return Result(rsc = ResponseStatusCode.OK, data = { 'm2m:qres' : res.data })
+					return Result(rsc=ResponseStatusCode.OK, data={ 'm2m:qres' : res.data })
 
 		#
 		#	Discovery request
