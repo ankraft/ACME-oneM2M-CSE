@@ -142,8 +142,8 @@ def getPlugins() -> str:
 	"""
 	dg = CSE.pluginManager.dependencyGraph()
 	return json.dumps(
-		{ 	'unloadedPlugins': CSE.pluginManager.unloadedPlugins,
-			'loadedPlugins': [ {
+		{ 	'unloadedPlugins': sorted(CSE.pluginManager.unloadedPlugins, key=lambda p: p.lower()),
+			'loadedPlugins': sorted([ {
 				'name': p.name,
 				'instanceClass': p.instance.__class__.__name__,
 				'instanceName': p.instanceAttributeName,
@@ -166,7 +166,7 @@ def getPlugins() -> str:
 				'doc': p.doc,
 			}
 			for p in CSE.pluginManager.plugins.values()
-			],
+			], key=lambda p: p['name'].lower()),
 		}, indent=4)
 
 
