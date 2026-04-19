@@ -280,8 +280,10 @@ class PluginManager(metaclass=Singleton.Singleton):
 				try:
 					fileName = os.path.join(directory, file)
 					pluginName = file[:-3]
-					spec = importlib.util.spec_from_file_location(f'{packagePath}.{pluginName}', fileName)
+					fullModuleName = f'{packagePath}.{pluginName}'
+					spec = importlib.util.spec_from_file_location(fullModuleName, fileName)
 					module = importlib.util.module_from_spec(spec)
+
 
 					# change the simple pluginName to the full module name
 					pluginName = module.__name__
@@ -298,11 +300,16 @@ class PluginManager(metaclass=Singleton.Singleton):
 					if pluginFilter and not pluginFilter(pluginName):
 						self.unloadedPlugins.append(pluginName)
 						continue
-					
+
 					# If the plugin was previously unloaded or filtered out, remove 
 					# it from the unloaded plugins list, since it is now being loaded. 
 					if pluginName in self.unloadedPlugins:
 						del self.unloadedPlugins[self.unloadedPlugins.index(pluginName)]
+
+					# The module must be added to sys.modules before executing it
+					# This is needed for some Python 3.13 checks that require the module to 
+					# be present in sys.modules before accessing its attributes.
+					sys.modules[fullModuleName] = module 
 
 					# Load the module into the interpreter
 					spec.loader.exec_module(module)
