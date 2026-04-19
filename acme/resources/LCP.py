@@ -11,25 +11,28 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from ..etc.Types import ResourceTypes, JSON, LocationSource
 from ..etc.Constants import Constants
+from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..runtime import Factory 
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
-from ..etc.GeoTools import getGeoPolygon
 
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrGTA)
 
 
+@requires(locationManager='acme.plugins.services.LocationManager', required=False)
 class LCP(AnnounceableResource):
 	""" LocationPolicy (LCP) resource type. """
 
+	locationManager: Any = None
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -57,7 +60,10 @@ class LCP(AnnounceableResource):
 		self.setAttribute('loi', container.ri)
 
 		# Register the LCP for periodic positioning procedure
-		CSE.location.addLocationPolicy(self)
+		if self.locationManager:
+			self.locationManager.addLocationPolicy(self)
+		else:
+			L.isWarn and L.logWarn('LocationManager is disabled. LocationPolicy will NOT be registered for periodic positioning procedure.')
 
 
 
@@ -75,14 +81,22 @@ class LCP(AnnounceableResource):
 		super().updated(dct, originator)
 
 		# update the location policy handling
-		CSE.location.updateLocationPolicy(self)
+		if self.locationManager:
+			self.locationManager.updateLocationPolicy(self)
+		else:
+			L.isWarn and L.logWarn('LocationManager is disabled. LocationPolicy will NOT be updated.')
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Delete the extra <container> resource
 		if self.loi is not None:
 			CSE.dispatcher.deleteResource(self.loi, originator)
-		CSE.location.removeLocationPolicy(self)
+
+		if self.locationManager:
+			self.locationManager.removeLocationPolicy(self)
+		else:
+			L.isWarn and L.logWarn('LocationManager is disabled. LocationPolicy will NOT be removed from periodic positioning procedure.')
+
 		super().deactivate(originator, parentResource)
 
 
@@ -122,9 +136,10 @@ class LCP(AnnounceableResource):
 
 		# Validate the polygon
 		if (gta := self.gta) is not None:
-			if (g := getGeoPolygon(gta)) is None:
-				raise BAD_REQUEST('Invalid geographicalTargetArea. Must be a valid geoJSON polygon.')
-			self.setAttribute(Constants.attrGTA, g)	# store the geoJSON polygon in the internal attribute
+			if self.locationManager:
+				if (g := self.locationManager.getGeoPolygon(gta)) is None:
+					raise BAD_REQUEST('Invalid geographicalTargetArea. Must be a valid geoJSON polygon.')
+				self.setAttribute(Constants.attrGTA, g)	# store the geoJSON polygon in the internal attribute
 		
 
 

@@ -34,7 +34,6 @@ from ..services.RequestManager import RequestManager
 from .EventManager import EventManager
 from ..services.GroupManager import GroupManager
 from ..runtime.Importer import Importer
-from ..services.LocationManager import LocationManager
 from ..services.NotificationManager import NotificationManager
 from ..runtime.PluginManager import PluginManager, DependencyError
 from ..runtime.ConsoleBase import ConsoleBase
@@ -78,9 +77,6 @@ groupResource:GroupManager = None
 
 importer:Importer = None
 """	Runtime instance of the `Importer`. """
-
-location:LocationManager = None
-"""	Runtime instance of the `LocationManager`. """
 
 notification:NotificationManager = None
 """	Runtime instance of the `NotificationManager`. """
@@ -135,7 +131,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, dispatcher, event, groupResource, importer, location
+	global action, announce, dispatcher, event, groupResource, importer
 	global notification, pluginManager, registration, remote, request, script, security, semantic
 	global storage, time, timeSeries, validator
 
@@ -201,7 +197,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		remote = RemoteCSEManager()				# Initialize the remote CSE manager
 		announce = AnnouncementManager()		# Initialize the announcement manager
 		semantic = SemanticManager()			# Initialize the semantic manager
-		location = LocationManager()			# Initialize the location manager
 		time = TimeManager()					# Initialize the time mamanger
 		script = ScriptManager()				# Initialize the script manager
 		action = ActionManager()				# Initialize the action manager
@@ -299,7 +294,6 @@ def _shutdown() -> None:
 	pluginManager and pluginManager.shutdown()
 
 	time and time.shutdown()
-	location and location.shutdown()
 	semantic and semantic.shutdown()
 	remote and remote.shutdown()
 	script and script.shutdown()

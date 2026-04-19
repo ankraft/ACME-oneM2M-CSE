@@ -170,6 +170,17 @@ _http_enableUpperTesterEndpoint_=${http:enableUpperTesterEndpoint}
 _statistics_enable_=${cse.statistics:enable}
 _textui_enable_=${textui:enable}
 _webui_enable_=${webui:enable}
+_locationManager_enable_=${cse.service.location:enable}
+
+
+;
+;	Settings for the Location Service
+
+[cse.service.location]
+; Enable the Location Service. This includes the LocationManager plugin and 
+; the related features in the CSE.
+; Default: true
+enable=true
 
 
 ;

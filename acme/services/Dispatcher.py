@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, cast, Sequence, Optional
+from typing import List, Tuple, cast, Sequence, Optional, Any
 
 import operator
 import sys
@@ -32,6 +32,7 @@ from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
 from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI, isUniqueRI
 from ..etc.IDUtils import localResourceID, isSPRelative, isAbsolute, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
+from ..helpers.PluginManager import requires
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
@@ -47,11 +48,14 @@ from ..runtime.Logging import Logging as L
 
 # TODO NOTIFY optimize local resource notifications
 # TODO handle config update
+@requires(locationManager='acme.plugins.services.LocationManager', required=False)
 class Dispatcher(object):
 	""" Dispatcher class. Handles all requests and dispatches them to the
 		appropriate handlers. This includes requests for resources, requests
 		for resource creation, and requests for resource deletion.
 	"""
+
+	locationManager: Any = None	# type: ignore
 
 	__slots__ = (
 		'K',
@@ -635,9 +639,12 @@ class Dispatcher(object):
 
 		# Geo query
 		if filterCriteria.geom:	# Just check one of the tree required attributes. If one is there, all are there
-			allLen += 1	# Add one more criteria to check to the required count
-			if r.loc:	# Only check if the resource has a location
-				found += 1 if CSE.location.checkGeoLocation(r, filterCriteria.gmty, filterCriteria._geom, filterCriteria.gsf) else 0
+			if self.locationManager:
+				allLen += 1	# Add one more criteria to check to the required count
+				if r.loc:	# Only check if the resource has a location
+					found += 1 if self.locationManager.checkGeoLocation(r, filterCriteria.gmty, filterCriteria._geom, filterCriteria.gsf) else 0
+			else:
+				L.isWarn and L.logWarn('LocationManager is disabled. No geo queries can be processed.')
 
 		# L.isDebug and L.logDebug(f'fo: {fo}, found: {found}, allLen: {allLen}')
 		# Test whether the OR or AND criteria is fullfilled

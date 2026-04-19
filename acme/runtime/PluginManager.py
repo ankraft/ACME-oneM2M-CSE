@@ -31,6 +31,7 @@ class PluginManager(PM):
 		'acme.plugins.runtime.MinimalConsole':			lambda : Configuration.console_type == 'simple',
 		'acme.plugins.runtime.Statistics':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('statistics_enable', False),
 		'acme.plugins.runtime.TextUI':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('textui_enable', False),	
+		'acme.plugins.services.LocationManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('locationManager_enable', True),	
 	}
 	"""	Dictionary of plugin checks. The keys are the plugin names, the values are callables that take the plugin name as an argument and return a boolean indicating whether the plugin should be loaded. This is used to determine which plugins to load based on the configuration. """
 

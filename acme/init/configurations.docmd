@@ -255,6 +255,15 @@ The default value is `True`.
 
 
 
+# cse.service.location.enable
+
+This setting enables or disables the location service. 
+This includes the LocationManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+
 # cse.sortDiscoveredResources
 
 This setting turns on the sorting of discovery resources. Otherwise the order is non-deterministic.
@@ -640,7 +649,7 @@ The default value is `C*,S*`.
 This setting specifies a comma-separated list of CSR originators (or CSE-IDs) that can register. 
 Simple wildcards (* and ?) are supported.
 
-Note: No leading `/` characters are allowed.
+**Note**: Since the values are CSE-IDs, they must start with a "/" character.
 
 The default value is an empty list.
 
@@ -1171,7 +1180,7 @@ The default value is `8080`.
 This setting specifies the root path of the CSE's HTTP server. 
 This is the URL path prefix under which the CSE is reachable.
 
-Note: Don't provide a trailing `/` character
+**Note**: Don't provide a trailing `/` character
 
 The default value is an empty string.
 

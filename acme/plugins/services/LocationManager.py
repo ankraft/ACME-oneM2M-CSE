@@ -10,21 +10,21 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Optional, Literal
+from typing import Tuple, Optional, Literal, Union
 from dataclasses import dataclass
-import json
 
-from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ..etc.Types import LocationInformationType, LocationSource, GeofenceEventCriteria, ResourceTypes, GeometryType, GeoSpatialFunctionType
-from ..etc.DateUtils import fromDuration
-from ..etc.GeoTools import getGeoPoint, getGeoPolygon, isLocationInsidePolygon, geoWithin, geoContains, geoIntersects
-from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..runtime.Logging import Logging as L
-from ..runtime import CSE
-from ..resources.LCP import LCP
-from ..resources.CIN import CIN
-from ..runtime import Factory
-from ..resources.Resource import Resource
+from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
+from ...helpers.PluginManager import plugin, init, stop, restart, configure
+from ...etc.Types import LocationInformationType, LocationSource, GeofenceEventCriteria, ResourceTypes, GeometryType, GeoSpatialFunctionType
+from ...etc.DateUtils import fromDuration
+from ...etc.GeoTools import getGeoPoint, getGeoPolygon, isLocationInsidePolygon, geoWithin, geoContains, geoIntersects
+from ...etc.ResponseStatusCodes import BAD_REQUEST
+from ...runtime.Logging import Logging as L
+from ...runtime import CSE
+from ...runtime.Configuration import Configuration
+from ...resources.LCP import LCP
+from ...resources.CIN import CIN
+from ...resources.Resource import Resource
 
 GeofencePositionType = Literal[GeofenceEventCriteria.Inside, GeofenceEventCriteria.Outside]
 """ Type alias for the geofence position."""
@@ -32,11 +32,12 @@ GeofencePositionType = Literal[GeofenceEventCriteria.Inside, GeofenceEventCriter
 LocationType = Tuple[float, float]
 """ Type alias for the location type."""
 
+
 @dataclass
-class LocationInformation(object):
+class LocationInformation:
 	"""	Location information for a location policy.
 	"""
-	worker:BackgroundWorker = None
+	worker:Optional[BackgroundWorker] = None
 	""" The worker for the location policy. """
 	location:Optional[LocationType] = None
 	""" The current location. """
@@ -50,6 +51,7 @@ class LocationInformation(object):
 	""" The location container resource ID. """
 
 
+@plugin(property='locationManager', tags=['core'])
 class LocationManager(object):
 	"""	The LocationManager class implements the location service and helper functions.
 	
@@ -63,21 +65,21 @@ class LocationManager(object):
 	)
 
 
-	def __init__(self) -> None:
+	@init
+	def init(self) -> None:
 		"""	Initialization of the LocationManager module.
 		"""
 
 		self.locationPolicyInfos:dict[str, LocationInformation] = {}
 		
 		self.deviceDefaultPosition:GeofencePositionType = GeofenceEventCriteria.Inside	# Default event criteria
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 		L.isInfo and L.log('LocationManager initialized')
 
 
 # TODO rebuild the list of location policies when the CSE is reset or started. OR create a DB
 
-	def shutdown(self) -> bool:
+	@stop
+	def stop(self) -> bool:
 		"""	Shutdown the LocationManager.
 		
 			Returns:
@@ -87,6 +89,7 @@ class LocationManager(object):
 		return True
 
 
+	@restart
 	def restart(self, name:str) -> None:
 		"""	Restart the LocationManager.
 		"""
@@ -339,6 +342,18 @@ class LocationManager(object):
 		return result	# type:ignore [return-value]
 
 
+	def getGeoPolygon(self, jsn:Optional[Union[dict, str]]) -> Optional[list[tuple[float, float]]]:
+		""" Get the geo-polygon from a geoJSON object. This is just a wrapper for the getGeoPolygon
+			function in GeoTools.
+
+			Args:
+				jsn: The geoJSON object as a dictionary or a string.
+			Returns:
+				A list of tuples of the geo-polygon (latitude, longitude). None if not found.
+		"""
+		return getGeoPolygon(jsn)
+
+
 	#########################################################################
 	#
 	# 	GeoLocation and GeoQuery
@@ -372,3 +387,22 @@ class LocationManager(object):
 					raise ValueError(f'Invalid geo spatial function: {gsf}')
 		except ValueError as e:
 			raise BAD_REQUEST(L.logDebug(f'Invalid geometry: {e}'))
+
+
+	#########################################################################
+	#
+	# Configuration handling
+	#
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		"""	Configure the WebSocket server.
+
+			Args:
+				config: The configuration object to update with the WebSocket server configuration.
+		"""
+		parser = config.configParser
+
+		# Basic configs
+		config.cse_service_location_enable = parser.getboolean('cse.service.location', 'enable', fallback=True)
+

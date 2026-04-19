@@ -247,6 +247,11 @@ class Configuration(object):
 	"""	Full access for admin. """
 
 
+	cse_service_location_enable:bool = False
+	"""	Enable or disable the location service. This includes the LocationManager plugin and the related features in the CSE. """
+
+
+
 	database_type:str
 	"""	The type of the database. """
 

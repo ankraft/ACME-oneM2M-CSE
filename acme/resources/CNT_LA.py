@@ -11,11 +11,12 @@
 """
 
 from __future__ import annotations
-from typing import Optional, cast
+from typing import Optional, cast, Any
 
 from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
+from ..helpers.PluginManager import requires
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
@@ -26,9 +27,12 @@ from ..resources.Resource import addToInternalAttributes
 addToInternalAttributes(Constants.attrLCPLink)
 
 
+@requires(locationManager='acme.plugins.services.LocationManager', required=False)
 class CNT_LA(VirtualResource):
 	"""	This class implements the virtual <latest> resource for <container> resources.
 	"""
+
+	locationManager: Any = None
 
 	def handleRetrieveRequest(self, request: Optional[CSERequest]=None,
 									id: Optional[str]=None,
@@ -49,7 +53,10 @@ class CNT_LA(VirtualResource):
 		# This might create a new CIN
 		if (li := self.getLCPLink()) is not None:
 			if (result := self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest=False)) is not None:
-				CSE.location.handleLatestRetrieve(cast(CIN, result.resource), li)
+				if self.locationManager:
+					self.locationManager.handleLatestRetrieve(cast(CIN, result.resource), li)
+				else:
+					L.isWarn and L.logWarn('LocationManager is disabled. Location information will NOT be properly handled for the latest CIN.')
 
 		return self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest=False)
 
