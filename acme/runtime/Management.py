@@ -149,11 +149,13 @@ def getPlugins() -> str:
 				'instanceName': p.instanceAttributeName,
 				'filename': p.fileName,
 				'dependencies': [{	'module': d.pluginName, 
+									'class': CSE.pluginManager.plugins[d.pluginName].pluginClass.__name__ if d.pluginName in CSE.pluginManager.plugins else None,
 									'attribute': d.attributeName, 
 									'required': d.required, 
 									'resolved': d.resolved } 
 										for d in dg.get(p.name, [])],
-				'requiredBy': [{'module': k, 
+				'requiredBy': [{'module': k,
+								'class': d.className,
 								'attribute': d.attributeName, 
 								'required': d.required, 
 								'resolved': d.resolved } 
@@ -161,6 +163,21 @@ def getPlugins() -> str:
 									for d in deps if d.pluginName == p.name],
 				'priority': p.priority,
 				'tags': p.tags,
+					'callbacks': [
+						name for name, method in (
+							('init', p.initMethod),
+							('finish', p.finishMethod),
+							('start', p.startMethod),
+							('stop', p.stopMethod),
+							('restart', p.restartMethod),
+							('pause', p.pauseMethod),
+							('unpause', p.unpauseMethod),
+							('configure', p.configureMethod),
+							('validate', p.validateMethod),
+							('onResolved', p.onResolvedMethod),
+							('onUnresolved', p.onUnresolvedMethod),
+					) if method is not None
+				],
 				'noRestartWhilePaused': p.noRestartWhilePaused,
 				'state': p.state.name,
 				'doc': p.doc,

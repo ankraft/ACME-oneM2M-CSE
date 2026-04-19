@@ -61,6 +61,7 @@ class Dependency:
 	""" Dataclass to hold information about a dependency. """
 	attributeName: str
 	pluginName: str
+	className: str
 	required: bool
 	resolved: bool = False
 
@@ -627,7 +628,11 @@ class PluginManager(metaclass=Singleton.Singleton):
 			for dep in deps:
 				if dep.pluginName in self.plugins and self.plugins[dep.pluginName].instance:
 					setattr(cls, dep.attributeName, self.plugins[dep.pluginName].instance)
-					deps[deps.index(dep)] = Dependency(dep.attributeName, dep.pluginName, dep.required, True)
+					deps[deps.index(dep)] = Dependency(attributeName=dep.attributeName, 
+													   pluginName=dep.pluginName, 
+													   className=cls.__name__ if isinstance(cls, type) else str(cls),
+													   required=dep.required, 
+													   resolved=True)
 				elif dep.required:
 					raise DependencyError(f'Class "{cls}" requires the plugin "{dep.pluginName}" which could not be resolved. Is it disabled?')
 				# Otherwise, the dependency is not resolved, but it is not required, so we can ignore it for now. 
@@ -662,7 +667,11 @@ class PluginManager(metaclass=Singleton.Singleton):
 			for dep in deps:
 				if dep.pluginName in self.plugins and dep.resolved and hasattr(cls, dep.attributeName):
 					setattr(cls, dep.attributeName, None)
-					deps[deps.index(dep)] = Dependency(dep.attributeName, dep.pluginName, dep.required, False)
+					deps[deps.index(dep)] = Dependency(attributeName=dep.attributeName, 
+													   pluginName=dep.pluginName, 
+													   className=cls.__name__ if isinstance(cls, type) else str(cls),
+													   required=dep.required, 
+													   resolved=False)
 
 		# Set all plugins (not other classes) to "unresolved" state even if they have no dependencies.
 		for plugin in self.plugins.values():
@@ -922,6 +931,7 @@ def requires(*args:Any, **kwargs:Any) -> Callable:
 				dependencies[cls] = []
 			dependencies[cls].append(Dependency(attributeName=attributeName, 
 												pluginName=pluginName, 
+												className=cls.__name__,
 												required=isRequired, 
 												resolved=False))
 
