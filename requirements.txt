@@ -76,7 +76,7 @@ pyparsing==3.2.3
     # via rdflib
 pyperclip==1.9.0
     # via acmecse-dev (setup.py)
-python-dotenv==1.2.1
+python-dotenv==1.2.2
     # via acmecse-dev (setup.py)
 rdflib==7.1.4
     # via acmecse-dev (setup.py)
