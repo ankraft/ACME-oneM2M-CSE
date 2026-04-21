@@ -15,7 +15,7 @@ from typing import Optional, cast, Any
 
 from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.Constants import Constants
-from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
+from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND, NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
@@ -56,7 +56,7 @@ class CNT_LA(VirtualResource):
 				if self.locationManager:
 					self.locationManager.handleLatestRetrieve(cast(CIN, result.resource), li)
 				else:
-					L.isWarn and L.logWarn('LocationManager is disabled. Location information will NOT be properly handled for the latest CIN.')
+					raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. Location information will NOT be properly handled for the latest CIN.'))
 
 		return self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest=False)
 

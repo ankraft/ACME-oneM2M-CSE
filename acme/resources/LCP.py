@@ -63,7 +63,7 @@ class LCP(AnnounceableResource):
 		if self.locationManager:
 			self.locationManager.addLocationPolicy(self)
 		else:
-			L.isWarn and L.logWarn('LocationManager is disabled. LocationPolicy will NOT be registered for periodic positioning procedure.')
+			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be registered for periodic positioning procedure.'))
 
 
 
@@ -84,7 +84,7 @@ class LCP(AnnounceableResource):
 		if self.locationManager:
 			self.locationManager.updateLocationPolicy(self)
 		else:
-			L.isWarn and L.logWarn('LocationManager is disabled. LocationPolicy will NOT be updated.')
+			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be updated.'))
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
@@ -95,7 +95,7 @@ class LCP(AnnounceableResource):
 		if self.locationManager:
 			self.locationManager.removeLocationPolicy(self)
 		else:
-			L.isWarn and L.logWarn('LocationManager is disabled. LocationPolicy will NOT be removed from periodic positioning procedure.')
+			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be removed from periodic positioning procedure.'))
 
 		super().deactivate(originator, parentResource)
 
@@ -140,6 +140,8 @@ class LCP(AnnounceableResource):
 				if (g := self.locationManager.getGeoPolygon(gta)) is None:
 					raise BAD_REQUEST('Invalid geographicalTargetArea. Must be a valid geoJSON polygon.')
 				self.setAttribute(Constants.attrGTA, g)	# store the geoJSON polygon in the internal attribute
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled, cannot validate geographicalTargetArea.'))
 		
 
 

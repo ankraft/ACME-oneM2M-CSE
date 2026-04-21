@@ -254,6 +254,28 @@ This setting indicate whether the optional "to" and "from" parameters shall be s
 The default value is `True`.
 
 
+# cse.service
+
+This section contains settings that control the CSE's core services
+
+
+# cse.service.action
+
+This section contains settings that control the CSE's action service.
+
+
+# cse.service.action.enable
+
+This setting enables or disables the action service.
+This includes the ActionManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+# cse.service.location
+
+This section contains settings that control the CSE's location service.
+
 
 # cse.service.location.enable
 
@@ -262,6 +284,10 @@ This includes the LocationManager plugin and the related features in the CSE.
 
 The default value is `True`.
 
+
+# cse.service.semantic
+
+This section contains settings that control the CSE's semantic service.
 
 
 # cse.service.semantic.enable

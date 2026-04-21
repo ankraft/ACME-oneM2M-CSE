@@ -653,7 +653,7 @@ class Dispatcher(object):
 				if r.loc:	# Only check if the resource has a location
 					found += 1 if self.locationManager.checkGeoLocation(r, filterCriteria.gmty, filterCriteria._geom, filterCriteria.gsf) else 0
 			else:
-				L.isWarn and L.logWarn('LocationManager is disabled. No geo queries can be processed.')
+				raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. No geo queries can be processed.'))
 
 		# L.isDebug and L.logDebug(f'fo: {fo}, found: {found}, allLen: {allLen}')
 		# Test whether the OR or AND criteria is fullfilled

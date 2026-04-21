@@ -25,7 +25,6 @@ from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, LogLevel
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import ResponseException
-from ..services.ActionManager import ActionManager
 from ..runtime.Configuration import Configuration
 
 
@@ -52,9 +51,6 @@ from ..runtime.Logging import Logging as L
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
-
-action:ActionManager = None
-"""	Runtime instance of the `ActionManager`. """
 
 announce:AnnouncementManager = None
 """	Runtime instance of the `AnnouncementManager`. """
@@ -127,7 +123,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, dispatcher, event, groupResource, importer
+	global announce, dispatcher, event, groupResource, importer
 	global notification, pluginManager, registration, remote, request, script, security
 	global storage, time, timeSeries, validator
 
@@ -194,7 +190,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		announce = AnnouncementManager()		# Initialize the announcement manager
 		time = TimeManager()					# Initialize the time manager
 		script = ScriptManager()				# Initialize the script manager
-		action = ActionManager()				# Initialize the action manager
 		
 		pluginManager.start(excludedTags=['database'])	# Start the remaining plugins after all components are initialized.
 

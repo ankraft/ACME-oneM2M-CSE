@@ -16,10 +16,9 @@ from typing import Optional, Any
 
 from ..etc.Types import JSON, CSERequest
 from ..etc.Constants import Constants
-from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, NOT_IMPLEMENTED
 from ..helpers.TextTools import findXPath
 from ..helpers.PluginManager import requires
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime import Factory as Factory
 from ..resources.Resource import Resource, addToInternalAttributes
@@ -55,7 +54,7 @@ class SMD(AnnounceableResource):
 		if self.semanticManager:
 			self.semanticManager.addDescriptor(self)
 		else:
-			L.isWarn and L.logWarn('SemanticManager is disabled, cannot add descriptor to graph')
+			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot add descriptor to graph'))
 		self.setAttribute('svd', True)
 
 
@@ -79,7 +78,7 @@ class SMD(AnnounceableResource):
 			if self.semanticManager:
 				self.semanticManager.validateSPARQL(soeNew)
 			else:
-				L.isWarn and L.logWarn('SemanticManager is disabled, cannot validate SPARQL query for soe attribute')
+				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate SPARQL query for soe attribute'))
 
 		# Generic update and validation (with semantic procdures)
 		super().update(dct, originator, doValidateAttributes)
@@ -96,7 +95,7 @@ class SMD(AnnounceableResource):
 		if self.semanticManager:
 			self.semanticManager.removeDescriptor(self)
 		else:
-			L.isWarn and L.logWarn('SemanticManager is disabled, cannot remove descriptor from graph')
+			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot remove descriptor from graph'))
 		return super().deactivate(originator, parentResource)
 
 
@@ -110,14 +109,14 @@ class SMD(AnnounceableResource):
 		if self.semanticManager:
 			self.semanticManager.validateValidationEnable(self)
 		else:
-			L.isWarn and L.logWarn('SemanticManager is disabled, cannot validate vlde attribute')
+			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate vlde attribute'))
 
 		# Validate descriptor attribute
 		try:
 			if self.semanticManager:
 				self.semanticManager.validateDescriptor(self)
 			else:
-				L.isWarn and L.logWarn('SemanticManager is disabled, cannot validate dcrp attribute')
+				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate dcrp attribute'))
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 		
@@ -126,7 +125,7 @@ class SMD(AnnounceableResource):
 			if self.semanticManager:
 				self.semanticManager.addDescriptor(self)
 			else:
-				L.isWarn and L.logWarn('SemanticManager is disabled, cannot add descriptor to graph')
+				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot add descriptor to graph'))
 		self.setAttribute('svd', True)
 		
 		# The above procedures might have updated this instance.		

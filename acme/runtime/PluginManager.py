@@ -33,6 +33,7 @@ class PluginManager(PM):
 		'acme.plugins.runtime.MinimalConsole':			lambda : Configuration.console_type == 'simple',
 		'acme.plugins.runtime.Statistics':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('statistics_enable', False),
 		'acme.plugins.runtime.TextUI':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('textui_enable', False),	
+		'acme.plugins.services.ActionManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('actionManager_enable', True),	
 		'acme.plugins.services.LocationManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('locationManager_enable', True),	
 		'acme.plugins.services.SemanticManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('semanticManager_enable', True),	
 	}

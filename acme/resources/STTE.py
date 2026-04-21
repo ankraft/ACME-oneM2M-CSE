@@ -8,20 +8,25 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Any
 
 from ..etc.Types import JSON, ProcessState
-from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND, NOT_IMPLEMENTED
+from ..helpers.PluginManager import requires	
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.Resource import Resource
 from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 
 
 # TODO annc version
 # TODO add to UML diagram
 # TODO add to statistics, also in console
 
+@requires(actionManager='acme.plugins.services.ActionManager', required=False)
 class STTE(AnnounceableResource):
+
+	actionManager: Optional[Any] = None
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -41,7 +46,10 @@ class STTE(AnnounceableResource):
 					nxstID = sttr['nxst']
 					# Check access
 					# EXPRIMENTAL assuming a subject rsource ID attribute in stateTransition
-					CSE.action.checkEvalCriteria(sttr['evc'], sttr['sri'], _orig)
+					if self.actionManager:
+						self.actionManager.checkEvalCriteria(sttr['evc'], sttr['sri'], _orig)
+					else:
+						raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 
 					# Check parent of references next state resource
 					stateResource = CSE.dispatcher.retrieveResource(nxstID)

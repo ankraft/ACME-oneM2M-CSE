@@ -170,8 +170,20 @@ _http_enableUpperTesterEndpoint_=${http:enableUpperTesterEndpoint}
 _statistics_enable_=${cse.statistics:enable}
 _textui_enable_=${textui:enable}
 _webui_enable_=${webui:enable}
+_actionManager_enable_=${cse.service.action:enable}
 _locationManager_enable_=${cse.service.location:enable}
 _semanticManager_enable_=${cse.service.semantic:enable}
+
+
+;
+;	Settings for the Action Processing Service
+;
+
+[cse.service.action]
+; Enable the Action Processing Service. This includes the ActionManager plugin and 
+; the related features in the CSE.
+; Default: true
+enable=true
 
 
 ;

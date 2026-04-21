@@ -11,25 +11,34 @@
 from __future__ import annotations
 from typing import Optional
 
+from pyparsing.common import Any
+
 from ..etc.Types import JSON
-from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
-from ..runtime import CSE
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, NOT_IMPLEMENTED
+from ..helpers.PluginManager import requires
+from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
+@requires(actionManager='acme.plugins.services.ActionManager', required=False)
 class DEPR(AnnounceableResource):
 	""" Dependency (DEPR) resource type. """
+
+	actionManager: Optional[Any] = None
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 
 		super().activate(parentResource, originator)
 
 		# Check that the evalCriteria and target resources are correct and accessible
-		try:
-			CSE.action.checkEvalCriteria(self.evc, self.rri, originator)
-		except ResponseException as e:
-			raise BAD_REQUEST(e.dbg)
+		if self.actionManager:
+			try:
+				self.actionManager.checkEvalCriteria(self.evc, self.rri, originator)
+			except ResponseException as e:
+				raise BAD_REQUEST(e.dbg)
+		else:
+			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 
 
 	def update(self, dct: JSON=None, 
@@ -43,7 +52,10 @@ class DEPR(AnnounceableResource):
 		# Check that the evalCriteria and target resources are correct and accessible
 		# Check the evc only if the evc attribute is present in the update request
 		try:
-			CSE.action.checkEvalCriteria(evc, rri, originator, 'evc' in dct)
+			if self.actionManager:
+				self.actionManager.checkEvalCriteria(evc, rri, originator, 'evc' in dct)
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 

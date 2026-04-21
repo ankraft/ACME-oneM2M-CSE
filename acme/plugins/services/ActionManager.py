@@ -13,21 +13,23 @@ from typing import Optional, Any, cast
 
 import sys, copy
 
-from ..etc.Types import EvalMode, EvalCriteriaOperator, JSON, CSERequest, BasicType, ResourceTypes, Permission
-from ..etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR, BAD_REQUEST, NOT_FOUND
-from ..helpers.TextTools import setXPath
-from ..etc.DateUtils import utcTime
-from ..etc.RequestUtils import responseFromResult
-from ..runtime import CSE
-from ..runtime.Configuration import Configuration
-from ..runtime.Logging import Logging as L
-from ..resources.Resource import Resource
-from ..resources.ACTR import ACTR
-from ..helpers.ResourceSemaphore import CriticalSection
+from ...etc.Types import EvalMode, EvalCriteriaOperator, JSON, CSERequest, BasicType, ResourceTypes, Permission
+from ...etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR, BAD_REQUEST, NOT_FOUND
+from ...helpers.TextTools import setXPath
+from ...etc.DateUtils import utcTime
+from ...etc.RequestUtils import responseFromResult
+from ...runtime import CSE
+from ...runtime.Configuration import Configuration
+from ...runtime.Logging import Logging as L
+from ...resources.Resource import Resource
+from ...resources.ACTR import ACTR
+from ...helpers.ResourceSemaphore import CriticalSection
+from ...helpers.PluginManager import plugin, start, restart, stop
 
 
 # TODO implement support for input attribute when the procedure is clear
 
+@plugin(property='actionManager', tags=['core'])
 class ActionManager(object):
 	"""	This class defines functionalities to handle action triggerings, 
 		dependancies and other action related functionalities
@@ -35,30 +37,28 @@ class ActionManager(object):
 
 	
 	# Imported here because of circular import
-	from ..resources.Resource import Resource
+	from ...resources.Resource import Resource
 
 
-	def __init__(self) -> None:
+	@start
+	def start(self) -> None:
 		"""	Initialization of an *ActionManager* instance.
 		"""
-
 		# Add handler for any resource change event
 		CSE.event.addHandler(CSE.event.changeResource, self.evaluateActions)	# type: ignore
 
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		L.isInfo and L.log('ActionManager initialized')
 
 
-	def shutdown(self) -> bool:
+	@stop
+	def shutdown(self) -> None:
 		"""	Shutdown the Action Manager.
-		
-			Returns:
-				Boolean that indicates the success of the operation
 		"""
 		L.isInfo and L.log('ActionManager shut down')
-		return True
+		return 
 
 
+	@restart
 	def restart(self, name:str) -> None:
 		"""	Restart the ActionManager service.
 		"""
@@ -421,7 +421,7 @@ class ActionManager(object):
 			#	Check evalCriteria operator
 			if (optr := evc.get('optr')) is None:
 				BAD_REQUEST('Operator not defined in evalCriteria')
-			CSE.action.checkAttributeOperator(EvalCriteriaOperator(optr), dataType, sbjt)
+			self.checkAttributeOperator(EvalCriteriaOperator(optr), dataType, sbjt)
 
 
 	def checkAttributeThreshold(self, sbjt:str, thld:Any, rtype:ResourceTypes) -> BasicType:

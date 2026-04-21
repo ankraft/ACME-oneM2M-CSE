@@ -9,12 +9,14 @@
 
 from __future__ import annotations
 
-from ..resources.Resource import Resource
+from typing import Optional, Any
 
+from ..resources.Resource import Resource
 from ..etc.Types import ResourceTypes, JSON, ProcessState, ProcessControl, Permission
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..helpers.TextTools import findXPath
-from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION
+from ..helpers.PluginManager import requires
+from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION, NOT_IMPLEMENTED	
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 
@@ -22,8 +24,10 @@ from ..runtime.Logging import Logging as L
 # TODO add to UML diagram
 # TODO add to statistics, also in console
 
-
+@requires(actionManager='acme.plugins.services.ActionManager', required=False)
 class PRMR(AnnounceableResource):
+
+	actionManager: Optional[Any] = None
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -58,21 +62,26 @@ class PRMR(AnnounceableResource):
 		_originator = self.getCurrentOriginator()
 
 		if newAtcos:
-			for atco in newAtcos:
+			if self.actionManager:
+				for atco in newAtcos:
 				# Check validity of the activateCondition attribute
-				try:
-					CSE.action.checkEvalCriteria(atco['evc'], atco['sri'], _originator)
-				except ResponseException as e:
-					raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in activateCondition: {e}'))
+					try:
+						self.actionManager.checkEvalCriteria(atco['evc'], atco['sri'], _originator)
+					except ResponseException as e:
+						raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in activateCondition: {e}'))
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 
 		if newEncos:
-			for enco in newEncos:
+			if self.actionManager:
+				for enco in newEncos:
 				# Check validity of the endCondition attribute
-				try:
-					CSE.action.checkEvalCriteria(enco['evc'], enco['sri'], _originator)
-				except ResponseException as e:
-					raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in endCondition: {e}'))
-				
+					try:
+						self.actionManager.checkEvalCriteria(enco['evc'], enco['sri'], _originator)
+					except ResponseException as e:
+						raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in endCondition: {e}'))
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 	
 		# Step 4) Check existence and access to the <state> resource referenced by the (new) initialState attribute
 		if newInst:
@@ -114,7 +123,10 @@ class PRMR(AnnounceableResource):
 			# Step 10)
 			case ProcessControl.Pause if prst == ProcessState.Activated:
 				self.setAttribute('prst', ProcessState.Paused.value)
-				CSE.action.enterPauseState(self)
+				if self.actionManager:
+					self.actionManager.enterPauseState(self)
+				else:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter pause state'))
 				# TODO test for this
 
 
@@ -144,7 +156,10 @@ class PRMR(AnnounceableResource):
 			# Step 11)
 			case ProcessControl.Reactivate if prst == ProcessState.Paused:
 				self.setAttribute('prst', ProcessState.Activated.value)
-				CSE.action.enterActiveState(self)
+				if self.actionManager:
+					self.actionManager.enterActiveState(self)
+				else:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter active state'))
 				# TODO continues processing the process
 			
 			# Step 12)
@@ -161,7 +176,10 @@ class PRMR(AnnounceableResource):
 				# Remove the current state (cust) attribute
 				self.delAttribute('cust')	# EXPERIMENTAL In the spec this sets the cust attribute to Null
 				# disable the process
-				CSE.action.enterDisabledState(self)
+				if self.actionManager:
+					self.actionManager.enterDisabledState(self)
+				else:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter disabled state'))
 
 
 

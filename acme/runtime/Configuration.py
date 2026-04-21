@@ -246,6 +246,9 @@ class Configuration(object):
 	"""	Full access for admin. """
 
 
+	cse_service_action_enable:bool = False
+	"""	Enable or disable the action processing service. This includes the ActionManager plugin and the related features in the CSE. """
+	
 	cse_service_location_enable:bool = False
 	"""	Enable or disable the location service. This includes the LocationManager plugin and the related features in the CSE. """
 

@@ -10,20 +10,25 @@
 """ Action (ACTR) resource type. """
 
 from __future__ import annotations
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 
 from ..etc.Types import  EvalMode, JSON, Permission, Operation
-from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
+from ..helpers.PluginManager import requires
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
+@requires(actionManager='acme.plugins.services.ActionManager', required=False)
 class ACTR(AnnounceableResource):
 	""" Action (ACTR) resource type. """
+
+	actionManager: Optional[Any] = None
+	"""	Runtime instance of the `ActionManager` plugin. """
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
@@ -51,12 +56,18 @@ class ACTR(AnnounceableResource):
 
 		# Check that the evalCriteria is correct
 		try:
-			CSE.action.checkEvalCriteria(self.evc, checkResource, originator)
+			if self.actionManager:
+				self.actionManager.checkEvalCriteria(self.evc, checkResource, originator)
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 
 		# Schedule and process the <action> resource
-		CSE.action.scheduleAction(self)
+		if self.actionManager:
+			self.actionManager.scheduleAction(self)
+		else:
+			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot schedule action'))
 
 
 	def update(self, dct:JSON = None, 
@@ -123,7 +134,10 @@ class ACTR(AnnounceableResource):
 
 			# Check that the evalCriteria is correct
 			try:
-				CSE.action.checkEvalCriteria(newEvc, sriResource, originator)
+				if self.actionManager:
+					self.actionManager.checkEvalCriteria(newEvc, sriResource, originator)
+				else:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)
 
@@ -137,28 +151,44 @@ class ACTR(AnnounceableResource):
 		# Restart the monitoring (unschedule and restart later) when new evm is given
 		doScheduleAction = False
 		if dctEvm is not None:
-			CSE.action.unscheduleAction(self)
+			if self.actionManager:
+				self.actionManager.unscheduleAction(self)
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
+			
 			# don't restart when new evm == off
 			if dctEvm in [ EvalMode.once, EvalMode.periodic, EvalMode.continous ]:
 				doScheduleAction = True
 		
 		# Restart periodic and continious when new ecp (only) was set
 		if newEcp is not None and dctEvm is None and origEvm in [ EvalMode.periodic, EvalMode.continous ]:
-			CSE.action.unscheduleAction(self)
+			if self.actionManager:
+				self.actionManager.unscheduleAction(self)
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
 			doScheduleAction = True
 
 		# Restart monitoring if necessary
 		if doScheduleAction:
-			CSE.action.scheduleAction(self)
+			if self.actionManager:
+				self.actionManager.scheduleAction(self)
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot schedule action'))
 		
 		# Update other attributes if necessary
 		if dep:
-			CSE.action.updateAction(self)
+			if self.actionManager:
+				self.actionManager.updateAction(self)
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot update action dependencies'))
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Unschedule the action
-		CSE.action.unscheduleAction(self)
+		if self.actionManager:
+			self.actionManager.unscheduleAction(self)
+		else:
+			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
 		return super().deactivate(originator, parentResource)
 
 
