@@ -52,3 +52,17 @@ class ACMEConfiguration(configparser.ConfigParser):
 		super().set(section, option, value)
 
 
+	def __str__(self) -> str:
+		""" Return a string representation of the configuration. 
+
+			Returns:
+				A string representation of the configuration, with sections and options formatted for readability.
+		"""
+		output = []
+		for section in self.sections():
+			output.append(f'[{section}]')
+			for option, value in self.items(section, raw=True):
+				output.append(f'{option} = {value}')
+			output.append('')  # Add an empty line between sections
+		return '\n'.join(output)
+
