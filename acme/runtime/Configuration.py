@@ -1172,7 +1172,6 @@ from ..runtime.configurations.GroupServiceConfiguration import GroupServiceConfi
 from ..runtime.configurations.LCPResourceConfiguration import LCPResourceConfiguration
 from ..runtime.configurations.LoggingConfiguration import LoggingConfiguration
 from ..runtime.configurations.ModuleConfiguration import ModuleConfiguration
-from ..runtime.configurations.PostgreSQLBindingConfiguration import PostgreSQLBindingConfiguration
 from ..runtime.configurations.RegistrationServiceConfiguration import RegistrationServiceConfiguration
 from ..runtime.configurations.RemoteCSEServiceConfiguration import RemoteCSEServiceConfiguration
 from ..runtime.configurations.REQResourceConfiguration import REQResourceConfiguration
@@ -1180,7 +1179,6 @@ from ..runtime.configurations.ScriptingConfiguration import ScriptingConfigurati
 from ..runtime.configurations.SecurityServiceConfiguration import SecurityServiceConfiguration
 from ..runtime.configurations.StorageConfiguration import StorageConfiguration
 from ..runtime.configurations.SUBResourceConfiguration import SUBResourceConfiguration
-from ..runtime.configurations.TinyDBBindingConfiguration import TinyDBBindingConfiguration
 from ..runtime.configurations.TSBResourceConfiguration import TSBResourceConfiguration
 from ..runtime.configurations.TSResourceConfiguration import TSResourceConfiguration
 
@@ -1204,8 +1202,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 
 	# Storage configurations
 	StorageConfiguration(),
-	PostgreSQLBindingConfiguration(),
-	TinyDBBindingConfiguration(),
 
 	# Resource configurations
 	ACPResourceConfiguration(),

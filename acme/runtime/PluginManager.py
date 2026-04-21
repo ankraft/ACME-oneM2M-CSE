@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 import sys
-from typing import Callable
+from typing import Callable, Optional
 from ..helpers.PluginManager import PluginManager as PM, PluginState, DependencyError
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
@@ -27,6 +27,8 @@ class PluginManager(PM):
 		'acme.plugins.bindings.http.HttpStructure':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableStructureEndpoint', False),
 		'acme.plugins.bindings.http.HttpUpperTester':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableUpperTesterEndpoint', False),
 		'acme.plugins.bindings.http.HttpWebUI':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('webui_enable', False),
+		'acme.plugins.database.PostgreSQLBinding':		lambda : Configuration.database_type == 'postgresql',
+		'acme.plugins.database.TinyDBBinding':			lambda : Configuration.database_type in ('tinydb', 'memory'),
 		'acme.plugins.runtime.Console':					lambda : Configuration.console_type == 'rich',
 		'acme.plugins.runtime.MinimalConsole':			lambda : Configuration.console_type == 'simple',
 		'acme.plugins.runtime.Statistics':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('statistics_enable', False),
@@ -86,6 +88,7 @@ class PluginManager(PM):
 				raise
 
 		# Load system plugins
+		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/database', 'acme.plugins.database')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/runtime', 'acme.plugins.runtime')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/services', 'acme.plugins.services')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/bindings', 'acme.plugins.bindings')
@@ -103,21 +106,40 @@ class PluginManager(PM):
 		L.isInfo and L.log('Plugins configured and started')
 
 
-	def start(self) -> None:
+	def start(self, tags: Optional[str|list[str]] = None,
+					excludedTags: Optional[str|list[str]] = None) -> bool:
 		"""	Start the PluginManager service. This is called when the CSE is started. """
 
 		L.isDebug and L.logDebug('Resolving and starting plugins')
 		try:
 			self.resolvePlugins() # Resolve dependencies before starting the plugins. 
-			self.startPlugins()
+			self.startPlugins(tags=tags, excludedTags=excludedTags)
 		except DependencyError as e:
 			L.logErr(f'Failed to resolve plugin dependencies: {e}')
 			L.logErr('A plugin cannot be started due to unresolved dependencies. Please check the configuration and the enabled plugins.')
 			raise
 
-		if (ps := [plugin.name for plugin in self.plugins.values() if plugin.state != PluginState.RUNNING]):
+		tags = tags if isinstance(tags, list) else [tags] if tags else []
+		excludedTags = excludedTags if isinstance(excludedTags, list) else [excludedTags] if excludedTags else []
+
+		if (ps := [plugin.name 
+			 	   for plugin in self.plugins.values() 
+				   if (not tags or plugin.name in tags) and (not excludedTags or plugin.name not in excludedTags) and plugin.state != PluginState.RUNNING]):
 			L.logWarn(f'Not all plugins could be started: {", ".join(ps)}')
 		L.isInfo and L.log('PluginManager started')
+		return True
+
+
+
+	def stop(self, tags: Optional[str|list[str]] = None,
+				   excludedTags: Optional[str|list[str]] = None) -> bool:
+		"""	Stop the PluginManager service. This is called when the CSE is stopped. It does not shut down the plugins, but only stops them. 
+		"""
+		L.isDebug and L.logDebug(f'Stopping plugins: tags={tags}, excludedTags={excludedTags}')
+		self.stopPlugins(tags=tags, excludedTags=excludedTags)
+		return True
+
+
 
 
 	def restart(self, _: str) -> None:
@@ -127,12 +149,13 @@ class PluginManager(PM):
 		L.isDebug and L.logDebug('Plugins restarted')
 
 		
-	def shutdown(self) -> bool:
+	def shutdown(self, tags: Optional[str|list[str]] = None,
+					excludedTags: Optional[str|list[str]] = None) -> bool:
 		"""	Shutdown the PluginManager service and plugins.
 		"""
 		# Shutdown plugins
 		L.isInfo and L.log('Shutting down and unloading plugins')
-		self.stopPlugins()
+		self.stopPlugins(tags=tags, excludedTags=excludedTags)
 		self.unresolvePlugins()	# Unresolve plugins after stopping them to clean up injected dependencies and set plugin instances to None
 		self.unloadPlugins()	# This implicitly stops the plugins as well
 		L.isInfo and L.log('Plugins stopped and unloaded')

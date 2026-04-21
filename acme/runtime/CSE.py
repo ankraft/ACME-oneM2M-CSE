@@ -170,6 +170,12 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 										balanceReduceFactor=Configuration.cse_operation_jobs_balanceReduceFactor)
 
 	try:
+		# Initialize the plugin manager
+		# This loads, configures and runs the plugins as well
+		pluginManager = PluginManager()	
+		pluginManager.start(tags=['database'])	# Start the database plugins first
+
+
 		storage = Storage()						# Initialize the resource storage
 
 		importer = Importer()					# Initialize the importer
@@ -179,12 +185,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		dispatcher = Dispatcher()				# Initialize the resource dispatcher
 		request = RequestManager()				# Initialize the request manager
 		
-		# httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
-
-		# Initialize the plugin manager
-		# This loads, configures and runs the plugins as well
-		pluginManager = PluginManager()	
-
 		security = SecurityManager()			# Initialize the security manager
 
 		notification = NotificationManager()	# Initialize the notification manager
@@ -195,8 +195,8 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		time = TimeManager()					# Initialize the time manager
 		script = ScriptManager()				# Initialize the script manager
 		action = ActionManager()				# Initialize the action manager
-
-		pluginManager.start()					# Start the plugins after all components are initialized. This is important, because some plugins might depend on the components to be initialized before they can start. For example, the WebSocket plugin needs the request manager to be initialized before it can start.
+		
+		pluginManager.start(excludedTags=['database'])	# Start the remaining plugins after all components are initialized.
 
 		# Import attribute, flexContainer and enum policies, and configuration documentation
 		#
@@ -286,7 +286,9 @@ def _shutdown() -> None:
 		event.cseShutdown() 	# type: ignore
 	
 	# shutdown the services
-	pluginManager and pluginManager.shutdown()
+	# Stop all the plugins, except the database plugins, which are needed during shutdown 
+	# This leaves only the database plugins running
+	pluginManager and pluginManager.stop(excludedTags=['database'])
 
 	time and time.shutdown()
 	remote and remote.shutdown()
@@ -303,6 +305,9 @@ def _shutdown() -> None:
 	event and event.shutdown()
 	storage  and storage.shutdown()
 	
+	# This shutdowns all plugins, including the ones, which only have been stopped before
+	pluginManager and pluginManager.shutdown()	
+
 	L.isInfo and L.log('CSE shut down')
 	L.console('CSE shut down', nlb = True)
 
@@ -355,7 +360,7 @@ def resetCSE() -> None:
 		# Pause all binding plugins to stop receiving requests during reset.
 		pluginManager.pausePlugins(tags='binding')
 		# Restart all plugins, except core plugins. They are restarted via an event
-		pluginManager.restartPlugins(exceptTags='core')	
+		pluginManager.restartPlugins(excludedTags='core')	
 
 		storage.purge()
 

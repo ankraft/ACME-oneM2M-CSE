@@ -19,15 +19,20 @@ from psycopg2 import connect, Error
 from psycopg2.extras import Json as PsyJson
 from psycopg2.extensions import cursor as PsyCursor, connection as PsyConnection
 
-from .DBBinding import DBBinding
-from ..etc.Constants import Constants as C
-from ..etc.Types import JSON, ResourceTypes, OriginatorType
-from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
-from ..runtime.Logging import Logging as L
+from ...runtime.DBBinding import DBBinding
+from ...etc.Constants import Constants as C
+from ...etc.Types import JSON, ResourceTypes, OriginatorType
+from ...etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
+from ...runtime.Logging import Logging as L
+from ...runtime.Configuration import Configuration, ConfigurationError
+from ...helpers.PluginManager import plugin, start, configure, validate
+from ...helpers.NetworkTools import isValidPort
+
 
 
 # TODO Add error handling ansd exceptions to fetch methods?
 
+@plugin(property='postgresqlBinding', tags=['core', 'database'])
 class PostgreSQLBinding(DBBinding):
 	"""	PostgreSQLBinding class.
 	"""
@@ -63,41 +68,36 @@ class PostgreSQLBinding(DBBinding):
 	"""	The name of the table for subscription mappings. """
 
 
-	def __init__(self,	dbHost: str, 
-			  			dbPort: int,
-						dbUser: str,
-						dbPassword: str,
-						dbDatabase: str,
-						dbSchema: str) -> None:
-		"""	Initialize the PostgreSQLBinding object.
+					# if _disablePostgreSQL:
+					# 	raise RuntimeError('Configuration conflict: Use of PostgreSQL is disabled in the environment, but enabled in the configuration.')
+					# self.db = PostgreSQLBinding(Configuration.database_postgresql_host,	
+					# 							Configuration.database_postgresql_port,	
+					# 							Configuration.database_postgresql_role,	
+					# 							Configuration.database_postgresql_password,
+					# 							Configuration.database_postgresql_database,
+					# 							Configuration.database_postgresql_schema
+					# 						)
 
-			Args:
-				dbHost: The hostname of the database server.
-				dbPort: The port of the database server.
-				dbUser: The username to connect to the database.
-				dbPassword: The password to connect to the database.
-				dbDatabase: The name of the database to connect to.
-				dbSchema: The schema to use in the database.
-		"""
-		super().__init__()
 
+	@start
+	def start(self) -> None:
 		# Store the connection parameters
-		self.dbHost = dbHost
+		self.dbHost = Configuration.database_postgresql_host
 		"""	The hostname of the database server. """
 		
-		self.dbPort = dbPort
+		self.dbPort = Configuration.database_postgresql_port
 		"""	The port of the database server. """
 
-		self.dbUser = dbUser
+		self.dbUser = Configuration.database_postgresql_role
 		"""	The username to connect to the database. """
 
-		self.dbPassword = dbPassword
+		self.dbPassword = Configuration.database_postgresql_password
 		"""	The password to connect to the database. """
 
-		self.dbDatabase = dbDatabase
+		self.dbDatabase = Configuration.database_postgresql_database
 		"""	The name of the database to connect to. """
 
-		self.dbSchema = dbSchema
+		self.dbSchema = Configuration.database_postgresql_schema
 		"""	The schema to use in the database. """
 
 		self.dbConnection:Optional[PsyConnection] = None
@@ -139,6 +139,33 @@ class PostgreSQLBinding(DBBinding):
 	def backupDB(self, dir:str) -> bool:
 		# L.isDebug and L.logDebug(f'Database backup is not supported for PostgreSQL. Skipping.')
 		return True
+
+
+	#
+	#	Configuration
+	#
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		parser = config.configParser
+
+		#	Database PostgreSQL
+
+		config.database_postgresql_host = parser.get('database.postgresql', 'host', fallback='localhost')
+		config.database_postgresql_port = parser.getint('database.postgresql', 'port', fallback=5432)
+		config.database_postgresql_role = parser.get('database.postgresql', 'role', fallback=None)	# CSE-ID
+		config.database_postgresql_password = parser.get('database.postgresql', 'password', fallback=None)
+		config.database_postgresql_database = parser.get('database.postgresql', 'database', fallback='acmecse')
+		config.database_postgresql_schema = parser.get('database.postgresql', 'schema', fallback='acmecse')
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		# PostgreSQL
+
+		if not isValidPort(config.database_postgresql_port):
+			raise ConfigurationError(fr'Invalid port number for [i]\[database.postgresql]:port[/i]: {config.database_postgresql_port}')
+
 
 
 	###########################################################################

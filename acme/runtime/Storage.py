@@ -21,29 +21,23 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, List, Optional, Sequence, Tuple
+from typing import Callable, cast, List, Optional, Sequence, Tuple, Any
 
 import os
 
 from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode, OriginatorType
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
-from ..etc.Constants import RuntimeConstants as RC
 from .Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..resources.SCH import SCH
 from .Factory import resourceFromDict
 from .Logging import Logging as L
+from ..helpers.PluginManager import requires
 
-from ..databases.DBBinding import DBBinding
-from ..databases.TinyDBBinding import TinyDBBinding
+from .DBBinding import DBBinding
 
-if 'ACME_NO_PGSQL' not in os.environ:
-	from ..databases.PostgreSQLBinding import PostgreSQLBinding
-	_disablePostgreSQL = False
-else:
-	_disablePostgreSQL = True
 
 
 # Constants for database and table names
@@ -67,9 +61,14 @@ _schedules = 'schedules'
 """ Name of the schedules table. """
 
 
+@requires(tinyDBBinding='acme.plugins.database.TinyDBBinding', required=False)
+@requires(postgreSQLBinding='acme.plugins.database.PostgreSQLBinding', required=False)
 class Storage(object):
 	"""	This class implements the entry points to the CSE's underlying database functions.
 	"""
+
+	tinyDBBinding: Optional[Any] = None
+	postgreSQLBinding: Optional[Any] = None
 
 	__slots__ = (
 		'db',
@@ -86,37 +85,21 @@ class Storage(object):
 		self.db:DBBinding = None
 		""" The database object. """
 	
-		if _disablePostgreSQL:
-			L.isDebug and L.logDebug('PostgreSQL is disabled by environment variable')
-
 		# Create the database object and connect to the database
 		try:
 			match Configuration.database_type:
 				case 'tinydb':
 					# create tinyDB object and open DB for file handling
-					self.db = TinyDBBinding(Configuration.database_tinydb_path, 		
-											f'{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}', # add SP-ID + CSE CSI as postfix
-											Configuration.database_tinydb_cacheSize,
-											Configuration.database_tinydb_writeDelay
-										) 
+					self.db = self.tinyDBBinding
+
 				case 'memory':
 					# create tinyDB object and open DB for in-memory handling
-					self.db = TinyDBBinding(None,
-											f'{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}', # add SP-ID + CSE CSI as postfix
-											Configuration.database_tinydb_cacheSize,
-											Configuration.database_tinydb_writeDelay
-										)
+					self.db = self.tinyDBBinding
+
 				case 'postgresql':
 					# create PostgreSQL object and connect to the DB
-					if _disablePostgreSQL:
-						raise RuntimeError('Configuration conflict: Use of PostgreSQL is disabled in the environment, but enabled in the configuration.')
-					self.db = PostgreSQLBinding(Configuration.database_postgresql_host,	
-												Configuration.database_postgresql_port,	
-												Configuration.database_postgresql_role,	
-												Configuration.database_postgresql_password,
-												Configuration.database_postgresql_database,
-												Configuration.database_postgresql_schema
-											)
+					self.db = self.postgreSQLBinding
+
 				case _:
 					L.logErr('Unknown database type')
 					quit()

@@ -16,18 +16,21 @@ import shutil, os
 from threading import Lock
 from pathlib import Path
 
-from .DBBinding import DBBinding
-from ..etc.Types import JSON, ResourceTypes, OriginatorType
+from ...runtime.DBBinding import DBBinding
+from ...etc.Types import JSON, ResourceTypes, OriginatorType
+from ...etc.Constants import RuntimeConstants as RC
 
-from ..runtime.Logging import Logging as L
+from ...runtime.Logging import Logging as L
+from ...runtime.Configuration import Configuration
 
 from tinydb import TinyDB, Query
 from tinydb.table import Document
 from tinydb.storages import MemoryStorage
 from tinydb.operations import delete 
 
-from ..helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
-from ..helpers.TinyDBBetterTable import TinyDBBetterTable
+from ...helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
+from ...helpers.TinyDBBetterTable import TinyDBBetterTable
+from ...helpers.PluginManager import plugin, init, start, configure, validate
 
 
 # Constants for database and table names
@@ -59,6 +62,7 @@ _schedules = 'schedules'
 """ Name of the schedules table. """
 
 
+@plugin(property='tinyDBBinding', tags=['core', 'database'])
 class TinyDBBinding(DBBinding):
 	"""	This class implements the TinyDB binding to the database. It is used by the Storage class.
 	"""
@@ -67,6 +71,7 @@ class TinyDBBinding(DBBinding):
 		'path',
 		'cacheSize',
 		'writeDelay',
+		'postfix',
 		
 		'lockResources',
 		'lockIdentifiers',
@@ -119,30 +124,10 @@ class TinyDBBinding(DBBinding):
 	)
 	""" Define slots for instance variables. """
 
-	def __init__(self, path:str, 
-			  		   postfix:str, 
-					   cacheSize:int,
-					   writeDelay:int) -> None:
-		"""	Initialize the TinyDB binding.
+
+	@init
+	def init(self) -> None:
 		
-			Args:
-				path: Path to the database directory. If None, the database will be in memory.
-				postfix: Postfix for the database file names.
-				cacheSize: Size of the cache for the TinyDB tables.
-				writeDelay: Delay for writing to the database (in full seconds).
-		"""
-		
-		self.path = path
-		""" Path to the database directory. """
-
-		self.cacheSize = cacheSize
-		""" Size of the cache for the TinyDB tables. """
-
-		self.writeDelay = writeDelay
-		""" Delay for writing to the database. """
-
-		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
-
 		#
 		#	Create transaction locks
 		#
@@ -179,6 +164,27 @@ class TinyDBBinding(DBBinding):
 
 		self.lockOriginators = Lock()
 		""" Lock for the originators. """
+
+		L.isInfo and L.log('TinyDBBinding initialized')
+
+
+	@start
+	def start(self) -> None:
+
+		self.path = None if Configuration.database_type == 'memory' else Configuration.database_tinydb_path
+		""" Path to the database directory. """
+
+		self.postfix = f'{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}', # add SP-ID + CSE CSI as postfix
+		""" Postfix for the database file names. """
+
+		self.cacheSize = Configuration.database_tinydb_cacheSize
+		""" Size of the cache for the TinyDB tables. """
+
+		self.writeDelay = Configuration.database_tinydb_cacheSize
+		""" Delay for writing to the database. """
+
+		L.isDebug and L.logDebug(f'Cache Size: {self.cacheSize:d}')
+
 
 
 		# All databases/tables will use the smart query cache
@@ -221,31 +227,31 @@ class TinyDBBinding(DBBinding):
 			#	Assign file names
 			#
 
-			self.fileResources = f'{self.path}/{_resources}-{postfix}.json'
+			self.fileResources = f'{self.path}/{_resources}-{self.postfix}.json'
 			""" Filename for the resources table."""
 
-			self.fileIdentifiers = f'{self.path}/{_identifiers}-{postfix}.json'
+			self.fileIdentifiers = f'{self.path}/{_identifiers}-{self.postfix}.json'
 			""" Filename for the identifiers table."""
 
-			self.fileSubscriptions = f'{self.path}/{_subscriptions}-{postfix}.json'
+			self.fileSubscriptions = f'{self.path}/{_subscriptions}-{self.postfix}.json'
 			""" Filename for the subscriptions table."""
 
-			self.fileBatchNotifications = f'{self.path}/{_batchNotifications}-{postfix}.json'
+			self.fileBatchNotifications = f'{self.path}/{_batchNotifications}-{self.postfix}.json'
 			""" Filename for the batchNotifications table."""
 
-			self.fileStatistics = f'{self.path}/{_statistics}-{postfix}.json'
+			self.fileStatistics = f'{self.path}/{_statistics}-{self.postfix}.json'
 			""" Filename for the statistics table."""
 
-			self.fileActions = f'{self.path}/{_actions}-{postfix}.json'
+			self.fileActions = f'{self.path}/{_actions}-{self.postfix}.json'
 			""" Filename for the actions table."""
 
-			self.fileRequests = f'{self.path}/{_requests}-{postfix}.json'
+			self.fileRequests = f'{self.path}/{_requests}-{self.postfix}.json'
 			""" Filename for the requests table."""
 
-			self.fileSchedules = f'{self.path}/{_schedules}-{postfix}.json'
+			self.fileSchedules = f'{self.path}/{_schedules}-{self.postfix}.json'
 			""" Filename for the schedules table."""
 
-			self.fileOriginators = f'{self.path}/originators-{postfix}.json'
+			self.fileOriginators = f'{self.path}/originators-{self.postfix}.json'
 			""" Filename for the originators table."""
 
 			#
@@ -416,6 +422,27 @@ class TinyDBBinding(DBBinding):
 				shutil.copy2(fn, dir)
 		L.isDebug and L.logDebug('DB backup done')
 		return True
+
+
+	#
+	#	Configuration
+	#
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		parser = config.configParser
+
+		config.database_tinydb_path = parser.get('database.tinydb', 'path', fallback='./data')
+		config.database_tinydb_cacheSize = parser.getint('database.tinydb', 'cacheSize', fallback=0)		# Default: no caching
+		config.database_tinydb_writeDelay = parser.getint('database.tinydb', 'writeDelay', fallback=1)		# Default: 1 second
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		# override configuration with command line arguments
+		if config._args_DBDataDirectory is not None:
+			config.database_tinydb_path = config._args_DBDataDirectory
+
 
 	#########################################################################
 
