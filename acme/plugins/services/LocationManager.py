@@ -90,7 +90,7 @@ class LocationManager(object):
 
 
 	@restart
-	def restart(self, name:str) -> None:
+	def restart(self) -> None:
 		"""	Restart the LocationManager.
 		"""
 		L.isDebug and L.logDebug('LocationManager restarted')
