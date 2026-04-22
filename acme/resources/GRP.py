@@ -7,9 +7,11 @@
 """ Group (GRP) Resource Type """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Any
 
 from ..etc.Types import ResourceTypes, ConsistencyStrategy, JSON
+from ..etc.ResponseStatusCodes import NOT_IMPLEMENTED
+from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..runtime import Factory as Factory	# attn: circular import
@@ -17,8 +19,11 @@ from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
+@requires(groupManager='acme.plugins.services.GroupManager', required=False)
 class GRP(AnnounceableResource):
 	""" Represents the Group resource. """
+
+	groupManager: Optional[Any] = None
 
 	def initialize(self, pi: str) -> None:
 		self.setAttribute('mt', int(ResourceTypes.MIXED), overwrite=False)
@@ -46,6 +51,8 @@ class GRP(AnnounceableResource):
 					   dct: Optional[JSON]=None, 
 					   parentResource: Optional[Resource]=None) -> None:
 		super().validate(originator, dct, parentResource)
-		CSE.groupResource.validateGroup(self, originator)
+		if not self.groupManager:
+			raise NOT_IMPLEMENTED(L.logWarn('GroupManager plugin is disabled, cannot validate group.'))
+		self.groupManager.validateGroup(self, originator)
 
 

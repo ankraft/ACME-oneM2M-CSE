@@ -171,6 +171,7 @@ _statistics_enable_=${cse.statistics:enable}
 _textui_enable_=${textui:enable}
 _webui_enable_=${webui:enable}
 _actionManager_enable_=${cse.service.action:enable}
+_groupManager_enable_=${cse.service.group:enable}
 _locationManager_enable_=${cse.service.location:enable}
 _semanticManager_enable_=${cse.service.semantic:enable}
 
@@ -181,6 +182,17 @@ _semanticManager_enable_=${cse.service.semantic:enable}
 
 [cse.service.action]
 ; Enable the Action Processing Service. This includes the ActionManager plugin and 
+; the related features in the CSE.
+; Default: true
+enable=true
+
+
+;
+;	Settings for the Action Processing Service
+;
+
+[cse.service.group]
+; Enable the Group Management Service. This includes the GroupManager plugin and 
 ; the related features in the CSE.
 ; Default: true
 enable=true

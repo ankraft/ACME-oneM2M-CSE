@@ -31,7 +31,6 @@ from ..runtime.Configuration import Configuration
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
 from .EventManager import EventManager
-from ..services.GroupManager import GroupManager
 from ..runtime.Importer import Importer
 from ..services.NotificationManager import NotificationManager
 from ..runtime.PluginManager import PluginManager, DependencyError
@@ -63,9 +62,6 @@ dispatcher:Dispatcher = None
 
 event:EventManager = None
 """	Runtime instance of the `EventManager`. """
-
-groupResource:GroupManager = None
-"""	Runtime instance of the `GroupManager`. """
 
 # httpServer:HttpServer = None
 """	Runtime instance of the `HttpServer`. """
@@ -123,7 +119,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global announce, dispatcher, event, groupResource, importer
+	global announce, dispatcher, event, importer
 	global notification, pluginManager, registration, remote, request, script, security
 	global storage, time, timeSeries, validator
 
@@ -184,7 +180,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		security = SecurityManager()			# Initialize the security manager
 
 		notification = NotificationManager()	# Initialize the notification manager
-		groupResource = GroupManager()					# Initialize the group manager
 		timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 		remote = RemoteCSEManager()				# Initialize the remote CSE manager
 		announce = AnnouncementManager()		# Initialize the announcement manager
@@ -290,7 +285,6 @@ def _shutdown() -> None:
 	script and script.shutdown()
 	announce and announce.shutdown()
 	timeSeries and timeSeries.shutdown()
-	groupResource and groupResource.shutdown()
 	notification and notification.shutdown()
 	request and request.shutdown()
 	dispatcher and dispatcher.shutdown()
@@ -355,7 +349,7 @@ def resetCSE() -> None:
 		# Pause all binding plugins to stop receiving requests during reset.
 		pluginManager.pausePlugins(tags='binding')
 		# Restart all plugins, except core plugins. They are restarted via an event
-		pluginManager.restartPlugins(excludedTags='core')	
+		pluginManager.restartPlugins()	
 
 		storage.purge()
 

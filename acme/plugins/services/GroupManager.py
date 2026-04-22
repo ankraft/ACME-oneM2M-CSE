@@ -10,43 +10,46 @@
 """	This module implements the group service manager functionality. """
 
 from __future__ import annotations
-from typing import cast, List
+from typing import cast, List, Optional, Any
 
-from ..etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
-from ..etc.Types import CSERequest, JSON, ResponseType
-from ..etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
-from ..etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
-from ..etc.ACMEUtils import structuredPathFromRI
-from ..etc.IDUtils import isSPRelative, csiFromSPRelative
-from ..etc.DateUtils import utcTime
-from ..etc.Constants import RuntimeConstants as RC
-from ..resources.FCNT import FCNT
-from ..resources.MgmtObj import MgmtObj
-from ..resources.Resource import Resource
-from ..resources.GRP_FOPT import GRP_FOPT
-from ..runtime.Factory import resourceFromDict
-from ..runtime import CSE
-from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration
+from ...etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
+from ...etc.Types import CSERequest, JSON, ResponseType
+from ...etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
+from ...etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
+from ...etc.ACMEUtils import structuredPathFromRI
+from ...etc.IDUtils import isSPRelative, csiFromSPRelative
+from ...etc.DateUtils import utcTime
+from ...etc.Constants import RuntimeConstants as RC
+from ...helpers.PluginManager import plugin, start, stop, restart
+from ...resources.FCNT import FCNT
+from ...resources.MgmtObj import MgmtObj
+from ...resources.Resource import Resource
+from ...resources.GRP_FOPT import GRP_FOPT
+from ...runtime.Factory import resourceFromDict
+from ...runtime import CSE
+from ...runtime.Logging import Logging as L
+from ...runtime.Configuration import Configuration
 
 
+@plugin(property='groupManager', tags=['core'])
 class GroupManager(object):
 	"""	Manager for the CSE's group service. 
 	"""
 
-	def __init__(self) -> None:
+	groupManager: Optional[Any] = None
+
+	@start
+	def start(self) -> None:
 		"""	Initialization of the GroupManager.
 		"""
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
 
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
-
 		L.isInfo and L.log('GroupManager initialized')
 
 
-	def shutdown(self) -> bool:
+	@stop
+	def stop(self) -> bool:
 		"""	Shutdown the GroupManager.
 		
 			Returns:
@@ -56,7 +59,8 @@ class GroupManager(object):
 		return True
 
 
-	def restart(self, name:str) -> None:
+	@restart
+	def restart(self) -> None:
 		"""	Restart the registration services.
 		"""
 		L.isDebug and L.logDebug('GroupManager restarted')
