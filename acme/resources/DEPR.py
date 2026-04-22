@@ -32,13 +32,12 @@ class DEPR(AnnounceableResource):
 		super().activate(parentResource, originator)
 
 		# Check that the evalCriteria and target resources are correct and accessible
-		if self.actionManager:
-			try:
-				self.actionManager.checkEvalCriteria(self.evc, self.rri, originator)
-			except ResponseException as e:
-				raise BAD_REQUEST(e.dbg)
-		else:
+		if not self.actionManager:
 			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+		try:
+			self.actionManager.checkEvalCriteria(self.evc, self.rri, originator)
+		except ResponseException as e:
+			raise BAD_REQUEST(e.dbg)
 
 
 	def update(self, dct: JSON=None, 
@@ -52,10 +51,9 @@ class DEPR(AnnounceableResource):
 		# Check that the evalCriteria and target resources are correct and accessible
 		# Check the evc only if the evc attribute is present in the update request
 		try:
-			if self.actionManager:
-				self.actionManager.checkEvalCriteria(evc, rri, originator, 'evc' in dct)
-			else:
+			if not self.actionManager:
 				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+			self.actionManager.checkEvalCriteria(evc, rri, originator, 'evc' in dct)
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 

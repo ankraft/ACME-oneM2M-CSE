@@ -56,18 +56,16 @@ class ACTR(AnnounceableResource):
 
 		# Check that the evalCriteria is correct
 		try:
-			if self.actionManager:
-				self.actionManager.checkEvalCriteria(self.evc, checkResource, originator)
-			else:
+			if not self.actionManager:
 				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+			self.actionManager.checkEvalCriteria(self.evc, checkResource, originator)
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 
 		# Schedule and process the <action> resource
-		if self.actionManager:
-			self.actionManager.scheduleAction(self)
-		else:
+		if not self.actionManager:
 			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot schedule action'))
+		self.actionManager.scheduleAction(self)
 
 
 	def update(self, dct:JSON = None, 
@@ -133,11 +131,10 @@ class ACTR(AnnounceableResource):
 		if dctEvc or dctSri:	# If we have a evalCriteria at all or a subject resource
 
 			# Check that the evalCriteria is correct
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 			try:
-				if self.actionManager:
-					self.actionManager.checkEvalCriteria(newEvc, sriResource, originator)
-				else:
-					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+				self.actionManager.checkEvalCriteria(newEvc, sriResource, originator)
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)
 
@@ -151,10 +148,9 @@ class ACTR(AnnounceableResource):
 		# Restart the monitoring (unschedule and restart later) when new evm is given
 		doScheduleAction = False
 		if dctEvm is not None:
-			if self.actionManager:
-				self.actionManager.unscheduleAction(self)
-			else:
+			if not self.actionManager:
 				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
+			self.actionManager.unscheduleAction(self)
 			
 			# don't restart when new evm == off
 			if dctEvm in [ EvalMode.once, EvalMode.periodic, EvalMode.continous ]:
@@ -162,33 +158,29 @@ class ACTR(AnnounceableResource):
 		
 		# Restart periodic and continious when new ecp (only) was set
 		if newEcp is not None and dctEvm is None and origEvm in [ EvalMode.periodic, EvalMode.continous ]:
-			if self.actionManager:
-				self.actionManager.unscheduleAction(self)
-			else:
+			if not self.actionManager:
 				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
+			self.actionManager.unscheduleAction(self)
 			doScheduleAction = True
 
 		# Restart monitoring if necessary
 		if doScheduleAction:
-			if self.actionManager:
-				self.actionManager.scheduleAction(self)
-			else:
+			if not self.actionManager:
 				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot schedule action'))
+			self.actionManager.scheduleAction(self)
 		
 		# Update other attributes if necessary
 		if dep:
-			if self.actionManager:
-				self.actionManager.updateAction(self)
-			else:
+			if not self.actionManager:
 				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot update action dependencies'))
+			self.actionManager.updateAction(self)
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Unschedule the action
-		if self.actionManager:
-			self.actionManager.unscheduleAction(self)
-		else:
+		if not self.actionManager:
 			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
+		self.actionManager.unscheduleAction(self)
 		return super().deactivate(originator, parentResource)
 
 

@@ -46,10 +46,9 @@ class STTE(AnnounceableResource):
 					nxstID = sttr['nxst']
 					# Check access
 					# EXPRIMENTAL assuming a subject rsource ID attribute in stateTransition
-					if self.actionManager:
-						self.actionManager.checkEvalCriteria(sttr['evc'], sttr['sri'], _orig)
-					else:
+					if not self.actionManager:
 						raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+					self.actionManager.checkEvalCriteria(sttr['evc'], sttr['sri'], _orig)
 
 					# Check parent of references next state resource
 					stateResource = CSE.dispatcher.retrieveResource(nxstID)

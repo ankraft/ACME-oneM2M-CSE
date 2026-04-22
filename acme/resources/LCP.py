@@ -60,10 +60,9 @@ class LCP(AnnounceableResource):
 		self.setAttribute('loi', container.ri)
 
 		# Register the LCP for periodic positioning procedure
-		if self.locationManager:
-			self.locationManager.addLocationPolicy(self)
-		else:
+		if not self.locationManager:
 			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be registered for periodic positioning procedure.'))
+		self.locationManager.addLocationPolicy(self)
 
 
 
@@ -81,10 +80,9 @@ class LCP(AnnounceableResource):
 		super().updated(dct, originator)
 
 		# update the location policy handling
-		if self.locationManager:
-			self.locationManager.updateLocationPolicy(self)
-		else:
+		if not self.locationManager:
 			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be updated.'))
+		self.locationManager.updateLocationPolicy(self)
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
@@ -92,10 +90,9 @@ class LCP(AnnounceableResource):
 		if self.loi is not None:
 			CSE.dispatcher.deleteResource(self.loi, originator)
 
-		if self.locationManager:
-			self.locationManager.removeLocationPolicy(self)
-		else:
+		if not self.locationManager:
 			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be removed from periodic positioning procedure.'))
+		self.locationManager.removeLocationPolicy(self)
 
 		super().deactivate(originator, parentResource)
 
@@ -136,12 +133,11 @@ class LCP(AnnounceableResource):
 
 		# Validate the polygon
 		if (gta := self.gta) is not None:
-			if self.locationManager:
-				if (g := self.locationManager.getGeoPolygon(gta)) is None:
-					raise BAD_REQUEST('Invalid geographicalTargetArea. Must be a valid geoJSON polygon.')
-				self.setAttribute(Constants.attrGTA, g)	# store the geoJSON polygon in the internal attribute
-			else:
+			if not self.locationManager:
 				raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled, cannot validate geographicalTargetArea.'))
+			if (g := self.locationManager.getGeoPolygon(gta)) is None:
+				raise BAD_REQUEST('Invalid geographicalTargetArea. Must be a valid geoJSON polygon.')
+			self.setAttribute(Constants.attrGTA, g)	# store the geoJSON polygon in the internal attribute
 		
 
 

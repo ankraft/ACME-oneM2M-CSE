@@ -62,26 +62,24 @@ class PRMR(AnnounceableResource):
 		_originator = self.getCurrentOriginator()
 
 		if newAtcos:
-			if self.actionManager:
-				for atco in newAtcos:
-				# Check validity of the activateCondition attribute
-					try:
-						self.actionManager.checkEvalCriteria(atco['evc'], atco['sri'], _originator)
-					except ResponseException as e:
-						raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in activateCondition: {e}'))
-			else:
+			if not self.actionManager:
 				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+			for atco in newAtcos:
+			# Check validity of the activateCondition attribute
+				try:
+					self.actionManager.checkEvalCriteria(atco['evc'], atco['sri'], _originator)
+				except ResponseException as e:
+					raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in activateCondition: {e}'))
 
 		if newEncos:
-			if self.actionManager:
-				for enco in newEncos:
-				# Check validity of the endCondition attribute
-					try:
-						self.actionManager.checkEvalCriteria(enco['evc'], enco['sri'], _originator)
-					except ResponseException as e:
-						raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in endCondition: {e}'))
-			else:
+			if not self.actionManager:
 				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+			for enco in newEncos:
+			# Check validity of the endCondition attribute
+				try:
+					self.actionManager.checkEvalCriteria(enco['evc'], enco['sri'], _originator)
+				except ResponseException as e:
+					raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in endCondition: {e}'))
 	
 		# Step 4) Check existence and access to the <state> resource referenced by the (new) initialState attribute
 		if newInst:
@@ -123,10 +121,9 @@ class PRMR(AnnounceableResource):
 			# Step 10)
 			case ProcessControl.Pause if prst == ProcessState.Activated:
 				self.setAttribute('prst', ProcessState.Paused.value)
-				if self.actionManager:
-					self.actionManager.enterPauseState(self)
-				else:
+				if not self.actionManager:
 					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter pause state'))
+				self.actionManager.enterPauseState(self)
 				# TODO test for this
 
 
@@ -156,10 +153,9 @@ class PRMR(AnnounceableResource):
 			# Step 11)
 			case ProcessControl.Reactivate if prst == ProcessState.Paused:
 				self.setAttribute('prst', ProcessState.Activated.value)
-				if self.actionManager:
-					self.actionManager.enterActiveState(self)
-				else:
+				if not self.actionManager:
 					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter active state'))
+				self.actionManager.enterActiveState(self)
 				# TODO continues processing the process
 			
 			# Step 12)
@@ -176,10 +172,9 @@ class PRMR(AnnounceableResource):
 				# Remove the current state (cust) attribute
 				self.delAttribute('cust')	# EXPERIMENTAL In the spec this sets the cust attribute to Null
 				# disable the process
-				if self.actionManager:
-					self.actionManager.enterDisabledState(self)
-				else:
+				if not self.actionManager:
 					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter disabled state'))
+				self.actionManager.enterDisabledState(self)
 
 
 

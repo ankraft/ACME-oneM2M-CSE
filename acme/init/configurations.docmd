@@ -272,6 +272,19 @@ This includes the ActionManager plugin and the related features in the CSE.
 The default value is `True`.
 
 
+# cse.service.group
+
+This section contains settings that control the CSE's group service.
+
+
+# cse.service.group.enable
+
+This setting enables or disables the group service.
+This includes the GroupManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
 # cse.service.location
 
 This section contains settings that control the CSE's location service.

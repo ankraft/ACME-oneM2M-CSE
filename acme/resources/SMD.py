@@ -51,10 +51,9 @@ class SMD(AnnounceableResource):
 		# Validation of CREATE is done in self.validate()
 		
 		# Perform Semantic validation process and add descriptor
-		if self.semanticManager:
-			self.semanticManager.addDescriptor(self)
-		else:
+		if not self.semanticManager:
 			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot add descriptor to graph'))
+		self.semanticManager.addDescriptor(self)
 		self.setAttribute('svd', True)
 
 
@@ -75,10 +74,9 @@ class SMD(AnnounceableResource):
 		
 		# If soe exists then validate it
 		if soeNew:
-			if self.semanticManager:
-				self.semanticManager.validateSPARQL(soeNew)
-			else:
+			if not self.semanticManager:
 				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate SPARQL query for soe attribute'))
+			self.semanticManager.validateSPARQL(soeNew)
 
 		# Generic update and validation (with semantic procdures)
 		super().update(dct, originator, doValidateAttributes)
@@ -92,10 +90,9 @@ class SMD(AnnounceableResource):
 
 	
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
-		if self.semanticManager:
-			self.semanticManager.removeDescriptor(self)
-		else:
+		if not self.semanticManager:
 			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot remove descriptor from graph'))
+		self.semanticManager.removeDescriptor(self)
 		return super().deactivate(originator, parentResource)
 
 

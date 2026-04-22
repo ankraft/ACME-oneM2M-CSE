@@ -276,7 +276,7 @@ class Dispatcher(object):
 					#	This is indicated by rcn = semantic content
 					L.isDebug and L.logDebug('Performing semantic discovery / query')
 
-					if self.semanticManager is None:
+					if not self.semanticManager:
 						raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot execute semantic discovery'))
 					
 					# Validate SPARQL in semanticFilter
@@ -648,12 +648,11 @@ class Dispatcher(object):
 
 		# Geo query
 		if filterCriteria.geom:	# Just check one of the tree required attributes. If one is there, all are there
-			if self.locationManager:
-				allLen += 1	# Add one more criteria to check to the required count
-				if r.loc:	# Only check if the resource has a location
-					found += 1 if self.locationManager.checkGeoLocation(r, filterCriteria.gmty, filterCriteria._geom, filterCriteria.gsf) else 0
-			else:
+			if not self.locationManager:
 				raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. No geo queries can be processed.'))
+			allLen += 1	# Add one more criteria to check to the required count
+			if r.loc:	# Only check if the resource has a location
+				found += 1 if self.locationManager.checkGeoLocation(r, filterCriteria.gmty, filterCriteria._geom, filterCriteria.gsf) else 0
 
 		# L.isDebug and L.logDebug(f'fo: {fo}, found: {found}, allLen: {allLen}')
 		# Test whether the OR or AND criteria is fullfilled

@@ -53,10 +53,9 @@ class CNT_LA(VirtualResource):
 		# This might create a new CIN
 		if (li := self.getLCPLink()) is not None:
 			if (result := self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest=False)) is not None:
-				if self.locationManager:
-					self.locationManager.handleLatestRetrieve(cast(CIN, result.resource), li)
-				else:
+				if not self.locationManager:
 					raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. Location information will NOT be properly handled for the latest CIN.'))
+				self.locationManager.handleLatestRetrieve(cast(CIN, result.resource), li)
 
 		return self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest=False)
 
