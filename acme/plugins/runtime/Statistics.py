@@ -151,12 +151,12 @@ class Statistics(object):
 		# create lock
 		self.statLock = Lock()
 
-		# retrieve or create statistics record, even when statistics are disabled
-		self.stats = self.setupStats()
-
 
 	@start
 	def start(self) -> None:
+
+		# retrieve or create statistics record, even when statistics are disabled
+		self.stats = self.setupStats()
 
 		if Configuration.cse_statistics_enable:
 			# subscripe vto various events
