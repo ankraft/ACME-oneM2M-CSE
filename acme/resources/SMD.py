@@ -103,17 +103,15 @@ class SMD(AnnounceableResource):
 		super().validate(originator, dct, parentResource)
 		
 		# Validate validationEnable attribute
-		if self.semanticManager:
-			self.semanticManager.validateValidationEnable(self)
-		else:
+		if not self.semanticManager:
 			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate vlde attribute'))
+		self.semanticManager.validateValidationEnable(self)
 
 		# Validate descriptor attribute
+		if not self.semanticManager:
+			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate dcrp attribute'))
 		try:
-			if self.semanticManager:
-				self.semanticManager.validateDescriptor(self)
-			else:
-				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate dcrp attribute'))
+			self.semanticManager.validateDescriptor(self)
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 		

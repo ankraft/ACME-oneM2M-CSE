@@ -8,40 +8,40 @@
 
 from __future__ import annotations
 
-from ..etc.Types import NotificationEventType, MissingData, LastTSInstance, ResourceTypes
-from ..resources.Resource import Resource
-from ..runtime import CSE
-from ..etc.DateUtils import toISO8601Date, fromAbsRelTimestamp, fromDuration
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..runtime.Logging import Logging as L
+from ...etc.Types import NotificationEventType, MissingData, LastTSInstance, ResourceTypes
+from ...etc.DateUtils import toISO8601Date, fromAbsRelTimestamp, fromDuration
+from ...resources.Resource import Resource
+from ...helpers.BackgroundWorker import BackgroundWorkerPool
+from ...helpers.PluginManager import plugin, start, stop, restart
+from ...runtime import CSE
+from ...runtime.Logging import Logging as L
 
 
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects
 """	Active TimeSeries instances. Maps the resourceID of the <TS> resource to the LastTSInstance object. """
 
+@plugin(property='timeSeriesManager', tags=['core'])
 class TimeSeriesManager(object):
 	""" Manager for TimeSeries handlings
 	"""
 
-	def __init__(self) -> None:
+	@start
+	def start(self) -> None:
 		"""	Initialize the TimeSeriesManager. Register event handlers.
 		"""
 		self._restoreTimeSeriesStructures()	# Restore structures after a complete restart
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
-		L.isInfo and L.log('TimeSeriesManager initialized')
+		L.isInfo and L.log('TimeSeriesManager initialized and started')
 
 
-	def shutdown(self) -> bool:
+	@stop
+	def stop(self) -> None:
 		"""	Shutdown the TimeSeriesManager. Stop all the active workers.
-
-			Return:
-				True if the shutdown was successful.
 		"""
 		self.stopMonitoring()
 		L.isInfo and L.log('TimeSeriesManager shut down')
-		return True
 
 	
+	@restart
 	def restart(self, name:str) -> None:
 		"""	Restart the TimeSeriesManager service.
 

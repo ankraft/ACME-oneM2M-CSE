@@ -1171,7 +1171,6 @@ from ..runtime.configurations.CNTResourceConfiguration import CNTResourceConfigu
 from ..runtime.configurations.ConsoleConfiguration import ConsoleConfiguration
 from ..runtime.configurations.CSEConfiguration import CSEConfiguration
 from ..runtime.configurations.FCNTResourceConfiguration import FCNTResourceConfiguration
-from ..runtime.configurations.GroupServiceConfiguration import GroupServiceConfiguration
 from ..runtime.configurations.LCPResourceConfiguration import LCPResourceConfiguration
 from ..runtime.configurations.LoggingConfiguration import LoggingConfiguration
 from ..runtime.configurations.ModuleConfiguration import ModuleConfiguration
@@ -1198,7 +1197,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 
 	# Service configurations
 	AnnouncementServiceConfiguration(),
-	GroupServiceConfiguration(),
 	RegistrationServiceConfiguration(),
 	RemoteCSEServiceConfiguration(),
 	SecurityServiceConfiguration(),

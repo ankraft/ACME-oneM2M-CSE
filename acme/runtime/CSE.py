@@ -41,7 +41,6 @@ from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..runtime.Storage import Storage
 from ..services.TimeManager import TimeManager
-from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
@@ -96,9 +95,6 @@ storage:Storage = None
 time:TimeManager = None
 """	Runtime instance of the `TimeManager`. """
 
-timeSeries:TimeSeriesManager = None
-"""	Runtime instance of the `TimeSeriesManager`. """
-
 validator:Validator = None
 """	Runtime instance of the `Validator`. """
 
@@ -121,7 +117,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	"""
 	global announce, dispatcher, event, importer
 	global notification, pluginManager, registration, remote, request, script, security
-	global storage, time, timeSeries, validator
+	global storage, time, validator
 
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
@@ -180,7 +176,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		security = SecurityManager()			# Initialize the security manager
 
 		notification = NotificationManager()	# Initialize the notification manager
-		timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 		remote = RemoteCSEManager()				# Initialize the remote CSE manager
 		announce = AnnouncementManager()		# Initialize the announcement manager
 		time = TimeManager()					# Initialize the time manager
@@ -284,7 +279,6 @@ def _shutdown() -> None:
 	remote and remote.shutdown()
 	script and script.shutdown()
 	announce and announce.shutdown()
-	timeSeries and timeSeries.shutdown()
 	notification and notification.shutdown()
 	request and request.shutdown()
 	dispatcher and dispatcher.shutdown()

@@ -8,24 +8,30 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Any
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
-from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE, CONFLICT
+from ..etc.Types import ResourceTypes, JSON
+from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE, CONFLICT, NOT_IMPLEMENTED
 from ..helpers.TextTools import findXPath
+from ..helpers.PluginManager import requires
 from ..etc.DateUtils import getResourceDate, toISO8601Date
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
-from ..runtime import Factory		# attn: circular import
 
 
 # CSE default:
 #	- peid is set to pei/2 if ommitted, and pei is set
 
+@requires(timeSeriesManager='acme.plugins.services.TimeSeriesManager', required=False)
 class TS(ContainerResource):
+
+
+	timeSeriesManager: Optional[Any] = None
+	""" Holds a reference to the TimeSeriesManager plugin, if available. """
+	
 
 	def initialize(self, pi: str) -> None:
 		self.setAttribute('mdd', False, overwrite=False)	# Default is False if not provided
@@ -69,7 +75,9 @@ class TS(ContainerResource):
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		super().deactivate(originator, parentResource)
-		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+		if not self.timeSeriesManager:
+			raise NOT_IMPLEMENTED(L.logWarn('TimeSeriesManager plugin is disabled, cannot handle timeSeries deactivate request.'))
+		self.timeSeriesManager.stopMonitoringTimeSeries(self.ri)
 
 
 	def update(self, dct:Optional[JSON] = None, 
@@ -84,16 +92,20 @@ class TS(ContainerResource):
 			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
 				raise BAD_REQUEST(L.logDebug('mdd must not be updated together with mdt, mdn, pei or peid.'))
 
+
+			if not self.timeSeriesManager:
+				raise NOT_IMPLEMENTED(L.logWarn('TimeSeriesManager plugin is disabled, cannot handle timeSeries update request.'))
+			
 			# Clear the list if mddNew is deliberatly set to True
 			if mddNew == True:
 				self._clearMdlt()
 				# Restart the monitoring process
 				# The actual "restart" is happening when the next TSI is received
 				L.isDebug and L.logDebug(f'(Re)Start monitoring <TS>: {self.ri}. Actual monitoring begins when first <TSI> is received.')
-				CSE.timeSeries.pauseMonitoringTimeSeries(self.ri)
+				self.timeSeriesManager.pauseMonitoringTimeSeries(self.ri)
 			else:
 				L.isDebug and L.logDebug(f'Pause monitoring <TS>: {self.ri}')
-				CSE.timeSeries.pauseMonitoringTimeSeries(self.ri)
+				self.timeSeriesManager.pauseMonitoringTimeSeries(self.ri)
 		
 		# Check that certain attributes are not updated when mdd is true
 		if self.mdd  == True: # existing mdd
@@ -218,7 +230,9 @@ class TS(ContainerResource):
 
 				# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
 				if self.mdd and self.pei is not None and self.mdt is not None:
-					CSE.timeSeries.updateTimeSeries(self, childResource)
+					if not self.timeSeriesManager:
+						raise NOT_IMPLEMENTED(L.logWarn('TimeSeriesManager plugin is disabled, cannot handle timeSeries update request.'))
+					self.timeSeriesManager.updateTimeSeries(self, childResource)
 			
 				# Send update event on behalf of the latest resources.
 				# The oldest resource might not be changed. That is handled in the validate() method.
@@ -227,7 +241,9 @@ class TS(ContainerResource):
 			case ResourceTypes.SUB:
 				# start monitoring
 				if childResource['enc/md']:
-					CSE.timeSeries.addSubscription(self, childResource)
+					if not self.timeSeriesManager:
+						raise NOT_IMPLEMENTED(L.logWarn('TimeSeriesManager plugin is disabled, cannot handle timeSeries update.'))
+					self.timeSeriesManager.addSubscription(self, childResource)
 
 
 
@@ -241,14 +257,18 @@ class TS(ContainerResource):
 				self._validateChildren()
 			case ResourceTypes.SUB:
 				if childResource['enc/md']:
-					CSE.timeSeries.removeSubscription(self, childResource)
+					if not self.timeSeriesManager:
+						raise NOT_IMPLEMENTED(L.logWarn('TimeSeriesManager plugin is disabled, cannot handle timeSeries child removal.'))
+					self.timeSeriesManager.removeSubscription(self, childResource)
 
 
 	# handle eventuel updates of subscriptions
 	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
 		super().childUpdated(childResource, updatedAttributes, originator)
 		if childResource.ty == ResourceTypes.SUB and childResource['enc/md']:
-			CSE.timeSeries.updateSubscription(self, childResource)		
+			if not self.timeSeriesManager:
+				raise NOT_IMPLEMENTED(L.logWarn('TimeSeriesManager plugin is disabled, cannot handle timeSeries subscription update.'))
+			self.timeSeriesManager.updateSubscription(self, childResource)		
 
 
 	def _validateChildren(self) -> None:
@@ -319,8 +339,10 @@ class TS(ContainerResource):
 		
 		# If any of mdd, pei or mdt becomes None, or is mdd==False, then stop monitoring this TS
 		if not mdd or not self.pei or not self.mdt:
-			if CSE.timeSeries.isMonitored(self.ri):
-				CSE.timeSeries.pauseMonitoringTimeSeries(self.ri)
+			if not self.timeSeriesManager:
+				raise NOT_IMPLEMENTED(L.logWarn('TimeSeriesManager plugin is disabled, cannot handle timeSeries activate/update request.'))
+			if self.timeSeriesManager.isMonitored(self.ri):
+				self.timeSeriesManager.pauseMonitoringTimeSeries(self.ri)
 
 
         # If any parameters related to the missing data detection process (missingDataDetectTimer, missingDataMaxNr,

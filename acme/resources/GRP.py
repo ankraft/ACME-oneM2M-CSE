@@ -24,6 +24,7 @@ class GRP(AnnounceableResource):
 	""" Represents the Group resource. """
 
 	groupManager: Optional[Any] = None
+	""" Hold a reference to the GroupManager plugin, if available. """
 
 	def initialize(self, pi: str) -> None:
 		self.setAttribute('mt', int(ResourceTypes.MIXED), overwrite=False)

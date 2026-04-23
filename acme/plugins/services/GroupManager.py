@@ -20,7 +20,7 @@ from ...etc.ACMEUtils import structuredPathFromRI
 from ...etc.IDUtils import isSPRelative, csiFromSPRelative
 from ...etc.DateUtils import utcTime
 from ...etc.Constants import RuntimeConstants as RC
-from ...helpers.PluginManager import plugin, start, stop, restart
+from ...helpers.PluginManager import plugin, start, stop, restart, configure, validate
 from ...resources.FCNT import FCNT
 from ...resources.MgmtObj import MgmtObj
 from ...resources.Resource import Resource
@@ -28,7 +28,7 @@ from ...resources.GRP_FOPT import GRP_FOPT
 from ...runtime.Factory import resourceFromDict
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
-from ...runtime.Configuration import Configuration
+from ...runtime.Configuration import Configuration, ConfigurationError
 
 
 @plugin(property='groupManager', tags=['core'])
@@ -65,6 +65,20 @@ class GroupManager(object):
 		"""
 		L.isDebug and L.logDebug('GroupManager restarted')
 
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		#	Defaults for Group Resources
+		parser = config.configParser
+
+		config.resource_grp_resultExpirationTime = parser.getint('resource.grp', 'resultExpirationTime', fallback=0)
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		# Check group resource defaults
+		if config.resource_grp_resultExpirationTime < 0:
+			raise ConfigurationError(fr'[i]\[resource.grp]:resultExpirationTime[/i] must be >= 0')
 
 	#########################################################################
 
