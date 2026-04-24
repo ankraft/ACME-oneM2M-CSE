@@ -12,7 +12,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, Generic, Optional, TypeVar, cast, overload
+from dataclasses import dataclass
+import inspect
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
@@ -23,8 +25,32 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 #########################################################################
 #
+#	Event Data class.
+#
+
+T = TypeVar("T")
+
+@dataclass
+class EventData(Generic[T]):
+	"""	Event data class. This class is used to pass data to event handlers.
+	"""
+
+	name: Optional[str] = None
+	"""	The event name. """
+
+	payload: T = None
+	"""	The event payload. """
+
+
+#########################################################################
+#
 #	Event class.
 #
+
+# The F TypeVar on the decorator overload (see below) is important — it tells the type
+# checker that whatever callable goes in comes back out unchanged, so the handler's own
+# signature is preserved after decoration.
+F = TypeVar("F", bound=Callable)
 
 
 class Event(list):	# type:ignore[type-arg]
@@ -53,9 +79,9 @@ class Event(list):	# type:ignore[type-arg]
 	)
 	"""	Slots of the Event class. """
 
-	def __init__(self,  runInBackground:Optional[bool] = True, 
-						manager:Optional[EventManager] = None,
-						name:Optional[str] = None):
+	def __init__(self,  runInBackground: Optional[bool] = True, 
+						manager: Optional[EventManager] = None,
+						name: Optional[str] = None):
 		"""	Event initialization.
 
 			Args:
@@ -70,6 +96,10 @@ class Event(list):	# type:ignore[type-arg]
 		self.name = name
 		"""	The event name. """
 
+	@overload
+	def __call__(self, func: F) -> F: ...          # decorator path
+	@overload
+	def __call__(self, *args:Any, **kwargs:Any) -> None: ... # emit path
 
 	def __call__(self, *args:Any, **kwargs:Any) -> None:
 		"""	Handle calling an event instance. This call is forwarded to **all** of the registered
@@ -78,13 +108,20 @@ class Event(list):	# type:ignore[type-arg]
 			If the event was created with `runInBackground` as True,
 			then the callbacks are called sequentially (not individually!) as a thread.
 
+			This method is used in two ways: 1) as a decorator to register an event handler, 
+			and 2) to raise an event by calling the event instance. The method distinguishes between
+			the two cases by checking whether the first argument is a callable function and whether 
+			it is an instance of `EventData` (in which case it
+
 			Args:
 				args: Unnamed function arguments.
 				kwargs: Keyword function arguments.
 		"""
 
-		def _runner(name:str, *args:Any, **kwargs:Any) -> None:
+		def _runner(name: str, *args: Any, **kwargs: Any) -> None:
 			"""	Call all registered function for this event object. Pass on any argument.
+				The callbacks are called sequentially (not in parallel!).
+
 	
 				Args:
 					args: Unnamed function arguments.
@@ -97,11 +134,21 @@ class Event(list):	# type:ignore[type-arg]
 				# 	function(name, *args, **kwargs)
 				function(name, *args, **kwargs)
 
+		if len(args) == 1 and callable(args[0]) and not isinstance(args[0], EventData):
+			self.append(args[0])
+			return args[0]
+
 		if not self.manager._running:
 			return
+		
+		# Add event name to the event data if not already set
+		if args and isinstance(args[0], EventData):
+			if not args[0].name:
+				args[0].name = self.name
+
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(self.name, *args, **kwargs), name = self.name)
+			BackgroundWorkerPool.runJob(lambda args=args, kwargs=kwargs: _runner(self.name, *args, **kwargs), name=self.name)
 		else:
 			_runner(self.name, *args, **kwargs)
 		# _runner(self.name, *args, **kwargs)
@@ -141,22 +188,32 @@ class EventManager(object):
 	def __init__(self) -> None:
 		"""	EventManager initialization.
 		"""
-		self._running = True
+		self._running = False
 		"""	Internal Running indicator for the manager instance. """
+		self.start()
 
 
-	def shutdown(self) -> bool:
-		"""	Shutdown the Event Manager.
+	def start(self) -> bool:
+		"""	Start the Event Manager.
 		
 			Return:
-				*True* when shutdown is complete.
+				*True* if the Event Manager was started successfully.
+		"""
+		self._running = True
+		return True
+
+	def stop(self) -> bool:
+		"""	Stop the Event Manager.
+		
+			Return:
+				*True* if the Event Manager was stopped successfully.
 		"""
 		self._running = False
 		return True
 
 	#########################################################################
 
-	def addEvent(self, name:str, runInBackground:Optional[bool] = True) -> Event:
+	def addEvent(self, name: str, runInBackground: Optional[bool] = True) -> Event:
 		"""	Create and add a new `Event`.
 
 			Args:
@@ -167,11 +224,11 @@ class EventManager(object):
 				The created `Event`.
 		"""
 		if not hasattr(self, name):
-			setattr(self, name, Event(runInBackground = runInBackground, manager = self, name = name))
+			setattr(self, name, Event(runInBackground=runInBackground, manager=self, name=name))
 		return cast(Event, getattr(self, name))
 
 
-	def removeEvent(self, name:str) -> None:
+	def removeEvent(self, name: str) -> None:
 		"""	Remove an `Event` instance by its name.
 
 			Args:
@@ -189,7 +246,7 @@ class EventManager(object):
 				self.removeEvent(n)
 
 
-	def hasEvent(self, name:str) -> bool:
+	def hasEvent(self, name: str) -> bool:
 		"""	Check whether an `Event` instance exists.
 
 			Args:
@@ -200,7 +257,7 @@ class EventManager(object):
 		return name in self.__dict__
 
 
-	def addHandler(self, event:Event|list[Event], func:Callable) -> None:		# type:ignore[type-arg]
+	def addHandler(self, event: Event|list[Event], func: Callable) -> None:		# type:ignore[type-arg]
 		"""	Add a new event handler to an `Event` or to a list of `Event` instance.
 
 			Args:
@@ -212,7 +269,7 @@ class EventManager(object):
 		list(map(lambda e: e.append(func), [event] if isinstance(event, Event) else event))
 	
 
-	def hasHandler(self, event:Event|list[Event], func:Callable) -> bool:
+	def hasHandler(self, event: Event|list[Event], func: Callable) -> bool:
 		"""	Test whether one or more events have a specific handler assigned.
 
 			Args:
@@ -225,7 +282,7 @@ class EventManager(object):
 		return any([ e for e in l if func in e ])
 
 
-	def removeHandler(self, event:Event|list[Event], func:Callable) -> None:	# type:ignore[type-arg]
+	def removeHandler(self, event: Event|list[Event], func: Callable) -> None:	# type:ignore[type-arg]
 		"""	Remove an event handler from an `Event` instance or a list of `Event` instances.
 
 			Args:
@@ -233,3 +290,34 @@ class EventManager(object):
 				func: The function callback to remove from the `Event` instance(s).
 		"""
 		list(map(lambda e: e.remove(func), [event] if isinstance(event, Event) else event))
+
+
+def EventHandler(cls: type) -> type:
+	"""	Class decorator to automatically register event handlers. 
+		Any method of the decorated class that is decorated with an `Event` 
+		decorator will be automatically registered as an event handler for that event.
+
+		It is necessary to use this decorator for any class that has methods decorated with `onEvent`, 
+		otherwise the event handlers will not be registered and the decorated methods will not be
+		correctly called when the event is raised.
+	"""
+	originalInit = cls.__init__	# type: ignore[misc]
+
+	def __init__(self, *args: Any, **kwargs: Any) -> None:	# type: ignore[no-untyped-def]
+		originalInit(self, *args, **kwargs)
+		for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+			if hasattr(method.__func__, '_event'):
+				method.__func__._event.append(method)
+
+	cls.__init__ = __init__ 	# type: ignore[misc]
+	return cls
+
+
+def onEvent(event: Event) -> Callable[[F], F]:
+	"""Marks a method for event registration — deferred until instantiation.
+	"""
+	def decorator(func: F) -> F:
+		func._event = event	# type: ignore[attr-defined]
+		return func
+	return decorator
+

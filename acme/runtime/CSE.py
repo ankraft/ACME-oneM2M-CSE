@@ -105,6 +105,8 @@ _cseResetLock = Lock()
 
 ##############################################################################
 
+event = EventManager()					# Initialize the event manager before anything else
+
 
 def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	"""	Startup of the CSE. Initialization of various global variables, creating and initializing of manager instances etc.
@@ -115,7 +117,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global announce, dispatcher, event, importer
+	global announce, dispatcher, importer
 	global notification, pluginManager, registration, remote, request, script, security
 	global storage, time, validator
 
@@ -131,8 +133,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		args.headless	= False
 		for key, value in kwargs.items():
 			args.__setattr__(key, value)
-
-	event = EventManager()					# Initialize the event manager before anything else
 
 	if not Configuration.init(args):
 		RC.cseStatus = CSEStatus.STOPPED
@@ -399,3 +399,8 @@ def run() -> None:
 		raise TimeoutError(L.logErr(f'CSE did not start within {C.cseStartupDelay * 3} seconds'))
 
 
+
+
+# @event.cseStartup
+# def testEvent(name: str) -> None:
+# 	print(f'Event {name} received')

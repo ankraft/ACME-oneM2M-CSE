@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from ..helpers import EventManager as HelpersEventManager
+from ..helpers.EventManager import EventManager as HelpersEventManager, Event, EventHandler, EventData, onEvent
 from .Logging import Logging as L
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
@@ -17,7 +17,7 @@ from .Logging import Logging as L
 # TODO move event creations from here to the resp modules.
 
 
-class EventManager(HelpersEventManager.EventManager):
+class EventManager(HelpersEventManager):
 
 	def __init__(self) -> None:
 		super().__init__()
@@ -33,8 +33,8 @@ class EventManager(HelpersEventManager.EventManager):
 			 	   'change'  # whenever a resource is updated or changed in any way
 				   ):
 			self.addEvent(f'{op}Resource')
+		
 		self.addEvent('createChildResource')
-
 		self.addEvent('requestReceived')								# Thrown whenever a request is received
 		self.addEvent('responseReceived')								# Thrown whenever a response is received
 		self.addEvent('cseStartup')										# After the CSE started
@@ -59,6 +59,11 @@ class EventManager(HelpersEventManager.EventManager):
 
 
 	def shutdown(self) -> bool:
-		super().shutdown()
+		super().stop()
 		L.isInfo and L.log('EventManager shut down')
 		return True
+
+
+	def __getattr__(self, name: str) -> Event:
+		# Events are added dynamically — silence type checker
+		raise AttributeError(name)  # default behaviour, type checker still sees Event
