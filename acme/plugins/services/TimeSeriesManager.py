@@ -12,9 +12,9 @@ from ...etc.Types import NotificationEventType, MissingData, LastTSInstance, Res
 from ...etc.DateUtils import toISO8601Date, fromAbsRelTimestamp, fromDuration
 from ...resources.Resource import Resource
 from ...helpers.BackgroundWorker import BackgroundWorkerPool
-from ...helpers.PluginManager import plugin, start, stop, restart
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
+from ...runtime.PluginSupport import plugin, start, stop, restart
 
 
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects

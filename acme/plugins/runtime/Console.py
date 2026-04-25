@@ -34,7 +34,6 @@ import plotext
 
 from ...runtime import CSE
 
-from ...helpers.PluginManager import plugin, init, restart
 from ...helpers.KeyHandler import FunctionKey, loop, waitForKeypress, Commands
 from ...helpers.interpreter.PContext import PContext
 from ...helpers.interpreter.Types import PError
@@ -46,6 +45,7 @@ from ...runtime.Management import getStatusRich, getRegistrationsRich, getResour
 from ...runtime.ConsoleBase import ConsoleBase
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
+from ...runtime.PluginSupport import plugin, init, restart
 
 # TODO support configevent!
 # TODO move some of the functions to a more general place because they are used here and in the TUI

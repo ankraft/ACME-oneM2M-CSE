@@ -20,10 +20,10 @@ from ...resources.SMD import SMD
 from ...resources.Resource import Resource
 from ...etc.Types import Permission, ResourceTypes, Result, SemanticFormat, ContentSerializationType
 from ...etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
-from ...helpers.PluginManager import plugin, init, start, stop, restart, configure
 from ...runtime import CSE
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
+from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure
 
 
 class SemanticHandler(ABC):

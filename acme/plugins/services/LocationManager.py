@@ -14,7 +14,6 @@ from typing import Tuple, Optional, Literal, Union
 from dataclasses import dataclass
 
 from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ...helpers.PluginManager import plugin, init, stop, restart, configure
 from ...etc.Types import LocationInformationType, LocationSource, GeofenceEventCriteria, ResourceTypes, GeometryType, GeoSpatialFunctionType
 from ...etc.DateUtils import fromDuration
 from ...etc.GeoTools import getGeoPoint, getGeoPolygon, isLocationInsidePolygon, geoWithin, geoContains, geoIntersects
@@ -22,6 +21,7 @@ from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ...runtime.Logging import Logging as L
 from ...runtime import CSE
 from ...runtime.Configuration import Configuration
+from ...runtime.PluginSupport import plugin, init, stop, restart, configure
 from ...resources.LCP import LCP
 from ...resources.CIN import CIN
 from ...resources.Resource import Resource

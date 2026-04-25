@@ -19,7 +19,7 @@ from ...helpers.BackgroundWorker import BackgroundWorkerPool
 from ...runtime import CSE
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.Logging import Logging as L
-from ...helpers.PluginManager import plugin, init, start, stop, restart, configure, validate
+from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure, validate
 
 
 coRetrieves	= 'coqRet'

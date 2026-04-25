@@ -33,10 +33,10 @@ from ...helpers.TextTools import findXPath
 from ...helpers.MultiDict import MultiDict
 from ...helpers.CoAPthonTools import registerOneM2MContentTypes, registerOneM2MOptions, newCoAPOption, operationsMethodsMap
 from ...helpers.ACMELRUCache import ACMELRUCache
-from ...helpers.PluginManager import plugin, init, start, stop, pause, unpause, configure, validate, requires
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.Logging import Logging as L
 from ...runtime import CSE
+from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
 from ...etc.Constants import RuntimeConstants as RC
 
 from coapthon import defines

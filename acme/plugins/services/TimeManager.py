@@ -10,16 +10,17 @@
 """
 
 from __future__ import annotations
-from typing import cast, List, Tuple, Optional
+from typing import cast, List, Tuple, Optional, Any
 
-from ..resources.TSB import TSB
-from ..runtime import CSE
-from ..etc.Types import BeaconCriteria, CSERequest, ResourceTypes
-from ..etc.ResponseStatusCodes import BAD_REQUEST
-from ..etc.DateUtils import isodateDelta, toDuration, getResourceDate
-from ..etc.Constants import RuntimeConstants as RC
-from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..runtime.Logging import Logging as L
+from ...resources.TSB import TSB
+from ...runtime import CSE
+from ...etc.Types import BeaconCriteria, CSERequest, ResourceTypes
+from ...etc.ResponseStatusCodes import BAD_REQUEST
+from ...etc.DateUtils import isodateDelta, toDuration, getResourceDate
+from ...etc.Constants import RuntimeConstants as RC
+from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ...runtime.Logging import Logging as L
+from ...runtime.PluginSupport import plugin, start, stop, restart
 
 # TODO add check to http request handling
 # TODO add check to http response handling
@@ -28,6 +29,7 @@ from ..runtime.Logging import Logging as L
 # TODO add check to ws request handling
 # TODO add check to ws response handling
 
+@plugin(property='timeManager', tags=['core'])
 class TimeManager(object):
 	"""	Managing time related CSE functions.
 	"""
@@ -39,12 +41,13 @@ class TimeManager(object):
 	)
 	""" Define slots for instance variables. """
 
-	def __init__(self) -> None:
+	timeManager: Optional[Any] = None
+	"""	Reference to the TimeManager plugin instance. """
+
+	@start
+	def start(self) -> None:
 		"""	Initialize the TimeManager.
 		"""
-
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 
 		# Read all periofics and add them (again)
 		for each in self._getAllPeriodicTimeSyncBeacons():
@@ -66,7 +69,8 @@ class TimeManager(object):
 		L.isInfo and L.log('TimeManager initialized')
 
 
-	def shutdown(self) -> bool:
+	@stop
+	def stop(self) -> bool:
 		"""	Shutdown the TimeManager.
 		
 			Return:
@@ -77,7 +81,8 @@ class TimeManager(object):
 		return True
 
 
-	def restart(self, name:str) -> None:
+	@restart
+	def restart(self) -> None:
 		"""	Restart the time manager services.
 		"""
 		self._stopPeriodicBeacons()

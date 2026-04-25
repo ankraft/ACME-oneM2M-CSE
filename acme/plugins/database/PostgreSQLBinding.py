@@ -25,7 +25,7 @@ from ...etc.Types import JSON, ResourceTypes, OriginatorType
 from ...etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...helpers.PluginManager import plugin, start, configure, validate
+from ...runtime.PluginSupport import plugin, start, configure, validate
 from ...helpers.NetworkTools import isValidPort
 
 

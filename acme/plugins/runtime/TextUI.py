@@ -16,8 +16,8 @@ import asyncio
 
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
-from ...helpers.PluginManager import plugin, start, stop, restart, configure, validate
 from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
 from ...etc.Types import CSEStatus
 from ...etc.Constants import RuntimeConstants as RC
 

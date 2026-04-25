@@ -39,8 +39,8 @@ from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
+from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
 from ...etc.Constants import RuntimeConstants as RC
-from ...helpers.PluginManager import plugin, init, start, stop, pause, unpause, configure, validate
 
 
 #

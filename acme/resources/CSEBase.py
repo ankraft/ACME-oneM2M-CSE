@@ -16,6 +16,7 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.IDUtils import isValidCSI
 from ..etc.ACMEUtils import resourceFromCSI
 from ..etc.Constants import Constants
+from ..etc.DateUtils import getResourceDate
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime import CSE
@@ -89,7 +90,7 @@ class CSEBase(AnnounceableResource):
 		super().willBeRetrieved(originator, request, subCheck=subCheck)
 
 		# add the current time to this resource instance
-		self.setAttribute('ctm', CSE.time.getCSETimestamp())
+		self.setAttribute('ctm', getResourceDate())
 
 
 	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:

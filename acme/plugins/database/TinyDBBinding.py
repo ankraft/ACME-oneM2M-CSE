@@ -22,6 +22,7 @@ from ...etc.Constants import RuntimeConstants as RC
 
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration
+from ...runtime.PluginSupport import plugin, init, start, configure, validate
 
 from tinydb import TinyDB, Query
 from tinydb.table import Document
@@ -30,7 +31,6 @@ from tinydb.operations import delete
 
 from ...helpers.TinyDBBufferedStorage import TinyDBBufferedStorage
 from ...helpers.TinyDBBetterTable import TinyDBBetterTable
-from ...helpers.PluginManager import plugin, init, start, configure, validate
 
 
 # Constants for database and table names

@@ -40,7 +40,6 @@ from ..services.RemoteCSEManager import RemoteCSEManager
 from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..runtime.Storage import Storage
-from ..services.TimeManager import TimeManager
 from ..services.Validator import Validator
 from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
@@ -92,9 +91,6 @@ security:SecurityManager = None
 storage:Storage = None
 """	Runtime instance of the `Storage`. """
 
-time:TimeManager = None
-"""	Runtime instance of the `TimeManager`. """
-
 validator:Validator = None
 """	Runtime instance of the `Validator`. """
 
@@ -117,9 +113,8 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global announce, dispatcher, importer
+	global announce, dispatcher, importer, storage, validator
 	global notification, pluginManager, registration, remote, request, script, security
-	global storage, time, validator
 
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
@@ -159,30 +154,28 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 
 	try:
 		# Initialize the plugin manager
-		# This loads, configures and runs the plugins as well
+		# This loads, configures and validates the plugins as well
 		pluginManager = PluginManager()	
-		pluginManager.start(tags=['database'])	# Start the database plugins first
-
-
-		storage = Storage()						# Initialize the resource storage
+		
+		# Start the database plugins and the storage first
+		pluginManager.start(tags=['database'])	
+		storage = Storage()	
 
 		importer = Importer()					# Initialize the importer
 		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
+
 		registration = RegistrationManager()	# Initialize the registration manager
 		validator = Validator()					# Initialize the resource validator
 		dispatcher = Dispatcher()				# Initialize the resource dispatcher
 		request = RequestManager()				# Initialize the request manager
-		
 		security = SecurityManager()			# Initialize the security manager
-
 		notification = NotificationManager()	# Initialize the notification manager
+
 		remote = RemoteCSEManager()				# Initialize the remote CSE manager
 		announce = AnnouncementManager()		# Initialize the announcement manager
-		time = TimeManager()					# Initialize the time manager
 		script = ScriptManager()				# Initialize the script manager
 		
 		pluginManager.start(excludedTags=['database'])	# Start the remaining plugins after all components are initialized.
-
 		# Import attribute, flexContainer and enum policies, and configuration documentation
 		#
 		# After this, the CSE reads the scripts from the default and runtime init directories.
@@ -192,6 +185,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		if not importer.importPolicies() or not importer.importScripts():
 			RC.cseStatus = CSEStatus.STOPPED
 			return False
+
+		# event.cseBootstrap()	# Send an event that the CSE bootstrap finished. This is executed after all components are initialized and started, but before importing policies and scripts.
+		
 		
 	except ResponseException as e:
 		L.logErr(f'Error during startup: {e.dbg}')
@@ -275,7 +271,6 @@ def _shutdown() -> None:
 	# This leaves only the database plugins running
 	pluginManager and pluginManager.stop(excludedTags=['database'])
 
-	time and time.shutdown()
 	remote and remote.shutdown()
 	script and script.shutdown()
 	announce and announce.shutdown()
@@ -357,6 +352,7 @@ def resetCSE() -> None:
 			pluginManager.textUI and pluginManager.textUI.shutdown()
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
+
 		remote.restart()
 
 

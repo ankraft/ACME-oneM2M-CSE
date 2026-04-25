@@ -37,6 +37,7 @@ class PluginManager(PM):
 		'acme.plugins.services.GroupManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('groupManager_enable', True),	
 		'acme.plugins.services.LocationManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('locationManager_enable', True),	
 		'acme.plugins.services.SemanticManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('semanticManager_enable', True),	
+		'acme.plugins.services.TimeManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeManager_enable', True),	
 		'acme.plugins.services.TimeSeriesManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeSeriesManager_enable', True),	
 	}
 	"""	Dictionary of plugin checks. The keys are the plugin names, the values are callables that take the plugin name as an argument and return a boolean indicating whether the plugin should be loaded. This is used to determine which plugins to load based on the configuration. """

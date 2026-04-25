@@ -50,6 +50,7 @@ from ..runtime.Logging import Logging as L
 # TODO handle config update
 @requires(locationManager='acme.plugins.services.LocationManager', required=False)
 @requires(semanticManager='acme.plugins.services.SemanticManager', required=False)
+@requires(timeManager='acme.plugins.services.TimeManager', required=False)
 class Dispatcher(object):
 	""" Dispatcher class. Handles all requests and dispatches them to the
 		appropriate handlers. This includes requests for resources, requests
@@ -58,6 +59,7 @@ class Dispatcher(object):
 
 	locationManager: Any = None	# type: ignore
 	semanticManager: Any = None	# type: ignore
+	timeManager: Any = None		# type: ignore
 
 	__slots__ = (
 		'K',
@@ -1753,10 +1755,13 @@ class Dispatcher(object):
 			Raises:
 				`TARGET_NOT_REACHABLE`: In case the CSE is not active.
 		"""
-		if CSE.time.cseActiveSchedule:
+		if not self.timeManager:
+			L.isDebug and L.logDebug('TimeManager plugin is disabled, cannot check CSE schedule. Defaulting to active.')
+			return
+		if self.timeManager.cseActiveSchedule:
 			# Only check if the CSE has at least one schedule
 			# Otherwise the CSE is always active
-			for s in CSE.time.cseActiveSchedule:
+			for s in self.timeManager.cseActiveSchedule:
 				if cronMatchesTimestamp(s):
 					return
 			# TODO not sure if this is the right error code

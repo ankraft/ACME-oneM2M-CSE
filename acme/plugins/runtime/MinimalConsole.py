@@ -19,11 +19,11 @@
 # The import parth is a bit tricky here, because it is set to "acme.runtime"
 
 from ...runtime import CSE
-from ...helpers.PluginManager import plugin, init
 from ...helpers.KeyHandler import loop, Commands, FunctionKey
 from ...etc.Constants import RuntimeConstants as RC
 from ...runtime.Logging import Logging as L											# type: ignore
 from ...runtime.ConsoleBase import ConsoleBase
+from ...runtime.PluginSupport import plugin, init
 
 @plugin(tags=['core'])
 class MinimalConsole(ConsoleBase):

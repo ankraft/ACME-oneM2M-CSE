@@ -8,17 +8,17 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Any
 
-from ..etc.Types import AttributePolicyDict, BeaconCriteria, ResourceTypes, JSON
+from ..etc.Types import BeaconCriteria, JSON
 from ..etc.Constants import Constants
-from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.DateUtils import fromDuration
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
+from ..runtime.PluginSupport import requires
 
 
 # Add to internal attributes 
@@ -29,12 +29,16 @@ addToInternalAttributes(Constants.attrBCNT)
 # DISCUSS Only one TSB with loss_of_sync, but only one is relevant for a requester. Only one is allowed? Check in update/create
 
 
+@requires(timeManager='acme.plugins.services.TimeManager', required=False)
 
 class TSB(AnnounceableResource):
 
 # DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure. ->
 #  good would be that, if not present, the CSE provides a value. Add to TS-0004 procedures
 
+
+	timeManager: Optional[Any] = None
+	"""	Reference to the TimeManager plugin instance. """
 
 	def initialize(self, pi:str) -> None:
 		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite=False)
@@ -47,7 +51,9 @@ class TSB(AnnounceableResource):
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
-		CSE.time.addTimeSyncBeacon(self)
+		if not self.timeManager:
+			raise NOT_IMPLEMENTED(L.logWarn('TimeManager plugin is disabled, cannot add time sync beacon to TimeManager'))
+		self.timeManager.addTimeSyncBeacon(self)
 	
 
 	def update(self, dct:Optional[JSON] = None, 
@@ -55,12 +61,16 @@ class TSB(AnnounceableResource):
 					 doValidateAttributes:Optional[bool] = True) -> None:
 		originalBcnc = self.bcnc
 		super().update(dct, originator, doValidateAttributes)
-		CSE.time.updateTimeSyncBeacon(self, originalBcnc)
+		if not self.timeManager:
+			raise NOT_IMPLEMENTED(L.logWarn('TimeManager plugin is disabled, cannot update time sync beacon in TimeManager'))
+		self.timeManager.updateTimeSyncBeacon(self, originalBcnc)
 	
 
 	def deactivate(self, originator: str, parentResource:Resource) -> None:
 		super().deactivate(originator, parentResource)
-		CSE.time.removeTimeSyncBeacon(self)
+		if not self.timeManager:
+			raise NOT_IMPLEMENTED(L.logWarn('TimeManager plugin is disabled, cannot remove time sync beacon from TimeManager'))
+		self.timeManager.removeTimeSyncBeacon(self)
 
 
 	def validate(self, originator:Optional[str] = None, 

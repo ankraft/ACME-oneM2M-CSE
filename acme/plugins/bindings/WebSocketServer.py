@@ -25,12 +25,13 @@ from ...etc.IDUtils import uniqueID, csiFromSPRelative
 from ...etc.Utils import renameThread, normalizeURL
 from ...etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, ResponseType, AuthorizationResult, LogLevel
 from ...etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE, ORIGINATOR_HAS_NO_PRIVILEGE
+from ...helpers.EventManager import Event
 from ...helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ...helpers.ThreadSafeCounter import ThreadSafeCounter
 from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ...helpers.PluginManager import  plugin, init, start, stop, pause, unpause, configure, validate
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
+from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
 from ...resources.Resource import Resource
 from ...runtime.Logging import Logging as L
 
@@ -81,13 +82,13 @@ class WebSocketServer(object):
 		self.actor:Optional[BackgroundWorker] = None
 		"""	The actor for running the synchronous WebSocket server in the background. """
 
-		self.operationEvents = {
-			Operation.CREATE:		[CSE.event.wsCreate, 'WS_C'],		# type: ignore [attr-defined]
-			Operation.RETRIEVE: 	[CSE.event.wsRetrieve, 'WS_R'],		# type: ignore [attr-defined]
-			Operation.UPDATE:		[CSE.event.wsUpdate, 'WS_U'],		# type: ignore [attr-defined]
-			Operation.DELETE:		[CSE.event.wsDelete, 'WS_D'],		# type: ignore [attr-defined]
-			Operation.NOTIFY:		[CSE.event.wsNotify, 'WS_M'],		# type: ignore [attr-defined]
-			Operation.DISCOVERY:	[CSE.event.wsRetrieve, 'WS_F'],		# type: ignore [attr-defined]
+		self.operationEvents: dict[Operation, tuple[Event, str]] = {
+			Operation.CREATE:		(CSE.event.wsCreate, 'WS_C'),		# type: ignore [attr-defined]
+			Operation.RETRIEVE: 	(CSE.event.wsRetrieve, 'WS_R'),		# type: ignore [attr-defined]
+			Operation.UPDATE:		(CSE.event.wsUpdate, 'WS_U'),		# type: ignore [attr-defined]
+			Operation.DELETE:		(CSE.event.wsDelete, 'WS_D'),		# type: ignore [attr-defined]
+			Operation.NOTIFY:		(CSE.event.wsNotify, 'WS_M'),		# type: ignore [attr-defined]
+			Operation.DISCOVERY:	(CSE.event.wsRetrieve, 'WS_F'),		# type: ignore [attr-defined]
 		}
 		"""	Events for the different operations. """
 

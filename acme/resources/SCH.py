@@ -11,17 +11,24 @@
 
 from __future__ import annotations
 
+from typing import Optional, Any
 from ..etc.Constants import Constants as C
 from ..etc.Types import ResourceTypes, JSON
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
+from ..runtime.PluginSupport import requires
 from ..resources.Resource import Resource
 from ..etc.ResponseStatusCodes import CONTENTS_UNACCEPTABLE, NOT_IMPLEMENTED
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
+@requires(timeManager='acme.plugins.services.TimeManager', required=False)
+
 class SCH(AnnounceableResource):
 	""" Schedule (SCH) resource type. """
+
+	timeManager: Optional[Any] = None
+	"""	Reference to the TimeManager plugin instance. """
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -75,8 +82,10 @@ class SCH(AnnounceableResource):
 
 		# Set the active schedule in the CSE when updated
 		if parentResource.ty == ResourceTypes.CSEBase:
-			CSE.time.cseActiveSchedule = self.getFinalResourceAttribute('se/sce', dct)
-			L.isDebug and L.logDebug(f'Setting active schedule in CSE to {CSE.time.cseActiveSchedule}')
+			if not self.timeManager:
+				raise NOT_IMPLEMENTED(L.logWarn('TimeManager plugin is disabled, cannot set active schedule in CSE'))
+			self.timeManager.cseActiveSchedule = self.getFinalResourceAttribute('se/sce', dct)
+			L.isDebug and L.logDebug(f'Setting active schedule in CSE to {self.timeManager.cseActiveSchedule}')
 
 
 	def deactivate(self, originator: str, parentResource:Resource) -> None:

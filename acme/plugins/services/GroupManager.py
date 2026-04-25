@@ -20,7 +20,7 @@ from ...etc.ACMEUtils import structuredPathFromRI
 from ...etc.IDUtils import isSPRelative, csiFromSPRelative
 from ...etc.DateUtils import utcTime
 from ...etc.Constants import RuntimeConstants as RC
-from ...helpers.PluginManager import plugin, start, stop, restart, configure, validate
+from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
 from ...resources.FCNT import FCNT
 from ...resources.MgmtObj import MgmtObj
 from ...resources.Resource import Resource
@@ -32,7 +32,7 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 
 
 @plugin(property='groupManager', tags=['core'])
-class GroupManager(object):
+class GroupManager():
 	"""	Manager for the CSE's group service. 
 	"""
 

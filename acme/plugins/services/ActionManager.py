@@ -21,16 +21,16 @@ from ...etc.RequestUtils import responseFromResult
 from ...runtime import CSE
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
+from ...runtime.PluginSupport import plugin, start, stop, restart
 from ...resources.Resource import Resource
 from ...resources.ACTR import ACTR
 from ...helpers.ResourceSemaphore import CriticalSection
-from ...helpers.PluginManager import plugin, start, restart, stop
 
 
 # TODO implement support for input attribute when the procedure is clear
 
 @plugin(property='actionManager', tags=['core'])
-class ActionManager(object):
+class ActionManager():
 	"""	This class defines functionalities to handle action triggerings, 
 		dependancies and other action related functionalities
 	"""
@@ -59,7 +59,7 @@ class ActionManager(object):
 
 
 	@restart
-	def restart(self, name:str) -> None:
+	def restart(self) -> None:
 		"""	Restart the ActionManager service.
 		"""
 		L.isDebug and L.logDebug('ActionManager restarted')

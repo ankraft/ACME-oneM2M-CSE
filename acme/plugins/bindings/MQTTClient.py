@@ -23,10 +23,11 @@ from ...etc.Constants import RuntimeConstants as RC
 from ...helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ...helpers.NetworkTools import isValidPort
 from ...helpers import TextTools
-from ...helpers.PluginManager import plugin, init, start, stop, pause, unpause, configure, validate
+from ...helpers.EventManager import Event
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
+from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
 
 
 class MQTTClientHandler(MQTTHandler):
@@ -54,13 +55,13 @@ class MQTTClientHandler(MQTTHandler):
 		self.topicPrefixCount = len(Configuration.mqtt_topicPrefix.split('/'))	# Count the elements for the prefix
 		""" Number of elements in the prefix. """
 
-		self.operationEvents = {
-			Operation.CREATE:		[CSE.event.mqttCreate, 'MQ_C'],		# type: ignore [attr-defined]
-			Operation.RETRIEVE: 	[CSE.event.mqttRetrieve, 'MQ_R'],	# type: ignore [attr-defined]
-			Operation.UPDATE:		[CSE.event.mqttUpdate, 'MQ_U'],		# type: ignore [attr-defined]
-			Operation.DELETE:		[CSE.event.mqttDelete, 'MQ_D'],		# type: ignore [attr-defined]
-			Operation.NOTIFY:		[CSE.event.mqttNotify, 'MQ_N'],		# type: ignore [attr-defined]
-			Operation.DISCOVERY:	[CSE.event.mqttRetrieve, 'MQ_F'],	# type: ignore [attr-defined]
+		self.operationEvents: dict[Operation, tuple[Event, str]] = {
+			Operation.CREATE:		(CSE.event.mqttCreate, 'MQ_C'),		# type: ignore [attr-defined]
+			Operation.RETRIEVE: 	(CSE.event.mqttRetrieve, 'MQ_R'),	# type: ignore [attr-defined]
+			Operation.UPDATE:		(CSE.event.mqttUpdate, 'MQ_U'),		# type: ignore [attr-defined]
+			Operation.DELETE:		(CSE.event.mqttDelete, 'MQ_D'),		# type: ignore [attr-defined]
+			Operation.NOTIFY:		(CSE.event.mqttNotify, 'MQ_N'),		# type: ignore [attr-defined]
+			Operation.DISCOVERY:	(CSE.event.mqttRetrieve, 'MQ_F'),	# type: ignore [attr-defined]
 		}
 		""" Operation events. """
 
