@@ -11,35 +11,41 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple, List, cast
+from typing import Optional, Tuple, List, cast, Any
 
 import time
 
-from ..etc.IDUtils import isSPRelative
-from ..helpers.TextTools import findXPath
-from ..etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, ResultContentType, CSERequest, FilterCriteria 
-from ..etc.Types import Operation, CSERegistrar
-from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
-from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
-from ..etc.Constants import Constants, RuntimeConstants as RC
-from ..resources.Resource import Resource
-from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources.CSEBase import getCSE
-from ..runtime import CSE
-from ..runtime.Configuration import Configuration
-from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
+from ...etc.IDUtils import isSPRelative
+from ...helpers.TextTools import findXPath
+from ...etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, ResultContentType, CSERequest, FilterCriteria 
+from ...etc.Types import Operation, CSERegistrar
+from ...etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
+from ...etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
+from ...etc.Constants import Constants, RuntimeConstants as RC
+from ...resources.Resource import Resource
+from ...resources.AnnounceableResource import AnnounceableResource
+from ...resources.CSEBase import getCSE
+from ...runtime import CSE
+from ...runtime.Configuration import Configuration
+from ...runtime.Logging import Logging as L
+from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime.PluginSupport import plugin, start, stop, configure, validate
 
 # TODO for anounceable resource:
 # - update: update resource here
 
 
+@plugin(property='announcementManager', tags=['core'])
 class AnnouncementManager(object):
 	"""	This class implements announcement functionalities.
 	"""
 
+	nnouncementManager: Optional[Any] = None
+	"""	Reference to the AnnouncementManager plugin instance. """
 
-	def __init__(self) -> None:
+
+	@start
+	def start(self) -> None:
 		"""	Initialization of the announcement manager.
 		"""
 		CSE.event.addHandler(CSE.event.registeredToRegistrarCSE, self.handleRegisteredToRegistrarCSE)			# type: ignore
@@ -48,8 +54,9 @@ class AnnouncementManager(object):
 		L.isInfo and L.log('AnnouncementManager initialized')
 
 
-	def shutdown(self) -> bool:
-		"""	Shutdown the announcement manager.
+	@stop
+	def stop(self) -> None:
+		"""	Stop the announcement manager.
 		
 			Return:
 				Always True.
@@ -59,7 +66,19 @@ class AnnouncementManager(object):
 				if csr:
 					self.checkResourcesForUnAnnouncement(csr)
 		L.isInfo and L.log('AnnouncementManager shut down')
-		return True
+
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+		parser = config.configParser
+		config.cse_announcements_allowAnnouncementsToHostingCSE = parser.getboolean('cse.announcements', 'allowAnnouncementsToHostingCSE', fallback=True)
+		config.cse_announcements_delayAfterRegistration = parser.getfloat('cse.announcements', 'delayAfterRegistration', fallback=3.0)
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		if config.cse_announcements_delayAfterRegistration < 0.0:
+			raise ConfigurationError(fr'\[cse.announcements]:delayAfterRegistration must be 0 or greater')
 
 
 	#########################################################################

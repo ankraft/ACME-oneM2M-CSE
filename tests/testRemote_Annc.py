@@ -86,7 +86,7 @@ class TestRemote_Annc(unittest.TestCase):
 				 	'at': 	[ REMOTECSEID ]
 				}}
 		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
-		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 1)

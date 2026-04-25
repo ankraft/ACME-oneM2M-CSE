@@ -13,20 +13,24 @@ from typing import Optional, Tuple, Any
 from copy import deepcopy
 from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
 from ..etc.Types import Announced, IdentifierScope
-from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.IDUtils import isAbsolute, toAbsolute, toSPRelative
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 from .Resource import Resource, addToInternalAttributes
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrAnnouncedTo) # add announcedTo to internal attributes
 
 
+@requires(announcementManager='acme.plugins.services.AnnouncementManager', required=False)
 class AnnounceableResource(Resource):
 	"""	Base class for all announceable resources.
 	"""
+
+	announcementManager: Optional[Any] = None
 
 	def __init__(self, dct:Optional[JSON]=None, create:Optional[bool]=False) -> None:
 		super().__init__(dct, create=create)
@@ -41,14 +45,18 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at:
-			CSE.announce.announceResource(self)
+			if not self.announcementManager:
+				raise NOT_IMPLEMENTED(L.logWarn('AnnouncementManager is disabled, cannot announce resource'))
+			self.announcementManager.announceResource(self)
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# L.isDebug and L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
 		# perform deannouncements
 		if self.at:
-			CSE.announce.deAnnounceResource(self)
+			if not self.announcementManager:
+				raise NOT_IMPLEMENTED(L.logWarn('AnnouncementManager is disabled, cannot de-announce resource'))
+			self.announcementManager.deAnnounceResource(self)
 		super().deactivate(originator, parentResource)
 
 
@@ -72,10 +80,14 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at:
-			CSE.announce.announceUpdatedResource(self, originator)
+			if not self.announcementManager:
+				raise NOT_IMPLEMENTED(L.logWarn('AnnouncementManager is disabled, cannot announce updated resource'))
+			self.announcementManager.announceUpdatedResource(self, originator)
 		else:
 			if self._origAT:	# at is removed in update, so remove self
-				CSE.announce.deAnnounceResource(self)
+				if not self.announcementManager:
+					raise NOT_IMPLEMENTED(L.logWarn('AnnouncementManager is disabled, cannot de-announce updated resource'))
+				self.announcementManager.deAnnounceResource(self)
 
 
 	def validate(self, originator:Optional[str] = None, 

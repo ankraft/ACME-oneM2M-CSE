@@ -60,160 +60,160 @@ class Configuration(object):
 	coap_enable:bool = None
 	"""	Enable or disable the CoAP server. """
 
-	coap_listenIF:str
+	coap_listenIF:str = None
 	"""	The network interface to listen on for CoAP. """
 
-	coap_port:int
+	coap_port:int = None
 	"""	The port to listen on for CoAP. """
 
-	coap_address:str
+	coap_address:str = None
 	"""	The address to listen on for CoAP. """
 
-	coap_timeout:float
+	coap_timeout:float = None
 	"""	The timeout for CoAP requests. """
 
-	coap_clientConnectionCacheSize:int
+	coap_clientConnectionCacheSize:int = None
 	"""	The size of the client connection cache. """
 
 
-	coap_security_caCertificateFile:str
+	coap_security_caCertificateFile:str = None
 	"""	The CA certificate file for CoAP. """
 
-	coap_security_caPrivateKeyFile:str
+	coap_security_caPrivateKeyFile:str = None
 	"""	The CA private key file for CoAP. """
 
-	coap_security_dtlsVersion:str
+	coap_security_dtlsVersion:str = None
 	"""	The DTLS version for CoAP. """
 
-	coap_security_useDTLS:bool
+	coap_security_useDTLS:bool = None
 	"""	Enable or disable DTLS for CoAP. """
 
-	coap_security_verifyCertificate:bool
+	coap_security_verifyCertificate:bool = None
 	"""	Enable or disable certificate verification for CoAP. """
 
 
-	console_type:str
+	console_type:str = None
 	"""	The type of the console. Allowed values: "rich", "simple". """
 
-	console_confirmQuit:bool
+	console_confirmQuit:bool = None
 	"""	Confirm quitting the console. """
 
-	console_headless:bool
+	console_headless:bool = None
 	"""	Run the CSE in headless mode. """
 
-	console_hideResources:list[str]
+	console_hideResources:list[str] = None
 	"""	Resources to hide in the console. """
 
-	console_refreshInterval:float
+	console_refreshInterval:float = None
 	"""	The refresh interval for the console. """
 
-	console_theme:str
+	console_theme:str = None
 	"""	The theme for the console. """
 
-	console_treeIncludeVirtualResource:bool
+	console_treeIncludeVirtualResource:bool = None
 	"""	Include virtual resources in the console tree. """
 
-	console_treeMode:str|TreeMode
+	console_treeMode:str|TreeMode = None
 	"""	The tree mode for the console. """
 
 
-	cse_asyncSubscriptionNotifications:bool
+	cse_asyncSubscriptionNotifications:bool = None
 	"""	Enable or disable asynchronous subscription notifications. """
 
-	cse_checkExpirationsInterval:int
+	cse_checkExpirationsInterval:int = None
 	"""	The interval to check for resource expirations. """
 
-	cse_cseID:str
+	cse_cseID:str = None
 	"""	The CSE-ID of the CSE. """
 
-	cse_defaultSerialization:str|ContentSerializationType
+	cse_defaultSerialization:str|ContentSerializationType = None
 	"""	The default serialization for the CSE. """
 
-	cse_enableRemoteCSE:bool
+	cse_enableRemoteCSE:bool = None
 	"""	Enable or disable remote CSEs. """
 
-	cse_enableResourceExpiration:bool
+	cse_enableResourceExpiration:bool = None
 	"""	Enable or disable resource expiration. """
 
-	cse_enableSubscriptionVerificationRequests:bool
+	cse_enableSubscriptionVerificationRequests:bool = None
 	"""	Enable or disable subscription verification requests. """
 
-	cse_flexBlockingPreference:str
+	cse_flexBlockingPreference:str = None
 	"""	The flex blocking preference for the CSE. """
 
-	cse_maxExpirationDelta:int
+	cse_maxExpirationDelta:int = None
 	"""	The maximum expiration delta for resources. """
 
-	cse_originator:str
+	cse_originator:str = None
 	"""	The originator for the CSE. """
 
-	cse_poa:list[str]
+	cse_poa:list[str] = None
 	"""	The Points of Access for the CSE. """
 
-	cse_releaseVersion:str
+	cse_releaseVersion:str = None
 	"""	The release version of the CSE. """
 
-	cse_requestExpirationDelta:float
+	cse_requestExpirationDelta:float = None
 	"""	The request expiration delta for the CSE. """
 
-	cse_resourcesPath:str
+	cse_resourcesPath:str = None
 	"""	The path to the resources. """
 
-	cse_resourceID:str
+	cse_resourceID:str = None
 	"""	The resource ID of the CSE. """
 
-	cse_resourceName:str
+	cse_resourceName:str = None
 	"""	The resource name of the CSE. """
 
-	cse_sendToFromInResponses:bool
+	cse_sendToFromInResponses:bool = None
 	"""	Send the To and From in responses. """
 
-	cse_sortDiscoveredResources:bool
+	cse_sortDiscoveredResources:bool = None
 	"""	Sort discovered resources. """
 
-	cse_supportedReleaseVersions:list[str]
+	cse_supportedReleaseVersions:list[str] = None
 	"""	The supported release versions of the CSE. """
 
-	cse_serviceProviderID:str
+	cse_serviceProviderID:str = None
 	"""	The service provider ID of the CSE. """
 
-	cse_type:str|CSEType
+	cse_type:str|CSEType = None
 	"""	The type of the CSE. """
 
-	cse_idLength:int
+	cse_idLength:int = None
 	"""	The length of the generated resource IDs. """
 
-	cse_announcements_allowAnnouncementsToHostingCSE:bool
+	cse_announcements_allowAnnouncementsToHostingCSE:bool = None
 	"""	Allow announcements to the hosting CSE. """
 
-	cse_announcements_delayAfterRegistration:float
+	cse_announcements_delayAfterRegistration:float = None
 	"""	The delay after registration for announcements. """
 
 
-	cse_operation_jobs_balanceLatency:int
+	cse_operation_jobs_balanceLatency:int = None
 	"""	The latency for balancing jobs. """
 
-	cse_operation_jobs_balanceReduceFactor:float
+	cse_operation_jobs_balanceReduceFactor:float = None
 	"""	The reduce factor for balancing jobs. """
 
-	cse_operation_jobs_balanceTarget:float
+	cse_operation_jobs_balanceTarget:float = None
 	"""	The target for balancing jobs. """
 
 
-	cse_operation_requests_enable:bool
+	cse_operation_requests_enable:bool = None
 	"""	Enable or disable operation requests. """
 
-	cse_operation_requests_size:int
+	cse_operation_requests_size:int = None
 	"""	The size of the operation requests. """
 
 
-	cse_operation_plugins_disabledPlugins:list[str]
+	cse_operation_plugins_disabledPlugins:list[str] = None
 	"""	A list of disabled plugins. """
 
-	cse_operation_plugins_replace:bool
+	cse_operation_plugins_replace:bool = None
 	"""	Replace existing plugins with the same name. """
 
-	_cse_operation_plugins_enabledComponents:dict[str, bool]
+	_cse_operation_plugins_enabledComponents:dict[str, bool] = None
 	"""	An internal dictionary of enabled plugins. The keys are the component names, the values are booleans indicating whether the corresponding plugin is enabled. """
 
 
@@ -221,28 +221,28 @@ class Configuration(object):
 	"""	A dictionary of CSE or service provider CSEs registrars. The keys are the CSE IDs, the values are dictionaries with the registrar information. """
 
 
-	cse_registration_allowedAEOriginators:list[str]
+	cse_registration_allowedAEOriginators:list[str] = None
 	"""	Allowed AE originators for registration. """
 
-	cse_registration_allowedCSROriginators:list[str]
+	cse_registration_allowedCSROriginators:list[str] = None
 	"""	Allowed CSR originators for registration. """
 
-	cse_registration_checkLiveliness:bool
+	cse_registration_checkLiveliness:bool = None
 	"""	Check liveliness for registration. """
 
-	cse_registration_checkInterval:int
+	cse_registration_checkInterval:int = None
 	"""	Time interval to check liveliness of registration(s). """
 
-	cse_registration_unregisterWhenStopping:bool
+	cse_registration_unregisterWhenStopping:bool = None
 	"""	Unregister the CSR resource when stopping the CSE. """
 
-	cse_security_secret:str
+	cse_security_secret:str = None
 	"""	The main secret key for the CSE. """
 
-	cse_security_enableACPChecks:bool
+	cse_security_enableACPChecks:bool = None
 	"""	Enable or disable ACP checks. """
 
-	cse_security_fullAccessAdmin:bool
+	cse_security_fullAccessAdmin:bool = None
 	"""	Full access for admin. """
 
 
@@ -256,333 +256,333 @@ class Configuration(object):
 	"""	Enable or disable the semantic service. This includes the SemanticManager plugin and the related features in the CSE. """
 
 
-	database_type:str
+	database_type:str = None
 	"""	The type of the database. """
 
-	database_resetOnStartup:bool
+	database_resetOnStartup:bool = None
 	"""	Reset the database on startup. """
 
-	database_backupPath:str
+	database_backupPath:str = None
 	"""	The path for the database backup. """
 
 
-	database_tinydb_path:str
+	database_tinydb_path:str = None
 	"""	The path to the TinyDB database. """
 
-	database_tinydb_cacheSize:int
+	database_tinydb_cacheSize:int = None
 	"""	The cache size for the TinyDB database. """
 
-	database_tinydb_writeDelay:int
+	database_tinydb_writeDelay:int = None
 	"""	The write delay for the TinyDB database. """
 
 
-	database_postgresql_host:str
+	database_postgresql_host:str = None
 	"""	The host of the PostgreSQL database. """
 
-	database_postgresql_port:int
+	database_postgresql_port:int = None
 	"""	The port of the PostgreSQL database. """
 
-	database_postgresql_role:str
+	database_postgresql_role:str = None
 	"""	The role of the PostgreSQL database. """
 
-	database_postgresql_password:str
+	database_postgresql_password:str = None
 	"""	The password of the PostgreSQL database. """
 
-	database_postgresql_database:str
+	database_postgresql_database:str = None
 	"""	The database of the PostgreSQL database. """
 
-	database_postgresql_schema:str
+	database_postgresql_schema:str = None
 	"""	The schema of the PostgreSQL database. """
 
 
-	http_address:str
+	http_address:str = None
 	"""	The address to listen on for HTTP the http server. """
 
-	http_allowPatchForDelete:bool
+	http_allowPatchForDelete:bool = None
 	"""	Allow PATCH for DELETE operations. """
 
 	http_enable:bool = None
 	"""	Enable or disable the HTTP server. """
 
-	http_enableStructureEndpoint:bool
+	http_enableStructureEndpoint:bool = None
 	"""	Enable the structure endpoint. """
 
-	http_enableUpperTesterEndpoint:bool
+	http_enableUpperTesterEndpoint:bool = None
 	"""	Enable the upper tester endpoint. """
 
-	http_enableManagementEndpoint:bool
+	http_enableManagementEndpoint:bool = None
 	"""	Enable the management endpoint. """
 
-	http_listenIF:str
+	http_listenIF:str = None
 	"""	The network interface to listen on for HTTP. """
 
-	http_port:int
+	http_port:int = None
 	"""	The port to listen on for HTTP. """
 
-	http_root:str
+	http_root:str = None
 	"""	The root of the HTTP path. """
 
-	http_externalRoot:str
+	http_externalRoot:str = None
 	"""	The non-local root path of the HTTP path. This is used when the CSE is accessed from non-local addresses, e.g. in a Kubernetes cluster. """
 
-	http_timeout:float
+	http_timeout:float = None
 	"""	The timeout for HTTP requests. """
 
 
-	http_cors_enable:bool
+	http_cors_enable:bool = None
 	"""	Enable or disable CORS. """
 
-	http_cors_resources:list[str]
+	http_cors_resources:list[str] = None
 	"""	The resources for CORS. """
 
 
-	http_security_caCertificateFile:str
+	http_security_caCertificateFile:str = None
 	"""	The CA certificate file for HTTP. """
 
-	http_security_caPrivateKeyFile:str
+	http_security_caPrivateKeyFile:str = None
 	"""	The CA private key file for HTTP. """
 
-	http_security_tlsVersion:str
+	http_security_tlsVersion:str = None
 	"""	The TLS version for HTTP. """
 
-	http_security_useTLS:bool
+	http_security_useTLS:bool = None
 	"""	Enable or disable TLS for HTTP. """
 
-	http_security_verifyCertificate:bool
+	http_security_verifyCertificate:bool = None
 	"""	Enable or disable certificate verification for HTTP. """
 
-	http_security_enableBasicAuth:bool
+	http_security_enableBasicAuth:bool = None
 	"""	Enable or disable basic authentication for HTTP. """
 
-	http_security_enableTokenAuth:bool
+	http_security_enableTokenAuth:bool = None
 	"""	Enable or disable token authentication for HTTP. """
 
-	http_security_basicAuthFile:str
+	http_security_basicAuthFile:str = None
 	"""	The file for basic authentication for HTTP. """
 
-	http_security_tokenAuthFile:str
+	http_security_tokenAuthFile:str = None
 	"""	The file for token authentication for HTTP. """
 
 
-	http_wsgi_enable:bool
+	http_wsgi_enable:bool = None
 	"""	Enable or disable the WSGI server. """
 
-	http_wsgi_connectionLimit:int
+	http_wsgi_connectionLimit:int = None
 	"""	The connection limit for the WSGI server. """
 
-	http_wsgi_threadPoolSize:int
+	http_wsgi_threadPoolSize:int = None
 	"""	The thread pool size for the WSGI server. """
 
 
-	logging_count:int
+	logging_count:int = None
 	"""	The number of log entries. """
 
-	logging_enableBindingsLogging:bool
+	logging_enableBindingsLogging:bool = None
 	"""	Enable or disable bindings logging. """
 
-	logging_enableFileLogging:bool
+	logging_enableFileLogging:bool = None
 	"""	Enable or disable file logging. """
 
-	logging_enableScreenLogging:bool
+	logging_enableScreenLogging:bool = None
 	"""	Enable or disable screen logging. """
 
-	logging_filter:list
+	logging_filter:list = None
 	"""	The filter for logging. """
 
-	logging_level:str|LogLevel
+	logging_level:str|LogLevel = None
 	"""	The log level. """
 
-	logging_maxLogMessageLength:int
+	logging_maxLogMessageLength:int = None
 	"""	The maximum log message length. """
 
-	logging_path:str
+	logging_path:str = None
 	"""	The path for logging. """
 
-	logging_queueSize:int
+	logging_queueSize:int = None
 	"""	The queue size for logging. """
 
-	logging_size:int
+	logging_size:int = None
 	"""	The size of the log. """
 
-	logging_stackTraceOnError:bool
+	logging_stackTraceOnError:bool = None
 	"""	Enable or disable stack trace on error. """
 
-	logging_enableUTCTimezone:bool
+	logging_enableUTCTimezone:bool = None
 	"""	Enable or disable UTC timezone. """
 
 
-	mqtt_address:str
+	mqtt_address:str = None
 	"""	The address to listen on for the MQTT server. """
 
 	mqtt_enable:bool = None
 	"""	Enable or disable the MQTT server. """
 
-	mqtt_keepalive:int
+	mqtt_keepalive:int = None
 	"""	The keepalive for MQTT. """
 
-	mqtt_listenIF:str
+	mqtt_listenIF:str = None
 	"""	The network interface to listen on for MQTT. """
 
-	mqtt_port:int
+	mqtt_port:int = None
 	"""	The port to listen on for MQTT. """
 
-	mqtt_timeout:float
+	mqtt_timeout:float = None
 	"""	The timeout for MQTT requests. """
 
-	mqtt_topicPrefix:str
+	mqtt_topicPrefix:str = None
 	"""	The topic prefix for MQTT. """
 
-	mqtt_security_allowedCredentialIDs:list[str]
+	mqtt_security_allowedCredentialIDs:list[str] = None
 	"""	The allowed credential IDs for MQTT. """
 
-	mqtt_security_caCertificateFile:str
+	mqtt_security_caCertificateFile:str = None
 	"""	The CA certificate file for MQTT. """
 
-	mqtt_security_password:str
+	mqtt_security_password:str = None
 	"""	The password for MQTT. """
 
-	mqtt_security_username:str
+	mqtt_security_username:str = None
 	"""	The username for MQTT. """
 
-	mqtt_security_useTLS:bool
+	mqtt_security_useTLS:bool = None
 	"""	Enable or disable TLS for MQTT. """
 
-	mqtt_security_verifyCertificate:bool
+	mqtt_security_verifyCertificate:bool = None
 	"""	Enable or disable certificate verification for MQTT. """
 
-	mqtt_websocket_enable:bool
+	mqtt_websocket_enable:bool = None
 	"""	Enable or disable the MQTT over WebSocket. """
 
-	mqtt_websocket_port:int
+	mqtt_websocket_port:int = None
 	"""	The WebSocket port for MQTT. """
 
-	mqtt_websocket_path:str
+	mqtt_websocket_path:str = None
 	"""	The WebSocket path for MQTT. """
 
-	resource_acp_selfPermission:int
+	resource_acp_selfPermission:int = None
 	"""	The self permission for ACP. """
 
 
-	resource_actr_ecpContinuous:int
+	resource_actr_ecpContinuous:int = None
 	"""	The continuous for ACTR. """
 
-	resource_actr_ecpPeriodic:int
+	resource_actr_ecpPeriodic:int = None
 	"""	The periodic for ACTR. """
 
 
-	resource_cnt_enableLimits:bool
+	resource_cnt_enableLimits:bool = None
 	"""	Enable or disable limits for CNT. """
 
-	resource_cnt_mni:int
+	resource_cnt_mni:int = None
 	"""	The MNI for CNT. """
 
-	resource_cnt_mbs:int
+	resource_cnt_mbs:int = None
 	"""	The MBS for CNT. """
 
-	resource_cnt_mia:int
+	resource_cnt_mia:int = None
 	"""	The MIA for CNT. """
 
 
-	resource_fcnt_enableLimits:bool
+	resource_fcnt_enableLimits:bool = None
 	"""	Enable or disable limits for FCNT. """
 
-	resource_fcnt_mni:int
+	resource_fcnt_mni:int = None
 	"""	The MNI for FCNT. """
 
-	resource_fcnt_mbs:int
+	resource_fcnt_mbs:int = None
 	"""	The MBS for FCNT. """
 
-	resource_fcnt_mia:int
+	resource_fcnt_mia:int = None
 	"""	The MIA for FCNT. """
 
 
-	resource_grp_resultExpirationTime:int
+	resource_grp_resultExpirationTime:int = None
 	"""	The result expiration time for GRP. """
 
-	resource_lcp_mni:int
+	resource_lcp_mni:int = None
 	"""	The MNI for LCP. """
 
-	resource_lcp_mbs:int
+	resource_lcp_mbs:int = None
 	"""	The MBS for LCP. """
 
 
-	resource_req_et:int
+	resource_req_et:int = None
 	"""	The expiration time for REQ. """
 
 
-	resource_sub_batchNotifyDuration:int
+	resource_sub_batchNotifyDuration:int = None
 	"""	The batch notify duration for SUB. """
 
 
-	resource_ts_enableLimits:bool
+	resource_ts_enableLimits:bool = None
 	"""	Enable or disable limits for TS. """
 
-	resource_ts_mbs:int
+	resource_ts_mbs:int = None
 	"""	The MBS for TS. """
 
-	resource_ts_mdn:int
+	resource_ts_mdn:int = None
 	"""	The MDN for TS. """
 
-	resource_ts_mni:int
+	resource_ts_mni:int = None
 	"""	The MNI for TS. """
 
-	resource_ts_mia:int
+	resource_ts_mia:int = None
 	"""	The MIA for TS. """
 
 
-	resource_tsb_bcni:str
+	resource_tsb_bcni:str = None
 	"""	The BCNI for TSB. """
 
-	resource_tsb_bcnt:float
+	resource_tsb_bcnt:float = None
 	"""	The BCNT for TSB. """
 
 
-	scripting_fileMonitoringInterval:float
+	scripting_fileMonitoringInterval:float = None
 	"""	The file monitoring interval for scripting. """
 
-	scripting_maxRuntime:float
+	scripting_maxRuntime:float = None
 	"""	The maximum runtime for scripting. """
 
-	scripting_scriptDirectories:list[str]
+	scripting_scriptDirectories:list[str] = None
 	"""	The script directories for scripting. """
 
-	scripting_verbose:bool
+	scripting_verbose:bool = None
 	"""	Enable or disable verbose mode for scripting. """
 
 
-	cse_statistics_enable:bool
+	cse_statistics_enable:bool = None
 	"""	Enable or disable statistics. """
 
-	cse_statistics_writeInterval:int
+	cse_statistics_writeInterval:int = None
 	"""	The write interval for statistics. """
 
 
 	textui_enable:bool = None
 	"""	Enable or disable the text UI. """
 
-	textui_refreshInterval:float
+	textui_refreshInterval:float = None
 	"""	The refresh interval for the text UI. """
 
 	textui_startWithTUI:bool = None
 	"""	Start with the text UI. """
 
-	textui_theme:str
+	textui_theme:str = None
 	"""	The theme for the text UI. """
 
-	textui_maxRequestSize:int
+	textui_maxRequestSize:int = None
 	"""	The maximum request size for the text UI. """
 
-	textui_notificationTimeout:float
+	textui_notificationTimeout:float = None
 	"""	The notification timeout for the text UI. """
 
-	textui_enableTextEditorSyntaxHighlighting:bool
+	textui_enableTextEditorSyntaxHighlighting:bool = None
 	"""	Enable or disable text editor syntax highlighting for the text UI. """
 
 
 	webui_enable:bool = None
 	"""	Enable or disable the web UI. """
 	
-	webui_root:str
+	webui_root:str = None
 	"""	The root path for the web UI. """
 
 
@@ -590,47 +590,47 @@ class Configuration(object):
 	"""	Enable or disable the WebSocket server. """
 
 
-	websocket_address:str
+	websocket_address:str = None
 	"""	The address to listen on for the WebSocket server. """
 
-	websocket_listenIF:str
+	websocket_listenIF:str = None
 	"""	The network interface to listen on for WebSocket. """
 
-	websocket_loglevel:int|str
+	websocket_loglevel:int|str = None
 	"""	The log level for WebSocket. """
 
-	websocket_port:int
+	websocket_port:int = None
 	"""	The port to listen on for WebSocket. """
 
-	websocket_timeout:float
+	websocket_timeout:float = None
 	"""	The timeout for WebSocket requests. """
 
 
-	websocket_security_caCertificateFile:str
+	websocket_security_caCertificateFile:str = None
 	"""	The CA certificate file for WebSocket. """
 
-	websocket_security_caPrivateKeyFile:str
+	websocket_security_caPrivateKeyFile:str = None
 	"""	The CA private key file for WebSocket. """
 
-	websocket_security_tlsVersion:str
+	websocket_security_tlsVersion:str = None
 	"""	The TLS version for WebSocket. """
 
-	websocket_security_useTLS:bool
+	websocket_security_useTLS:bool = None
 	"""	Enable or disable TLS for WebSocket. """
 
-	websocket_security_verifyCertificate:bool
+	websocket_security_verifyCertificate:bool = None
 	"""	Enable or disable certificate verification for WebSocket. """
 
-	websocket_security_enableBasicAuth:bool
+	websocket_security_enableBasicAuth:bool = None
 	"""	Enable or disable basic authentication for WebSocket. """
 
-	websocket_security_enableTokenAuth:bool
+	websocket_security_enableTokenAuth:bool = None
 	"""	Enable or disable token authentication for WebSocket. """
 	
-	websocket_security_basicAuthFile:str
+	websocket_security_basicAuthFile:str = None
 	"""	The file for basic authentication for WebSocket. """
 
-	websocket_security_tokenAuthFile:str
+	websocket_security_tokenAuthFile:str = None
 	"""	The file for token authentication for WebSocket. """
 
 
@@ -1166,7 +1166,6 @@ class ConfigurationError(Exception):
 
 from ..runtime.configurations.ACPResourceConfiguration import ACPResourceConfiguration
 from ..runtime.configurations.ACTRResourceConfiguration import ACTRResourceConfiguration
-from ..runtime.configurations.AnnouncementServiceConfiguration import AnnouncementServiceConfiguration
 from ..runtime.configurations.CNTResourceConfiguration import CNTResourceConfiguration
 from ..runtime.configurations.ConsoleConfiguration import ConsoleConfiguration
 from ..runtime.configurations.CSEConfiguration import CSEConfiguration
@@ -1196,7 +1195,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 	ScriptingConfiguration(),
 
 	# Service configurations
-	AnnouncementServiceConfiguration(),
 	RegistrationServiceConfiguration(),
 	RemoteCSEServiceConfiguration(),
 	SecurityServiceConfiguration(),

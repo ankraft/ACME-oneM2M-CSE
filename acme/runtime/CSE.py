@@ -41,16 +41,12 @@ from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..runtime.Storage import Storage
 from ..services.Validator import Validator
-from ..services.AnnouncementManager import AnnouncementManager
 from ..runtime.Logging import Logging as L
 
 ##############################################################################
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
-
-announce:AnnouncementManager = None
-"""	Runtime instance of the `AnnouncementManager`. """
 
 console:ConsoleBase = None
 """ Runtime instance of the `Console`. """
@@ -113,7 +109,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global announce, dispatcher, importer, storage, validator
+	global dispatcher, importer, storage, validator
 	global notification, pluginManager, registration, remote, request, script, security
 
 	# Set status
@@ -172,7 +168,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		notification = NotificationManager()	# Initialize the notification manager
 
 		remote = RemoteCSEManager()				# Initialize the remote CSE manager
-		announce = AnnouncementManager()		# Initialize the announcement manager
 		script = ScriptManager()				# Initialize the script manager
 		
 		pluginManager.start(excludedTags=['database'])	# Start the remaining plugins after all components are initialized.
@@ -273,7 +268,6 @@ def _shutdown() -> None:
 
 	remote and remote.shutdown()
 	script and script.shutdown()
-	announce and announce.shutdown()
 	notification and notification.shutdown()
 	request and request.shutdown()
 	dispatcher and dispatcher.shutdown()
