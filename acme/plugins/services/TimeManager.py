@@ -160,7 +160,7 @@ class TimeManager(object):
 			notification = {
 				'm2m:tsbn' : {	# TODO proposed short name. Check with TS-0004 later
 					'tbr' : tsb.ri,
-					'ctm' : self.getCSETimestamp()
+					'ctm' : getResourceDate()
 				}
 			}
 			CSE.notification.sendNotificationWithDict(notification, tsb.bcnu, originator = RC.cseCsi)
@@ -258,14 +258,3 @@ class TimeManager(object):
 			return str(abs(tsd))	# EXPERIMENTAL
 
 		return None
-
-
-	def getCSETimestamp(self) -> str:
-		"""	Get the CSE's current date and time (UTC based).
-		
-			Return:
-				ISO timestamp string
-		"""
-		return getResourceDate()
-
-	
