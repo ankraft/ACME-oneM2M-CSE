@@ -249,11 +249,23 @@ class Configuration(object):
 	cse_service_action_enable:bool = False
 	"""	Enable or disable the action processing service. This includes the ActionManager plugin and the related features in the CSE. """
 	
+	cse_service_announcement_enable:bool = False
+	"""	Enable or disable the announcement service. This includes the AnnouncementManager plugin and the related features in the CSE. """
+
+	cse_service_group_enable:bool = False
+	"""	Enable or disable the group service. This includes the GroupManager plugin and the related features in the CSE. """
+	
 	cse_service_location_enable:bool = False
 	"""	Enable or disable the location service. This includes the LocationManager plugin and the related features in the CSE. """
 
 	cse_service_semantic_enable:bool = False
 	"""	Enable or disable the semantic service. This includes the SemanticManager plugin and the related features in the CSE. """
+
+	cse_service_time_enable:bool = False
+	"""	Enable or disable the time service. This includes the TimeManager plugin and the related features in the CSE. """
+
+	cse_service_timeSeries_enable:bool = False
+	"""	Enable or disable the time series service. This includes the TimeSeriesManager plugin and the related features in the CSE. """
 
 
 	database_type:str = None

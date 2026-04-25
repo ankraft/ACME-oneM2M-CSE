@@ -272,6 +272,20 @@ This includes the ActionManager plugin and the related features in the CSE.
 The default value is `True`.
 
 
+# cse.service.announcement
+
+This section contains settings that control the CSE's announcement service.
+
+
+# cse.service.announcement.enable
+
+This setting enables or disables the announcement service.
+This includes the AnnouncementManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+
 # cse.service.group
 
 This section contains settings that control the CSE's group service.
@@ -309,6 +323,32 @@ This setting enables or disables the semantic service.
 This includes the SemanticManager plugin and the related features in the CSE.
 
 The default value is `True`.
+
+
+# cse.service.time
+
+This section contains settings that control the CSE's time service.
+
+
+# cse.service.time.enable
+
+This setting enables or disables the Time Manager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+
+# cse.service.timeSeries
+
+This section contains settings that control the CSE's Time Series service.
+
+
+# cse.service.timeSeries.enable
+
+This setting enables or disables the Time Series Manager plugin and the related features in the CSE.
+
+The default value is `True`.
+
 
 
 
