@@ -146,10 +146,10 @@ class PluginInfo:
 	""" The validate method of the plugin. This method, if set, is called during the plugin validation phase, after the configuration phase. """
 
 	onResolvedMethod: Callable | None = None
-	""" The on_resolved method of the plugin. This method, if set, is called when the plugin is resolved. """
+	""" The onResolved method of the plugin. This method, if set, is called when the plugin is resolved. """
 
 	onUnresolvedMethod: Callable | None = None
-	""" The on_unresolved method of the plugin. This method, if set, is called when the plugin is unresolved. """
+	""" The onUnresolved method of the plugin. This method, if set, is called when the plugin is unresolved. """
 
 
 	def resolve(self) -> None:
@@ -245,6 +245,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 	plugins: dict[str, PluginInfo] = {}
 	unloadedPlugins: list[str] = []
 	_pluginInstances: dict[str, Any] = {}
+	_tagsPluginMap: dict[str, list[tuple[str, Any]]] = {}
 
 
 	def loadPlugins(self, directory: str, 
@@ -284,7 +285,6 @@ class PluginManager(metaclass=Singleton.Singleton):
 					fullModuleName = f'{packagePath}.{pluginName}'
 					spec = importlib.util.spec_from_file_location(fullModuleName, fileName)
 					module = importlib.util.module_from_spec(spec)
-
 
 					# change the simple pluginName to the full module name
 					pluginName = module.__name__
@@ -351,9 +351,9 @@ class PluginManager(metaclass=Singleton.Singleton):
 										plugin.configureMethod = method
 									case 'validate':
 										plugin.validateMethod = method
-									case 'on_resolved':
+									case 'onResolved':
 										plugin.onResolvedMethod = method
-									case 'on_unresolved':
+									case 'onUnresolved':
 										plugin.onUnresolvedMethod = method
 
 						case 'pluginClass' if plugin.pluginClass:
@@ -399,6 +399,14 @@ class PluginManager(metaclass=Singleton.Singleton):
 				plugin.initMethod(plugin.instance, *args, **kwargs)
 
 			plugin.state = PluginState.INITIALIZED
+		
+		# Map tags to plugin names for easier lookup by tag
+		for plugin in newPlugins.values():
+			if plugin.tags:
+				for tag in plugin.tags:
+					if tag not in self._tagsPluginMap:
+						self._tagsPluginMap[tag] = []
+					self._tagsPluginMap[tag].append((plugin.name, plugin.instance))
 
 		# Add new plugins to the main plugin list
 		self.plugins.update(newPlugins)
@@ -441,6 +449,10 @@ class PluginManager(metaclass=Singleton.Singleton):
 			# unload module from interpreter
 			if pluginName in sys.modules.keys():
 				del sys.modules[pluginName]
+
+		# Remove plugin names from tag map
+		for tag, pluginList in self._tagsPluginMap.items():
+			self._tagsPluginMap[tag] = [name for name in pluginList if name not in pluginNames]
 
 
 	def _transition(self, 
@@ -647,7 +659,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 				# find the callback method in the class. Not ideal, but we have to do it this way because the class
 				# itself does not have any tag to identify the callback method, so we have to look for it here.
 				for _, method in inspect.getmembers(cls):
-					if getattr(method, _tagType, None) == 'on_resolved':
+					if getattr(method, _tagType, None) == 'onResolved':
 						resolvedCallback = method
 						break
 				else:
@@ -683,7 +695,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 				# find the callback method in the class. Not ideal, but we have to do it this way because the class
 				# itself does not have any tag to identify the callback method, so we have to look for it here.
 				for _, method in inspect.getmembers(cls):
-					if getattr(method, _tagType, None) == 'on_unresolved':
+					if getattr(method, _tagType, None) == 'onUnresolved':
 						resolvedCallback = method
 						break
 				else:
@@ -749,6 +761,52 @@ class PluginManager(metaclass=Singleton.Singleton):
 		if name:
 			return {name: graph[name] if name in graph else []}
 		return graph
+	
+
+	def getPluginsByTag(self, tag: str, byPriority: bool = False) -> list[tuple[str, Any]]:
+		""" Get the names of the plugins that have the given tag.
+
+			Args:
+				tag: The tag to search for.
+				byPriority: Whether to sort the plugins by their priority. If True, the plugins are returned sorted by their priority, with the highest priority first (0 = highest priority).
+			Returns:
+				A list of plugin names that have the given tag.
+		"""
+		plugins = self._tagsPluginMap.get(tag, [])
+		if byPriority:
+			# Sort plugins by priority, with the highest priority first
+			plugins.sort(key=lambda p: self.plugins[p[0]].priority)
+		return plugins
+	
+
+	def callService(self, tag: str, endpoint: str, *args: Any, **kwargs: Any) -> Any:
+		"""	Call a service plugin endpoint. 
+
+			Args:
+				tag: The tag of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, the one with the highest priority is called.
+				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `@endpoint` decorator.
+				*args: Positional arguments to pass to the endpoint method.
+				**kwargs: Keyword arguments to pass to the endpoint method.
+
+			Return:
+				The result of the endpoint method call.
+
+			Raises:
+				ValueError: If no plugin with the given tag and endpoint is found, or if multiple plugins with the same tag and endpoint are found.
+		"""
+
+		# Get the plugin instance for the given tag and endpoint
+		plugins = self.getPluginsByTag(tag)
+		plugins = [ (p, i) for p, i in plugins if hasattr(i, '_endpointMap') and endpoint in i._endpointMap ]
+		if not plugins:
+			raise ValueError(f'No plugin found with tag: {tag}')
+		if len(plugins) > 1:
+			raise ValueError(f'Multiple plugins found with tag: {tag}: {[p[0] for p in plugins]}')
+		
+		# Call the endpoint method on the plugin instance
+		# The actual endpoint method name is looked up in the plugin's endpoint map internally
+		# (see the @endpoint decorator and the ServicePlugin class) 
+		return getattr(plugins[0][1], endpoint)(*args, **kwargs)
 
 
 #
@@ -817,14 +875,14 @@ def validate(func: Callable) -> Callable: # type: ignore
 	return _wrap(func, 'validate')
 
 
-def on_resolved(func: Callable) -> Callable:
+def onResolved(func: Callable) -> Callable:
 	""" Decorator to mark a method as a callback to be called when the plugin or class becomes resolved. """
-	return _wrap(func, 'on_resolved')
+	return _wrap(func, 'onResolved')
 
 
-def on_unresolved(func: Callable) -> Callable:
+def onUnresolved(func: Callable) -> Callable:
 	""" Decorator to mark a method as a callback to be called when the plugin or class becomes unresolved. """
-	return _wrap(func, 'on_unresolved')
+	return _wrap(func, 'onUnresolved')
 
 
 def plugin(property: str|ClassVar = None,						 # type: ignore
@@ -938,5 +996,77 @@ def requires(*args:Any, **kwargs:Any) -> Callable:
 		return cls
 	return decorator
 
+
+# #############################################################################
+# #
+# #	Create the plugin manager singleton instance. 
+# #
+
+# pluginManager = PluginManager()	
+
+
+#############################################################################
+#
+#	Service Plugin Support
+#
+
+class ServicePlugin:
+	"""	Base class for service plugins. """
+
+	_endpointMap: dict[str, str]	# mapping of endpoint names to method names
+
+	def __init_subclass__(cls, **kwargs: Any) -> None:
+		"""	Initialize the plugin class, creating the service endpoint map by checking
+			the methods marked by the @endpoint decorator. 
+		"""
+		super().__init_subclass__(**kwargs)
+		cls._endpointMap = {}
+		for attrName, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+			for endPointname in getattr(method, '_endpoints', []):
+				cls._endpointMap[endPointname] = attrName
+
+
+	def __getattribute__(self, name: str) -> Any:
+		"""	Override __getattribute__ to allow access to service endpoints by their
+			endpoint name instead of the method name. 
+			
+			Args:
+				name: The name of the attribute to access. This can be either the real method name or the endpoint name defined by the @endpoint decorator.
+
+			Return:
+				The attribute value. If the name is an endpoint name, the corresponding method is returned.
+		"""
+		endpointMap = object.__getattribute__(self, '_endpointMap')
+		if name in endpointMap:
+			name = endpointMap[name]
+		return object.__getattribute__(self, name)
+	
+
+#############################################################################
+#
+#	Functions for Services Support
+#
+
+# TODO move to -> pluginManager? 
+
+	
+
+#############################################################################
+#
+#	Decorators for Service Plugins
+#
+
+def endpoint(name: str) -> Callable:
+	"""	Decorator to mark a method as an endpoint for a Serviceplugin. 
+		The name of the endpoint is given as an argument.
+	"""
+
+	def decorator(func: type) -> type:
+		if not hasattr(func, '_endpoints'):
+			func._endpoints = []		# type: ignore[attr-defined]
+		func._endpoints.append(name)	# type: ignore[attr-defined]
+		return func
+	
+	return decorator
 
 
