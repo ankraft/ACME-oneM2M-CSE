@@ -57,13 +57,3 @@ class EventManager(HelpersEventManager):
 		self.addEvent('acmeNotification', runInBackground=False)		# Special event if a notification targets a URL scheme "acme://"
 		# No finished message bc logging is not not initialized yes
 
-
-	def shutdown(self) -> bool:
-		super().stop()
-		L.isInfo and L.log('EventManager shut down')
-		return True
-
-
-	def __getattr__(self, name: str) -> Event:
-		# Events are added dynamically — silence type checker
-		raise AttributeError(name)  # default behaviour, type checker still sees Event

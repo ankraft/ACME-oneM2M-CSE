@@ -15,8 +15,10 @@ from __future__ import annotations
 from typing import Any, Callable, Generic, Optional, TypeVar, cast, overload
 from dataclasses import dataclass
 import inspect
+from unicodedata import name
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.Singleton import Singleton
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
 
@@ -38,8 +40,9 @@ class EventData(Generic[T]):
 	name: Optional[str] = None
 	"""	The event name. """
 
-	payload: T = None
+	payload: T | list = None
 	"""	The event payload. """
+
 
 
 #########################################################################
@@ -79,22 +82,19 @@ class Event(list):	# type:ignore[type-arg]
 	)
 	"""	Slots of the Event class. """
 
-	def __init__(self,  runInBackground: Optional[bool] = True, 
-						manager: Optional[EventManager] = None,
-						name: Optional[str] = None):
+	def __init__(self,  name: Optional[str] = None,
+			  			runInBackground: Optional[bool] = True) -> None:
 		"""	Event initialization.
 
 			Args:
 				runInBackground: Indicator whether an event should be handled in a separate thread.
-				manager: The responsible `EventManager` to handle an event.
 				name: The event name.
 		"""
-		self.runInBackground = runInBackground
-		"""	Indicator whether an event should be handled in a separate thread. """
-		self.manager = manager
-		"""	The responsible `EventManager` to handle an event. """
 		self.name = name
 		"""	The event name. """
+		self.runInBackground = runInBackground
+		"""	Indicator whether an event should be handled in a separate thread. """
+
 
 	@overload
 	def __call__(self, func: F) -> F: ...          # decorator path
@@ -132,15 +132,15 @@ class Event(list):	# type:ignore[type-arg]
 				# 	x = BackgroundWorkerPool.runJob(lambda name = name, args = args, kwargs = kwargs: function(name, *args, **kwargs))
 				# else:
 				# 	function(name, *args, **kwargs)
-				function(name, *args, **kwargs)
+				if hasattr(function, '_onEvents'):
+					function(EventData(name=name, payload=list(args)))	# type: ignore[attr-defined]
+				else:
+					function(name, *args, **kwargs)
 
 		if len(args) == 1 and callable(args[0]) and not isinstance(args[0], EventData):
 			self.append(args[0])
 			return args[0]
 
-		if not self.manager._running:
-			return
-		
 		# Add event name to the event data if not already set
 		if args and isinstance(args[0], EventData):
 			if not args[0].name:
@@ -164,7 +164,7 @@ class Event(list):	# type:ignore[type-arg]
 
 
 
-class EventManager(object):
+class EventManager(metaclass=Singleton):
 	"""	Event topics are added as new methods to an *EventManager* instance. 
 		Events can be raised by calling those new methods.
 
@@ -179,40 +179,6 @@ class EventManager(object):
 				Raise the *anEvent* `Event` with an *anArg* argument.
 	"""
 
-	__slots__ = (
-		'_running',
-	)
-	"""	Slots of the EventManager class. """
-
-
-	def __init__(self) -> None:
-		"""	EventManager initialization.
-		"""
-		self._running = False
-		"""	Internal Running indicator for the manager instance. """
-		self.start()
-
-
-	def start(self) -> bool:
-		"""	Start the Event Manager.
-		
-			Return:
-				*True* if the Event Manager was started successfully.
-		"""
-		self._running = True
-		return True
-
-	def stop(self) -> bool:
-		"""	Stop the Event Manager.
-		
-			Return:
-				*True* if the Event Manager was stopped successfully.
-		"""
-		self._running = False
-		return True
-
-	#########################################################################
-
 	def addEvent(self, name: str, runInBackground: Optional[bool] = True) -> Event:
 		"""	Create and add a new `Event`.
 
@@ -224,7 +190,7 @@ class EventManager(object):
 				The created `Event`.
 		"""
 		if not hasattr(self, name):
-			setattr(self, name, Event(runInBackground=runInBackground, manager=self, name=name))
+			setattr(self, name, Event(name=name, runInBackground=runInBackground))
 		return cast(Event, getattr(self, name))
 
 
@@ -292,6 +258,15 @@ class EventManager(object):
 		list(map(lambda e: e.remove(func), [event] if isinstance(event, Event) else event))
 
 
+	def __getattr__(self, name: str) -> Event:
+		if name.startswith('_'):
+			raise AttributeError(name)
+		# Add event dynamically if it does not exist yet
+		event = Event(name)
+		setattr(self, name, event)
+		return event
+
+
 def EventHandler(cls: type) -> type:
 	"""	Class decorator to automatically register event handlers. 
 		Any method of the decorated class that is decorated with an `Event` 
@@ -305,9 +280,10 @@ def EventHandler(cls: type) -> type:
 
 	def __init__(self, *args: Any, **kwargs: Any) -> None:	# type: ignore[no-untyped-def]
 		originalInit(self, *args, **kwargs)
-		for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
-			if hasattr(method.__func__, '_event'):
-				method.__func__._event.append(method)
+		for _, method in inspect.getmembers(self, predicate=inspect.ismethod):
+			for event in getattr(method.__func__, '_onEvents', []):
+				event.append(method)
+
 
 	cls.__init__ = __init__ 	# type: ignore[misc]
 	return cls
@@ -317,7 +293,9 @@ def onEvent(event: Event) -> Callable[[F], F]:
 	"""Marks a method for event registration — deferred until instantiation.
 	"""
 	def decorator(func: F) -> F:
-		func._event = event	# type: ignore[attr-defined]
+		if not hasattr(func, '_onEvents'):
+			func._onEvents = []		# type: ignore[attr-defined]
+		func._onEvents.append(event)	# type: ignore[attr-defined]
 		return func
 	return decorator
 
