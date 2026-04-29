@@ -14,24 +14,26 @@
 from __future__ import annotations
 from typing import List, Tuple, Dict, cast, Optional, Any
 
-from ..etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
-from ..etc.Types import ContentSerializationType, BindingType, CSERegistrar
-from ..etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
-from ..etc.ACMEUtils import pureResource
-from ..etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isAbsolute, getSPFromID, uniqueAEI, toSPRelative	# cannot import at the top because of circel import
-from ..etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl
-from ..etc.Constants import Constants, RuntimeConstants as RC
-from ..helpers.TextTools import findXPath, setXPath
-from ..resources.CSR import CSR
-from ..resources.CSEBase import CSEBase, getCSE
-from ..resources.Resource import Resource
-from ..runtime.Factory import resourceFromDict
-from ..runtime.Configuration import Configuration
-from ..runtime import CSE
-from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..runtime.Logging import Logging as L
+from ...etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
+from ...etc.Types import ContentSerializationType, BindingType, CSERegistrar
+from ...etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
+from ...etc.ACMEUtils import pureResource
+from ...etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isValidSPID, isValidCSI, isAbsolute, getSPFromID, toSPRelative	# cannot import at the top because of circel import
+from ...etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl, normalizeURL
+from ...etc.Constants import Constants, RuntimeConstants as RC
+from ...helpers.TextTools import findXPath, setXPath
+from ...resources.CSR import CSR
+from ...resources.CSEBase import CSEBase, getCSE
+from ...resources.Resource import Resource
+from ...runtime.Factory import resourceFromDict
+from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime import CSE
+from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ...runtime.Logging import Logging as L
+from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
 
 
+@plugin(property='remoteCSEManager', tags=['acme', 'remote'], priority=20)
 class RemoteCSEManager(object):
 	"""	This class defines functionalities to handle remote CSE/CSR registrations.
 
@@ -41,6 +43,8 @@ class RemoteCSEManager(object):
 			registrarConfig: The local registrar configuration entry.
 			spRegistrarConfigs: A dictionary of all SP registrar configurations except the own one.
 	"""
+
+	remoteCSEManager: Optional[Any] = None
 
 	__slots__ = (
 		'connectionMonitor',
@@ -62,6 +66,10 @@ class RemoteCSEManager(object):
 		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's - "csi : (CSR, registeredATcsi)". CSR is None for CSEs further down 
 		self.registrarConfig:CSERegistrar = None 					# Locally store the own registrar's config entry for simplicity
 
+
+	@start
+	def start(self) -> None:
+
 		# Get the configuration settings
 		self._assignConfig()
 
@@ -79,7 +87,7 @@ class RemoteCSEManager(object):
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
 
 		# Add a handler when the CSE is started
-		CSE.event.addHandler(CSE.event.cseStartup, self.start)	# type: ignore
+		CSE.event.addHandler(CSE.event.cseStartup, self.startConnectionMonitor)	# type: ignore
 		L.isInfo and L.log('RemoteCSEManager initialized')
 
 		# Optimize event handling
@@ -87,18 +95,19 @@ class RemoteCSEManager(object):
 		self._eventDeregisteredFromRegistrarCSE = CSE.event.deregisteredFromRegistrarCSE	# type: ignore [attr-defined]
 
 
-
-	def shutdown(self) -> bool:
-		"""	Shutdown the RemoteCSEManager.
+	@stop
+	def stop(self) -> bool:
+		"""	Stop the RemoteCSEManager.
 		
 			Return:
 				Always return True.
 		"""
-		self.stop()
+		self.stopConnectionMonitor()
 		L.isInfo and L.log('RemoteCSEManager shut down')
 		return True
 
 
+	@restart
 	def restart(self) -> None:
 		"""	Restart the remote service monitor.
 		"""
@@ -107,7 +116,6 @@ class RemoteCSEManager(object):
 		self.descendantCSR.clear()
 		self.checkConnectionsNow()	# Force the connection monitor to check the connections now
 		L.isDebug and L.logDebug('RemoteManager restarted')
-
 
 
 	def checkConnectionsNow(self) -> None:
@@ -150,7 +158,7 @@ class RemoteCSEManager(object):
 	#	Connection Monitor
 	#
 
-	def start(self, name:str) -> None:
+	def startConnectionMonitor(self, name:str) -> None:
 		"""	Start the remote monitor as a background worker. 
 
 			Args:
@@ -180,7 +188,7 @@ class RemoteCSEManager(object):
 																'csrMonitor').start()
 
 
-	def stop(self) -> None:
+	def stopConnectionMonitor(self) -> None:
 		"""	Stop the connection monitor. Also delete the CSR resources on both sides, if possible.
 		"""
 		if not Configuration.cse_enableRemoteCSE:
@@ -296,7 +304,7 @@ class RemoteCSEManager(object):
 			if updatedAttributes:
 				# Update direct registree CSRs
 				try:
-					CSE.remote.updateRemoteDescendantCSR({ 'm2m:csr' : updatedAttributes })
+					self.updateRemoteDescendantCSR({ 'm2m:csr' : updatedAttributes })
 				except Exception as e:
 					L.logErr(f'Cannot update descendant CSRs: {e}')
 
@@ -405,7 +413,7 @@ class RemoteCSEManager(object):
 			if updatedAttributes:
 				# Update direct registree CSRs
 				try:
-					CSE.remote.updateRemoteDescendantCSR({ 'm2m:csr' : updatedAttributes })
+					self.updateRemoteDescendantCSR({ 'm2m:csr' : updatedAttributes })
 				except Exception as e:
 					L.logErr(f'Cannot update descendant CSRs: {e}')
 
@@ -1035,15 +1043,12 @@ class RemoteCSEManager(object):
 			BackgroundWorkerPool.newActor(lambda: _updateDescendant(csrID), name=f'{csrID}-updateDescendant').start()
 
 
-	#########################################################################
-
-
-	def _copyCSE2CSR(self, registrarConfig:CSERegistrar,
-				  		   target:Resource, 
-						   source:Resource, 
-						   isUpdate:Optional[bool]=False, 
-						   targetCsi:str=None,
-						   forOwnCSR:Optional[bool]=False) -> None:
+	def _copyCSE2CSR(self, registrarConfig: CSERegistrar,
+				  		   target: Resource, 
+						   source: Resource, 
+						   isUpdate: Optional[bool] = False, 
+						   targetCsi: str = None,
+						   forOwnCSR: Optional[bool] = False) -> None:
 		"""	Copy the relevant attributes from a <CSEBase> to a <CSR> resource.
 		
 			Args:
@@ -1117,3 +1122,184 @@ class RemoteCSEManager(object):
 				if attr in target:
 					target.delAttribute(attr, setNone = False)
 
+
+	#########################################################################
+	#
+	#	Configuration and validation
+	#
+
+	@configure
+	def configure(self, config: Configuration) -> None:
+
+		parser = config.configParser
+
+		def parseRegistrar(section:str, registrar:CSERegistrar) -> None:
+			registrar._configurationSection = section # Set the configuration section for the registrar
+			# Parse a registrar configuration section and populate the registrar object
+			registrar.spID = parser.get(section, 'spID', fallback=None)
+			registrar.address = parser.get(section, 'address', fallback=None)
+			registrar.cseID = parser.get(section, 'cseID', fallback=None)
+			registrar.excludeCSRAttributes = parser.getlist(section, 'excludeCSRAttributes', fallback=[])		# type: ignore [attr-defined]
+			registrar.resourceName = parser.get(section, 'resourceName', fallback='')
+			registrar.root = parser.get(section, 'root', fallback='')
+			registrar.serialization = parser.get(section, 'serialization', fallback='json')
+			registrar.INCSEcseID = parser.get(section, 'INCSEcseID', fallback=None)
+			registrar.originator = parser.get(section, 'originator', fallback=None)
+
+
+		def parseRegistrarSecurity(section:str, registrar:CSERegistrar) -> None:
+			# Parse the security section for a registrar and populate the security attributes
+			registrar.security.credentials.httpUsername = parser.get(section, 'httpUsername', fallback=None)
+			registrar.security.credentials.httpPassword = parser.get(section, 'httpPassword', fallback=None)
+			registrar.security.credentials.httpToken = parser.get(section, 'httpBearerToken', fallback=None)
+			registrar.security.credentials.wsUsername = parser.get(section, 'wsUsername', fallback=None)
+			registrar.security.credentials.wsPassword = parser.get(section, 'wsPassword', fallback=None)
+			registrar.security.credentials.wsToken = parser.get(section, 'wsBearerToken', fallback=None)
+			registrar.security.selfCredentials.httpUsername = parser.get(section, 'selfHttpUsername', fallback=None)
+			registrar.security.selfCredentials.httpPassword = parser.get(section, 'selfHttpPassword', fallback=None)
+			registrar.security.selfCredentials.wsUsername = parser.get(section, 'selfWsUsername', fallback=None)
+			registrar.security.selfCredentials.wsPassword = parser.get(section, 'selfWsPassword', fallback=None)
+
+		#	Registrar CSE
+		registrar = CSERegistrar()
+		parseRegistrar('cse.registrar', registrar)
+
+
+		# Registrar CSE Security
+		if parser.has_section('cse.registrar.security'):
+			# parseRegistrarSecurity('cse.registrar.security', registrar)
+			parseRegistrarSecurity('cse.registrar.security', registrar)
+
+		config.cse_registrars[RC.cseSPid] = registrar
+
+		# Get the SP (Mcc') configurations
+		spMapping:dict[str, str] = {}
+		for section in parser.sections():
+			if section.startswith('cse.sp.registrar.'):
+				if not section.endswith('.security'):
+					registrar = CSERegistrar()
+					spName = section[len('cse.sp.registrar.'):]  # Extract the SP name from the section
+					if spName == RC.cseSPIDSlashLess:
+						raise ConfigurationError(r'The registrar within the same Service Provider domain must be configured in the \[cse.registrar] section.')
+					parseRegistrar(section, registrar)
+					spMapping[spName] = registrar.spID 					# Map the SP name to its spID
+					config.cse_registrars[registrar.spID] = registrar	# Store the registrar in the configuration under its spID
+
+				else: 
+					spName = section[len('cse.sp.registrar.'):-len('.security')]
+					if spName not in spMapping:
+						raise ConfigurationError(fr'No SP Registrar configuration found for security section: {spName} -> {section}')
+					registrar = config.cse_registrars.get(spMapping[spName], None)
+					if not registrar:
+						raise ConfigurationError(fr'No SP Registrar configuration found for security section: {spName} -> {section}')
+					parseRegistrarSecurity(f'cse.sp.registrar.{spName}.security', registrar)
+				
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+
+		# Validate CSE Type and remove default registrar if not IN
+		for spName, registrar in config.cse_registrars.copy().items():
+
+			# First finish the registrar initialization. This can only be done after all the other configurations have been read
+			config.cse_registrars[spName].reInit()
+
+			# Set the correct originator
+			if registrar.originator is None:
+				# If the originator is not set, use the own Service Provider ID as the originator
+				registrar.originator = RC.cseCsi
+				if registrar.spID is not None and registrar.spID != RC.cseSPid:
+					# If the Service Provider ID is set and is not the own Service Provider ID, expand the
+					# originator to include the Service Provider ID and CSE ID
+					registrar.originator = f'{RC.cseSPid}{RC.cseCsi}'
+
+			# If the registrar has no name, use the own spID as the key
+			# This seems to be a bit of a hack, but at the time when the own registrar is added, the RC.cseSpid is not yet set
+			if registrar.spID is None:
+				registrar.spID = RC.cseSPid	# Use the own Service Provider ID if not set
+			if spName is None:
+				# Find the first non-None cseID or spID to use as the key
+				registrar.spID = registrar.spID or RC.cseSPid	# Use the own Service Provider ID if not set
+				config.cse_registrars[RC.cseSPid] = registrar
+				config.cse_registrars.pop(spName)
+				spName = RC.cseSPid
+			
+			# Check if the Service Provider ID is valid
+			if not isValidSPID(registrar.spID):
+				raise ConfigurationError(f'The Service Provider ID {registrar.spID} is not set or invalid.')
+
+			match config.cse_type:
+				# IN CSEs can NOT have a registrar other than other SP's one
+				case CSEType.IN if spName == RC.cseSPid:
+					if registrar.cseID != '/':	# "/" indicates an empty CSE ID
+						raise ConfigurationError(r'An IN CSE can not have a registrar (section: \[cse.registrar])')
+					config.cse_registrars.pop(RC.cseSPid)
+					continue
+
+				# MN and ASN CSEs may have a registrar
+				case CSEType.MN | CSEType.ASN if spName == RC.cseSPid:	
+					if registrar.cseID == '/':	# "/" indicates an empty CSE ID, so remove it
+						config.cse_registrars.pop(RC.cseSPid)
+
+				# MN and ASCN CSE must not have a SP registrar
+				case CSEType.MN | CSEType.ASN if spName != RC.cseSPid:	
+					raise ConfigurationError(fr'Service Provider Registrar: "{spName}" is not allowed for CSE Type: "{config.cse_type.name}"')
+
+
+		# Validate CSE Registrars
+		for spName, registrar in config.cse_registrars.items():
+
+			if spName != RC.cseSPid:
+				if not registrar.spID:
+					raise ConfigurationError(fr'Missing \[{registrar._configurationSection}]:spID for registrar: {spName}')
+				if not registrar.cseID:
+					raise ConfigurationError(fr'Missing \[{registrar._configurationSection}]:cseID for registrar: {spName}')
+				if not registrar.resourceName:
+					raise ConfigurationError(fr'Missing \[{registrar._configurationSection}]:resourceName for registrar: {spName}')
+				if not registrar.address:
+					raise ConfigurationError(fr'Missing \[{registrar._configurationSection}]:address for registrar: {spName}')
+
+			# Normalize addresses
+			registrar.address = normalizeURL(registrar.address)
+			registrar.root = normalizeURL(registrar.root)
+
+			# Registrar Serialization
+			if isinstance(ct := registrar.serialization, str):
+				registrar.serialization = ContentSerializationType.getType(ct)
+				if registrar.serialization == ContentSerializationType.UNKNOWN:
+					raise ConfigurationError(fr'Unsupported \[{registrar._configurationSection}]:serialization: {ct}')
+
+			# Check that the CSE-ID is valid
+			# if registrar.address and registrar.cseID and config.cse_type != CSEType.IN:
+			if registrar.address and registrar.cseID:
+				if not isValidCSI(val := registrar.cseID): 
+					raise ConfigurationError(fr'Invalid format for [i]\[{registrar._configurationSection}]:cseID[/i]: {val}')
+				if len(registrar.cseID) > 0 and len(registrar.resourceName) == 0:
+					raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}]:resourceName[/i]')
+
+			if registrar.INCSEcseID:
+				if not isValidCSI(val := registrar.INCSEcseID):
+					raise ConfigurationError(fr'Wrong format for [i]\[{registrar._configurationSection}]:INCSEcseID[/i]: {val}')
+			#TODO Investigate: The INCSEcseID above might need be set the same as the cseID, if not set.
+
+			if registrar.security.credentials.httpUsername and not registrar.security.credentials.httpPassword:
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:httpPassword[/i] (password is required if username is set)')
+			if not registrar.security.credentials.httpUsername and registrar.security.credentials.httpPassword:
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:httpUsername[/i] (username is required if password is set)')
+			if registrar.security.credentials.httpToken and registrar.security.credentials.httpUsername:
+				raise ConfigurationError(rf'Only one of [i]\[{registrar._configurationSection}.security]:httpBearerToken[/i] or [i]\[{registrar._configurationSection}.security]:httpUsername[/i] can be set')
+			if registrar.security.credentials.wsUsername and not registrar.security.credentials.wsPassword:
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:wsPassword[/i] (password is required if username is set)')
+			if not registrar.security.credentials.wsUsername and registrar.security.credentials.wsPassword:
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:wsUsername[/i] (username is required if password is set)')
+			if registrar.security.credentials.wsToken and registrar.security.credentials.wsUsername:
+				raise ConfigurationError(rf'Only one of [i]\[{registrar._configurationSection}.security]:wsBearerToken[/i] or [i]\[{registrar._configurationSection}.security]:wsUsername[/i] can be set')
+
+			if registrar.security.selfCredentials.httpUsername and not registrar.security.selfCredentials.httpPassword:
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:selfHttpPassword[/i] (password is required if username is set)')
+			if not registrar.security.selfCredentials.httpUsername and registrar.security.selfCredentials.httpPassword:
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:selfHttpUsername[/i] (username is required if password is set)')
+			if registrar.security.selfCredentials.wsUsername and not registrar.security.selfCredentials.wsPassword:
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:selfWsPassword[/i] (password is required if username is set)')
+			if not registrar.security.selfCredentials.wsUsername and registrar.security.selfCredentials.wsPassword:
+				raise ConfigurationError(rf'Missing configuration [i]\[{registrar._configurationSection}.security]:selfWsUsername[/i] (username is required if password is set)')

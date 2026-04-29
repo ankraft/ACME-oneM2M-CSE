@@ -36,7 +36,6 @@ from ..services.NotificationManager import NotificationManager
 from ..runtime.PluginManager import PluginManager, DependencyError
 from ..runtime.ConsoleBase import ConsoleBase
 from ..services.RegistrationManager import RegistrationManager
-from ..services.RemoteCSEManager import RemoteCSEManager
 from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..runtime.Storage import Storage
@@ -54,9 +53,6 @@ console:ConsoleBase = None
 dispatcher:Dispatcher = None
 """	Runtime instance of the `Dispatcher`. """
 
-event:EventManager = None
-"""	Runtime instance of the `EventManager`. """
-
 # httpServer:HttpServer = None
 """	Runtime instance of the `HttpServer`. """
 
@@ -66,14 +62,8 @@ importer:Importer = None
 notification:NotificationManager = None
 """	Runtime instance of the `NotificationManager`. """
 
-pluginManager:PluginManager = None
-"""	Runtime instance of the `PluginManager`. """
-
 registration:RegistrationManager = None
 """	Runtime instance of the `RegistrationManager`. """
-
-remote:RemoteCSEManager = None
-"""	Runtime instance of the `RemoteCSEManager`. """
 
 request:RequestManager = None
 """	Runtime instance of the `RequestManager`. """
@@ -95,9 +85,13 @@ validator:Validator = None
 _cseResetLock = Lock()
 """ Internal CSE's lock when resetting. """
 
-##############################################################################
+event:EventManager = EventManager() # 	# Initialize the event manager before anything else
+"""	Runtime instance of the `EventManager`. """
 
-event = EventManager()					# Initialize the event manager before anything else
+pluginManager:PluginManager = PluginManager()
+"""	Runtime instance of the `PluginManager`. """
+
+##############################################################################
 
 
 def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
@@ -110,7 +104,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			False if the CSE couldn't initialized and started. 
 	"""
 	global dispatcher, importer, storage, validator
-	global notification, pluginManager, registration, remote, request, script, security
+	global notification, pluginManager, registration, request, script, security
 
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
@@ -143,7 +137,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	# set the logger for the backgroundWorkers. Add an offset to compensate for
 	# this and other redirect functions to determine the correct file / linenumber
 	# in the log output
-	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l, m, stackOffset = 2))
+	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l, m, stackOffset=2))
 	BackgroundWorkerPool.setJobBalance(	balanceTarget=Configuration.cse_operation_jobs_balanceTarget,
 										balanceLatency=Configuration.cse_operation_jobs_balanceLatency,
 										balanceReduceFactor=Configuration.cse_operation_jobs_balanceReduceFactor)
@@ -151,7 +145,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	try:
 		# Initialize the plugin manager
 		# This loads, configures and validates the plugins as well
-		pluginManager = PluginManager()	
+		pluginManager.startup()	
 		
 		# Start the database plugins and the storage first
 		pluginManager.start(tags=['database'])	
@@ -167,10 +161,13 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		security = SecurityManager()			# Initialize the security manager
 		notification = NotificationManager()	# Initialize the notification manager
 
-		remote = RemoteCSEManager()				# Initialize the remote CSE manager
 		script = ScriptManager()				# Initialize the script manager
 		
-		pluginManager.start(excludedTags=['database'])	# Start the remaining plugins after all components are initialized.
+		pluginManager.start(tags=['binding'])	# Start the bindings
+		pluginManager.start(tags=['core'])		# Start the remaining core plugins after all components are initialized.
+		pluginManager.start(tags=['remote'])	# Start the remote plugins after the core plugins
+		pluginManager.start(tags=['ui'])		# Start the remaining plugins after the core and remote plugins
+
 		# Import attribute, flexContainer and enum policies, and configuration documentation
 		#
 		# After this, the CSE reads the scripts from the default and runtime init directories.
@@ -264,9 +261,10 @@ def _shutdown() -> None:
 	# shutdown the services
 	# Stop all the plugins, except the database plugins, which are needed during shutdown 
 	# This leaves only the database plugins running
-	pluginManager and pluginManager.stop(excludedTags=['database'])
+	pluginManager and pluginManager.stop(tags=['ui'])
+	pluginManager and pluginManager.stop(tags=['remote'])
+	pluginManager and pluginManager.stop(tags=['core'])
 
-	remote and remote.shutdown()
 	script and script.shutdown()
 	notification and notification.shutdown()
 	request and request.shutdown()
@@ -274,10 +272,13 @@ def _shutdown() -> None:
 	security and security.shutdown()
 	validator and validator.shutdown()
 	registration and registration.shutdown()
-	event and event.shutdown()
+
 	storage  and storage.shutdown()
+	pluginManager and pluginManager.stop(tags=['database'])
 	
-	# This shutdowns all plugins, including the ones, which only have been stopped before
+	pluginManager and pluginManager.stop(tags=['bindings'])
+
+	# This shutdowns all plugins, stopping the ones that are still running
 	pluginManager and pluginManager.shutdown()	
 
 	L.isInfo and L.log('CSE shut down')
@@ -332,7 +333,8 @@ def resetCSE() -> None:
 		# Pause all binding plugins to stop receiving requests during reset.
 		pluginManager.pausePlugins(tags='binding')
 		# Restart all plugins, except core plugins. They are restarted via an event
-		pluginManager.restartPlugins()	
+		pluginManager.restartPlugins(tags='core')	
+		pluginManager.restartPlugins(tags='ui')	
 
 		storage.purge()
 
@@ -347,11 +349,12 @@ def resetCSE() -> None:
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
 
-		remote.restart()
-
-
 		# Unpause all binding plugins to start receiving requests again after reset.
 		pluginManager.unpausePlugins(tags='binding')	
+
+		# Restart remote plugins after the main
+		pluginManager.restartPlugins(tags='remote')	
+
 
 		# Enable log queuing again
 		L.queueOn()

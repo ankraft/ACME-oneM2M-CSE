@@ -254,10 +254,13 @@ class Configuration(object):
 
 	cse_service_group_enable:bool = False
 	"""	Enable or disable the group service. This includes the GroupManager plugin and the related features in the CSE. """
-	
+
 	cse_service_location_enable:bool = False
 	"""	Enable or disable the location service. This includes the LocationManager plugin and the related features in the CSE. """
 
+	cse_service_remoteCSE_enable:bool = False
+	"""	Enable or disable the remote CSE service. This includes the RemoteCSEManager plugin and the related features in the CSE. """
+	
 	cse_service_semantic_enable:bool = False
 	"""	Enable or disable the semantic service. This includes the SemanticManager plugin and the related features in the CSE. """
 
@@ -1186,7 +1189,6 @@ from ..runtime.configurations.LCPResourceConfiguration import LCPResourceConfigu
 from ..runtime.configurations.LoggingConfiguration import LoggingConfiguration
 from ..runtime.configurations.ModuleConfiguration import ModuleConfiguration
 from ..runtime.configurations.RegistrationServiceConfiguration import RegistrationServiceConfiguration
-from ..runtime.configurations.RemoteCSEServiceConfiguration import RemoteCSEServiceConfiguration
 from ..runtime.configurations.REQResourceConfiguration import REQResourceConfiguration
 from ..runtime.configurations.ScriptingConfiguration import ScriptingConfiguration
 from ..runtime.configurations.SecurityServiceConfiguration import SecurityServiceConfiguration
@@ -1208,7 +1210,6 @@ _moduleConfigs:list[ModuleConfiguration] = [
 
 	# Service configurations
 	RegistrationServiceConfiguration(),
-	RemoteCSEServiceConfiguration(),
 	SecurityServiceConfiguration(),
 
 	# Storage configurations

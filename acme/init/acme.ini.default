@@ -174,6 +174,7 @@ _actionManager_enable_=${cse.service.action:enable}
 _announcementManager_enable_=${cse.service.announcement:enable}
 _groupManager_enable_=${cse.service.group:enable}
 _locationManager_enable_=${cse.service.location:enable}
+_remoteCSEManager_enable_=${cse.service.remoteCSE:enable}
 _semanticManager_enable_=${cse.service.semantic:enable}
 _timeManager_enable_=${cse.service.time:enable}
 _timeSeriesManager_enable_=${cse.service.timeSeries:enable}
@@ -218,6 +219,15 @@ enable=true
 [cse.service.location]
 ; Enable the Location Service. This includes the LocationManager plugin and 
 ; the related features in the CSE.
+; Default: true
+enable=true
+
+;
+;	Settings for the RemoteCSE Service
+;
+
+[cse.service.remoteCSE]
+; Enable the RemoteCSE Service.
 ; Default: true
 enable=true
 

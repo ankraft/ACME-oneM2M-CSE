@@ -34,7 +34,7 @@ from ..resources.ACTR import ACTR
 from ..resources.SCH import SCH
 from .Factory import resourceFromDict
 from .Logging import Logging as L
-from ..helpers.PluginManager import requires
+from ..runtime.PluginSupport import requires
 
 from .DBBinding import DBBinding
 

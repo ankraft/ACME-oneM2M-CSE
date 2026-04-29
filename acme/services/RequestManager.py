@@ -36,7 +36,7 @@ from ..etc.Utils import isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath
 from ..helpers.RingBuffer import RingBuffer
-from ..helpers.PluginManager import requires, on_resolved, on_unresolved, Dependency
+from ..helpers.PluginManager import requires, onResolved, onUnresolved, Dependency
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
 from ..resources.Resource import Resource
@@ -66,6 +66,7 @@ expirationCheckFactor = 2.0
 @requires(coapServer='acme.plugins.bindings.CoAPServer', required=False)
 @requires(mqttClient='acme.plugins.bindings.MQTTClient', required=False)
 @requires(websocketServer='acme.plugins.bindings.WebSocketServer', required=False)
+@requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
 class RequestManager(object):
 	"""	RequestManager class.
 	"""
@@ -112,23 +113,25 @@ class RequestManager(object):
 	)
 
 	httpServer: Any = None	# type: ignore
-	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
+	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency."""
 	coapServer: Any = None	# type: ignore
-	"""	The CoAPServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the CoAPServer plugin is loaded. """
+	"""	The CoAPServer plugin instance is injected by the PluginManager based on the declared dependency."""
 	mqttClient: Any = None	# type: ignore
-	"""	The MQTTClient plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the MQTTClient plugin is loaded. """
+	"""	The MQTTClient plugin instance is injected by the PluginManager based on the declared dependency."""
 	websocketServer: Any = None	# type: ignore
-	"""	The WebSocketServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the WebSocketServer plugin is loaded. """
+	"""	The WebSocketServer plugin instance is injected by the PluginManager based on the declared dependency."""
+	remoteCSEManager: Any = None	# type: ignore
+	"""	The RemoteCSEManager plugin instance is injected by the PluginManager based on the declared dependency."""
 
 
-	@on_resolved
+	@onResolved
 	def onResolvedHandler(self, dependencies:list[Dependency]) -> None:
 		for dep in dependencies:
 			if dep.resolved:
 				L.isDebug and L.logDebug(f'{dep.pluginName} binding is now resolved.')
 
 
-	@on_unresolved
+	@onUnresolved
 	def onUnresolvedHandler(self, dependencies:list[Dependency]) -> None:
 		for dep in dependencies:
 			if not dep.resolved:
@@ -1750,12 +1753,14 @@ class RequestManager(object):
 					targetResource = resource
 				else:
 					targetResource = getCSE()			# for all other resources without a poa is the CSE responsible
-			elif (t := CSE.remote.getCSRFromPath(uri)): # target is a registering CSE
-				targetResource, _ = t
-				isForwardedRequest = True
-			elif CSE.remote.registrarConfig._registrarCSEBaseResource:	# just send it up to the registrar CSE, if any
-				targetResource = CSE.remote.registrarConfig._registrarCSEBaseResource
-				isForwardedRequest = True
+			
+			elif self.remoteCSEManager is not None:
+				if (t := self.remoteCSEManager.getCSRFromPath(uri)): # target is a registered CSE
+					targetResource, _ = t
+					isForwardedRequest = True
+				elif self.remoteCSEManager.registrarConfig._registrarCSEBaseResource:	# just send it up to the registrar CSE, if any
+					targetResource = self.remoteCSEManager.registrarConfig._registrarCSEBaseResource
+					isForwardedRequest = True
 
 		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarding request to: {uri}')
 

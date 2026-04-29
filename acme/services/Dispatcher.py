@@ -51,15 +51,17 @@ from ..runtime.Logging import Logging as L
 @requires(locationManager='acme.plugins.services.LocationManager', required=False)
 @requires(semanticManager='acme.plugins.services.SemanticManager', required=False)
 @requires(timeManager='acme.plugins.services.TimeManager', required=False)
+@requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
 class Dispatcher(object):
 	""" Dispatcher class. Handles all requests and dispatches them to the
 		appropriate handlers. This includes requests for resources, requests
 		for resource creation, and requests for resource deletion.
 	"""
 
-	locationManager: Any = None	# type: ignore
-	semanticManager: Any = None	# type: ignore
-	timeManager: Any = None		# type: ignore
+	locationManager: Optional[Any] = None	# type: ignore
+	semanticManager: Optional[Any] = None	# type: ignore
+	timeManager: Optional[Any] = None		# type: ignore
+	remoteCSEManager: Optional[Any] = None	# type: ignore
 
 	__slots__ = (
 		'K',
@@ -368,7 +370,9 @@ class Dispatcher(object):
 			else:
 				# Retrieve from remote
 				if isSPRelative(id) or isAbsolute(id):
-					return CSE.remote.retrieveRemoteResource(id, originator)
+					if self.remoteCSEManager is None:
+						raise NOT_IMPLEMENTED(L.logWarn('RemoteCSEManager is disabled, cannot retrieve resource from remote CSE'))
+					return self.remoteCSEManager.retrieveRemoteResource(id, originator)
 		if not id:
 			raise NOT_FOUND(L.logDebug(f'No resource with this ID: {request.to if request else "unknown"}'))
 

@@ -8,7 +8,7 @@
 """
 
 from typing import Generator, Optional, Tuple, TextIO
-import json, time, socket, platform, os, sys, datetime, threading, csv, io
+import json, time, socket, platform, os, sys, datetime, threading, csv, io, inspect
 from urllib.parse import urlparse
 
 from rich.text import Text
@@ -36,6 +36,7 @@ from ..resources.Resource import Resource
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import pluginManager
 
 
 # Used in many "rich" functions
@@ -87,7 +88,9 @@ def refreshRegistrations() -> str:
 		Returns:
 			A message indicating the result of the registration.
 	"""
-	CSE.remote.checkConnectionsNow()
+	if pluginManager.remoteCSEManager is None:
+		return 'RemoteCSEManager plugin is disabled, cannot refresh registrations'
+	pluginManager.remoteCSEManager.checkConnectionsNow()
 	return "Registration(s) refresh triggered."
 
 
@@ -140,16 +143,16 @@ def getPlugins() -> str:
 		Returns:
 			The loaded plugins of the CSE in JSON format.
 	"""
-	dg = CSE.pluginManager.dependencyGraph()
+	dg = pluginManager.dependencyGraph()
 	return json.dumps(
-		{ 	'unloadedPlugins': sorted(CSE.pluginManager.unloadedPlugins, key=lambda p: p.lower()),
+		{ 	'unloadedPlugins': sorted(pluginManager.unloadedPlugins, key=lambda p: p.lower()),
 			'loadedPlugins': sorted([ {
 				'name': p.name,
 				'instanceClass': p.instance.__class__.__name__,
 				'instanceName': p.instanceAttributeName,
 				'filename': p.fileName,
 				'dependencies': [{	'module': d.pluginName, 
-									'class': CSE.pluginManager.plugins[d.pluginName].pluginClass.__name__ if d.pluginName in CSE.pluginManager.plugins else None,
+									'class': pluginManager.plugins[d.pluginName].pluginClass.__name__ if d.pluginName in pluginManager.plugins else None,
 									'attribute': d.attributeName, 
 									'required': d.required, 
 									'resolved': d.resolved } 
@@ -163,26 +166,31 @@ def getPlugins() -> str:
 									for d in deps if d.pluginName == p.name],
 				'priority': p.priority,
 				'tags': p.tags,
-					'callbacks': [
-						name for name, method in (
-							('init', p.initMethod),
-							('finish', p.finishMethod),
-							('start', p.startMethod),
-							('stop', p.stopMethod),
-							('restart', p.restartMethod),
-							('pause', p.pauseMethod),
-							('unpause', p.unpauseMethod),
-							('configure', p.configureMethod),
-							('validate', p.validateMethod),
-							('onResolved', p.onResolvedMethod),
-							('onUnresolved', p.onUnresolvedMethod),
-					) if method is not None
-				],
+				'callbacks': [
+					name for name, method in (
+						('init', p.initMethod),
+						('finish', p.finishMethod),
+						('start', p.startMethod),
+						('stop', p.stopMethod),
+						('restart', p.restartMethod),
+						('pause', p.pauseMethod),
+						('unpause', p.unpauseMethod),
+						('configure', p.configureMethod),
+						('validate', p.validateMethod),
+						('onResolved', p.onResolvedMethod),
+						('onUnresolved', p.onUnresolvedMethod),
+				) if method is not None],
+				'endpoints': [ name  for name in p.instance._endpointMap.keys()] if hasattr(p.instance, '_endpointMap') else [],
+				'handledEvents': sorted([ event.name
+						for _, method in inspect.getmembers(p.instance, predicate=inspect.ismethod) 
+						if hasattr(method.__func__, '_onEvents') and method.__func__._onEvents
+						for event in method.__func__._onEvents
+						]),
 				'noRestartWhilePaused': p.noRestartWhilePaused,
 				'state': p.state.name,
 				'doc': p.doc,
 			}
-			for p in CSE.pluginManager.plugins.values()
+			for p in pluginManager.plugins.values()
 			], key=lambda p: p['name'].lower()),
 		}, indent=4)
 
@@ -196,7 +204,7 @@ def getCSEStatusAsDict() -> JSON:
 	try:
 		csebase = getCSE()
 		try:
-			status:JSON = CSE.pluginManager.statistics.statsAsDict() # type: ignore [attr-defined]
+			status:JSON = pluginManager.statistics.statsAsDict() # type: ignore [attr-defined]
 		except AttributeError as e:
 			status = {
 				'resources': {},
@@ -286,7 +294,7 @@ def getCSEStatusAsDict() -> JSON:
 				'textUI': Configuration.textui_enable if Configuration.textui_enable is not None else False,	# textUI_enable could be None
 				'webUI': Configuration.webui_enable if Configuration.webui_enable else False,	# webui_enable could be None
 			},
-			'numberOfPlugins': len(CSE.pluginManager.plugins),
+			'numberOfPlugins': len(pluginManager.plugins),
 			'numberOfPythonModules': len(sys.modules),
 		}
 		status['logging'].update({
@@ -409,10 +417,15 @@ def getRegistrationStatus() -> JSON:
 		}
 		if isAbsolute(csr.csi) and getSPFromID(csr.csi) != RC.cseSPIDSlashLess:
 			status['spRegistrations'].append(_e)
-		elif CSE.remote.registrarConfig and CSE.remote.registrarConfig._registrarCSEBaseResource and csr.csi == CSE.remote.registrarConfig._registrarCSEBaseResource.csi:
-			status['registrar'].append(_e)
 		else:
-			status['registrees'].append(_e)
+			if pluginManager.remoteCSEManager is not None:
+				if	pluginManager.remoteCSEManager.registrarConfig and \
+					pluginManager.remoteCSEManager.registrarConfig._registrarCSEBaseResource and \
+					csr.csi == pluginManager.remoteCSEManager.registrarConfig._registrarCSEBaseResource.csi:
+
+					status['registrar'].append(_e)
+				else:
+					status['registrees'].append(_e)
 
 	# AE registrations
 
@@ -709,15 +722,16 @@ skinparam linetype ortho
 	if RC.cseType != CSEType.ASN:
 		cnt = 0
 		connections = {}
-		for desc in CSE.remote.descendantCSR.keys():
-			csi = desc[1:]
-			(csr, atCsi) = CSE.remote.descendantCSR[desc]
-			poa = f'\\n{csr.poa}' if csr else ''
-			typeShortname = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
-			shape = 'node' if csr else 'rectangle'
-			result += f'{shape} d{cnt} as "<color:green>{csi}</color>{typeShortname}{poa}" #white\n'
-			connections[desc] = (cnt, atCsi)
-			cnt += 1
+		if pluginManager.remoteCSEManager is not None:
+			for desc in pluginManager.remoteCSEManager.descendantCSR.keys():
+				csi = desc[1:]
+				(csr, atCsi) = pluginManager.remoteCSEManager.descendantCSR[desc]
+				poa = f'\\n{csr.poa}' if csr else ''
+				typeShortname = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
+				shape = 'node' if csr else 'rectangle'
+				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{typeShortname}{poa}" #white\n'
+				connections[desc] = (cnt, atCsi)
+				cnt += 1
 		
 		for key in connections.keys():
 			connection = connections[key]
@@ -1119,21 +1133,33 @@ def getRegistrationsRich(style: Optional[Style] = Style(),
 	tableCSE.add_column(_markupText('[u]Registrees[/u]\n', style=textStyle), no_wrap=False)
 
 	# one row for the CSE itself
-	_addCSERow(tableCSE, 
-				Style.combine((Style(italic=True, bold=True), textStyle)), 
-				cse, 
-				CSE.remote.registrarConfig._registrarCSEBaseResource if CSE.remote.registrarConfig else None, 
-				CSE.remote.descendantCSR.keys()) #type:ignore[arg-type]
+	if pluginManager.remoteCSEManager is not None:
+		_addCSERow(tableCSE, 
+					Style.combine((Style(italic=True, bold=True), textStyle)), 
+					cse, 
+					pluginManager.remoteCSEManager.registrarConfig._registrarCSEBaseResource if pluginManager.remoteCSEManager.registrarConfig else None, 
+					pluginManager.remoteCSEManager.descendantCSR.keys()) #type:ignore[arg-type]
+	else:
+		_addCSERow(tableCSE, 
+			Style.combine((Style(italic=True, bold=True), textStyle)), 
+			cse, 
+			None, 
+			[]) #type:ignore[arg-type]
+
 
 	spCsr:list[Resource] = []
-	for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
-		if isAbsolute(csr.csi) and getSPFromID(csr.csi) != RC.cseSPIDSlashLess:	# store the CSR for other SP for later
-			spCsr.append(csr)
-			continue
-		if CSE.remote.registrarConfig and CSE.remote.registrarConfig._registrarCSEBaseResource and csr.csi == CSE.remote.registrarConfig._registrarCSEBaseResource.csi:
-			_addCSERow(tableCSE, textStyle, csr, None, [cse.csi] + csr.dcse)
-		else:
-			_addCSERow(tableCSE, textStyle, csr, cse, csr.dcse)
+	if pluginManager.remoteCSEManager is not None:
+		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
+			if isAbsolute(csr.csi) and getSPFromID(csr.csi) != RC.cseSPIDSlashLess:	# store the CSR for other SP for later
+				spCsr.append(csr)
+				continue
+			if pluginManager.remoteCSEManager.registrarConfig and \
+				pluginManager.remoteCSEManager.registrarConfig._registrarCSEBaseResource and \
+				csr.csi == pluginManager.remoteCSEManager.registrarConfig._registrarCSEBaseResource.csi:
+
+				_addCSERow(tableCSE, textStyle, csr, None, [cse.csi] + csr.dcse)
+			else:
+				_addCSERow(tableCSE, textStyle, csr, cse, csr.dcse)
 
 	panelCSE = Panel(tableCSE, 
 						box=box.ROUNDED, 

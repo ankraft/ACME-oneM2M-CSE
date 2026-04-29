@@ -43,7 +43,7 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_sendToFromInResponses = parser.getboolean('cse', 'sendToFromInResponses', fallback=True)
 		config.cse_sortDiscoveredResources = parser.getboolean('cse', 'sortDiscoveredResources', fallback=True)
 		config.cse_supportedReleaseVersions = parser.getlist('cse', 'supportedReleaseVersions', fallback=['2a', '3', '4', '5']) # type: ignore [attr-defined]
-		config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback='acme.example.com')
+		config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback='//acme.example.com')
 		config.cse_type = parser.get('cse', 'type', fallback='IN')		# IN, MN, ASN
 		config.cse_idLength = parser.getint('cse', 'idLength', fallback=10)
 
@@ -177,4 +177,9 @@ class CSEConfiguration(ModuleConfiguration):
 		   			config._cse_operation_plugins_enabledComponents['websocket_enable'],
 		   			config._cse_operation_plugins_enabledComponents['coap_enable']]):
 			raise ConfigurationError('At least one binding must be enabled (http, mqtt, websocket, or coap)')
+		
+
+		# Check that remoteCSEManager is enabled if AnnouncementManager is enabled
+		if config._cse_operation_plugins_enabledComponents['announcementManager_enable'] and not config._cse_operation_plugins_enabledComponents['remoteCSEManager_enable']:
+			raise ConfigurationError('AnnouncementManager plugin requires RemoteCSEManager plugin to be enabled. Either enable the RemoteCSEManager plugin or disable the AnnouncementManager plugin.')
 		

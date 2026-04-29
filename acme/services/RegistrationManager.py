@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 from ..etc.Types import ResourceTypes, JSON, CSEType, OriginatorType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
-from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, ResponseException
+from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, NOT_IMPLEMENTED, ResponseException
 from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, uniqueRN, originatorToID
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
@@ -21,9 +21,13 @@ from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 
 
+@requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
 class RegistrationManager(object):
+
+	remoteCSEManager: Optional[Any] = None	# type: ignore
 
 	__slots__ = (
 		'expWorker',
@@ -287,8 +291,10 @@ class RegistrationManager(object):
 	def handleCSRRegistration(self, csr:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Registering CSR. csi: {csr.csi}')
 
+		if not self.remoteCSEManager:
+			raise NOT_IMPLEMENTED(L.logWarn('RemoteCSEManager is disabled, cannot register CSR'))
 		# Check whether this is an ASN-CSE
-		if RC.cseType == CSEType.ASN and originator != CSE.remote.registrarConfig.cseID:
+		if RC.cseType == CSEType.ASN and originator != self.remoteCSEManager.registrarConfig.cseID:
 			raise OPERATION_NOT_ALLOWED(L.logWarn('Registration to ASN CSE is not allowed'))
 	
 		# Check that the originator is not an AE
