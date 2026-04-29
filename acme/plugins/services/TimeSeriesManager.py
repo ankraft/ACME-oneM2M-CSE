@@ -20,7 +20,7 @@ from ...runtime.PluginSupport import plugin, start, stop, restart
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects
 """	Active TimeSeries instances. Maps the resourceID of the <TS> resource to the LastTSInstance object. """
 
-@plugin(property='timeSeriesManager', tags=['core'])
+@plugin(property='timeSeriesManager', tags=['acme', 'core'])
 class TimeSeriesManager(object):
 	""" Manager for TimeSeries handlings
 	"""

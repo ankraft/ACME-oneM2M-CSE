@@ -302,7 +302,7 @@ class MQTTClientHandler(MQTTHandler):
 ##############################################################################
 
 
-@plugin(property='mqttClient', tags=['binding', 'core'], noRestartWhilePaused=True)
+@plugin(property='mqttClient', tags=['binding', 'acme'], noRestartWhilePaused=True)
 class MQTTClient(object):
 	"""	The general MQTT manager for this CSE.
 	"""

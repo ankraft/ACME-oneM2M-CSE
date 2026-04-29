@@ -54,7 +54,7 @@ from ...runtime.PluginSupport import plugin, init, restart
 ##############################################################################
 
 
-@plugin(tags=['core'])
+@plugin(tags=['acme', 'ui'])
 class Console(ConsoleBase):
 	"""	Console Manager class.
 	

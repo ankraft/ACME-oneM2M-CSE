@@ -31,7 +31,7 @@ from ...textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 _textUI:TextUI = None
 """	Active textUI instance """
 
-@plugin(property='textUI', tags=['core'])
+@plugin(property='textUI', tags=['acme', 'ui'])
 class TextUI(object):
 
 	__slots__ = (

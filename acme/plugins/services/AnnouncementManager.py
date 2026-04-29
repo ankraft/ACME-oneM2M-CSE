@@ -29,19 +29,19 @@ from ...runtime import CSE
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.PluginSupport import plugin, start, stop, configure, validate
+from ...runtime.PluginSupport import plugin, start, stop, configure, validate, requires
 
 # TODO for anounceable resource:
 # - update: update resource here
 
 
-@plugin(property='announcementManager', tags=['core'])
+@plugin(property='announcementManager', tags=['acme', 'remote'], priority=50)
+@requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager')
 class AnnouncementManager(object):
 	"""	This class implements announcement functionalities.
 	"""
-
-	nnouncementManager: Optional[Any] = None
-	"""	Reference to the AnnouncementManager plugin instance. """
+	remoteCSEManager: Optional[Any] = None	# type: ignore
+	"""	Reference to the RemoteCSEManager plugin. """
 
 
 	@start
@@ -61,8 +61,8 @@ class AnnouncementManager(object):
 			Return:
 				Always True.
 		"""
-		if CSE.remote:
-			for csr in CSE.remote.getAllLocalCSRs():
+		if self.remoteCSEManager:
+			for csr in self.remoteCSEManager.getAllLocalCSRs():
 				if csr:
 					self.checkResourcesForUnAnnouncement(csr)
 		L.isInfo and L.log('AnnouncementManager shut down')

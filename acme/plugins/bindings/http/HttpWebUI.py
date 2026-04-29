@@ -17,7 +17,7 @@ from ....runtime.Configuration import Configuration
 from ....webui.webUI import WebUI
 
 
-@plugin(tags=['core'])
+@plugin(tags=['acme', 'core', 'ui'])
 @requires(httpServer='acme.plugins.bindings.HttpServer')
 class HttpWebUI:
 	"""	Plugin class to add the Web UI functionality to the HTTP server.

@@ -51,7 +51,7 @@ class LocationInformation:
 	""" The location container resource ID. """
 
 
-@plugin(property='locationManager', tags=['core'])
+@plugin(property='locationManager', tags=['acme', 'core'])
 class LocationManager(object):
 	"""	The LocationManager class implements the location service and helper functions.
 	

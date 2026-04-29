@@ -119,7 +119,7 @@ class SemanticHandler(ABC):
 		...
 
 
-@plugin(property='semanticManager', tags=['core'])
+@plugin(property='semanticManager', tags=['acme', 'core'])
 class SemanticManager(object):
 	"""	This class implements semantic service and helper functions.
 

@@ -31,7 +31,7 @@ from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
 
 
-@plugin(property='groupManager', tags=['core'])
+@plugin(property='groupManager', tags=['acme', 'core'])
 class GroupManager():
 	"""	Manager for the CSE's group service. 
 	"""

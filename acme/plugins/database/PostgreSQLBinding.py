@@ -32,7 +32,7 @@ from ...helpers.NetworkTools import isValidPort
 
 # TODO Add error handling ansd exceptions to fetch methods?
 
-@plugin(property='postgresqlBinding', tags=['core', 'database'])
+@plugin(property='postgresqlBinding', tags=['acme', 'database'])
 class PostgreSQLBinding(DBBinding):
 	"""	PostgreSQLBinding class.
 	"""

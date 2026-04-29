@@ -29,7 +29,7 @@ from ...helpers.ResourceSemaphore import CriticalSection
 
 # TODO implement support for input attribute when the procedure is clear
 
-@plugin(property='actionManager', tags=['core'])
+@plugin(property='actionManager', tags=['acme', 'core'])
 class ActionManager():
 	"""	This class defines functionalities to handle action triggerings, 
 		dependancies and other action related functionalities

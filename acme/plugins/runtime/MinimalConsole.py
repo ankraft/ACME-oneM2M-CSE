@@ -25,7 +25,7 @@ from ...runtime.Logging import Logging as L											# type: ignore
 from ...runtime.ConsoleBase import ConsoleBase
 from ...runtime.PluginSupport import plugin, init
 
-@plugin(tags=['core'])
+@plugin(tags=['acme', 'ui'])
 class MinimalConsole(ConsoleBase):
 	"""	Plugin class to add a minimal console functionality to the CSE. 
 	"""

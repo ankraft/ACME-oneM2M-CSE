@@ -29,7 +29,7 @@ from ...runtime.PluginSupport import plugin, start, stop, restart
 # TODO add check to ws request handling
 # TODO add check to ws response handling
 
-@plugin(property='timeManager', tags=['core'])
+@plugin(property='timeManager', tags=['acme', 'core'])
 class TimeManager(object):
 	"""	Managing time related CSE functions.
 	"""

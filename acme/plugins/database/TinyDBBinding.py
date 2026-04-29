@@ -62,7 +62,7 @@ _schedules = 'schedules'
 """ Name of the schedules table. """
 
 
-@plugin(property='tinyDBBinding', tags=['core', 'database'])
+@plugin(property='tinyDBBinding', tags=['acme', 'database'])
 class TinyDBBinding(DBBinding):
 	"""	This class implements the TinyDB binding to the database. It is used by the Storage class.
 	"""

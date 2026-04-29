@@ -12,12 +12,12 @@ from typing import Optional, Any
 import sys, json
 from ....runtime.Logging import Logging as L
 from ....etc.Types import LogLevel, AuthorizationResult
-from ....helpers.PluginManager import plugin, start, configure, requires, on_resolved, Dependency
+from ....helpers.PluginManager import plugin, start, configure, requires
 from ....runtime.Configuration import Configuration
 from ....runtime import Management as Mgmt
 
 
-@plugin(tags=['core'])
+@plugin(tags=['acme', 'core'])
 @requires(httpServer='acme.plugins.bindings.HttpServer') 
 class HttpManagement:
 	"""	Plugin class to add the Management functionality to the HTTP server.

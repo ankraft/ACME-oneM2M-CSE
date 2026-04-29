@@ -21,7 +21,7 @@ from ....etc.RequestUtils import prepareResultForSending
 from ....runtime.Configuration import Configuration
 
 
-@plugin(tags=['core'])
+@plugin(tags=['acme', 'core'])
 @requires(httpServer='acme.plugins.bindings.HttpServer')
 class HttpUpperTester:
 	"""	Plugin class to add the Upper Tester functionality to the HTTP server.

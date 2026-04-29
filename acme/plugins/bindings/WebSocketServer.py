@@ -36,7 +36,7 @@ from ...resources.Resource import Resource
 from ...runtime.Logging import Logging as L
 
 
-@plugin(property='webSocketServer', tags=['binding', 'core'], noRestartWhilePaused=True)
+@plugin(property='webSocketServer', tags=['binding', 'acme'], noRestartWhilePaused=True)
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.
 	"""

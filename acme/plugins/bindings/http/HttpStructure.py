@@ -15,7 +15,7 @@ from ....helpers.PluginManager import plugin, start, configure, requires
 from ....runtime.Configuration import Configuration
 
 
-@plugin(tags=['core'])
+@plugin(tags=['acme', 'core'])
 @requires(httpServer='acme.plugins.bindings.HttpServer')
 class HttpStructure:
 	"""	Plugin class to add the Structure functionality to the HTTP server.
