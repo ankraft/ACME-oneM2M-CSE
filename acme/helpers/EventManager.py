@@ -30,17 +30,15 @@ from ..helpers.Singleton import Singleton
 #	Event Data class.
 #
 
-T = TypeVar("T")
-
 @dataclass
-class EventData(Generic[T]):
+class EventData():
 	"""	Event data class. This class is used to pass data to event handlers.
 	"""
 
 	name: Optional[str] = None
 	"""	The event name. """
 
-	payload: T | list = None
+	payload: Any | list[Any] = None
 	"""	The event payload. """
 
 
@@ -122,7 +120,6 @@ class Event(list):	# type:ignore[type-arg]
 			"""	Call all registered function for this event object. Pass on any argument.
 				The callbacks are called sequentially (not in parallel!).
 
-	
 				Args:
 					args: Unnamed function arguments.
 					kwargs: Keyword function arguments.
@@ -133,16 +130,23 @@ class Event(list):	# type:ignore[type-arg]
 				# else:
 				# 	function(name, *args, **kwargs)
 				if hasattr(function, '_onEvents'):
-					function(EventData(name=name, payload=list(args)))	# type: ignore[attr-defined]
+					if args and isinstance(args[0], EventData):
+						function(args[0])
+					else:
+						function(EventData(name=name, payload=list(args)))	# type: ignore[attr-defined]
 				else:
 					function(name, *args, **kwargs)
 
+		# If the first argument is a callable function and not an EventData, then we are in the decorator path, 
+		# so we just add the function to the list of handlers.
 		if len(args) == 1 and callable(args[0]) and not isinstance(args[0], EventData):
 			self.append(args[0])
 			return args[0]
 
 		# Add event name to the event data if not already set
 		if args and isinstance(args[0], EventData):
+			if len(args) > 1:
+				raise RuntimeError('When passing an EventData as argument, it must be the only argument.')
 			if not args[0].name:
 				args[0].name = self.name
 
