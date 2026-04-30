@@ -29,9 +29,14 @@ from ...runtime.Factory import resourceFromDict
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 
+
+eventManager = EventManager()
+""" Event manager singleton instance. """
 
 @plugin(property='groupManager', tags=['acme', 'core'])
+@EventHandler
 class GroupManager():
 	"""	Manager for the CSE's group service. 
 	"""
@@ -42,9 +47,6 @@ class GroupManager():
 	def start(self) -> None:
 		"""	Initialization of the GroupManager.
 		"""
-		# Add delete event handler because we like to monitor the resources in mid
-		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
-
 		L.isInfo and L.log('GroupManager initialized')
 
 
@@ -319,6 +321,7 @@ class GroupManager():
 	#	Event Handler
 	#
 
+	@onEvent(eventManager.deleteResource)
 	def handleDeleteEvent(self, name:str, deletedResource:Resource) -> None:
 		"""	Handle a CSE-internal delete event (ie. whenever a resource is deleted).
 			Check whether the deleted resource is a member of a group. If yes, then remove the member.

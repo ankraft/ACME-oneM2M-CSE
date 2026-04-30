@@ -17,7 +17,6 @@ from ..etc.DateUtils import getResourceDate
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
-from ..runtime import Factory				# attn: circular import
 from ..resources.Resource import Resource, internalAttributes, addToInternalAttributes
 from ..resources.ContainerResource import ContainerResource
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection

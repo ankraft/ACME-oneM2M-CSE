@@ -37,11 +37,16 @@ from ...helpers.NetworkTools import isTCPPortAvailable, isValidPort, isValidateI
 from ...helpers import TextTools as TextTools
 from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...runtime.Configuration import Configuration, ConfigurationError
+from ...runtime.EventManager import EventManager
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
 from ...etc.Constants import RuntimeConstants as RC
 
+
+
+eventManager = EventManager()
+""" Event manager singleton instance. """
 
 #
 # Types definitions for the http server
@@ -106,22 +111,23 @@ class HttpServer(object):
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
 
 		# Optimize event handling
-		self._eventHttpRetrieve =  CSE.event.httpRetrieve			# type: ignore [attr-defined]
+
+		self._eventHttpRetrieve =  eventManager.httpRetrieve			# type: ignore [attr-defined]
 		""" Event for HTTP retrieve operations. """
 
-		self._eventHttpCreate = CSE.event.httpCreate				# type: ignore [attr-defined]
+		self._eventHttpCreate = eventManager.httpCreate				# type: ignore [attr-defined]
 		""" Event for HTTP create operations. """
 
-		self._eventHttpNotify =  CSE.event.httpNotify				# type: ignore [attr-defined]
+		self._eventHttpNotify =  eventManager.httpNotify				# type: ignore [attr-defined]
 		""" Event for HTTP notify operations. """
 
-		self._eventHttpUpdate = CSE.event.httpUpdate				# type: ignore [attr-defined]
+		self._eventHttpUpdate = eventManager.httpUpdate				# type: ignore [attr-defined]
 		""" Event for HTTP update operations. """
 
-		self._eventHttpDelete = CSE.event.httpDelete				# type: ignore [attr-defined]
+		self._eventHttpDelete = eventManager.httpDelete				# type: ignore [attr-defined]
 		""" Event for HTTP delete operations. """
 
-		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
+		self._eventResponseReceived = eventManager.responseReceived	# type: ignore [attr-defined]
 		""" Event for HTTP response received. """
 
 

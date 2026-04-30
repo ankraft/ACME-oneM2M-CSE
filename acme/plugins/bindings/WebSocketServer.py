@@ -32,11 +32,16 @@ from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
 from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
+from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ...resources.Resource import Resource
 from ...runtime.Logging import Logging as L
 
 
+eventManager = EventManager()
+""" Event manager singleton instance. """
+
 @plugin(property='webSocketServer', tags=['binding', 'acme'], noRestartWhilePaused=True)
+@EventHandler
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.
 	"""
@@ -61,9 +66,6 @@ class WebSocketServer(object):
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self._configUpdate)			# type: ignore
 
-		# Add a handler for resource deletion
-		CSE.event.addHandler(CSE.event.deleteResource, self._handleDeleteEvent)	# type: ignore
-
 		self.isPaused = False
 		"""	Flag whether the server is currently paused. Requests are not handled when the server is paused. """
 
@@ -83,12 +85,12 @@ class WebSocketServer(object):
 		"""	The actor for running the synchronous WebSocket server in the background. """
 
 		self.operationEvents: dict[Operation, tuple[Event, str]] = {
-			Operation.CREATE:		(CSE.event.wsCreate, 'WS_C'),		# type: ignore [attr-defined]
-			Operation.RETRIEVE: 	(CSE.event.wsRetrieve, 'WS_R'),		# type: ignore [attr-defined]
-			Operation.UPDATE:		(CSE.event.wsUpdate, 'WS_U'),		# type: ignore [attr-defined]
-			Operation.DELETE:		(CSE.event.wsDelete, 'WS_D'),		# type: ignore [attr-defined]
-			Operation.NOTIFY:		(CSE.event.wsNotify, 'WS_M'),		# type: ignore [attr-defined]
-			Operation.DISCOVERY:	(CSE.event.wsRetrieve, 'WS_F'),		# type: ignore [attr-defined]
+			Operation.CREATE:		(eventManager.wsCreate, 'WS_C'),		# type: ignore [attr-defined]
+			Operation.RETRIEVE: 	(eventManager.wsRetrieve, 'WS_R'),		# type: ignore [attr-defined]
+			Operation.UPDATE:		(eventManager.wsUpdate, 'WS_U'),		# type: ignore [attr-defined]
+			Operation.DELETE:		(eventManager.wsDelete, 'WS_D'),		# type: ignore [attr-defined]
+			Operation.NOTIFY:		(eventManager.wsNotify, 'WS_M'),		# type: ignore [attr-defined]
+			Operation.DISCOVERY:	(eventManager.wsRetrieve, 'WS_F'),		# type: ignore [attr-defined]
 		}
 		"""	Events for the different operations. """
 
@@ -133,16 +135,16 @@ class WebSocketServer(object):
 		self.run()		# Restart the server
 
 
-	def _handleDeleteEvent(self, name: str, deletedResource: Resource) -> None:
+	@onEvent(eventManager.deleteResource)
+	def _handleDeleteEvent(self, eventData : EventData ) -> None:
 		"""	Callback and handler for the *deleteResource* event.
 
 			In case of an AE deletion, the associated WS connection is dissociated, but left open.
 
 			Args:
-				name: Event name.
-				deletedResource: The deleted resource.
+				eventData: The event data containing the deleted resource.
 		"""
-
+		deletedResource:Resource = eventData.payload[0]	# type: ignore [attr-defined]
 		if deletedResource.ty != ResourceTypes.AE or deletedResource.aei not in self.associatedConnections:
 			return
 		self.dissociateConnectionFromOriginator(deletedResource.aei)

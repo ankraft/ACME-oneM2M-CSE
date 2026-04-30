@@ -22,6 +22,7 @@ from ...runtime import CSE
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, start, stop, restart
+from ...runtime.EventManager import EventManager, onEvent, EventData, EventHandler
 from ...resources.Resource import Resource
 from ...resources.ACTR import ACTR
 from ...helpers.ResourceSemaphore import CriticalSection
@@ -29,24 +30,25 @@ from ...helpers.ResourceSemaphore import CriticalSection
 
 # TODO implement support for input attribute when the procedure is clear
 
+eventManager = EventManager()
+""" Event manager singleton instance. """
+
 @plugin(property='actionManager', tags=['acme', 'core'])
+@EventHandler
 class ActionManager():
 	"""	This class defines functionalities to handle action triggerings, 
 		dependancies and other action related functionalities
 	"""
 
-	
 	# Imported here because of circular import
 	from ...resources.Resource import Resource
+
 
 
 	@start
 	def start(self) -> None:
 		"""	Initialization of an *ActionManager* instance.
 		"""
-		# Add handler for any resource change event
-		CSE.event.addHandler(CSE.event.changeResource, self.evaluateActions)	# type: ignore
-
 		L.isInfo and L.log('ActionManager initialized')
 
 
@@ -55,7 +57,6 @@ class ActionManager():
 		"""	Shutdown the Action Manager.
 		"""
 		L.isInfo and L.log('ActionManager shut down')
-		return 
 
 
 	@restart
@@ -68,7 +69,9 @@ class ActionManager():
 	###############################################################################################
 
 
-	def evaluateActions(self, name:str, resource:Resource, realRi:Optional[str]=None) -> None:
+	@onEvent(eventManager.changeResource)
+	# def evaluateActions(self, resource:Resource, realRi:Optional[str]=None) -> None:
+	def evaluateActions(self, eventData: EventData) -> None:
 		"""	Eventhandler to evaluate actions for a resource in case a resource changes.
 
 			Args:
@@ -76,6 +79,8 @@ class ActionManager():
 				resource: The resource instance that triggered the event.
 				realRi: The real resource ID, if available.
 		"""
+		resource = eventData.payload[0]
+		realRi = eventData.payload[1] if len(eventData.payload) > 1 else None
 
 		if resource.isVirtual():
 			return

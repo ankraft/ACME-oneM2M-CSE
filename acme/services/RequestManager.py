@@ -38,6 +38,7 @@ from ..helpers.TextTools import setXPath
 from ..helpers.RingBuffer import RingBuffer
 from ..helpers.PluginManager import requires, onResolved, onUnresolved, Dependency
 from ..runtime.Configuration import Configuration
+from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ..runtime import CSE
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
@@ -45,6 +46,9 @@ from ..resources.REQ import REQ
 from ..resources.PCH import PCH
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
+
+eventManager = EventManager()
+""" Event manager singleton instance. """
 
 # Type definition
 TargetDetails = List[ 						#type: ignore[misc]
@@ -62,6 +66,7 @@ TargetDetails = List[ 						#type: ignore[misc]
 # This factor determines how often the monitor looks for expired request resources
 expirationCheckFactor = 2.0
 
+@EventHandler
 @requires(httpServer='acme.plugins.bindings.HttpServer', required=False)
 @requires(coapServer='acme.plugins.bindings.CoAPServer', required=False)
 @requires(mqttClient='acme.plugins.bindings.MQTTClient', required=False)
@@ -163,9 +168,6 @@ class RequestManager(object):
 
 		self._receivedResponsesLock = Lock()
 		""" Lock to access the received responses dictionary."""
-
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
@@ -304,7 +306,8 @@ class RequestManager(object):
 		return True
 
 	
-	def restart(self, name:str) -> None:
+	@onEvent(eventManager.cseReset)
+	def restart(self, eventData: EventData) -> None:
 		"""	Restart the registrationManager service.
 		"""
 		# Terminate waiting request and pollingQueue actors

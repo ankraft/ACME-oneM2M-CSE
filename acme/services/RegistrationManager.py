@@ -18,12 +18,17 @@ from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
 from ..runtime import CSE
+from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import requires
 
 
+eventManager = EventManager()
+""" Event manager singleton instance. """
+
+@EventHandler
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
 class RegistrationManager(object):
 
@@ -48,9 +53,6 @@ class RegistrationManager(object):
 		
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
-
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 
 		# Optimized event handling
 		self._eventRegistreeCSEHasRegistered = CSE.event.registreeCSEHasRegistered			# type: ignore
@@ -81,7 +83,8 @@ class RegistrationManager(object):
 		self.restartExpirationMonitor()
 
 
-	def restart(self, name:str) -> None:
+	@onEvent(eventManager.cseReset)
+	def restart(self, eventData: EventData) -> None:
 		"""	Restart the registration services.
 		"""
 		self.restartExpirationMonitor()

@@ -25,13 +25,16 @@ from ..helpers.TextTools import findXPath, simpleMatch
 from ..helpers.PluginManager import requires
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
+from ..runtime.Logging import Logging as L
+from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ..resources.Resource import Resource, isInternalAttribute
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
-from ..runtime.Logging import Logging as L
 
+
+eventHandler = EventManager()
 @dataclass
 class ACPResult():
 	"""	An ACP result structure.
@@ -41,6 +44,7 @@ class ACPResult():
 	authenticated:bool = False
 
 
+@EventHandler
 @requires(httpServer='acme.plugins.bindings.HttpServer', 
 		  websocketServer='acme.plugins.bindings.WebSocketServer',
 		  required=False)
@@ -67,11 +71,8 @@ class SecurityManager(object):
 		# Get the configuration settings
 		self._initAuthInformation()
 
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
-
 		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
+		CSE.event.addHandler(eventHandler.configUpdate, self.configUpdate)				# type: ignore
 
 		L.isInfo and L.log('SecurityManager initialized')
 		if Configuration.cse_security_enableACPChecks:
@@ -85,16 +86,17 @@ class SecurityManager(object):
 		return True
 	
 
-	def restart(self, name:str) -> None:
+	@onEvent(eventHandler.cseReset)
+	def restart(self, eventData: EventData) -> None:
 		"""	Restart the Security manager service.
 		"""
 		self._initAuthInformation()
 		L.logDebug('SecurityManager restarted')
 
 
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None,
-						   value:Any = None) -> None:
+	def configUpdate(self, name: str, 
+						   key: Optional[str] = None,
+						   value: Any = None) -> None:
 		"""	Handle configuration updates.
 
 			Args:

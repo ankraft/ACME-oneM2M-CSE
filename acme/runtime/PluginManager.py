@@ -135,7 +135,6 @@ class PluginManager(PM):
 		return True
 
 
-
 	def stop(self, tags: Optional[str|list[str]] = None,
 				   excludedTags: Optional[str|list[str]] = None) -> bool:
 		"""	Stop the PluginManager service. This is called when the CSE is stopped. It does not shut down the plugins, but only stops them. 

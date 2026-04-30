@@ -39,12 +39,16 @@ from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Factory import resourceFromDict
+from ..runtime.EventManager import EventManager
 from ..resources.Resource import Resource
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.NTSR import NTSR
 from ..resources.SMD import SMD
 from ..runtime.Logging import Logging as L
 
+
+eventManager = EventManager()
+""" Event manager singleton instance. """
 
 # TODO NOTIFY optimize local resource notifications
 # TODO handle config update
@@ -81,15 +85,15 @@ class Dispatcher(object):
 		self.sortDiscoveryResources = Configuration.cse_sortDiscoveredResources 
 		""" Sort the discovered resources. """
 
-		self._eventCreateResource = CSE.event.createResource			# type: ignore [attr-defined]
+		self._eventCreateResource = eventManager.createResource			# type: ignore [attr-defined]
 		""" Event handler for resource creation events. """
-		self._eventCreateChildResource = CSE.event.createChildResource	# type: ignore [attr-defined]
+		self._eventCreateChildResource = eventManager.createChildResource	# type: ignore [attr-defined]
 		""" Event handler for child resource creation events. """
-		self._eventUpdateResource = CSE.event.updateResource			# type: ignore [attr-defined]
+		self._eventUpdateResource = eventManager.updateResource			# type: ignore [attr-defined]
 		""" Event handler for resource update events. """
-		self._eventDeleteResource = CSE.event.deleteResource			# type: ignore [attr-defined]
+		self._eventDeleteResource = eventManager.deleteResource			# type: ignore [attr-defined]
 		""" Event handler for resource deletion events. """
-		self._eventRetrieveResource = CSE.event.retrieveResource		# type: ignore [attr-defined]
+		self._eventRetrieveResource = eventManager.retrieveResource		# type: ignore [attr-defined]
 		""" Event handler for resource retrieval events. """
 
 		L.isInfo and L.log('Dispatcher initialized')

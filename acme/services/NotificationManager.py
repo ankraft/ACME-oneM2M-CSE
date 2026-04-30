@@ -32,6 +32,7 @@ from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath, findXPath
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
+from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ..resources.Resource import Resource
 from ..resources.CRS import CRS
 from ..resources.SUB import SUB
@@ -46,7 +47,10 @@ from ..runtime.Logging import Logging as L
 SenderFunction = Callable[[str], bool]	# type:ignore[misc] # bc cyclic definition 
 """ Type definition for sender callback function. """
 
+eventManager = EventManager()
+""" Event manager singleton instance. """
 
+@EventHandler
 class NotificationManager(object):
 	"""	This class defines functionalities to handle subscriptions and notifications.
 
@@ -69,10 +73,8 @@ class NotificationManager(object):
 		self.lockBatchNotification = Lock()					# Lock for batchNotifications
 		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
 
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
-		
 		# Optimize event handling
-		self._eventNotification = CSE.event.notification	# type: ignore
+		self._eventNotification = eventManager.notification	# type: ignore
 
 		L.isInfo and L.log('NotificationManager initialized')
 
@@ -87,7 +89,8 @@ class NotificationManager(object):
 		return True
 
 
-	def restart(self, name:str) -> None:
+	@onEvent(eventManager.cseReset)
+	def restart(self, eventData: EventData) -> None:
 		"""	Restart the NotificationManager service.
 
 			Args:

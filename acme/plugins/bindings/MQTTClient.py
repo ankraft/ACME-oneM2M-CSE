@@ -28,6 +28,11 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
+from ...runtime.EventManager import EventManager, onEvent
+
+
+eventManager = EventManager()
+""" Event manager singleton instance. """
 
 
 class MQTTClientHandler(MQTTHandler):
@@ -56,12 +61,12 @@ class MQTTClientHandler(MQTTHandler):
 		""" Number of elements in the prefix. """
 
 		self.operationEvents: dict[Operation, tuple[Event, str]] = {
-			Operation.CREATE:		(CSE.event.mqttCreate, 'MQ_C'),		# type: ignore [attr-defined]
-			Operation.RETRIEVE: 	(CSE.event.mqttRetrieve, 'MQ_R'),	# type: ignore [attr-defined]
-			Operation.UPDATE:		(CSE.event.mqttUpdate, 'MQ_U'),		# type: ignore [attr-defined]
-			Operation.DELETE:		(CSE.event.mqttDelete, 'MQ_D'),		# type: ignore [attr-defined]
-			Operation.NOTIFY:		(CSE.event.mqttNotify, 'MQ_N'),		# type: ignore [attr-defined]
-			Operation.DISCOVERY:	(CSE.event.mqttRetrieve, 'MQ_F'),	# type: ignore [attr-defined]
+			Operation.CREATE:		(eventManager.mqttCreate, 'MQ_C'),		# type: ignore [attr-defined]
+			Operation.RETRIEVE: 	(eventManager.mqttRetrieve, 'MQ_R'),	# type: ignore [attr-defined]
+			Operation.UPDATE:		(eventManager.mqttUpdate, 'MQ_U'),		# type: ignore [attr-defined]
+			Operation.DELETE:		(eventManager.mqttDelete, 'MQ_D'),		# type: ignore [attr-defined]
+			Operation.NOTIFY:		(eventManager.mqttNotify, 'MQ_N'),		# type: ignore [attr-defined]
+			Operation.DISCOVERY:	(eventManager.mqttRetrieve, 'MQ_F'),	# type: ignore [attr-defined]
 		}
 		""" Operation events. """
 
@@ -317,15 +322,14 @@ class MQTTClient(object):
 	)
 	""" Slots for the MQTTClient. """
 
+
+
 	# TODO move config handling to event handler
 
 	@init
 	def init(self) -> None:
 		"""	Initialize the MQTT client.
 		"""
-
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
 
 		self.isStopped = False
 		""" Flag to indicate whether the MQTT client is stopped. """
@@ -371,6 +375,7 @@ class MQTTClient(object):
 		return True
 	
 
+	@onEvent(eventManager.configUpdate)
 	def configUpdate(self, name:str, 
 						   key:Optional[str] = None, 
 						   value:Optional[Any] = None) -> None:
