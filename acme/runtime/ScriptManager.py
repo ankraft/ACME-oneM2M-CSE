@@ -46,6 +46,7 @@ from .Factory import resourceFromDict
 from ..resources.Resource import Resource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+from ..runtime.EventManager import EventManager, onEvent, EventData, EventHandler
 
 #
 #	Meta Tags
@@ -87,6 +88,9 @@ _httpMethods = {
 }
 """	Internal mapping between http methods and function callbacks. """
 
+
+eventManger = EventManager()	# type: ignore
+"""	Event manager singleton instance. """
 
 @requires(textUI='acme.plugins.runtime.TextUI', required=False)
 class ACMEPContext(PContext):
@@ -1720,6 +1724,7 @@ class ACMEPContext(PContext):
 #	Script Manager
 #
 
+@EventHandler
 @requires(textUI='acme.plugins.runtime.TextUI', required=False)
 class ScriptManager(object):
 	"""	This manager entity handles script execution in the CSE.
@@ -1760,7 +1765,6 @@ class ScriptManager(object):
 
 		# Also do some internal handling
 		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)				# type: ignore
 		CSE.event.addHandler(CSE.event.cseRestarted, self.restartFinished)	# type: ignore
 		CSE.event.addHandler(CSE.event.keyboard, self.onKeyboard)			# type: ignore
 		CSE.event.addHandler(CSE.event.acmeNotification, self.onNotification)	# type: ignore
@@ -1844,7 +1848,8 @@ class ScriptManager(object):
 		self.runEventScripts(_metaOnStartup)
 
 
-	def restart(self, name:str) -> None:
+	@onEvent(eventManger.cseReset)	# type: ignore
+	def restart(self, eventData: EventData) -> None:
 		"""	Callback for the *cseReset* event.
 		
 			Restart the script manager service, ie. clear the scripts and storage. 

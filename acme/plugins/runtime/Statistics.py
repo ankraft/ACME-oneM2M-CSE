@@ -213,9 +213,6 @@ class Statistics(object):
 			eventManager.addHandler(eventManager.logError, lambda n: self._handleStatsEvent(logErrors))						# type: ignore
 			eventManager.addHandler(eventManager.logWarning, lambda n: self._handleStatsEvent(logWarnings))					# type: ignore
 
-			# Also do some internal handling
-			#CSE.event.addHandler(CSE.event.cseReset, self.reset)														# type: ignore
-
 			# Start background worker to handle writing to DB
 			L.isDebug and L.logDebug('Starting statistics DB thread')
 			BackgroundWorkerPool.newWorker(Configuration.cse_statistics_writeInterval, self.statisticsDBWorker, 'statsDBWorker').start()
