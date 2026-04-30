@@ -312,6 +312,20 @@ This includes the LocationManager plugin and the related features in the CSE.
 The default value is `True`.
 
 
+# cse.service.remoteCSE
+
+This section contains settings that control the CSE's remote CSE service.
+
+
+# cse.service.remoteCSE.enable
+
+This setting enables or disables the remote CSE service.
+
+This includes the RemoteCSEManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
 # cse.service.semantic
 
 This section contains settings that control the CSE's semantic service.
@@ -352,6 +366,14 @@ The default value is `True`.
 
 
 
+# cse.serviceProviderID
+
+This is the CSE's service provider ID.
+
+The default is `acme.example.com`.
+
+
+
 # cse.sortDiscoveredResources
 
 This setting turns on the sorting of discovery resources. Otherwise the order is non-deterministic.
@@ -369,14 +391,6 @@ The default value is `True`.
 This is a comma-separated list of the supported oneM2M release versions. 
 
 The default value is `2a,3,4`
-
-
-
-# cse.serviceProviderID
-
-This is the CSE's service provider ID.
-
-The default is `acme.example.com`.
 
 
 
