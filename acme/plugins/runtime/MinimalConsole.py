@@ -24,7 +24,7 @@ from ...etc.Constants import RuntimeConstants as RC
 from ...runtime.Logging import Logging as L											# type: ignore
 from ...runtime.ConsoleBase import ConsoleBase
 from ...runtime.PluginSupport import plugin, init
-from ...runtime.EventManager import EventManager
+from ...runtime.EventManager import EventManager, EventData
 
 eventManager = EventManager()	# type: ignore
 """ Event manager singleton instance. """
@@ -56,7 +56,7 @@ class MinimalConsole(ConsoleBase):
 		loop(commands, 
 			 catchKeyboardInterrupt=True, 
 			 headless=RC.isHeadless,
-			 catchAll=lambda ch: eventManager.keyboard(ch), # type: ignore [attr-defined]
+			 catchAll=lambda ch: eventManager.keyboard(EventData(payload=ch)), # type: ignore [attr-defined]
 			 nextKey='#' if self.doStartWithTextUI() else None,
 			 ignoreException=False,
 			)

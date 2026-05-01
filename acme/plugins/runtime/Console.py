@@ -46,7 +46,7 @@ from ...runtime.ConsoleBase import ConsoleBase
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, restart
-from ...runtime.EventManager import EventManager
+from ...runtime.EventManager import EventManager, EventData
 
 # TODO support configevent!
 # TODO move some of the functions to a more general place because they are used here and in the TUI
@@ -90,8 +90,6 @@ class Console(ConsoleBase):
 		'tuiApp',
 		
 		'treeMode',
-
-		'_eventKeyboard',
 	)
 	""" The slots for the Console to optimize memory usage. """
 
@@ -117,9 +115,6 @@ class Console(ConsoleBase):
 
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
-
-		self._eventKeyboard = CSE.event.keyboard			# type: ignore [attr-defined]
-		""" The keyboard event handler. """
 
 		L.isDebug and L.logDebug('Rich Console initialized')
 
@@ -209,7 +204,7 @@ class Console(ConsoleBase):
 		loop(commands, 
 			 catchKeyboardInterrupt=True, 
 			 headless=RC.isHeadless,
-			 catchAll=lambda ch: CSE.event.keyboard(ch), # type: ignore [attr-defined]
+			 catchAll=lambda ch: eventManager.keyboard(EventData(payload=ch)), # type: ignore [attr-defined]
 			 nextKey='#' if self.doStartWithTextUI() else None,
 			 ignoreException=False,
 			 exceptionHandler=lambda ch: L.setEnableScreenLogging(True))
@@ -424,9 +419,9 @@ Available under the BSD 3-Clause License
 				live.update(getResourceTreeRich(style=L.terminalStyle, withProgress=False), refresh=True)
 			
 			# Register events for which the tree is refreshed
-			CSE.event.addHandler([eventManager.createResource, 
-								  eventManager.deleteResource, 
-								  eventManager.updateResource],  _updateTree)		# type:ignore[attr-defined]
+			eventManager.addHandler([eventManager.createResource, 
+									 eventManager.deleteResource, 
+									 eventManager.updateResource],  _updateTree)		# type:ignore[attr-defined]
 
 			while (ch := waitForKeypress(Configuration.console_refreshInterval)) in [None, '\x14']:
 				if ch == '\x14':	# Toggle through tree modes
@@ -436,9 +431,9 @@ Available under the BSD 3-Clause License
 					break
 
 			# Remove the event callback for the events 
-			CSE.event.removeHandler([eventManager.createResource, 
-									 eventManager.deleteResource, 
-									 eventManager.updateResource], _updateTree)	# type:ignore[attr-defined]
+			eventManager.removeHandler([eventManager.createResource, 
+										eventManager.deleteResource, 
+										eventManager.updateResource], _updateTree)	# type:ignore[attr-defined]
 
 		# Reset the screen and logging
 		self.clearScreen(key)
@@ -586,18 +581,18 @@ Available under the BSD 3-Clause License
 						live.update(Pretty(resource.asDict()), refresh = True)
 					
 					# Register events for which the resource is refreshed
-					CSE.event.addHandler([eventManager.createResource, 
-						   				  eventManager.deleteResource, 
-										  eventManager.updateResource],  _updateResource)		# type:ignore[attr-defined]
+					eventManager.addHandler([eventManager.createResource, 
+						   					 eventManager.deleteResource, 
+											 eventManager.updateResource],  _updateResource)		# type:ignore[attr-defined]
 
 					while waitForKeypress(Configuration.console_refreshInterval) in [None, '\x09']:
 						if self.interruptContinous:
 							break
 
 					# Remove the event callback for the events 
-					CSE.event.removeHandler([eventManager.createResource, 
-							  				 eventManager.deleteResource, 
-											 eventManager.updateResource], _updateResource)	# type:ignore[attr-defined]
+					eventManager.removeHandler([eventManager.createResource, 
+							  					eventManager.deleteResource, 
+												eventManager.updateResource], _updateResource)	# type:ignore[attr-defined]
 
 				# Reset the screen and show error message if there is one
 				self.clearScreen(key)
@@ -837,7 +832,7 @@ Available under the BSD 3-Clause License
 					L.console('resource must be a <container>', isError = True)
 			
 				# Register for chil-added event (which would lead to a re-drawing of the graph)
-				CSE.event.addHandler(CSE.event.createChildResource,  _plot)		# type:ignore [attr-defined]
+				eventManager.addHandler(eventManager.createChildResource,  _plot)		# type:ignore [attr-defined]
 
 				# Remember the parent ri
 				pri = resource.ri
@@ -852,7 +847,7 @@ Available under the BSD 3-Clause License
 						break
 
 				# Remove the event callback for the events 
-				CSE.event.removeHandler(CSE.event.createChildResource, _plot)	# type:ignore[attr-defined]
+				eventManager.removeHandler(eventManager.createChildResource, _plot)	# type:ignore[attr-defined]
 				self.clearScreen(key)
 
 		# Reset the screen and logging

@@ -144,7 +144,7 @@ class WebSocketServer(object):
 			Args:
 				eventData: The event data containing the deleted resource.
 		"""
-		deletedResource:Resource = eventData.payload[0]	# type: ignore [attr-defined]
+		deletedResource:Resource = eventData[0]	# type: ignore [attr-defined]
 		if deletedResource.ty != ResourceTypes.AE or deletedResource.aei not in self.associatedConnections:
 			return
 		self.dissociateConnectionFromOriginator(deletedResource.aei)

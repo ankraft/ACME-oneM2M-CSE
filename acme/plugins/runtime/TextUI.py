@@ -18,11 +18,14 @@ from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
+from ...runtime.EventManager import EventManager, onEvent, EventData, EventHandler
 from ...etc.Types import CSEStatus
 from ...etc.Constants import RuntimeConstants as RC
 
 from ...textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 
+eventManager = EventManager()	# type: ignore
+"""	Event manager singleton instance. """
 
 # TODO Delete resource? After better dialog option is available
 # TODO Copy resource
@@ -31,6 +34,7 @@ from ...textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 _textUI:TextUI = None
 """	Active textUI instance """
 
+@EventHandler
 @plugin(property='textUI', tags=['acme', 'ui'])
 class TextUI(object):
 
@@ -54,10 +58,6 @@ class TextUI(object):
 
 		CSE.event.addHandler([CSE.event.aeHasRegistered, 									# type:ignore[attr-defined]
 							  CSE.event.aeHasDeregistered, 									# type:ignore[attr-defined]
-							  CSE.event.registreeCSEHasRegistered,							# type:ignore[attr-defined]
-							  CSE.event.registreeCSEHasDeregistered,						# type:ignore[attr-defined]
-							  CSE.event.csrUpdated,  										# type:ignore[attr-defined]
-							  CSE.event.registeredToRegistrarCSE, 							# type:ignore[attr-defined]
 							  CSE.event.deregisteredFromRegistrarCSE, 						# type:ignore[attr-defined]
 							  CSE.event.registeredToRemoteCSE], self.registrationUpdate)	# type:ignore[attr-defined]
 
@@ -86,6 +86,15 @@ class TextUI(object):
 	# the arguments are used.
 	# def registrationUpdate(self, name:str, resource:Resource, dct:dict=None, anotherResource:Resource=None) -> None:
 	def registrationUpdate(self, *args, **kwargs) -> None:		# type: ignore[no-untyped-def]
+		if self.tuiApp and self.tuiApp.containerRegistrations:
+			self.tuiApp.containerRegistrations.registrationsUpdate()
+
+
+	@onEvent(eventManager.registeredToRegistrarCSE)
+	@onEvent(eventManager.registreeCSEHasRegistered)
+	@onEvent(eventManager.registreeCSEHasDeregistered)
+	@onEvent(eventManager.csrUpdated)
+	def registrationUpdate2(self, eventData: EventData) -> None:		# type: ignore[no-untyped-def]
 		if self.tuiApp and self.tuiApp.containerRegistrations:
 			self.tuiApp.containerRegistrations.registrationsUpdate()
 

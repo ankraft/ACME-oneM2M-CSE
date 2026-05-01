@@ -22,17 +22,21 @@ from ...etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isValidSPID, isV
 from ...etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl, normalizeURL
 from ...etc.Constants import Constants, RuntimeConstants as RC
 from ...helpers.TextTools import findXPath, setXPath
+from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...resources.CSR import CSR
 from ...resources.CSEBase import CSEBase, getCSE
 from ...resources.Resource import Resource
 from ...runtime.Factory import resourceFromDict
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
-from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
 
+eventManager = EventManager()	# type: ignore
+"""	Event manager singleton instance. """
 
+@EventHandler
 @plugin(property='remoteCSEManager', tags=['acme', 'remote'], priority=20)
 class RemoteCSEManager(object):
 	"""	This class defines functionalities to handle remote CSE/CSR registrations.
@@ -51,9 +55,6 @@ class RemoteCSEManager(object):
 		'descendantCSR',
 		'registrarConfig',
 		'spRegistrarConfigs',
-
-		'_eventRegisteredToRegistrarCSE',
-		'_eventDeregisteredFromRegistrarCSE',
 	)
 
 
@@ -73,16 +74,6 @@ class RemoteCSEManager(object):
 		# Get the configuration settings
 		self._assignConfig()
 
-		#	The following lines register event handlers for registration and de-registration events.
-		#	The following events are registered when registerueng and de-registerung from the registrar CSE
-		CSE.event.addHandler(CSE.event.registeredToRegistrarCSE, self.handleRegistrarRegistrationEvent)				# type: ignore
-		CSE.event.addHandler(CSE.event.deregisteredFromRegistrarCSE, self.handleRegistrarDeregistrationEvent)		# type: ignore
-
-		#	The following events are usually thrown by the Registration Manager.
-		CSE.event.addHandler(CSE.event.registreeCSEHasRegistered, self.handleRegistreeCSERegistrationEvent)			# type: ignore
-		CSE.event.addHandler(CSE.event.registreeCSEHasDeregistered, self.handleRegistreeCSEDeregistrationEvent)		# type: ignore
-		CSE.event.addHandler(CSE.event.csrUpdated, self.handleCSRUpdateEvent)							# type: ignore
-
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
 
@@ -90,9 +81,6 @@ class RemoteCSEManager(object):
 		CSE.event.addHandler(CSE.event.cseStartup, self.startConnectionMonitor)	# type: ignore
 		L.isInfo and L.log('RemoteCSEManager initialized')
 
-		# Optimize event handling
-		self._eventRegisteredToRegistrarCSE = CSE.event.registeredToRegistrarCSE			# type: ignore [attr-defined]
-		self._eventDeregisteredFromRegistrarCSE = CSE.event.deregisteredFromRegistrarCSE	# type: ignore [attr-defined]
 
 
 	@stop
@@ -283,20 +271,17 @@ class RemoteCSEManager(object):
 	#	Event Handlers
 	#
 
-	def handleRegistrarRegistrationEvent(self, name: str,  
-									  	   registrarConfig: CSERegistrar,
-										   registrarCSE: Resource, 
-										   ownRegistrarCSR: Resource,
-										   localRegistrarCSR: Resource) -> None:
+	@onEvent(eventManager.registeredToRegistrarCSE)
+	def handleRegistrarRegistrationEvent(self, eventData: EventData) -> None:
 		""" Event handler for adding a registrar CSE/CSR CSI to the list of registered csi.
 
 			Args:
-				name:Event name.
-				registrarConfig: The registrar configuration that is registered.
-			 	registrarCSE: The CSBase that just registered (the CSR from the registrar CSE).
-				ownRegistrarCSR: The own CSR on the the registrar CSE
-				localRegistrarCSR: The local CSR representing the registrar CSE.
+				eventData: The event data containing the registrar configuration, the registrar CSE resource, the own CSR on the registrar CSE and the local CSR representing the registrar CSE.
 		"""
+		# registrarConfig = eventData[0]
+		# registrarCSE = eventData[1]
+		# ownRegistrarCSR = eventData[2]
+		localRegistrarCSR = eventData[3]
 
 		# Update the own CSEBase if necessary with further informatioon from the registrar CSE
 		if localRegistrarCSR is not None:
@@ -309,29 +294,29 @@ class RemoteCSEManager(object):
 					L.logErr(f'Cannot update descendant CSRs: {e}')
 
 
-	def handleRegistrarDeregistrationEvent(self, 
-										   name:str, 
-										   registrarConfig:CSERegistrar,
-										   registrarCSE:Optional[Resource]=None) -> None:
+	@onEvent(eventManager.deregisteredFromRegistrarCSE)
+	def handleRegistrarDeregistrationEvent(self, eventData: EventData) -> None:
 		"""	Event handler for removing the registrar CSE/CSR CSI from the list of registered csi.
 
 			Args:
-				name:Event name.
-				registrarConfig: The registrar configuration that is de-registered.
-				registrarCSE: The registrar CSE that is de-registered.
+				eventData: The event data containing the registrar configuration and the registrar CSE resource that is de-registered.
 		"""
+		registrarConfig = eventData[0]
+		#registrarCSE = eventData[1]
 		registrarConfig._registrarCSEBaseResource = None
 
 
-	def handleRegistreeCSERegistrationEvent(self, name:str, registreeCSR:Resource) -> None:
+	@onEvent(eventManager.registreeCSEHasRegistered)
+	def handleRegistreeCSERegistrationEvent(self, eventData: EventData) -> None:
 		"""	Event handler for adding a registree's CSE's <CSR> to the list of registered descendant CSE. 
 
 			Only the local registrar configuration is involved here.
 
 			Args:
-				name:Event name.
-				registreeCSR: The CSR that just registered.
+				eventData: The event data containing the registree CSR resource that is registered.
 		"""
+		registreeCSR: Resource = cast(Resource, eventData.payload)
+
 		if not (registreeCSRcsi := registreeCSR.csi):	# Not a CSR?
 			return
 		if registreeCSRcsi in self.descendantCSR:	# already registered
@@ -364,18 +349,20 @@ class RemoteCSEManager(object):
 				return
 		
 		# Send another event when the own CSE has fully registered
-		CSE.event.registeredToRemoteCSE(registreeCSR)	# type: ignore
+		eventManager.registeredToRemoteCSE(EventData(payload=(registreeCSR)))	# type: ignore
 
 
-	def handleRegistreeCSEDeregistrationEvent(self, name:str, registreeCSR:Resource) -> None:
+	@onEvent(eventManager.registreeCSEHasDeregistered)
+	def handleRegistreeCSEDeregistrationEvent(self, eventData: EventData) -> None:
 		"""	Event handler for removals of registree's CSE/CSR CSI from the list of registered descendant CSE. 
 
 			Only the local registrar configuration is involved here.
 		
 			Args:
-				name:Event name.
-				registreeCSR: the CSR that just de-registered.
+				eventData: The event data containing the registree CSR resource that is de-registered. The CSR resource must contain the csi of the deregistering CSE.
 		"""
+		registreeCSR:Resource = cast(Resource, eventData.payload)
+
 		L.isDebug and L.logDebug(f'Handling de-registration of registree CSE: {registreeCSR.csi}')
 
 		# Remove the deregistering CSE from the descendant list
@@ -392,18 +379,22 @@ class RemoteCSEManager(object):
 			self._updateOwnCSRonRegistrarCSE(self.registrarConfig)
 
 
-	def handleCSRUpdateEvent(self, name: str, csr: Resource, updateDict: JSON) -> None:
+	@onEvent(eventManager.csrUpdated)	# type: ignore
+	# def handleCSRUpdateEvent(self, name: str, csr: Resource, updateDict: JSON) -> None:
+	def handleCSRUpdateEvent(self, eventData: EventData) -> None:
 		"""	Event handler for an updates of a registree or registrar CSR.
 
 			Only the local registrar configuration is involved here.
 
 			Args:
-				name:Event name.
-				csr^: The updated registree CSE.
-				updateDict: The resource dictionary with the updated attributes.
+				eventData: The event data containing the updated CSR and the update dictionary.
 		"""
+		csr:Resource = eventData[0]		# type: ignore
+		updateDict:JSON = eventData[1]	# type: ignore
+
 		L.isDebug and L.logDebug(f'Handle registree or registrar CSR update: {csr}\nupdate: {updateDict}')
 
+	
 		# If this is the registrar CSR that has been updated, then update own CSEBase, and perhaps descendant CSRs
 		csrCsi = csr.csi
 		if csrCsi == self.registrarConfig.cseID:
@@ -515,13 +506,16 @@ class RemoteCSEManager(object):
 						localRegistrarCSR = self._createLocalCSR(registrarConfig)		# ignore result
 
 						#Send registration event
-						self._eventRegisteredToRegistrarCSE(registrarConfig, registrarConfig._registrarCSEBaseResource, csr, localRegistrarCSR)
+						eventManager.registeredToRegistrarCSE(EventData(payload=(registrarConfig, 
+																				 registrarConfig._registrarCSEBaseResource, 
+																				 csr, 
+																				 localRegistrarCSR)))
 						L.isInfo and L.log(f'Registered to registrar CSE: {registrarConfig.cseID}')
 					except:
 						pass
 				except:
 					L.isInfo and L.log('Disconnected from registrar CSE')
-					self._eventDeregisteredFromRegistrarCSE(registrarConfig, csr)
+					eventManager.deregisteredFromRegistrarCSE(EventData(payload=(registrarConfig, csr)))
 					registrarConfig._registrarCSEBaseResource = None
 		
 		else:	# No local CSR
@@ -547,7 +541,10 @@ class RemoteCSEManager(object):
 					localRegistrarCSR = self._createLocalCSR(registrarConfig) 	# create local CSR including ACPs to local CSR and local CSE. Ignore result
 
 					# Send registration event
-					self._eventRegisteredToRegistrarCSE(registrarConfig, registrarConfig._registrarCSEBaseResource, csr, localRegistrarCSR)
+					eventManager.registeredToRegistrarCSE(EventData(payload=(registrarConfig, 
+															  				 registrarConfig._registrarCSEBaseResource, 
+																			 csr, 
+																			 localRegistrarCSR)))
 					L.isInfo and L.log(f'Registered to registrar CSE: {registrarConfig.cseID}')
 				except:
 					registrarConfig._registrarCSEBaseResource = None

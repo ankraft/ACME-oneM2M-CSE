@@ -38,8 +38,20 @@ class EventData():
 	name: Optional[str] = None
 	"""	The event name. """
 
-	payload: Any | list[Any] = None
+	payload: Any | tuple = None
 	"""	The event payload. """
+
+
+	def __getitem__(self, key: int) -> Any:
+		if isinstance(self.payload, tuple):
+			return self.payload[key]
+		raise TypeError(f'EventData payload is not a tuple')
+
+
+	def __len__(self) -> int:
+		if isinstance(self.payload, tuple):
+			return len(self.payload)
+		raise TypeError(f'EventData payload is not a tuple')
 
 
 
@@ -133,7 +145,7 @@ class Event(list):	# type:ignore[type-arg]
 					if args and isinstance(args[0], EventData):
 						function(args[0])
 					else:
-						function(EventData(name=name, payload=list(args)))	# type: ignore[attr-defined]
+						function(EventData(name=name, payload=tuple(args)))	# type: ignore[attr-defined]
 				else:
 					function(name, *args, **kwargs)
 

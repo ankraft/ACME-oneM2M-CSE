@@ -18,7 +18,7 @@ import time
 from ...etc.IDUtils import isSPRelative
 from ...helpers.TextTools import findXPath
 from ...etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, ResultContentType, CSERequest, FilterCriteria 
-from ...etc.Types import Operation, CSERegistrar
+from ...etc.Types import Operation
 from ...etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
 from ...etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ...etc.Constants import Constants, RuntimeConstants as RC
@@ -30,11 +30,16 @@ from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.PluginSupport import plugin, start, stop, configure, validate, requires
+from ...runtime.EventManager import EventManager, EventHandler, EventData, onEvent
 
 # TODO for anounceable resource:
 # - update: update resource here
 
+eventManager = EventManager()	# type: ignore
+""" Event manager singleton instance. """
 
+
+@EventHandler
 @plugin(property='announcementManager', tags=['acme', 'remote'], priority=50)
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager')
 class AnnouncementManager(object):
@@ -48,9 +53,6 @@ class AnnouncementManager(object):
 	def start(self) -> None:
 		"""	Initialization of the announcement manager.
 		"""
-		CSE.event.addHandler(CSE.event.registeredToRegistrarCSE, self.handleRegisteredToRegistrarCSE)			# type: ignore
-		CSE.event.addHandler(CSE.event.registreeCSEHasRegistered, self.handleRegistreeCSEHasRegistered)			# type: ignore
-		
 		L.isInfo and L.log('AnnouncementManager initialized')
 
 
@@ -86,31 +88,31 @@ class AnnouncementManager(object):
 	#	Event Handlers. Listen on remote CSE registrations
 	#
 
-	def handleRegisteredToRegistrarCSE(self, registrarConfig: CSERegistrar, 
-											 name: str, 
-											 remoteCSE: Resource, 
-											 remoteCSR: Resource,
-											 localRegistrarCSR: Resource) -> None:
+	@onEvent(eventManager.registeredToRegistrarCSE)
+	def handleRegisteredToRegistrarCSE(self, eventData: EventData) -> None:
 		"""	Handle registrations to a registrar CSE.
 
 			Args:
-				name:Event name.
-				registrarConfig: The registrar configuration that is registered.
-				remoteCSE: The remote `CSEBase` resource.
-				remoteCSR: The own CSE's remote `CSR` resource.
-				localRegistrarCSR: The registrar CSE's local `CSR` resource.
+				eventData: The event data containing the registrar configuration and the registrar CSE resource that is registered. The CSR resource must contain the csi of the registering CSE.
 		"""
+		# registrarConfig: CSERegistrar = eventData[0]
+		# remoteCSE: Resource = eventData[1]
+		remoteCSR: Resource = eventData[2]
+		# localRegistrarCSR: Resource = eventData[3]
+
 		time.sleep(Configuration.cse_announcements_delayAfterRegistration)	# Give some time until remote CSE fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
-	def handleRegistreeCSEHasRegistered(self, name:str, remoteCSR:Resource) -> None:
+	@onEvent(eventManager.registreeCSEHasRegistered)
+	def handleRegistreeCSEHasRegistered(self, eventData: EventData) -> None:
 		"""	Handle registrations when a registree CSE has registered.
 
 			Args:
-				name:Event name.
-				remoteCSR: The own CSE's remote `CSR` resource.
+				eventData: The event data containing the registree CSR resource that is registered. The CSR resource must contain the csi of the registering CSE.
 		"""
+		remoteCSR:Resource = cast(Resource, eventData.payload)
+
 		time.sleep(Configuration.cse_announcements_delayAfterRegistration) 	# Give some time until remote CSE is fully connected
 		self.checkResourcesForAnnouncement(remoteCSR)
 

@@ -1765,8 +1765,6 @@ class ScriptManager(object):
 
 		# Also do some internal handling
 		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
-		CSE.event.addHandler(CSE.event.cseRestarted, self.restartFinished)	# type: ignore
-		CSE.event.addHandler(CSE.event.keyboard, self.onKeyboard)			# type: ignore
 		CSE.event.addHandler(CSE.event.acmeNotification, self.onNotification)	# type: ignore
 
 		# Add a handler for configuration changes
@@ -1860,7 +1858,8 @@ class ScriptManager(object):
 		L.isDebug and L.logDebug('ScriptManager restarted')
 	
 
-	def restartFinished(self, name:str) -> None:
+	@onEvent(eventManger.cseRestarted)	# type: ignore
+	def restartFinished(self, eventData: EventData) -> None:
 		"""	Callback for the *cseRestarted* event.
 		
 			Run the restart script(s), if any.
@@ -1869,17 +1868,18 @@ class ScriptManager(object):
 		self.runEventScripts(_metaOnRestart)
 
 
-	def onKeyboard(self, name:str, ch:str) -> None:
+	@onEvent(eventManger.keyboard)	# type: ignore
+	def onKeyboard(self, eventData: EventData) -> None:
 		"""	Callback for the *keyboard* event.
 		
 			Run script(s) with configured meta tags, if any.
 
 			Args:
-				name:Event name.
-				ch: The pressed key.
+				eventData: The event data, containing the pressed key.
 		"""
 		# Check for function key names first
 		# Look for the shutdown script(s) and run them. 
+		ch: FunctionKey|str = eventData.payload	# type: ignore[assignment]
 		self.runEventScripts(_metaOnKey, 
 							 cast(FunctionKey, ch).name if isinstance(ch, FunctionKey) else ch)
 

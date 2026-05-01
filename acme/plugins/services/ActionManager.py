@@ -79,8 +79,8 @@ class ActionManager():
 				resource: The resource instance that triggered the event.
 				realRi: The real resource ID, if available.
 		"""
-		resource = eventData.payload[0]
-		realRi = eventData.payload[1] if len(eventData.payload) > 1 else None
+		resource = eventData[0]
+		realRi = eventData[1] if len(eventData.payload) > 1 else None
 
 		if resource.isVirtual():
 			return

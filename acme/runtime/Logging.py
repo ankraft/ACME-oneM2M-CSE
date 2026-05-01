@@ -42,6 +42,10 @@ from ..helpers.RingBuffer import RingBuffer
 from ..helpers.BackgroundWorker import BackgroundWorker
 from ..runtime.Configuration import Configuration
 
+eventManager: Any = None
+"""	Event manager singleton instance. """
+
+
 levelName = {
 	logging.INFO :    'ℹ️  I',
 	logging.DEBUG :   '🐞 D',
@@ -212,6 +216,11 @@ class Logging:
 		"""Init the logging system.
 		"""
 
+		# We have to do this here to avoid circular imports
+		from ..runtime.EventManager import EventManager
+		global eventManager
+		eventManager = EventManager()	# type: ignore
+
 		if Logging.logger:
 			return
 
@@ -277,12 +286,12 @@ class Logging:
 
 		# React on config update. Only assig if it hasn't assigned before
 		from ..runtime import CSE
-		if not CSE.event.hasHandler(CSE.event.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
-			CSE.event.addHandler(CSE.event.configUpdate, Logging.configUpdate)			# type: ignore
+		if not CSE.event.hasHandler(eventManager.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
+			CSE.event.addHandler(eventManager.configUpdate, Logging.configUpdate)			# type: ignore
 
 		# Optimized eventing
-		Logging._eventLogError = CSE.event.logError	# type: ignore
-		Logging._eventLogWarning = CSE.event.logWarning 	# type: ignore
+		Logging._eventLogError = eventManager.logError	# type: ignore
+		Logging._eventLogWarning = eventManager.logWarning 	# type: ignore
 
 
 	@staticmethod

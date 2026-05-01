@@ -37,11 +37,8 @@ class RegistrationManager(object):
 	__slots__ = (
 		'expWorker',
 
-		'_eventRegistreeCSEHasRegistered',
-		'_eventRegistreeCSEHasDeregistered',
 		'_eventAEHasRegistered',
 		'_eventAEHasDeregistered',
-		'_eventCsrUpdated',
 		'_eventExpireResource',
 	)
 
@@ -55,11 +52,8 @@ class RegistrationManager(object):
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
 
 		# Optimized event handling
-		self._eventRegistreeCSEHasRegistered = CSE.event.registreeCSEHasRegistered			# type: ignore
-		self._eventRegistreeCSEHasDeregistered = CSE.event.registreeCSEHasDeregistered		# type: ignore
 		self._eventAEHasRegistered = CSE.event.aeHasRegistered								# type: ignore
 		self._eventAEHasDeregistered = CSE.event.aeHasDeregistered							# type: ignore
-		self._eventCsrUpdated = CSE.event.csrUpdated						# type: ignore
 		self._eventExpireResource = CSE.event.expireResource								# type: ignore
 
 		L.isInfo and L.log('RegistrationManager initialized')
@@ -144,7 +138,7 @@ class RegistrationManager(object):
 				self._eventAEHasRegistered(resource)
 			case ResourceTypes.CSR:
 				# send event
-				self._eventRegistreeCSEHasRegistered(resource)
+				eventManager.registreeCSEHasRegistered(EventData(payload=resource))
 
 
 	def handleCreator(self, resource:Resource, originator:str) -> None:
@@ -198,7 +192,7 @@ class RegistrationManager(object):
 				self._eventAEHasDeregistered(resource)
 			case ResourceTypes.CSR:
 				# send event
-				self._eventRegistreeCSEHasDeregistered(resource)
+				eventManager.registreeCSEHasDeregistered(EventData(payload=resource))
 
 
 	#########################################################################
@@ -338,7 +332,7 @@ class RegistrationManager(object):
 		"""
 		L.isDebug and L.logDebug(f'De-registering registree CSR. csi: {registreeCSR.csi}')
 		# send event
-		self._eventRegistreeCSEHasDeregistered(registreeCSR)
+		eventManager.registreeCSEHasDeregistered(EventData(payload=registreeCSR))
 		return True
 
 
@@ -349,7 +343,7 @@ class RegistrationManager(object):
 	def handleCSRUpdate(self, csr:Resource, updateDict:JSON) -> bool:
 		L.isDebug and L.logDebug(f'Updating CSR. csi: {csr.csi}')
 		# send event
-		self._eventCsrUpdated(csr, updateDict)
+		eventManager.csrUpdated(EventData(payload=(csr, updateDict)))
 		return True
 
 
