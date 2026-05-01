@@ -1767,9 +1767,6 @@ class ScriptManager(object):
 		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
 		CSE.event.addHandler(CSE.event.acmeNotification, self.onNotification)	# type: ignore
 
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
-
 		L.isInfo and L.log('ScriptManager initialized')
 
 
@@ -1795,16 +1792,16 @@ class ScriptManager(object):
 		return True
 	
 	
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Optional[Any] = None) -> None:
+	@onEvent(eventManger.configUpdate)	# type: ignore
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the *configUpdate* event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data, containing the updated configuration key.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in [ 'scripting.verbose', 
 						'scripting.fileMonitoringInterval', 
 						'scripting.scriptDirectories',

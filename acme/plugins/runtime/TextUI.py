@@ -50,9 +50,6 @@ class TextUI(object):
 	def start(self) -> None:
 		global _textUI
 
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
-
 		# Add handlers for registrations here. This is not done in the textUI classes because it it
 		# is not always clear when they are removed and re-created
 
@@ -99,16 +96,16 @@ class TextUI(object):
 			self.tuiApp.containerRegistrations.registrationsUpdate()
 
 	
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Optional[Any] = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in [ 'textui.startWithTUI', 
 				 		'textui.theme', 
 						'textui.refreshInterval', 

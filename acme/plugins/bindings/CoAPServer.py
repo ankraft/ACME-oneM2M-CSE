@@ -37,6 +37,7 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.Logging import Logging as L
 from ...runtime import CSE
 from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
+from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ...etc.Constants import RuntimeConstants as RC
 
 from coapthon import defines
@@ -50,6 +51,9 @@ from coapthon.messages.option import Option as CoapthonOption
 
 from coapthon.transaction import Transaction as CoapthonTransaction
 
+
+eventManager = EventManager()	# type: ignore
+"""	Event manager singleton instance. """
 
 
 # TODO  support DTLS sockets
@@ -878,6 +882,7 @@ class 	ACMECoAPServer(CoAP):
 			_closeClient()
 
 
+@EventHandler
 @plugin(property='coapServer', tags=['binding', 'acme'], noRestartWhilePaused=True)
 class CoAPServer():
 	"""	CoAPServer Server implementation.
@@ -896,12 +901,9 @@ class CoAPServer():
 	def initCoAPServer(self) -> None:
 		"""	Initialization of the CoAP Server.
 		"""
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self._configUpdate)			# type: ignore
 
 		self.isPaused = False
 		"""	Flag whether the server is currently paused. Requests are not handled when the server is paused. """
-
 
 		self.coapServer:Optional[ACMECoAPServer] = None
 		"""	The CoAP server object. """
@@ -934,16 +936,17 @@ class CoAPServer():
 		return True
 
 
-	def _configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Optional[Any] = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def _configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the *configUpdate* event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data, containing the key and value of the updated configuration.
 		"""
+
+		key:Optional[str] = eventData[0]
+		value:Optional[Any] = eventData[1]
+
 		if key not in [ 'coap.enable', 
 						'coap.port',
 						'coap.listenIF',

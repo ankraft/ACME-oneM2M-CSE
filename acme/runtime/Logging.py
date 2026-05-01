@@ -41,6 +41,7 @@ from ..helpers import TextTools
 from ..helpers.RingBuffer import RingBuffer
 from ..helpers.BackgroundWorker import BackgroundWorker
 from ..runtime.Configuration import Configuration
+from ..runtime.EventManager import EventData
 
 eventManager: Any = None
 """	Event manager singleton instance. """
@@ -285,9 +286,8 @@ class Logging:
 									# actor callback is executed, and this might result in a None exception
 
 		# React on config update. Only assig if it hasn't assigned before
-		from ..runtime import CSE
-		if not CSE.event.hasHandler(eventManager.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
-			CSE.event.addHandler(eventManager.configUpdate, Logging.configUpdate)			# type: ignore
+		if not eventManager.hasHandler(eventManager.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
+			eventManager.addHandler(eventManager.configUpdate, Logging.configUpdate)			# type: ignore
 
 		# Optimized eventing
 		Logging._eventLogError = eventManager.logError	# type: ignore
@@ -303,11 +303,12 @@ class Logging:
 
 
 	@staticmethod
-	def configUpdate(name:str, 
-					 key:Optional[str] = None, 
-					 value:Optional[Any] = None) -> None:
+	def configUpdate(_:str, eventData: EventData) -> None:
 		"""	Handle configuration update.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		restartNeeded = False
 		if key.startswith('logging.'):
 			# No special action needed

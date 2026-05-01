@@ -169,9 +169,6 @@ class RequestManager(object):
 		self._receivedResponsesLock = Lock()
 		""" Lock to access the received responses dictionary."""
 
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
-
 		# Optimized access to events
 		self._eventRequestReceived = CSE.event.requestReceived		# type:ignore [attr-defined]
 		""" Event for received requests. """
@@ -331,16 +328,16 @@ class RequestManager(object):
 		self.enableRequestRecording	= Configuration.cse_operation_requests_enable
 
 
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Optional[Any] = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in ( 'cse.flexBlockingPreference', 
 				 		'cse.requestExpirationDelta', 
 						'cse.maxExpirationDelta', 

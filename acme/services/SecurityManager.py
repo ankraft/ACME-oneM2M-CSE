@@ -71,9 +71,6 @@ class SecurityManager(object):
 		# Get the configuration settings
 		self._initAuthInformation()
 
-		# Add handler for configuration updates
-		CSE.event.addHandler(eventHandler.configUpdate, self.configUpdate)				# type: ignore
-
 		L.isInfo and L.log('SecurityManager initialized')
 		if Configuration.cse_security_enableACPChecks:
 			L.isInfo and L.log('ACP checking ENABLED')
@@ -94,15 +91,12 @@ class SecurityManager(object):
 		L.logDebug('SecurityManager restarted')
 
 
-	def configUpdate(self, name: str, 
-						   key: Optional[str] = None,
-						   value: Any = None) -> None:
+	@onEvent(eventHandler.configUpdate)
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Handle configuration updates.
 
 			Args:
-				name: The name of the configuration section.
-				key: The key of the configuration value.
-				value: The new value of the configuration value.
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
 		# if key not in (	'http.security.caCertificateFile',
 		# 				'http.security.caPrivateKeyFile',
@@ -113,6 +107,8 @@ class SecurityManager(object):
 		# 			  ):
 		# 	return
 		# TODO further optimization: only reload the changed files
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
 		self._initAuthInformation()
 
 

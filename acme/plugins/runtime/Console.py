@@ -46,7 +46,7 @@ from ...runtime.ConsoleBase import ConsoleBase
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, restart
-from ...runtime.EventManager import EventManager, EventData
+from ...runtime.EventManager import EventManager, EventData, EventHandler, onEvent
 
 # TODO support configevent!
 # TODO move some of the functions to a more general place because they are used here and in the TUI
@@ -59,6 +59,7 @@ eventManager = EventManager()	# type: ignore
 ##############################################################################
 
 
+@EventHandler
 @plugin(tags=['acme', 'ui'])
 class Console(ConsoleBase):
 	"""	Console Manager class.
@@ -113,9 +114,6 @@ class Console(ConsoleBase):
 		self.previousExportRi = ''
 		self.previousInstanceExportRi = ''
 
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
-
 		L.isDebug and L.logDebug('Rich Console initialized')
 
 
@@ -133,16 +131,16 @@ class Console(ConsoleBase):
 		self.treeMode:TreeMode = cast(TreeMode, Configuration.console_treeMode)	# Assigned because it is changed during runtime
 
 
-	def configUpdate(self, name:str,
-						   key:Optional[str] = None, 
-						   value:Any = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Handle configuration updates.
 
 			Args:
-				name: Event name.
-				key: The key for the configuration setting that is updated.
-				value: The new configuration setting.
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in [ 'console.refreshInterval',
 						'console.hideResources',
 						'console.treeMode',

@@ -74,9 +74,6 @@ class RemoteCSEManager(object):
 		# Get the configuration settings
 		self._assignConfig()
 
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
-
 		# Add a handler when the CSE is started
 		CSE.event.addHandler(CSE.event.cseStartup, self.startConnectionMonitor)	# type: ignore
 		L.isInfo and L.log('RemoteCSEManager initialized')
@@ -124,16 +121,16 @@ class RemoteCSEManager(object):
 		self.spRegistrarConfigs = {spid:config for spid, config in Configuration.cse_registrars.items() if spid != RC.cseSPid}	# all SP registrar configs except the own one
 
 
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Optional[Any] = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in [ 'cse.enableRemoteCSE' ] or not key.startswith(('cse.registrar', 'cse.sp.registrar.')):
 			return
 
@@ -1240,7 +1237,7 @@ class RemoteCSEManager(object):
 
 				# MN and ASCN CSE must not have a SP registrar
 				case CSEType.MN | CSEType.ASN if spName != RC.cseSPid:	
-					raise ConfigurationError(fr'Service Provider Registrar: "{spName}" is not allowed for CSE Type: "{config.cse_type.name}"')
+					raise ConfigurationError(fr'Service Provider Registrar: "{spName}" is not allowed for CSE Type: "{config.cse_type.name if isinstance(config.cse_type, CSEType) else config.cse_type}". Only the registrar with the same SP-ID as the CSE (section: \[cse.registrar]) is allowed for MN and ASN CSEs.')
 
 
 		# Validate CSE Registrars

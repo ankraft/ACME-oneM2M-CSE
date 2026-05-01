@@ -48,9 +48,6 @@ class RegistrationManager(object):
 		self.expWorker:BackgroundWorker	= None
 		self.startExpirationMonitor()
 		
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
-
 		# Optimized event handling
 		self._eventAEHasRegistered = CSE.event.aeHasRegistered								# type: ignore
 		self._eventAEHasDeregistered = CSE.event.aeHasDeregistered							# type: ignore
@@ -65,11 +62,16 @@ class RegistrationManager(object):
 		return True
 
 
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Any = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Handle configuration updates.
+			
+			Args:
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in ( 'cse.checkExpirationsInterval', 
 						'cse.enableResourceExpiration'
 						):

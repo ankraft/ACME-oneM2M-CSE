@@ -28,7 +28,7 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
-from ...runtime.EventManager import EventManager, onEvent
+from ...runtime.EventManager import EventManager, onEvent, EventData, EventHandler
 
 
 eventManager = EventManager()
@@ -307,6 +307,7 @@ class MQTTClientHandler(MQTTHandler):
 ##############################################################################
 
 
+@EventHandler
 @plugin(property='mqttClient', tags=['binding', 'acme'], noRestartWhilePaused=True)
 class MQTTClient(object):
 	"""	The general MQTT manager for this CSE.
@@ -376,16 +377,15 @@ class MQTTClient(object):
 	
 
 	@onEvent(eventManager.configUpdate)
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Optional[Any] = None) -> None:
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in [ 'mqtt.enable', 
 						'mqtt.topicPrefix',
 						'mqtt.timeout', 

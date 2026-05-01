@@ -141,6 +141,16 @@ class Event(list):	# type:ignore[type-arg]
 				# 	x = BackgroundWorkerPool.runJob(lambda name = name, args = args, kwargs = kwargs: function(name, *args, **kwargs))
 				# else:
 				# 	function(name, *args, **kwargs)
+
+				
+				
+				
+				
+				
+				# TODO after the conversion to eventdata simplify this.
+				# name is not necessary any more
+
+
 				if hasattr(function, '_onEvents'):
 					if args and isinstance(args[0], EventData):
 						function(args[0])

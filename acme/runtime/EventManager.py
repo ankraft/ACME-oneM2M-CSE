@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 from ..helpers.EventManager import EventManager as HelpersEventManager, Event, EventHandler, EventData, onEvent
-from .Logging import Logging as L
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
 

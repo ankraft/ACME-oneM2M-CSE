@@ -40,8 +40,8 @@ from ...runtime.Logging import Logging as L
 eventManager = EventManager()
 """ Event manager singleton instance. """
 
-@plugin(property='webSocketServer', tags=['binding', 'acme'], noRestartWhilePaused=True)
 @EventHandler
+@plugin(property='webSocketServer', tags=['binding', 'acme'], noRestartWhilePaused=True)
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.
 	"""
@@ -62,9 +62,6 @@ class WebSocketServer(object):
 	def init(self) -> None:
 		"""	Initialization of the WebSocket Server.
 		"""
-
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self._configUpdate)			# type: ignore
 
 		self.isPaused = False
 		"""	Flag whether the server is currently paused. Requests are not handled when the server is paused. """
@@ -112,16 +109,16 @@ class WebSocketServer(object):
 		return True
 
 
-	def _configUpdate(self, name: str, 
-						   key: Optional[str] = None, 
-						   value: Optional[Any] = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def _configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the *configUpdate* event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data containing the name of the updated configuration setting and its new value.
 		"""
+		key: Optional[str] = eventData[0]
+		value: Optional[Any] = eventData[1]
+
 		if key not in [ 'websocket.enable', 
 						'websocket.port',
 						'websocket.listenIF',
