@@ -17,7 +17,7 @@ from typing import List, Tuple, Dict, cast, Optional, Any
 from ...etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
 from ...etc.Types import ContentSerializationType, BindingType, CSERegistrar
 from ...etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
-from ...etc.ACMEUtils import pureResource
+from ...etc.JSONUtils import pureResource
 from ...etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isValidSPID, isValidCSI, isAbsolute, getSPFromID, toSPRelative	# cannot import at the top because of circel import
 from ...etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl, normalizeURL
 from ...etc.Constants import Constants, RuntimeConstants as RC

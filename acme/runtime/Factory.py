@@ -22,7 +22,7 @@ from ..etc.Types import ResourceTypes, FactoryCallableT, resourceTypeDetails
 from ..etc import Types
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Types import JSON
-from ..etc.ACMEUtils import pureResource
+from ..etc.JSONUtils import pureResource
 from .Logging import Logging as L
 
 

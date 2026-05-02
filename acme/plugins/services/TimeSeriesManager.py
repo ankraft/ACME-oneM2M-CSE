@@ -45,11 +45,8 @@ class TimeSeriesManager(object):
 
 	
 	@restart
-	def restart(self, name:str) -> None:
+	def restart(self) -> None:
 		"""	Restart the TimeSeriesManager service.
-
-			Args:
-				name: The name of the event.
 		"""
 		self.stopMonitoring()
 		runningTimeserieses.clear()

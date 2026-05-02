@@ -21,15 +21,16 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, List, Optional, Sequence, Tuple, Any
+from typing import Callable, cast, List, Optional, Sequence, Tuple, Any, TYPE_CHECKING
 from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode, OriginatorType
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
 from ..helpers.Singleton import Singleton
 from .Configuration import Configuration
-from ..resources.Resource import Resource
-from ..resources.ACTR import ACTR
-from ..resources.SCH import SCH
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..resources.ACTR import ACTR
+	from ..resources.SCH import SCH
 from .Factory import Factory
 from .Logging import Logging as L
 from ..runtime.PluginSupport import requires
@@ -408,7 +409,7 @@ class Storage(metaclass=Singleton):
 			docs = [_r[0] 
 		   			for _ri in _ris 
 					if (_r := self.db.searchResources(ri=_ri))]	# get the resource documents for the child resource IDs, only when they exist
-			return docs if raw else cast(List[Resource], list(map(lambda x: factory.resourceFromDict(x), docs)))
+			return docs if raw else cast(List, list(map(lambda x: factory.resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
 	
 

@@ -18,7 +18,7 @@ from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultCo
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType, GeoSpatialFunctionType
 from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatteryStatus, IdentifierScope
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
-from ..etc.ACMEUtils import pureResource
+from ..etc.JSONUtils import pureResource
 from ..etc.IDUtils import toCSERelative, toAbsolute, toSPRelative, isValidAEI, isCSERelative, isSPRelative, isAbsolute
 from ..etc.Utils import strToBool
 from ..helpers.TextTools import findXPath, soundsLike

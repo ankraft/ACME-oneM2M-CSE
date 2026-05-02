@@ -23,7 +23,7 @@ from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes,
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.IDUtils import uniqueRI, uniqueID
-from ..etc.ACMEUtils import pureResource
+from ..etc.JSONUtils import pureResource
 from ..etc.Utils import runsInIPython, isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration

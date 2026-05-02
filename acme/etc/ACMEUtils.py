@@ -13,18 +13,15 @@
 from __future__ import annotations
 
 from typing import Any, Tuple, cast, Optional
-import sys, re
+import sys
 
-from .Constants import Constants
 from .Types import ResourceTypes
-from .Types import JSON
-from .IDUtils import isStructured, isCSERelative, toSPRelative, isAbsolute, toAbsolute, isSPRelative
-from ..runtime import CSE
+from .IDUtils import isStructured, isAbsolute, toAbsolute
 from ..etc.Constants import RuntimeConstants as RC
+from ..runtime.Storage import Storage
 
-
-# Optimize access (fewer look-up)
-_attrType = Constants.attrRtype
+storage: Storage = Storage()	# type: ignore
+""" Storage singleton instance. """
 
 
 def isUniqueRI(ri:str) -> bool:
@@ -35,7 +32,7 @@ def isUniqueRI(ri:str) -> bool:
 		Return:
 			Boolean indicating the result of the test
 	"""
-	return not CSE.storage.identifier(ri)
+	return not storage.identifier(ri)
 
 
 def structuredPathFromRI(ri:str) -> Optional[str]:
@@ -47,7 +44,7 @@ def structuredPathFromRI(ri:str) -> Optional[str]:
 			Structured path, or None in case of an error.
 	"""
 	try:
-		return CSE.storage.identifier(ri)[0]['srn']
+		return storage.identifier(ri)[0]['srn']
 	except:
 		return None
 
@@ -62,7 +59,7 @@ def riFromStructuredPath(srn: str) -> Optional[str]:
 			Resource ID, or None in case of an error.
 	"""
 	try:
-		return CSE.storage.structuredIdentifier(srn)[0]['ri']
+		return storage.structuredIdentifier(srn)[0]['ri']
 	except:
 		return None
 
@@ -76,9 +73,9 @@ def resourceTypeFromID(id:str) -> Optional[ResourceTypes]:
 			Resource type, or None in case of an error.
 	"""
 	if isStructured(id):
-		lst = CSE.storage.structuredIdentifier(id)
+		lst = storage.structuredIdentifier(id)
 	else:
-		lst = CSE.storage.identifier(id)
+		lst = storage.identifier(id)
 	if not lst:
 		return None
 	return ResourceTypes(lst[0]['ty'])
@@ -285,85 +282,6 @@ def riFromID(id:str) -> str:
 	return riFromStructuredPath(id) if isStructured(id) else id
 
 
-##############################################################################
-#
-#	Resource and content related
-#
-
-_excludeFromRoot = [ 'pi' ]
-"""	Attributes that are excluded from the root of a resource tree. """
-
-_pureResourceRegex = re.compile(r'[\w]+:[\w]')
-"""	Regular expression to test for a pure resource name. """
-
-def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
-	"""	Return the "pure" structure without the "<domain>:xxx" resource type name, and the oneM2M type identifier. 
-
-		Args:
-			dct: JSON dictionary with the resource attributes.
-		Return:
-			Tupple with the inner JSON, the resource type name, and the found key.
-			If the resource type name is not in the correct format, eg the domain is missing, it is *None*.
-			The third element always contains the found outer attribute name.
-	"""
-	try:
-		rootKeys = list(dct.keys())
-		# Try to determine the root identifier 
-		if (lrk := len(rootKeys)) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
-			return dct[rootKeys[0]], rootKeys[0], rootKeys[0]
-		# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
-		return dct, dct.get(_attrType), rootKeys[0] if lrk > 0 else None
-	except Exception:
-		raise
-
-
-def resourceDiff(old:JSON, new:JSON, modifiers:Optional[JSON] = None) -> JSON:
-	"""	Compare an old and a new resource. A comparison happens for keywords and values.
-		Attributes which names start and end with "__" (ie internal attributes) are ignored.
-
-		Args:
-			old: Old resource dictionary to compare.
-			new: New resource dictionary to compare.
-			modifiers: A dictionary. If this dictionary is given then it contains the changes that let from old to new. This is used to determine if attributes were just updated with the same values.
-		Return:	
-			Return a dictionary of identified changes.
-	"""
-	res = {}
-	for k, v in new.items():
-		if k.startswith('__'):	# ignore all internal attributes
-			continue
-		if not k in old:		# Key not in old
-			res[k] = v
-		elif v != old[k]:		# Value different
-			res[k] = v
-		elif modifiers and k in modifiers:	# this means the attribute is overwritten by the same value. But still modified
-			res[k] = v
-
-	# Process deleted attributes. This is necessary since attributes can be
-	# explicitly set to None/Nulls.
-	for k, v in old.items():
-		if k not in new:
-			res[k] = None
-
-	return res
-
-
-
-def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Optional[JSON] = None) -> JSON:
-	"""	Calculate the difference between an original resource and after it has been updated, and then remove the attributes
-		that are part of the update request.
-
-		Args:
-			old: Old resource dictionary to compare.
-			new: New resource dictionary to compare.
-			requestPC: The original request's content. This is used to remove the attributes that are part of the update request.
-			modifiers: A dictionary. If this dictionary is given then it contains the changes that let from old to new. This is used to determine if attributes were just updated with the same values.
-		Return:	
-			Return a dictionary of those attributes that have been changed in a CREATE or UPDATE request.	
-	"""
-	return { k:v for k,v in resourceDiff(old, new, modifiers).items() if k not in requestPC or v != requestPC[k] }
-
-
 def resourceFromCSI(csi:str) -> Optional[Any]:	# Actual a Resource object
 	""" Get A CSEBase resource by its csi. This might be a different <CSEBase> resource then the hosting CSE.
 
@@ -374,7 +292,7 @@ def resourceFromCSI(csi:str) -> Optional[Any]:	# Actual a Resource object
 			<CSEBase> resource or None if not found.
 	"""
 	try:
-		return CSE.storage.retrieveResource(csi = csi)
+		return storage.retrieveResource(csi = csi)
 	except Exception as e:
 		import traceback
 		traceback.print_exc()

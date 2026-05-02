@@ -18,7 +18,8 @@ from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..etc.RequestUtils import removeNoneValuesFromDict
 from ..etc.IDUtils import isValidID, uniqueRI, uniqueRN
-from ..etc.ACMEUtils import resourceDiff, isUniqueRI
+from ..etc.ACMEUtils import isUniqueRI
+from ..etc.JSONUtils import resourceDiff
 from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
 from ..etc.DateUtils import getResourceDate

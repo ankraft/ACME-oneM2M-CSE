@@ -12,7 +12,7 @@ from typing import Optional
 
 from copy import deepcopy
 
-from ..etc.ACMEUtils import pureResource
+from ..etc.JSONUtils import pureResource
 from ..helpers.TextTools import findXPath
 from ..etc.Types import ResourceTypes, NotificationContentType
 from ..etc.Types import NotificationEventType, JSON

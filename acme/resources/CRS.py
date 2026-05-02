@@ -14,8 +14,9 @@ from typing import Optional
 
 from copy import deepcopy
 
-from ..etc.ACMEUtils import pureResource, toSPRelative, compareIDs
-from ..etc.IDUtils import csiFromSPRelative
+from ..etc.ACMEUtils import compareIDs
+from ..etc.JSONUtils import pureResource
+from ..etc.IDUtils import csiFromSPRelative, toSPRelative
 from ..helpers.TextTools import findXPath, setXPath
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
 from ..etc.Types import ResourceTypes, JSON, TimeWindowType, EventEvaluationMode, CSERequest
