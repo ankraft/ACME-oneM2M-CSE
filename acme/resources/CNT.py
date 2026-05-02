@@ -16,19 +16,23 @@ from ..etc.Types import ResourceTypes, JSON, JSONLIST
 from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE
 from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
+from ..resources.Resource import Resource
+from ..resources.ContainerResource import ContainerResource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
-from ..resources.Resource import Resource
-from ..resources.ContainerResource import ContainerResource
 from ..runtime.EventManager import EventManager, EventData
 from ..runtime.Factory import Factory
+from ..runtime.Storage import Storage
 
 eventManager = EventManager()	# type: ignore
 """ Event manager singleton instance. """
 
 factory: Factorys = Factory()	# type: ignore
 """ Factory singleton instance. """
+
+storage:Storage = Storage()	# type: ignore
+""" Storage singleton instance. """
 
 class CNT(ContainerResource):
 	""" Container resource type. """
@@ -180,7 +184,7 @@ class CNT(ContainerResource):
 
 
 		# Only get the CINs in raw format. Instantiate them as resources if needed
-		cinsRaw = cast(JSONLIST, sorted(CSE.storage.directChildResources(self.ri, ResourceTypes.CIN, raw = True), key = lambda x: x['ct']))
+		cinsRaw = cast(JSONLIST, sorted(storage.directChildResources(self.ri, ResourceTypes.CIN, raw = True), key = lambda x: x['ct']))
 		cni = len(cinsRaw)			
 		cin:Resource = None
 

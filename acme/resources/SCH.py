@@ -17,13 +17,16 @@ from ..etc.Types import ResourceTypes, JSON
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..runtime.PluginSupport import requires
+from ..runtime.Storage import Storage
 from ..resources.Resource import Resource
 from ..etc.ResponseStatusCodes import CONTENTS_UNACCEPTABLE, NOT_IMPLEMENTED
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
-@requires(timeManager='acme.plugins.services.TimeManager', required=False)
+storage:Storage = Storage()	# type: ignore
+"""	Storage singleton instance. """
 
+@requires(timeManager='acme.plugins.services.TimeManager', required=False)
 class SCH(AnnounceableResource):
 	""" Schedule (SCH) resource type. """
 
@@ -46,7 +49,7 @@ class SCH(AnnounceableResource):
 			raise NOT_IMPLEMENTED (L.logWarn(f'Network Coordinated Operation is not supported by this CSE'))
 
 		# Add the schedule to the schedules DB
-		CSE.storage.upsertSchedule(self)
+		storage.upsertSchedule(self)
 
 		# TODO When <SoftwareCampaign> is supported
 		# c)The request shall be rejected with the "OPERATION_NOT_ALLOWED" Response Status Code if the target resource 
@@ -74,7 +77,7 @@ class SCH(AnnounceableResource):
 		super().update(dct, originator, doValidateAttributes)
 
 		# Update the schedule in the schedules DB
-		CSE.storage.upsertSchedule(self)
+		storage.upsertSchedule(self)
 	
 
 	def validate(self, originator: str | None = None, dct: JSON | None = None, parentResource: Resource | None = None) -> None:
@@ -97,5 +100,5 @@ class SCH(AnnounceableResource):
 		super().deactivate(originator, parentResource)
 
 		# Remove the schedule from the schedules DB
-		CSE.storage.removeSchedule(self)
+		storage.removeSchedule(self)
 

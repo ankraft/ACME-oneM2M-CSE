@@ -21,9 +21,13 @@ from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
 from ..runtime.EventManager import EventManager, EventData
+from ..runtime.Storage import Storage
 
 eventManager = EventManager()	# type: ignore
 """ Event manager singleton instance. """
+
+storage:Storage = Storage()	# type: ignore
+"""	Storage singleton instance. """
 
 
 
@@ -205,9 +209,9 @@ class TS(ContainerResource):
 				raise NOT_ACCEPTABLE('child content sizes would exceed mbs')
 
 		# Check whether another TSI has the same dgt value set
-		tsis = CSE.storage.searchByFragment({'ty': ResourceTypes.TSI,
-											 'pi': self.ri,
-											 'dgt': childResource.dgt})
+		tsis = storage.searchByFragment({'ty': ResourceTypes.TSI,
+										 'pi': self.ri,
+										 'dgt': childResource.dgt})
 		if len(tsis) > 0:	# Error if yes
 			raise CONFLICT(f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
 

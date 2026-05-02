@@ -32,14 +32,15 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..resources.CSEBase import getCSE
 from ..resources.Resource import Resource
 
-
-
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import pluginManager
-
+from ..runtime.Storage import Storage
 from ..services.Dispatcher import Dispatcher
+
+storage:Storage = Storage()	# type: ignore
+"""	Storage singleton instance. """
 
 dispatcher: Dispatcher = Dispatcher()
 """ Dispatcher singleton instance. """
@@ -1406,7 +1407,7 @@ skinparam BoxPadding 60
 	seqs = ''
 	origPrefix = '<originator>\\n'
 
-	for r in CSE.storage.getRequests(id, sortedByOt=True):
+	for r in storage.getRequests(id, sortedByOt=True):
 		req = r['req']
 		op = req['op']
 		to = None

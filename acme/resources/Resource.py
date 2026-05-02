@@ -28,12 +28,17 @@ from ..runtime import CSE
 from ..etc.Constants import Constants
 from ..runtime.EventManager import EventManager, EventData
 from ..runtime.Factory import Factory
+from ..runtime.Storage import Storage
 
 eventManager = EventManager()	# type: ignore
 """	Event manager singleton instance. """
 
 factory:Factory = Factory()
 """ Factory singleton instance. """
+
+storage:Storage = Storage()	# type: ignore
+"""	Storage singleton instance. """
+
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 # TODO cleanup optimizations
@@ -944,7 +949,7 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		 """
-		CSE.storage.deleteResource(self)
+		storage.deleteResource(self)
 
 
 	def dbUpdate(self, finalize:bool = False) -> Resource:
@@ -958,7 +963,7 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		"""
-		CSE.storage.updateResource(self)
+		storage.updateResource(self)
 		# L.logWarn(f'{finalize} - {self.ri}')
 		if finalize and not self.isVirtual():
 				eventManager.changeResource(EventData(payload=(self, self.ri)))	 # type: ignore [attr-defined]
@@ -973,7 +978,7 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		"""
-		CSE.storage.createResource(self, overwrite)
+		storage.createResource(self, overwrite)
 
 
 	def dbReload(self) -> Resource:
@@ -987,7 +992,7 @@ class Resource(object):
 			Return:
 				Resource instance.	
 			"""
-		return CSE.storage.retrieveResource(ri = self.ri)
+		return storage.retrieveResource(ri = self.ri)
 
 
 	def dbReloadDict(self) -> Resource:
@@ -998,7 +1003,7 @@ class Resource(object):
 			Return:
 				Updated Resource instance.	
 		 """
-		resource = CSE.storage.retrieveResource(ri = self.ri)
+		resource = storage.retrieveResource(ri = self.ri)
 		self.dict = resource.dict
 		return self
 
@@ -1050,7 +1055,7 @@ class Resource(object):
 		if not (pi := self.pi):
 			# L.logErr('PI is None')
 			return rn
-		if len(rpi := CSE.storage.identifier(pi)) == 1:
+		if len(rpi := storage.identifier(pi)) == 1:
 			return cast(str, f'{rpi[0]["srn"]}/{rn}')
 		# L.logErr(traceback.format_stack())
 		L.logErr(f'Parent {pi} not found in DB')
@@ -1083,7 +1088,7 @@ class Resource(object):
 			Return:
 				Document of the parent resource
 		"""
-		return CSE.storage.retrieveResourceRaw(self.pi)
+		return storage.retrieveResourceRaw(self.pi)
 	
 
 	def createChildResourceFromDict(self, dct: JSON, 

@@ -48,6 +48,7 @@ from ..resources.REQ import REQ
 from ..resources.PCH import PCH
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
+from ..runtime.Storage import Storage
 
 registration: RegistrationManager = RegistrationManager()
 """ RegistrationManager singleton instance. """
@@ -57,6 +58,9 @@ eventManager = EventManager()
 
 dispatcher: Dispatcher = Dispatcher()
 """ Dispatcher singleton instance. """
+
+storage:Storage = Storage()	# type: ignore
+"""	Storage singleton instance. """
 
 # Type definition
 TargetDetails = List[ 						#type: ignore[misc]
@@ -572,7 +576,7 @@ class RequestManager(object):
 
 		if (nus := request.rtu) is None:	# might be an empty list
 			# RTU is not set, get POA's from the resp. AE.poa
-			# aes = CSE.storage.searchByFragment({ 'ty' : ResourceTypes.AE, 'aei' : to })	# search all <AE>s for aei=originator
+			# aes = storage.searchByFragment({ 'ty' : ResourceTypes.AE, 'aei' : to })	# search all <AE>s for aei=originator
 			# if len(aes) != 1:
 			# 	L.isWarn and L.logWarn(f'Wrong number of AEs with aei: {to} ({len(aes):d}): {str(aes)}')
 			# 	nus = aes[0].poa
@@ -1580,13 +1584,13 @@ class RequestManager(object):
 		if not originator:
 			return []
 		# First check whether there is an AE with that originator
-		if (l := len(aes := CSE.storage.searchByFragment({ 'aei' : originator }))) > 0:
+		if (l := len(aes := storage.searchByFragment({ 'aei' : originator }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one AE with the same aei: {originator}')
 				return []
 			csz = aes[0].csz
 		# Else try whether there is a CSE or CSR
-		elif (l := len(cses := CSE.storage.searchByFragment({ 'csi' : getIdFromOriginator(originator) }))) > 0:
+		elif (l := len(cses := storage.searchByFragment({ 'csi' : getIdFromOriginator(originator) }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one CSE with the same csi: {originator}')
 				return []
@@ -1800,15 +1804,15 @@ class RequestManager(object):
 		request.fillOriginalRequest(update = True)
 
 		# Store the request
-		CSE.storage.addRequest(request.op,
-							   rid, 
-							   srn,
-							   request.originator if request.originator else 'unknown',
-							   request._outgoing,
-							   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
-							   request.originalRequest,
-							   response,
-							   self.requestRingBuffer.append)
+		storage.addRequest(request.op,
+						   rid, 
+						   srn,
+						   request.originator if request.originator else 'unknown',
+						   request._outgoing,
+						   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
+						   request.originalRequest,
+						   response,
+						   self.requestRingBuffer.append)
 	
 class RequestRingBuffer(RingBuffer[JSON]):
 	"""	A ring buffer for requests.

@@ -15,9 +15,13 @@ from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+from ..runtime.Storage import Storage
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 
+
+storage:Storage = Storage()	# type: ignore
+"""	Storage singleton instance. """
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrRiTyMapping)
@@ -82,7 +86,7 @@ class ACP(AnnounceableResource):
 
 		# Remove own resourceID from all acpi
 		L.isDebug and L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
-		for r in CSE.storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi):	# search for presence in acpi, not perfect match
+		for r in storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi):	# search for presence in acpi, not perfect match
 			acpi = r.acpi
 			if self.ri in acpi:
 				acpi.remove(self.ri)

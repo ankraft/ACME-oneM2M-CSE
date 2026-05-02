@@ -22,9 +22,13 @@ from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, start, stop, restart
 from ...runtime.EventManager import EventManager, EventData, onEvent
+from ...runtime.Storage import Storage
 
-eventManager = EventManager()	# type: ignore
+eventManager:EventManager = EventManager()	# type: ignore
 """	Event manager singleton instance. """
+
+storage:Storage = Storage()	# type: ignore
+"""	Storage singleton instance. """
 
 # TODO add check to http request handling
 # TODO add check to http response handling
@@ -132,7 +136,7 @@ class TimeManager(object):
 			Return:
 				List of periodic timeSyncBeacons
 		"""
-		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': ResourceTypes.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
+		return cast(List[TSB], storage.searchByFragment( { 'ty': ResourceTypes.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
 
 	def addTimeSyncBeacon(self, tsb:TSB) -> None:
