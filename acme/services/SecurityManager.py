@@ -27,14 +27,25 @@ from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
+from ..runtime.Storage import Storage
 from ..resources.Resource import Resource, isInternalAttribute
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
+from ..services.Dispatcher import Dispatcher
 
 
-eventHandler = EventManager()
+eventHandler:EventManager = EventManager()
+""" Event handler singleton instance. """
+
+storage:Storage = Storage()
+""" Storage singleton instance. """
+
+dispatcher:Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
+
+
 @dataclass
 class ACPResult():
 	"""	An ACP result structure.
@@ -149,7 +160,7 @@ class SecurityManager(object):
 
 			"""
 			try:
-				if not (acp := CSE.dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
+				if not (acp := dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
 					L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}')
 					return ACPResult(False, [])
 				
@@ -280,7 +291,7 @@ class SecurityManager(object):
 					# TODO perhaps have a DB with all originators and their kind?
 
 					# TODO add a "raw" attribute that returns the JSON, but doesn't intantiate the object
-					if CSE.storage.retrieveResource(aei = originator):
+					if storage.retrieveResource(aei = originator):
 						L.isDebug and L.logDebug(f'Grant registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
 						return True
 				except NOT_FOUND:
@@ -374,7 +385,7 @@ class SecurityManager(object):
 
 				for daciRi in daci:
 					try:
-						if not (daciResource := CSE.dispatcher.retrieveResource(daciRi)):
+						if not (daciResource := dispatcher.retrieveResource(daciRi)):
 							L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DACI> resource not found: {daciRi}')
 							continue
 					except ResponseException as e:
@@ -431,7 +442,7 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Checking parent\'s permission')
 					try:
 						if not parentResource:
-							parentResource = CSE.dispatcher.retrieveResource(resource.pi)
+							parentResource = dispatcher.retrieveResource(resource.pi)
 						return self.hasAccess(originator, parentResource, requestedPermission, ty)
 					except ResponseException as e:
 						L.isWarn and L.logWarn(f'Parent resource not found: {resource.pi}: {e.dbg}')
@@ -558,7 +569,7 @@ class SecurityManager(object):
 				# test the current acpi whether the originator is allowed to update the acpi
 				for acpRi in targetResource.acpi:
 					try:
-						if not (acp := CSE.dispatcher.retrieveResource(acpRi)):
+						if not (acp := dispatcher.retrieveResource(acpRi)):
 							L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {acpRi}')
 							continue
 						if self.checkACPSelfPermission(cast(ACP, acp), _originator, Permission.UPDATE):
@@ -753,7 +764,7 @@ class SecurityManager(object):
 			# Check for group. If the originator is a member of a group, then the originator has access
 			if acp.getTypeForRI(a) == ResourceTypes.GRP:
 				try:
-					if originator in CSE.dispatcher.retrieveResource(a).mid:
+					if originator in dispatcher.retrieveResource(a).mid:
 						L.isDebug and L.logDebug(f'Originator found in group member')
 						return True
 				except ResponseException as e:

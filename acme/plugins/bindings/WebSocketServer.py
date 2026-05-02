@@ -133,7 +133,7 @@ class WebSocketServer(object):
 
 
 	@onEvent(eventManager.deleteResource)
-	def _handleDeleteEvent(self, eventData : EventData ) -> None:
+	def _handleDeleteEvent(self, eventData: EventData ) -> None:
 		"""	Callback and handler for the *deleteResource* event.
 
 			In case of an AE deletion, the associated WS connection is dissociated, but left open.
@@ -141,7 +141,7 @@ class WebSocketServer(object):
 			Args:
 				eventData: The event data containing the deleted resource.
 		"""
-		deletedResource:Resource = eventData[0]	# type: ignore [attr-defined]
+		deletedResource:Resource = eventData.payload	# type: ignore [assignment]
 		if deletedResource.ty != ResourceTypes.AE or deletedResource.aei not in self.associatedConnections:
 			return
 		self.dissociateConnectionFromOriginator(deletedResource.aei)

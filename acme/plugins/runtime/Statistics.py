@@ -21,6 +21,10 @@ from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure, validate
 from ...runtime.EventManager import EventManager, EventData
+from ...runtime.Storage import Storage
+
+storage:Storage = Storage()	# type: ignore
+""" Storage singleton instance. """
 
 
 coRetrieves	= 'coqRet'
@@ -478,7 +482,7 @@ class Statistics(object):
 		"""
 		
 		with self.statLock:
-			return CSE.storage.getStatistics()
+			return storage.getStatistics()
 
 
 	def storeDBStatistics(self) -> bool:
@@ -488,13 +492,13 @@ class Statistics(object):
 				True if the statistics were stored successfully, False otherwise.
 		"""
 		with self.statLock:
-			return CSE.storage.updateStatistics(self.stats)
+			return storage.updateStatistics(self.stats)
 	
 
 	def purgeDBStatistics(self) -> None:
 		"""	Purge statistics data.
 		"""
 		with self.statLock:
-			CSE.storage.purgeStatistics()
+			storage.purgeStatistics()
 
 	

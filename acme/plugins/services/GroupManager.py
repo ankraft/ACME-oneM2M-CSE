@@ -30,10 +30,18 @@ from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
+from ...runtime.Storage import Storage
+from ...services.Dispatcher import Dispatcher
 
 
-eventManager = EventManager()
+eventManager: EventManager = EventManager()
 """ Event manager singleton instance. """
+
+storage: Storage = Storage()
+""" Storage singleton instance. """
+
+dispatcher: Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 @plugin(property='groupManager', tags=['acme', 'core'])
 @EventHandler
@@ -152,7 +160,7 @@ class GroupManager():
 			if isLocalResource:
 				hasFopt = mid.endswith('/fopt')
 				id = mid[:-5] if len(mid) > 5 and hasFopt else mid 	# remove /fopt to retrieve the resource
-				resource = CSE.dispatcher.retrieveResource(id)
+				resource = dispatcher.retrieveResource(id)
 			else:
 				if not remoteResult.data or len(remoteResult.data) == 0:
 					if remoteResult.rsc == ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE:  # CSE has no privileges for retrieving the member
@@ -321,8 +329,8 @@ class GroupManager():
 	#	Event Handler
 	#
 
-	#@onEvent(eventManager.deleteResource)
-	def handleDeleteEvent(self, name:str, deletedResource:Resource) -> None:
+	@onEvent(eventManager.deleteResource)
+	def handleDeleteEvent(self, eventData: EventData) -> None:
 		"""	Handle a CSE-internal delete event (ie. whenever a resource is deleted).
 			Check whether the deleted resource is a member of a group. If yes, then remove the member.
 			This method is called by the `EventManager`. 
@@ -331,10 +339,11 @@ class GroupManager():
 				deletedResource: The deleted resource to check.
 		"""
 		L.isDebug and L.logDebug('Looking for and removing deleted resource from groups')
+		deletedResource = eventData.payload	
 
-		ri = deletedResource.ri
-		groups = CSE.storage.searchByFragment(	{ 'ty' : ResourceTypes.GRP }, 
-												lambda r: (mid := r.get('mid')) and ri in mid)	# type: ignore # Filter all <grp> where mid contains ri
+		ri = deletedResource.ri		# type:ignore [union-attr]
+		groups = storage.searchByFragment(	{ 'ty' : ResourceTypes.GRP }, 
+											lambda r: (mid := r.get('mid')) and ri in mid)	# type: ignore # Filter all <grp> where mid contains ri
 		for group in groups:
 			L.isDebug and L.logDebug(f'Removing deleted resource: {ri} from group: {group.ri}')
 			group['mid'].remove(ri)

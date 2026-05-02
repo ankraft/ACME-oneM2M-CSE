@@ -32,9 +32,17 @@ from ...runtime import CSE
 from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
+from ...services.RegistrationManager import RegistrationManager
+from ...services.Dispatcher import Dispatcher
 
 eventManager = EventManager()	# type: ignore
 """	Event manager singleton instance. """
+
+registration: RegistrationManager = RegistrationManager()	# type: ignore
+"""	Registration manager singleton instance. """
+
+dispatcher: Dispatcher = Dispatcher()	# type: ignore
+"""	Dispatcher singleton instance. """
 
 @EventHandler
 @plugin(property='remoteCSEManager', tags=['acme', 'remote'], priority=20)
@@ -151,7 +159,7 @@ class RemoteCSEManager(object):
 		# Internal optimization: collect all descendant CSEs in a dictionary
 		L.isDebug and L.logDebug('Rebuild internal descendants list')
 		self.descendantCSR.clear()
-		for eachCsr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
+		for eachCsr in dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 
 			if self.registrarConfig and self.registrarConfig.spID == RC.cseSPid and (csi := eachCsr.csi) != self.registrarConfig.cseID:			# Skipping the own registrar csr
 				L.isDebug and L.logDebug(f'Addind remote CSE: {csi}')
@@ -596,7 +604,7 @@ class RemoteCSEManager(object):
 				A list of found CSR resources.
 		"""
 		registreeCsrList = []
-		for eachCSR in CSE.dispatcher.retrieveDirectChildResources(pi=RC.cseRi, ty=ResourceTypes.CSR):
+		for eachCSR in dispatcher.retrieveDirectChildResources(pi=RC.cseRi, ty=ResourceTypes.CSR):
 
 
 		# TODO in this search, instead of a fixed cseid use a list and accept all cseIDs that are in the list
@@ -624,8 +632,8 @@ class RemoteCSEManager(object):
 
 		# add local CSR and ACP's
 		try:
-			CSE.dispatcher.createLocalResource(csrResource, localCSE, originator=remoteCSE.csi)
-			CSE.registration.handleCSRRegistration(csrResource, csrResource.csi)
+			dispatcher.createLocalResource(csrResource, localCSE, originator=remoteCSE.csi)
+			registration.handleCSRRegistration(csrResource, csrResource.csi)
 		except ResponseException as e:
 			raise BAD_REQUEST(f'cannot register CSR: {e.dbg}')
 
@@ -641,11 +649,11 @@ class RemoteCSEManager(object):
 		L.isDebug and L.logDebug(f'Deleting registree CSR: {registreeCSR.ri}')
 
 		# De-register the registree CSR first
-		if not CSE.registration.handleRegistreeCSRDeRegistration(registreeCSR):
+		if not registration.handleRegistreeCSRDeRegistration(registreeCSR):
 			raise BAD_REQUEST('cannot de-register registree CSR')
 
 		# Delete local CSR
-		CSE.dispatcher.deleteLocalResource(registreeCSR)
+		dispatcher.deleteLocalResource(registreeCSR)
 
 
 	#
@@ -977,7 +985,7 @@ class RemoteCSEManager(object):
 		# registree CSE as a descendant CSE.
 
 		try:
-			registreeCSR = CSE.dispatcher.retrieveLocalResource(ri=ri)
+			registreeCSR = dispatcher.retrieveLocalResource(ri=ri)
 		except ResponseException as e:
 			L.isDebug and L.logDebug(f'getCSRFromPath: {e.dbg}')
 			registreeCSR = getCSRWithDescendant(f'/{ri}')

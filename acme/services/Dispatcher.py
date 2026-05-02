@@ -32,23 +32,33 @@ from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, NOT_IMPLEMENTED
 from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI, isUniqueRI
 from ..etc.IDUtils import localResourceID, isSPRelative, isAbsolute, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
-from ..helpers.PluginManager import requires
+from ..helpers.Singleton import Singleton
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
+from ..runtime.EventManager import EventManager, EventData
+from ..runtime.Logging import Logging as L
+from ..runtime.Storage import Storage
 from ..runtime.Factory import resourceFromDict
-from ..runtime.EventManager import EventManager
+from ..runtime.PluginSupport import requires
+from ..services.RegistrationManager import RegistrationManager
 from ..resources.Resource import Resource
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.NTSR import NTSR
 from ..resources.SMD import SMD
-from ..runtime.Logging import Logging as L
 
 
-eventManager = EventManager()
+eventManager:EventManager = EventManager()
 """ Event manager singleton instance. """
+
+storage:Storage = Storage()
+""" Storage singleton instance. """
+
+registration: RegistrationManager = RegistrationManager()
+""" RegistrationManager singleton instance. 
+"""
 
 # TODO NOTIFY optimize local resource notifications
 # TODO handle config update
@@ -56,7 +66,7 @@ eventManager = EventManager()
 @requires(semanticManager='acme.plugins.services.SemanticManager', required=False)
 @requires(timeManager='acme.plugins.services.TimeManager', required=False)
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
-class Dispatcher(object):
+class Dispatcher(metaclass=Singleton):
 	""" Dispatcher class. Handles all requests and dispatches them to the
 		appropriate handlers. This includes requests for resources, requests
 		for resource creation, and requests for resource deletion.
@@ -68,33 +78,15 @@ class Dispatcher(object):
 	remoteCSEManager: Optional[Any] = None	# type: ignore
 
 	__slots__ = (
-		'K',
 		'sortDiscoveryResources',
-
-		'_eventRetrieveResource',
-		'_eventCreateResource',
-		'_eventCreateChildResource',
-		'_eventUpdateResource',
-		'_eventDeleteResource',
 	)
 	""" Slots of class attributes. """
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 		""" Initialize the Dispatcher. """
 
 		self.sortDiscoveryResources = Configuration.cse_sortDiscoveredResources 
 		""" Sort the discovered resources. """
-
-		self._eventCreateResource = eventManager.createResource			# type: ignore [attr-defined]
-		""" Event handler for resource creation events. """
-		self._eventCreateChildResource = eventManager.createChildResource	# type: ignore [attr-defined]
-		""" Event handler for child resource creation events. """
-		self._eventUpdateResource = eventManager.updateResource			# type: ignore [attr-defined]
-		""" Event handler for resource update events. """
-		self._eventDeleteResource = eventManager.deleteResource			# type: ignore [attr-defined]
-		""" Event handler for resource deletion events. """
-		self._eventRetrieveResource = eventManager.retrieveResource		# type: ignore [attr-defined]
-		""" Event handler for resource retrieval events. """
 
 		L.isInfo and L.log('Dispatcher initialized')
 
@@ -389,6 +381,8 @@ class Dispatcher(object):
 		else:
 			resource = self.retrieveLocalResource(ri=id, originator=originator, request=request)
 		if postRetrieveHook:
+			print(f'Calling willBeRetrieved hook for resource: {resource} {resource.ri} and originator: {originator}')
+			print(request)
 			resource.willBeRetrieved(originator, request, subCheck=False)
 		return resource
 
@@ -414,14 +408,14 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Retrieving local resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
-			resource = CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID
+			resource = storage.retrieveResource(ri = ri)		# retrieve via normal ID
 		elif srn:
-			resource = CSE.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+			resource = storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
 			raise NOT_FOUND(f'resource: {ri}|{srn} not found')
 
 		# send a retrieve event
-		self._eventRetrieveResource(resource)
+		eventManager.retrieveResource(EventData(payload=resource))
 
 		return resource
 
@@ -757,14 +751,14 @@ class Dispatcher(object):
 		parentResource.childWillBeAdded(newResource, originator)
 
 		# Check resource creation
-		newOriginator = CSE.registration.checkResourceCreation(newResource, originator, parentResource)
+		newOriginator = registration.checkResourceCreation(newResource, originator, parentResource)
 
 		# check whether the resource already exists, either via ri or srn
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
 		# TODO perhaps optimize this?
-		if CSE.storage.hasResource(ri = newResource.ri):
+		if storage.hasResource(ri = newResource.ri):
 			raise CONFLICT(L.logWarn(f'Resource with ri: {newResource.ri} already exists'))
-		if CSE.storage.hasResource(srn = newResource.getSrn()):
+		if storage.hasResource(srn = newResource.getSrn()):
 			raise CONFLICT(L.logWarn(f'Resource with structured id: {newResource.getSrn()} already exists'))
 
 		# originator might have changed during this check. Result.data contains this new originator
@@ -775,16 +769,16 @@ class Dispatcher(object):
 		try:
 			_resource = self.createLocalResource(newResource, parentResource, originator, rvi=request.rvi)
 		except ResponseException as e:
-			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
+			registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			raise e
 		except Exception as e:
 			L.logErr(f'Exception during resource creation: {e}', exc = e)
-			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
+			registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			raise e
 
 
 		# Post-creation
-		CSE.registration.postResourceCreation(_resource)
+		registration.postResourceCreation(_resource)
 
 		#
 		# Handle RCN's
@@ -963,10 +957,10 @@ class Dispatcher(object):
 				raise
 
 			# Send event for parent resource
-			self._eventCreateChildResource(parentResource)
+			eventManager.createChildResource(EventData(payload=parentResource))
 		
 		# send a create event
-		self._eventCreateResource(resource)
+		eventManager.createResource(EventData(payload=resource))
 
 		return resource
 
@@ -1053,8 +1047,8 @@ class Dispatcher(object):
 		resource = self.updateLocalResource(resource, deepcopy(request.pc), originator = originator)
 
 		# Check resource update with registration
-		# CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))
-		CSE.registration.checkResourceUpdated(resource, request.pc)
+		# 	registration.checkResourceUpdate(resource, deepcopy(request.pc))
+		registration.checkResourceUpdated(resource, request.pc)
 
 		#
 		# Handle RCN's
@@ -1111,7 +1105,7 @@ class Dispatcher(object):
 
 		# Update and send an update event
 		resource.dbUpdate(True)
-		self._eventUpdateResource(resource)
+		eventManager.updateResource(EventData(payload=resource))
 		return resource
 
 
@@ -1284,7 +1278,7 @@ class Dispatcher(object):
 		self.deleteLocalResource(resource, originator, withDeregistration=True)
 
 		# Some post-deletion stuff
-		CSE.registration.postResourceDeletion(resource)
+		registration.postResourceDeletion(resource)
 
 		return Result(resource=resultContent, rsc=ResponseStatusCode.DELETED)
 
@@ -1319,7 +1313,7 @@ class Dispatcher(object):
 
 		# Check resource deletion
 		if withDeregistration:
-			CSE.registration.checkResourceDeletion(resource)
+			registration.checkResourceDeletion(resource)
 
 
 		# delete the resource from the DB. Save the result to return later
@@ -1332,7 +1326,7 @@ class Dispatcher(object):
 			raise
 		finally:
 			# send a delete event
-			self._eventDeleteResource(resource)
+			eventManager.deleteResource(EventData(payload=resource))
 			# Now notify the parent resource
 			if doDeleteCheck and parentResource:
 				parentResource.childRemoved(resource, originator)
@@ -1522,7 +1516,7 @@ class Dispatcher(object):
 			Return:
 				A list of retrieved `Resource` objects. This list might be empty.
 		"""
-		return cast(List[Resource], CSE.storage.directChildResources(pi, ty))
+		return cast(List[Resource], storage.directChildResources(pi, ty))
 
 
 	def directChildResourcesRI(self, pi:str, 
@@ -1537,7 +1531,7 @@ class Dispatcher(object):
 			Return:
 				A list of retrieved resourceIdentifiers. This list might be empty.
 		"""
-		return CSE.storage.directChildResourcesRI(pi, ty)
+		return storage.directChildResourcesRI(pi, ty)
 	
 
 	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
@@ -1550,7 +1544,7 @@ class Dispatcher(object):
 			Return:
 				Number of child resources.
 		"""
-		return CSE.storage.countDirectChildResources(pi, ty)
+		return storage.countDirectChildResources(pi, ty)
 
 
 	def hasDirectChildResource(self, pi:str, 
@@ -1599,7 +1593,7 @@ class Dispatcher(object):
 			return False
 
 		# Search through the resources with the mapping functions
-		CSE.storage.searchByFilter(filter = determineLatest)
+		storage.searchByFilter(filter = determineLatest)
 		if not hit:
 			return None
 		# Instantiate and return resource
@@ -1640,17 +1634,17 @@ class Dispatcher(object):
 
 		# Count all resources
 		if ty is None:	# ty is an int
-			return CSE.storage.countResources()
+			return storage.countResources()
 		
 		# Count all resources of the given types
 		if isinstance(ty, tuple):
 			cnt = 0
 			for t in ty:
-				cnt += len(CSE.storage.retrieveResourcesByType(t))
+				cnt += len(storage.retrieveResourcesByType(t))
 			return cnt
 
 		# Count all resources of a specific type
-		return len(CSE.storage.retrieveResourcesByType(ty))
+		return len(storage.retrieveResourcesByType(ty))
 
 
 	def retrieveResourcesByType(self, ty:ResourceTypes) -> list[Resource]:
@@ -1662,7 +1656,7 @@ class Dispatcher(object):
 				A list of retrieved `Resource` objects. This list might be empty.
 		"""
 		result = []
-		rss = CSE.storage.retrieveResourcesByType(ty)
+		rss = storage.retrieveResourcesByType(ty)
 		for rs in (rss or []):
 			result.append(resourceFromDict(rs))
 		return result

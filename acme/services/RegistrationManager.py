@@ -21,16 +21,24 @@ from ..runtime import CSE
 from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ..helpers.Singleton import Singleton
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import requires
+from ..runtime.Storage import Storage
 
 
-eventManager = EventManager()
+eventManager:EventManager = EventManager()
 """ Event manager singleton instance. """
+
+storage:Storage = Storage()	# type: ignore
+""" Storage singleton instance. """
+
+dispatcher: "Dispatcher"
+""" Dispatcher singleton instance. """
 
 @EventHandler
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
-class RegistrationManager(object):
+class RegistrationManager(metaclass=Singleton):
 
 	remoteCSEManager: Optional[Any] = None	# type: ignore
 
@@ -38,7 +46,12 @@ class RegistrationManager(object):
 		'expWorker',
 	)
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
+
+		# Prevent circular imports by importing the dispatcher here
+		global dispatcher
+		from ..services.Dispatcher import Dispatcher
+		dispatcher = Dispatcher()
 
 		# Start expiration Monitor
 		self.expWorker:BackgroundWorker	= None
@@ -232,7 +245,7 @@ class RegistrationManager(object):
 
 		# Add the originator to the database
 		# TODO distinguid between C and S originators 
-		CSE.storage.addOriginator(originator, OriginatorType.CAEID)
+		storage.addOriginator(originator, OriginatorType.CAEID)
 
 		return originator
 
@@ -250,7 +263,7 @@ class RegistrationManager(object):
 			self.deregisterSOriginator(ae)
 
 		# delete the originator from the database
-		CSE.storage.removeOriginator(ae.aei)	
+		storage.removeOriginator(ae.aei)	
 
 		# Send event
 		eventManager.aeHasDeregistered(EventData(payload=ae))	# type: ignore [attr-defined]
@@ -269,7 +282,7 @@ class RegistrationManager(object):
 			Todo:
 				Currently this is done by searching the storage. This should be optimized by using an index for the originator.
 		"""
-		return CSE.storage.getOriginator(originator) is not None	
+		return storage.getOriginator(originator) is not None	
 
 	#########################################################################
 
@@ -350,7 +363,7 @@ class RegistrationManager(object):
 
 		# Check whether the same CSEBase has already registered (-> only once)
 		if (lnk := cbA.lnk):
-			if len(CSE.storage.searchByFragment({'lnk': lnk})) > 0:
+			if len(storage.searchByFragment({'lnk': lnk})) > 0:
 				raise CONFLICT(L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
 
 		# Assign a rn
@@ -389,11 +402,11 @@ class RegistrationManager(object):
 	def handleCSEBaseRegistration(self, cb:Resource, originator:str) -> None:
 		csi = cb.csi
 		L.isDebug and L.logDebug(f'Registering CSEBase. csi: {cb.csi}')
-		if CSE.storage.getOriginator(csi):
+		if storage.getOriginator(csi):
 			raise CONFLICT(L.logDebug(f'CSEBase with csi: {csi} already exists'))
 		
 		# For now only store the csi as originator
-		CSE.storage.addOriginator(csi, OriginatorType.CSEID)
+		storage.addOriginator(csi, OriginatorType.CSEID)
 
 
 	#########################################################################
@@ -429,14 +442,14 @@ class RegistrationManager(object):
 	def expirationDBMonitor(self) -> bool:
 		# L.isDebug and L.logDebug('Looking for expired resources')
 		now = getResourceDate()
-		resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
+		resources = storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
 		for resource in resources:
 			# try to retrieve the resource first bc it might have been deleted as a child resource
 			# of an expired resource
-			if not CSE.storage.hasResource(ri=resource.ri):
+			if not storage.hasResource(ri=resource.ri):
 				continue
 			L.isDebug and L.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
-			CSE.dispatcher.deleteLocalResource(resource, withDeregistration = True)	# ignore result
+			dispatcher.deleteLocalResource(resource, withDeregistration=True)	# ignore result
 			eventManager.expireResource(EventData(payload=resource))
 				
 		return True

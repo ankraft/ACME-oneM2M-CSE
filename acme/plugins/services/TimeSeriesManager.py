@@ -15,7 +15,10 @@ from ...helpers.BackgroundWorker import BackgroundWorkerPool
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, start, stop, restart
+from ...services.Dispatcher import Dispatcher
 
+dispatcher: Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects
 """	Active TimeSeries instances. Maps the resourceID of the <TS> resource to the LastTSInstance object. """
@@ -60,7 +63,7 @@ class TimeSeriesManager(object):
 			Return:
 				True if the structures have been restored.
 		"""
-		for each in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.SUB):
+		for each in dispatcher.retrieveResourcesByType(ResourceTypes.SUB):
 			if NotificationEventType.reportOnGeneratedMissingDataPoints in each.attribute('enc/net', []): # enc/net might be empty
 				L.isDebug and L.logDebug(f'Restoring structures for TSI subscription: {each.ri}')
 				self.addSubscription(each.retrieveParentResource(), each)
@@ -119,7 +122,7 @@ class TimeSeriesManager(object):
 
 				# If not, then add the expected arrival time as the dgt to the parent's mdlt list.
 				if tsRes is None:
-					if not (tsRes := CSE.dispatcher.retrieveResource(tsRi)):
+					if not (tsRes := dispatcher.retrieveResource(tsRi)):
 						L.logErr(f'Cannot retrieve original <ts> resource: {tsRi}', showStackTrace = False)			# might (very rarely) happen when this monitor runs while the <ts> was deleted in another request
 						return False	# stop monitoring (actor not restarted)
 				tsRes.addDgtToMdlt(rts.expectedDgt)

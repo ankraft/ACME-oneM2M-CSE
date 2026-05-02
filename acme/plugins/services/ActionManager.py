@@ -23,15 +23,23 @@ from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, start, stop, restart
 from ...runtime.EventManager import EventManager, onEvent, EventData, EventHandler
+from ...runtime.Storage import Storage
 from ...resources.Resource import Resource
 from ...resources.ACTR import ACTR
 from ...helpers.ResourceSemaphore import CriticalSection
+from ...services.Dispatcher import Dispatcher
 
 
 # TODO implement support for input attribute when the procedure is clear
 
-eventManager = EventManager()
+eventManager:EventManager = EventManager()
 """ Event manager singleton instance. """
+
+storage:Storage = Storage()
+""" Storage singleton instance. """
+
+dispatcher:Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 @plugin(property='actionManager', tags=['acme', 'core'])
 @EventHandler
@@ -89,7 +97,7 @@ class ActionManager():
 		L.isDebug and L.logDebug(f'Looking for resource actions for resource: {realRi}')
 
 		# Get actions. Remember, these are NOT <action> resources
-		actions = CSE.storage.searchActionReprsForSubject(realRi)		
+		actions = storage.searchActionReprsForSubject(realRi)		
 		# sort by action priority
 		actions = sorted(actions, key = lambda x: x['apy'] if x['apy'] is not None else sys.maxsize)
 		L.isDebug and L.logDebug(f'Found {len(actions)} actions for resource: {realRi}')
@@ -107,7 +115,7 @@ class ActionManager():
 				
 				# re-read the action document because it might have changed while waiting for the lock
 				# However, it might be under rare circumstances that the action is deleted while waiting
-				if not (action := CSE.storage.getActionRepr(ri)):
+				if not (action := storage.getActionRepr(ri)):
 					L.logWarn(f'Action {ri} not found anymore. Skipping')
 					continue
 
@@ -117,7 +125,7 @@ class ActionManager():
 
 					# retrieve the real action resource
 					try:
-						actr = cast(ACTR, CSE.dispatcher.retrieveLocalResource(ri))
+						actr = cast(ACTR, dispatcher.retrieveLocalResource(ri))
 					except ResponseException as e:
 						L.logErr(e.dbg)
 						raise e
@@ -150,22 +158,22 @@ class ActionManager():
 					evm = action['evm']
 					if evm == EvalMode.once:			# remove if only once
 						L.isDebug and L.logDebug(f'Removing "once" action: {ri}')
-						CSE.storage.removeActionRepr(ri)
+						storage.removeActionRepr(ri)
 						continue
 					if evm == EvalMode.continous:		# remove from action DB if count reaches 0
 						count = action['count']
 						if (count := count - 1) == 0:
 							L.isDebug and L.logDebug(f'Removing "continuous" action: {ri} (count: {actr.ecp} reached)')
-							CSE.storage.removeActionRepr(ri)
+							storage.removeActionRepr(ri)
 						else:
 							action['count'] = count
-							CSE.storage.updateActionRepr(action)
+							storage.updateActionRepr(action)
 						continue
 					if evm == EvalMode.periodic:
 						_ecp = action['ecp'] / 1000.0
 						action['periodTS'] = _now + ((action['periodTS'] - _now) % _ecp)
 						L.isDebug and L.logDebug(f'Setting next period start to: {action["periodTS"]} for "periodic" action: {ri}')
-						CSE.storage.updateActionRepr(action)
+						storage.updateActionRepr(action)
 				else:
 					L.isDebug and L.logDebug(f'Action: {ri} - conditions evaluated to False')
 
@@ -246,7 +254,7 @@ class ActionManager():
 
 			# Get the dependency resource
 			try:
-				dependency = CSE.dispatcher.retrieveLocalResource(dep)
+				dependency = dispatcher.retrieveLocalResource(dep)
 			except NOT_FOUND:
 				L.isDebug and L.logDebug(f'Dependency evaluation: {dep} not found. Skipping resource evaluation.')
 				continue
@@ -259,7 +267,7 @@ class ActionManager():
 
 			# Retrieve the referenced resource
 			try:
-				resource = CSE.dispatcher.retrieveLocalResource(dependency['rri'])
+				resource = dispatcher.retrieveLocalResource(dependency['rri'])
 			except ResponseException as e:
 				L.logErr(f'Dependency evaluation: {e.dbg}. Skipping resource evaluation.')
 				continue
@@ -298,21 +306,21 @@ class ActionManager():
 		evm = action.evm
 		if evm == EvalMode.off:
 			L.isDebug and L.logDebug(f'evm: off for action: {action.ri} - Action inactive.')
-			CSE.storage.removeActionRepr(action.ri)	# just remove, ignore result
+			storage.removeActionRepr(action.ri)	# just remove, ignore result
 			return
 		if evm == EvalMode.once:
 			L.isDebug and L.logDebug(f'evm: once for action: {action.ri}.')
-			CSE.storage.upsertAction(action, 0, 0)
+			storage.upsertAction(action, 0, 0)
 			return
 		if evm == EvalMode.periodic:
 			ecp = action.ecp if action.ecp else Configuration.resource_actr_ecpPeriodic
 			L.isDebug and L.logDebug(f'evm: periodic for action: {action.ri}, period: {ecp}.')
-			CSE.storage.upsertAction(action, utcTime(), 0)
+			storage.upsertAction(action, utcTime(), 0)
 			return
 		if evm == EvalMode.continous:
 			ecp = action.ecp if action.ecp else Configuration.resource_actr_ecpContinuous
 			L.isDebug and L.logDebug(f'evm: continuous for action: {action.ri}, counter: {ecp}')
-			CSE.storage.upsertAction(action, 0, ecp)
+			storage.upsertAction(action, 0, ecp)
 			return
 		raise INTERNAL_SERVER_ERROR(f'unknown EvalMode: {evm}. This should not happen.')
 		
@@ -323,7 +331,7 @@ class ActionManager():
 			Args:
 				action: The action to unschedule.
 		"""
-		CSE.storage.removeActionRepr(action.ri)
+		storage.removeActionRepr(action.ri)
 
 	
 	def updateAction(self, actr:ACTR) -> None:
@@ -333,9 +341,9 @@ class ActionManager():
 				actr: The action to update.
 		"""
 		# hack, only update the dep attribute
-		if action := CSE.storage.getActionRepr(actr.ri):
+		if action := storage.getActionRepr(actr.ri):
 			action['dep'] = actr.dep
-			CSE.storage.updateActionRepr(action)
+			storage.updateActionRepr(action)
 
 
 	#######################################################################
@@ -405,7 +413,7 @@ class ActionManager():
 		# Check if the subject resource exists and is accessible
 		match subject:
 			case str():
-				subjectResource = CSE.dispatcher.retrieveResourceWithPermission(subject, originator, Permission.RETRIEVE)
+				subjectResource = dispatcher.retrieveResourceWithPermission(subject, originator, Permission.RETRIEVE)
 			case _:
 				subjectResource = cast(Resource, subject)
 

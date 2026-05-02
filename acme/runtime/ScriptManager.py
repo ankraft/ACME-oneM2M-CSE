@@ -28,6 +28,8 @@ from ..etc.Utils import runsInIPython, isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
 from ..runtime import Management as Mgmt
+from ..services.RegistrationManager import RegistrationManager
+from ..services.Dispatcher import Dispatcher
 
 from ..helpers.interpreter.Interpreter import assertSymbol, valueFromArgument, resultFromArgument, getArgument
 from ..helpers.interpreter.Types import PFuncCallable, PError, PState, \
@@ -89,8 +91,14 @@ _httpMethods = {
 """	Internal mapping between http methods and function callbacks. """
 
 
-eventManger = EventManager()	# type: ignore
+eventManger:EventManager = EventManager()	# type: ignore
 """	Event manager singleton instance. """
+
+registration: RegistrationManager = RegistrationManager()
+"""	RegistrationManager singleton instance. """
+
+dispatcher: Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 @requires(textUI='acme.plugins.runtime.TextUI', required=False)
 class ACMEPContext(PContext):
@@ -734,19 +742,19 @@ class ACMEPContext(PContext):
 		parentResource:Any = None
 		if _resource.pi:
 			try:
-				parentResource = CSE.dispatcher.retrieveLocalResource(ri=_resource.pi)
+				parentResource = dispatcher.retrieveLocalResource(ri=_resource.pi)
 			except ResponseException as e:
 				raise PRuntimeError(self.setError(PError.runtime, e.dbg))
 
 		# Check resource registration
 		try:
-			CSE.registration.checkResourceCreation(_resource, _originator, parentResource)
+			registration.checkResourceCreation(_resource, _originator, parentResource)
 		except ResponseException as e:
 			raise PRuntimeError(self.setError(PError.runtime, e.dbg))
 
 		# Create the resource
 		try:
-			resource = CSE.dispatcher.createLocalResource(_resource, parentResource, originator = _originator)
+			resource = dispatcher.createLocalResource(_resource, parentResource, originator=_originator)
 		except ResponseException as e:
 			raise PRuntimeError(self.setError(PError.runtime, L.logErr(f'Error during import: {e.dbg}', showStackTrace = False)))
 		# return self._pcontextFromRequestResult(pcontext, result)

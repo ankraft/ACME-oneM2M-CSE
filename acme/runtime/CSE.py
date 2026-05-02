@@ -50,7 +50,7 @@ from ..runtime.Logging import Logging as L
 console:ConsoleBase = None
 """ Runtime instance of the `Console`. """
 
-dispatcher:Dispatcher = None
+dispatcher:Dispatcher = Dispatcher()
 """	Runtime instance of the `Dispatcher`. """
 
 # httpServer:HttpServer = None
@@ -62,7 +62,7 @@ importer:Importer = None
 notification:NotificationManager = None
 """	Runtime instance of the `NotificationManager`. """
 
-registration:RegistrationManager = None
+registration:RegistrationManager = RegistrationManager()
 """	Runtime instance of the `RegistrationManager`. """
 
 request:RequestManager = None
@@ -104,7 +104,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 			False if the CSE couldn't initialized and started. 
 	"""
 	global dispatcher, importer, storage, validator
-	global notification, pluginManager, registration, request, script, security
+	global notification, pluginManager, request, script, security
 
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
@@ -149,14 +149,16 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		
 		# Start the database plugins and the storage first
 		pluginManager.start(tags=['database'])	
-		storage = Storage()	
+
+		storage = Storage()						# Create the storage singleton instance
+		storage.initialize()					# Initialize the storage manager
 
 		importer = Importer()					# Initialize the importer
 		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
 
-		registration = RegistrationManager()	# Initialize the registration manager
+		registration.initialize()				# Initialize the registration manager
 		validator = Validator()					# Initialize the resource validator
-		dispatcher = Dispatcher()				# Initialize the resource dispatcher
+		dispatcher.initialize()					# Initialize the resource dispatcher
 		request = RequestManager()				# Initialize the request manager
 		security = SecurityManager()			# Initialize the security manager
 		notification = NotificationManager()	# Initialize the notification manager

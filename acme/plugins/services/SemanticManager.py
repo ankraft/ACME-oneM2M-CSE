@@ -24,6 +24,10 @@ from ...runtime import CSE
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure
+from ...services.Dispatcher import Dispatcher
+
+dispatcher: Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 
 class SemanticHandler(ABC):
@@ -157,7 +161,7 @@ class SemanticManager(object):
 		"""
 
 		# Re-Build graph in memory from <SMD> resources.
-		for smd in cast(Sequence[SMD], CSE.dispatcher.retrieveResourcesByType(ResourceTypes.SMD)):
+		for smd in cast(Sequence[SMD], dispatcher.retrieveResourcesByType(ResourceTypes.SMD)):
 			self.addDescriptor(smd)
 		L.isInfo and L.log('SemanticManager started')
 
@@ -431,7 +435,7 @@ class SemanticManager(object):
 				# Retrieve the resource for the ri and check permissions
 
 				try:
-					resource = CSE.dispatcher.retrieveResource(ri, originator)
+					resource = dispatcher.retrieveResource(ri, originator)
 				except ResponseException as e:
 					L.isDebug and L.logDebug(f'skipping unavailable resource: {resource.ri}')
 					continue

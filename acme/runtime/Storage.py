@@ -22,12 +22,10 @@
 
 from __future__ import annotations
 from typing import Callable, cast, List, Optional, Sequence, Tuple, Any
-
-import os
-
 from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode, OriginatorType
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
+from ..helpers.Singleton import Singleton
 from .Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
@@ -63,7 +61,7 @@ _schedules = 'schedules'
 
 @requires(tinyDBBinding='acme.plugins.database.TinyDBBinding', required=False)
 @requires(postgreSQLBinding='acme.plugins.database.PostgreSQLBinding', required=False)
-class Storage(object):
+class Storage(metaclass=Singleton):
 	"""	This class implements the entry points to the CSE's underlying database functions.
 	"""
 
@@ -72,10 +70,12 @@ class Storage(object):
 
 	__slots__ = (
 		'db',
+		'_resourceFromDict',
 	)
 	""" Define slots for instance variables. """
 
-	def __init__(self) -> None:
+
+	def initialize(self) -> None:
 		"""	Initialization of the storage manager.
 
 			Raises:

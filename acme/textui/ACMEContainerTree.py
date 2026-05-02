@@ -27,6 +27,7 @@ from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.Types import ResourceTypes
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import commentJson, limitLines
+from ..services.Dispatcher import Dispatcher
 from .ACMEContainerCreate import ACMEContainerCreate
 from .ACMEContainerDelete import ACMEContainerDelete
 from .ACMEContainerUpdate import ACMEContainerUpdate
@@ -34,6 +35,8 @@ from .ACMEContainerDiagram import ACMEContainerDiagram
 from .ACMEContainerResourceServices import ACMEContainerResourceServices
 
 
+dispatcher: Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 class ACMEResourceTree(TextualTree):
 	"""	The *Resources* tree conmponent view for the ACME text UI."""
@@ -170,11 +173,11 @@ class ACMEResourceTree(TextualTree):
 				ri: The resource id of the content.
 		"""
 		try:
-			resource = CSE.dispatcher.retrieveLocalResource(ri)
+			resource = dispatcher.retrieveLocalResource(ri)
 
 			# retrieve the latest/oldest instance of some virtual resources
 			if (_params := self._virtualResourcesParameter.get(resource.ty)):
-				if (_r := CSE.dispatcher.retrieveLatestOldestInstance(resource.pi, _params[0], oldest = _params[1])):
+				if (_r := dispatcher.retrieveLatestOldestInstance(resource.pi, _params[0], oldest = _params[1])):
 					resource = _r
 				else:
 					resource = None
@@ -253,7 +256,7 @@ class ACMEResourceTree(TextualTree):
 				A sorted list of tuples (resource, hasChildren).
 		"""
 		result:List[Tuple[Resource, bool]] = []
-		chs = [ x for x in CSE.dispatcher.retrieveDirectChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
+		chs = [ x for x in dispatcher.retrieveDirectChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
 		
 		# Sort resources: virtual and instance resources first, then by type and name
 		top = []
@@ -267,7 +270,7 @@ class ACMEResourceTree(TextualTree):
 		chs = top + rest
 
 		for resource in chs:
-			result.append((resource, len([ x for x in CSE.dispatcher.retrieveDirectChildResources(resource.ri)  ]) > 0))
+			result.append((resource, len([ x for x in dispatcher.retrieveDirectChildResources(resource.ri)  ]) > 0))
 		return result
 
 
@@ -530,7 +533,7 @@ class ACMEContainerTree(Container):
 						self.tabs.hide_tab('tree-tab-diagram') 
 
 					case ResourceTypes.CNT | ResourceTypes.TS:
-						instances = CSE.dispatcher.retrieveDirectChildResources(self.currentResource.ri, [ResourceTypes.CIN, ResourceTypes.TSI])
+						instances = dispatcher.retrieveDirectChildResources(self.currentResource.ri, [ResourceTypes.CIN, ResourceTypes.TSI])
 						
 						# The following lines may fail if the content cannot be converted to a float or a boolean.
 						# This is expected! This just means that any content is not a number and we cannot raw a diagram.

@@ -33,10 +33,16 @@ from ..resources.CSEBase import getCSE
 from ..resources.Resource import Resource
 
 
+
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import pluginManager
+
+from ..services.Dispatcher import Dispatcher
+
+dispatcher: Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 
 # Used in many "rich" functions
@@ -230,33 +236,33 @@ def getCSEStatusAsDict() -> JSON:
 		})
 
 		status['resources'].update({
-			'AE': (_cAE := CSE.dispatcher.countResources(ResourceTypes.AE)),
-			'ACP':(_cACP := CSE.dispatcher.countResources(ResourceTypes.ACP)),
-			'ACTR': (_cACTR := CSE.dispatcher.countResources(ResourceTypes.ACTR)),
-			'ALST': (_cALST := CSE.dispatcher.countResources(ResourceTypes.ALST)),
-			'CB': (_cCB := CSE.dispatcher.countResources(ResourceTypes.CSEBase)),
-			'CIN': (_cCIN := CSE.dispatcher.countResources(ResourceTypes.CIN)),
-			'CNT': (_cCNT := CSE.dispatcher.countResources(ResourceTypes.CNT)),
-			'CRS': (_cCRS := CSE.dispatcher.countResources(ResourceTypes.CRS)),
-			'CSR': (_cCSR := CSE.dispatcher.countResources(ResourceTypes.CSR)),
-			'DEPR': (_cDEPR := CSE.dispatcher.countResources(ResourceTypes.DEPR)),
-			'FCNT': (_cFCNT := CSE.dispatcher.countResources(ResourceTypes.FCNT)),
-			'FCI': (_cFCI := CSE.dispatcher.countResources(ResourceTypes.FCI)),
-			'GRP': (_cGRP := CSE.dispatcher.countResources(ResourceTypes.GRP)),
-			'LCP': (_cLCP := CSE.dispatcher.countResources(ResourceTypes.LCP)),
-			'MGMTOBJ': (_cMGMTOBJ := CSE.dispatcher.countResources(ResourceTypes.MGMTOBJ)),
-			'NOD': (_cNOD := CSE.dispatcher.countResources(ResourceTypes.NOD)),
-			'NTP': (_cNTP := CSE.dispatcher.countResources(ResourceTypes.NTP)),
-			'NTPR': (_cNTPR := CSE.dispatcher.countResources(ResourceTypes.NTPR)),
-			'PCH': (_cPCH := CSE.dispatcher.countResources(ResourceTypes.PCH)),
-			'PDR': (_cPDR := CSE.dispatcher.countResources(ResourceTypes.PDR)),
-			'REQ': (_cREQ := CSE.dispatcher.countResources(ResourceTypes.REQ)),
-			'SCH': (_cSCH := CSE.dispatcher.countResources(ResourceTypes.SCH)),
-			'SMD': (_cSMD := CSE.dispatcher.countResources(ResourceTypes.SMD)),
-			'SUB': (_cSUB := CSE.dispatcher.countResources(ResourceTypes.SUB)),
-			'TS': (_cTS := CSE.dispatcher.countResources(ResourceTypes.TS)),
-			'TSB': (_cTSB := CSE.dispatcher.countResources(ResourceTypes.TSB)),
-			'TSI': (_cTSI := CSE.dispatcher.countResources(ResourceTypes.TSI)),
+			'AE': (_cAE := dispatcher.countResources(ResourceTypes.AE)),
+			'ACP':(_cACP := dispatcher.countResources(ResourceTypes.ACP)),
+			'ACTR': (_cACTR := dispatcher.countResources(ResourceTypes.ACTR)),
+			'ALST': (_cALST := dispatcher.countResources(ResourceTypes.ALST)),
+			'CB': (_cCB := dispatcher.countResources(ResourceTypes.CSEBase)),
+			'CIN': (_cCIN := dispatcher.countResources(ResourceTypes.CIN)),
+			'CNT': (_cCNT := dispatcher.countResources(ResourceTypes.CNT)),
+			'CRS': (_cCRS := dispatcher.countResources(ResourceTypes.CRS)),
+			'CSR': (_cCSR := dispatcher.countResources(ResourceTypes.CSR)),
+			'DEPR': (_cDEPR := dispatcher.countResources(ResourceTypes.DEPR)),
+			'FCNT': (_cFCNT := dispatcher.countResources(ResourceTypes.FCNT)),
+			'FCI': (_cFCI := dispatcher.countResources(ResourceTypes.FCI)),
+			'GRP': (_cGRP := dispatcher.countResources(ResourceTypes.GRP)),
+			'LCP': (_cLCP := dispatcher.countResources(ResourceTypes.LCP)),
+			'MGMTOBJ': (_cMGMTOBJ := dispatcher.countResources(ResourceTypes.MGMTOBJ)),
+			'NOD': (_cNOD := dispatcher.countResources(ResourceTypes.NOD)),
+			'NTP': (_cNTP := dispatcher.countResources(ResourceTypes.NTP)),
+			'NTPR': (_cNTPR := dispatcher.countResources(ResourceTypes.NTPR)),
+			'PCH': (_cPCH := dispatcher.countResources(ResourceTypes.PCH)),
+			'PDR': (_cPDR := dispatcher.countResources(ResourceTypes.PDR)),
+			'REQ': (_cREQ := dispatcher.countResources(ResourceTypes.REQ)),
+			'SCH': (_cSCH := dispatcher.countResources(ResourceTypes.SCH)),
+			'SMD': (_cSMD := dispatcher.countResources(ResourceTypes.SMD)),
+			'SUB': (_cSUB := dispatcher.countResources(ResourceTypes.SUB)),
+			'TS': (_cTS := dispatcher.countResources(ResourceTypes.TS)),
+			'TSB': (_cTSB := dispatcher.countResources(ResourceTypes.TSB)),
+			'TSI': (_cTSI := dispatcher.countResources(ResourceTypes.TSI)),
 			'total': _cAE + _cACP + _cACTR + _cALST + _cCB + _cCIN + _cCNT + _cCRS + _cCSR + _cDEPR + _cFCNT + _cFCI + _cGRP + _cLCP + _cMGMTOBJ + _cNOD + _cNTP + _cNTPR + _cPCH + _cPDR + _cREQ + _cSCH + _cSMD + _cSUB + _cTS + _cTSB + _cTSI
 		})
 
@@ -401,7 +407,7 @@ def getRegistrationStatus() -> JSON:
 	}
 
 	# CSE registrations
-	for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
+	for csr in dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 		_e = {
 			'CSE-ID': csr.csi,
 			'SP-ID': f'//{getSPFromID(csr.csi)}' if isAbsolute(csr.csi) else RC.cseSPid,
@@ -429,7 +435,7 @@ def getRegistrationStatus() -> JSON:
 
 	# AE registrations
 
-	for ae in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.AE):
+	for ae in dispatcher.retrieveResourcesByType(ResourceTypes.AE):
 		status['ae'].append({
 			'AE-ID': ae.aei,
 			'resourceID': ae.ri,
@@ -468,11 +474,11 @@ def doExportResource(ri: str, withChildResources: Optional[bool] = False) -> Tup
 	try:
 
 		if withChildResources:
-			resdis = CSE.dispatcher.discoverResources(ri, originator=RC.cseOriginator)
+			resdis = dispatcher.discoverResources(ri, originator=RC.cseOriginator)
 			# insert the parent resource at the beginning of the list
-			resdis.insert(0, CSE.dispatcher.retrieveResource(ri))
+			resdis.insert(0, dispatcher.retrieveResource(ri))
 		else:
-			resdis = [CSE.dispatcher.retrieveResource(ri)]
+			resdis = [dispatcher.retrieveResource(ri)]
 
 		# Counter for the number of resources exported
 		count = 0
@@ -574,14 +580,14 @@ def doExportInstances(ri: str, asString: Optional[bool] = False) -> Tuple[int, s
 
 	try:
 		L.console('Export Instance Resources', isHeader=True)
-		container = CSE.dispatcher.retrieveResource(ri)
+		container = dispatcher.retrieveResource(ri)
 		if container.ty in [ResourceTypes.FCNT, ResourceTypes.FCNTAnnc]:
 			# TODO FCNT export not supported at the moment
 			return 0, L.console(f'Export of FCNT {ri} not supported', isError=True)
 
 		if not ResourceTypes.isContainerResource(container.ty):
 			return 0, L.console(f'{ri} is not a container resource', isError=True)
-		if not (instances := CSE.dispatcher.retrieveDirectChildResources(ri, _instanceMapping[container.ty])):
+		if not (instances := dispatcher.retrieveDirectChildResources(ri, _instanceMapping[container.ty])):
 			L.console(f'No instances found under {ri}', isError=True)
 			return 0, f'No instances found under {ri}'
 
@@ -640,7 +646,7 @@ def getStructurePuml(maxLevel: Optional[int] = 0) -> str:
 		result = ''
 		if maxLevel > 0 and level == maxLevel:
 			return result
-		chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
+		chs = dispatcher.retrieveDirectChildResources(res.ri)
 		for ch in chs:
 			result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {ResourceTypes(ch.ty).typeShortname()} ></color>\n'
 			result += getChildren(ch, level+1)
@@ -1149,7 +1155,7 @@ def getRegistrationsRich(style: Optional[Style] = Style(),
 
 	spCsr:list[Resource] = []
 	if pluginManager.remoteCSEManager is not None:
-		for csr in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
+		for csr in dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 			if isAbsolute(csr.csi) and getSPFromID(csr.csi) != RC.cseSPIDSlashLess:	# store the CSR for other SP for later
 				spCsr.append(csr)
 				continue
@@ -1203,7 +1209,7 @@ def getRegistrationsRich(style: Optional[Style] = Style(),
 	tableAE.add_column(_markupText('[u]Reachable[/u]\n', style=textStyle), width=5, no_wrap=True)
 	tableAE.add_column(_markupText('[u]POA[/u]\n', style=textStyle), width=15, no_wrap=False)
 
-	for ae in CSE.dispatcher.retrieveResourcesByType(ResourceTypes.AE):
+	for ae in dispatcher.retrieveResourcesByType(ResourceTypes.AE):
 		tableAE.add_row(ae.aei, 
 						ae.rn, 
 						ae.ri, 
@@ -1328,7 +1334,7 @@ def getResourceTreeRich(maxLevel: int = 0,
 		"""
 		if maxLevel > 0 and level == maxLevel:
 			return
-		chs = CSE.dispatcher.retrieveDirectChildResources(res.ri)
+		chs = dispatcher.retrieveDirectChildResources(res.ri)
 		for ch in chs:
 			if ch.isVirtual() and not Configuration.console_treeIncludeVirtualResource:	# Ignore virual resources
 				continue
@@ -1347,7 +1353,7 @@ def getResourceTreeRich(maxLevel: int = 0,
 				A Rich Tree object, or *None*.
 		"""
 		if parent:
-			if not (res := CSE.dispatcher.retrieveResource(parent)):
+			if not (res := dispatcher.retrieveResource(parent)):
 				return None
 		else:
 			res = getCSE()

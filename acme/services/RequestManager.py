@@ -40,6 +40,8 @@ from ..helpers.PluginManager import requires, onResolved, onUnresolved, Dependen
 from ..runtime.Configuration import Configuration
 from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ..runtime import CSE
+from ..services.RegistrationManager import RegistrationManager
+from ..services.Dispatcher import Dispatcher
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..resources.REQ import REQ
@@ -47,8 +49,14 @@ from ..resources.PCH import PCH
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
 
+registration: RegistrationManager = RegistrationManager()
+""" RegistrationManager singleton instance. """
+
 eventManager = EventManager()
 """ Event manager singleton instance. """
+
+dispatcher: Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 # Type definition
 TargetDetails = List[ 						#type: ignore[misc]
@@ -149,7 +157,7 @@ class RequestManager(object):
 		# Map request handlers and events for operations in the RequestManager and the dispatcher
 		self.requestHandlers:RequestHandler = { 		
 			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, 
-												  CSE.dispatcher.processRetrieveRequest, 
+												  dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
 												  eventManager.coapSendRetrieve,
 												  eventManager.httpSendRetrieve,
@@ -157,7 +165,7 @@ class RequestManager(object):
 												  eventManager.wsSendRetrieve),
 												#   self.sendRetrieveRequest),
 			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
-												  CSE.dispatcher.processRetrieveRequest, 
+												  dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
 												  eventManager.coapSendRetrieve,
 												  eventManager.httpSendRetrieve,
@@ -165,7 +173,7 @@ class RequestManager(object):
 												  eventManager.wsSendRetrieve),
 												#   self.sendRetrieveRequest),
 			Operation.CREATE	: RequestCallback(self.createRequest,
-												  CSE.dispatcher.processCreateRequest,
+												  dispatcher.processCreateRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendCreate,
 												  eventManager.httpSendCreate,
@@ -173,7 +181,7 @@ class RequestManager(object):
 												  eventManager.wsSendCreate),
 												#   self.sendCreateRequest),
 			Operation.UPDATE	: RequestCallback(self.updateRequest,
-												  CSE.dispatcher.processUpdateRequest,
+												  dispatcher.processUpdateRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendUpdate,
 												  eventManager.httpSendUpdate,
@@ -181,7 +189,7 @@ class RequestManager(object):
 												  eventManager.wsSendUpdate),
 												#   self.sendUpdateRequest),
 			Operation.DELETE	: RequestCallback(self.deleteRequest,
-												  CSE.dispatcher.processDeleteRequest,
+												  dispatcher.processDeleteRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendDelete,
 												  eventManager.httpSendDelete,
@@ -189,7 +197,7 @@ class RequestManager(object):
 												  eventManager.wsSendDelete),
 												#   self.sendDeleteRequest),
 			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
-												  CSE.dispatcher.processNotifyRequest,
+												  dispatcher.processNotifyRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendNotify,
 												  eventManager.httpSendNotify,
@@ -357,12 +365,12 @@ class RequestManager(object):
 		
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return CSE.dispatcher.processRetrieveRequest(request, request.originator)
+				return dispatcher.processRetrieveRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processRetrieveRequest(request, request.originator)
+					return dispatcher.processRetrieveRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -383,12 +391,12 @@ class RequestManager(object):
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return CSE.dispatcher.processCreateRequest(request, request.originator)
+				return dispatcher.processCreateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processCreateRequest(request, request.originator)
+					return dispatcher.processCreateRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -410,12 +418,12 @@ class RequestManager(object):
 		# Check contentType and resourceType
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return CSE.dispatcher.processUpdateRequest(request, request.originator)
+				return dispatcher.processUpdateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processUpdateRequest(request, request.originator)
+					return dispatcher.processUpdateRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -437,12 +445,12 @@ class RequestManager(object):
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
-				return CSE.dispatcher.processDeleteRequest(request, request.originator)
+				return dispatcher.processDeleteRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:								# flexBlocking as non-blocking
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processDeleteRequest(request, request.originator)
+					return dispatcher.processDeleteRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 			
@@ -459,12 +467,12 @@ class RequestManager(object):
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
-				return CSE.dispatcher.processNotifyRequest(request, request.originator)
+				return dispatcher.processNotifyRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processNotifyRequest(request, request.originator)
+					return dispatcher.processNotifyRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -483,13 +491,13 @@ class RequestManager(object):
 
 		# Register <request>
 		cseres = getCSE()
-		CSE.registration.checkResourceCreation(resource, request.originator, cseres)
+		registration.checkResourceCreation(resource, request.originator, cseres)
 		
 		# set the CSE.ri as indicator that this resource was created internally
 		resource.setCreatedInternally(cseres.pi)
 
 		# create <request>
-		return CSE.dispatcher.createLocalResource(resource, cseres, request.originator)
+		return dispatcher.createLocalResource(resource, cseres, request.originator)
 
 
 	def _handleNonBlockingRequest(self, request:CSERequest) -> Result:
@@ -633,7 +641,7 @@ class RequestManager(object):
 				pc = { 'm2m:dbg' : e.dbg }
 
 		# Retrieve the <request> resource
-		reqres = cast(REQ, CSE.dispatcher.retrieveResource(reqRi, originator = request.originator))
+		reqres = cast(REQ, dispatcher.retrieveResource(reqRi, originator = request.originator))
 
 		# Fill the <request>
 		reqres['ors'] = {	# operationResult
@@ -1095,7 +1103,7 @@ class RequestManager(object):
 				(_id := localResourceID(to)) is not None and \
 				not ResourceTypes.isNotificationEntity(targetType) and \
 				targetType != ResourceTypes.UNKNOWN:
-					_result = CSE.dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
+					_result = dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
 					results.append( RequestResponse(request, _result) )
 					continue
 
@@ -1653,7 +1661,7 @@ class RequestManager(object):
 			if (ri := localResourceID(uri)) is not None:	# If this the local CSE
 
 				try:
-					resource = CSE.dispatcher.retrieveResource(ri)
+					resource = dispatcher.retrieveResource(ri)
 				except ResponseException as e:
 					L.logWarn(f'Cannot retrieve local resource: {ri}: {e.dbg}')
 					return []
@@ -1674,7 +1682,7 @@ class RequestManager(object):
 		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarding request to: {uri}')
 
 		# If not found: The uri is an indirect resource with poa, retrieve one or more URIs from it
-		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri)):
+		if not targetResource and not (targetResource := dispatcher.retrieveResource(uri)):
 			L.isWarn and L.logWarn(f'Resource not found to get URL: {uri}')
 			return []
 		
@@ -1692,7 +1700,7 @@ class RequestManager(object):
 		pollingChannelResources = []
 		if targetResource.rr == False and targetResource.ri != RC.cseRi:
 			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')
-			if not len(pollingChannelResources := CSE.dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
+			if not len(pollingChannelResources := dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
 				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')
 				return []
 			# Take the first resource and return it. There should hopefully only be one, but we don't check this here

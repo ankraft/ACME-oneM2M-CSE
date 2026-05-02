@@ -41,6 +41,7 @@ from ..resources.PDR import PDR
 from ..resources.NTP import NTP
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..runtime.Logging import Logging as L
+from ..services.Dispatcher import Dispatcher
 
 # TODO: removal policy (e.g. unsuccessful tries)
 
@@ -49,6 +50,9 @@ SenderFunction = Callable[[str], bool]	# type:ignore[misc] # bc cyclic definitio
 
 eventManager = EventManager()
 """ Event manager singleton instance. """
+
+dispatcher:Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 @EventHandler
 class NotificationManager(object):
@@ -666,7 +670,7 @@ class NotificationManager(object):
 					return
 
 			try:
-				resource = CSE.dispatcher.retrieveResource(crsRi)
+				resource = dispatcher.retrieveResource(crsRi)
 			except ResponseException as e:
 				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}: {e.dbg}')	# Not much we can do here
 				return
@@ -696,7 +700,7 @@ class NotificationManager(object):
 				crs.dbUpdate(True)
 				if exc <= 0:
 					L.isDebug and L.logDebug(f'<crs>: {crs.ri} expiration counter expired. Deleting resources.')
-					CSE.dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
+					dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
 
 		else:
 			L.isDebug and L.logDebug(f'No notification sent')
@@ -973,7 +977,7 @@ class NotificationManager(object):
 		"""
 		if sub is None:
 			try:
-				sub = CSE.dispatcher.retrieveLocalResource(ri) # type:ignore[assignment]
+				sub = dispatcher.retrieveLocalResource(ri) # type:ignore[assignment]
 				# TODO check resource type?
 			except ResponseException as e:
 				return
@@ -1255,7 +1259,7 @@ class NotificationManager(object):
 				subscription = None
 				if sub['nse']:
 					try:
-						subscription = cast(SUB, CSE.dispatcher.retrieveResource(sub['ri']))
+						subscription = cast(SUB, dispatcher.retrieveResource(sub['ri']))
 					except ResponseException as e:
 						L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {e.dbg}')
 						return False
@@ -1279,7 +1283,7 @@ class NotificationManager(object):
 			subResource = CSE.storage.retrieveResource(ri=sub['ri'])
 			if exc < 1:
 				L.isDebug and L.logDebug(f'expirationCounter expired. Removing subscription: {subResource.ri}')
-				CSE.dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
+				dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
 			else:
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
 				subResource.dbUpdate(True)						# Update the real subscription
@@ -1416,7 +1420,7 @@ class NotificationManager(object):
 			nse = sub['nse']
 			if nse:
 				try:
-					subscription = cast(SUB, CSE.dispatcher.retrieveResource(sub['ri']))
+					subscription = cast(SUB, dispatcher.retrieveResource(sub['ri']))
 				except ResponseException as e:
 					L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {e.dbg}')
 					return False
@@ -1491,7 +1495,7 @@ class NotificationManager(object):
 					L.isDebug and L.logDebug(f'Originator {originator} not found in notification targets of: {parentSubscription.ri}')
 
 		# Get the sibling <notificationTargetMgmtPolicyRef> resources
-		ntprs = CSE.dispatcher.retrieveDirectChildResources(ntsr.pi, ResourceTypes.NTPR)
+		ntprs = dispatcher.retrieveDirectChildResources(ntsr.pi, ResourceTypes.NTPR)
 
 		# Check if the Originator is listed as one of the Notification Targets in any <notificationTargetMgmtPolicyRef> resource
 		ntp:NTP = None	# This is the linked to ntp resource
@@ -1503,7 +1507,7 @@ class NotificationManager(object):
 						L.isDebug and L.logDebug(f'No <ntp> resource referenced in <ntpr>: {ntpr.ri}')
 						continue
 					try:
-						r = CSE.dispatcher.retrieveLocalResource(npi, originator=originator)
+						r = dispatcher.retrieveLocalResource(npi, originator=originator)
 						if r.ty != ResourceTypes.NTP:
 							raise NOT_FOUND(f'Referenced resource is not a <ntp> resource: {r.ri}')
 						ntp = cast(NTP, r)
@@ -1539,7 +1543,7 @@ class NotificationManager(object):
 		# From here on, we have the <ntp> resource
 
 		# Retrieve the <PDR> child resources of the <ntp> resource
-		pdrs:list[PDR] = cast(list[PDR], CSE.dispatcher.retrieveDirectChildResources(ntp.ri, ResourceTypes.PDR))
+		pdrs:list[PDR] = cast(list[PDR], dispatcher.retrieveDirectChildResources(ntp.ri, ResourceTypes.PDR))
 		action:NotificationTargetPolicyAction = None
 		match len(pdrs):
 			case 0:	

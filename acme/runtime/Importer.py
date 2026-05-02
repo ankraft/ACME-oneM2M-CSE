@@ -27,6 +27,10 @@ from .Logging import Logging as L
 from .ScriptManager import _metaInit
 from ..resources.CSEBase import getCSE
 from .Factory import getResourceClassForType, initResources
+from ..services.Dispatcher import Dispatcher
+
+dispatcher: Dispatcher = Dispatcher()
+""" Dispatcher singleton instance. """
 
 # TODO Support child specialization in attribute definitionsEv
 
@@ -238,7 +242,7 @@ class Importer(object):
 						return False
 					case 1:
 						# Check whether there is already a filled DB, then skip the imports
-						if CSE.dispatcher.countResources() > 0:
+						if dispatcher.countResources() > 0:
 							L.isInfo and L.log('Resources already imported, skipping boostrap')
 						else:
 							# Run the startup script. There shall only be one.

@@ -47,13 +47,21 @@ from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, restart
 from ...runtime.EventManager import EventManager, EventData, EventHandler, onEvent
+from ...runtime.Storage import Storage
+from ...services.Dispatcher import Dispatcher
 
 # TODO support configevent!
 # TODO move some of the functions to a more general place because they are used here and in the TUI
 
 
-eventManager = EventManager()	# type: ignore
+eventManager: EventManager = EventManager()	# type: ignore
 """ Event manager singleton instance. """
+
+storage: Storage = Storage()
+""" Storage singleton instance. """
+
+dispatcher: Dispatcher = Dispatcher()	# type: ignore
+""" Dispatcher singleton instance. """
 
 
 ##############################################################################
@@ -251,8 +259,8 @@ class Console(ConsoleBase):
 			('^G', 'Plot & refresh graph continuously (only for container)'),
 			('i', 'Inspect resource'),
 			('I', 'Inspect resource and child resources'),
+			('^I', 'Show resource continuously'),
 			('k', 'Catalog of scripts'),
-			('^K', 'Show resource continuously'),
 			('l', 'Toggle screen logging on/off'),
 			('L', 'Toggle through log levels'),
 			('r', 'Show CSE registrations'),
@@ -411,7 +419,7 @@ Available under the BSD 3-Clause License
 		self._about('Resource Tree')
 		with Live(getResourceTreeRich(style=L.terminalStyle, withProgress=False), auto_refresh=False) as live:
 
-			def _updateTree(name:str = None, _:Resource = None) -> None:
+			def _updateTree(_: Any, eventData: EventData) -> None:
 				"""	Callback to update the on-screen tree on an event.
 				"""
 				live.update(getResourceTreeRich(style=L.terminalStyle, withProgress=False), refresh=True)
@@ -424,7 +432,7 @@ Available under the BSD 3-Clause License
 			while (ch := waitForKeypress(Configuration.console_refreshInterval)) in [None, '\x14']:
 				if ch == '\x14':	# Toggle through tree modes
 					self.treeMode = self.treeMode.succ()
-					_updateTree()
+					_updateTree(None, None)	# type: ignore [arg-type]
 				if self.interruptContinous:
 					break
 
@@ -493,12 +501,12 @@ Available under the BSD 3-Clause License
 		L.off()
 		if (ri := L.consolePrompt('ri')):
 			try:
-				resource = CSE.dispatcher.retrieveResource(ri)
+				resource = dispatcher.retrieveResource(ri)
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
 			else:
 				try:
-					CSE.dispatcher.deleteLocalResource(resource, withDeregistration = True)
+					dispatcher.deleteLocalResource(resource, withDeregistration = True)
 				except ResponseException as e:
 					L.console(e.dbg, isError = True)
 				else:
@@ -518,7 +526,7 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
 			self.previousInspectRi = ri
 			try:
-				resource = CSE.dispatcher.retrieveResource(ri)
+				resource = dispatcher.retrieveResource(ri)
 				L.console(resource.asDict())
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
@@ -536,9 +544,9 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('ri', default = self.previosInspectChildrenRi)):
 			self.previosInspectChildrenRi = ri
 			try:
-				resource = CSE.dispatcher.retrieveResource(ri)
-				children = CSE.dispatcher.discoverResources(ri, originator = RC.cseOriginator)
-				CSE.dispatcher.resourceTreeDict(children, resource.dict)	# the function call add attributes to the target resource
+				resource = dispatcher.retrieveResource(ri)
+				children = dispatcher.discoverResources(ri, originator = RC.cseOriginator)
+				dispatcher.resourceTreeDict(children, resource.dict)	# the function call add attributes to the target resource
 				L.console(resource.asDict())
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
@@ -557,7 +565,7 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
 			self.previousInspectRi = ri
 			try:
-				resource = CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)
+				resource = dispatcher.retrieveResource(ri, postRetrieveHook = True)
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
 			else: 
@@ -567,11 +575,11 @@ Available under the BSD 3-Clause License
 				endMessage:str = None
 				with Live(Pretty(resource.asDict()), console = L._console, auto_refresh = False) as live:
 
-					def _updateResource(name:str, r:Resource = None) -> None:
+					def _updateResource(_: Any, eventData: EventData) -> None:
 						"""	Callback to update the on-screen resource on an event.
 						"""
 						try:
-							resource = CSE.dispatcher.retrieveResource(ri, postRetrieveHook = True)
+							resource = dispatcher.retrieveResource(ri, postRetrieveHook = True)
 						except ResponseException as e:
 							endMessage = f'Resource is not available anymore: {ri}'
 							self.interruptContinous = True
@@ -672,7 +680,7 @@ Available under the BSD 3-Clause License
 	# 	L.console('Export Resources', isHeader = True)
 	# 	L.off()
 	# 	try:
-	# 		if not (resdis := CSE.dispatcher.discoverResources(RC.cseRi, originator = RC.cseOriginator)).status:
+	# 		if not (resdis := ispatcher.discoverResources(RC.cseRi, originator = RC.cseOriginator)).status:
 	# 			L.console(resdis.dbg, isError=True)
 	# 		else:
 	# 			resources:list[Resource] = []
@@ -753,7 +761,7 @@ Available under the BSD 3-Clause License
 			
 		# plot
 		try:
-			cins = CSE.dispatcher.retrieveDirectChildResources(resource.ri, ResourceTypes.CIN)
+			cins = dispatcher.retrieveDirectChildResources(resource.ri, ResourceTypes.CIN)
 			x = range(1, (lcins := len(cins)) + 1)
 			y = [ float(each.con) for each in cins ]
 			cols, rows = plotext.terminal_size()
@@ -788,7 +796,7 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('Container ri', default = self.previousGraphRi)):
 			self.previousGraphRi = ri
 			try:
-				resource = CSE.dispatcher.retrieveResource(ri)
+				resource = dispatcher.retrieveResource(ri)
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
 			else:
@@ -822,7 +830,7 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('Container ri', default = self.previousGraphRi)):
 			self.previousGraphRi = ri
 			try:
-				resource = CSE.dispatcher.retrieveResource(ri)
+				resource = dispatcher.retrieveResource(ri)
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
 			else:
@@ -888,7 +896,7 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		L.console('Delete all requests')
-		CSE.storage.deleteRequests()
+		storage.deleteRequests()
 
 
 

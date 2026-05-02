@@ -25,6 +25,10 @@ from ...runtime.PluginSupport import plugin, init, stop, restart, configure
 from ...resources.LCP import LCP
 from ...resources.CIN import CIN
 from ...resources.Resource import Resource
+from ...services.Dispatcher import Dispatcher
+
+dispatcher: Dispatcher = Dispatcher()	# type: ignore
+"""	Dispatcher singleton instance. """
 
 GeofencePositionType = Literal[GeofenceEventCriteria.Inside, GeofenceEventCriteria.Outside]
 """ Type alias for the geofence position."""
@@ -189,7 +193,7 @@ class LocationManager(object):
 			return
 		
 		# Check if the location policy is supported
-		if (lcp := CSE.dispatcher.retrieveResource(lcpRi)) is not None:
+		if (lcp := dispatcher.retrieveResource(lcpRi)) is not None:
 			if lcp.los == LocationSource.Network_based and lcp.lou is not None and lcp.lou == 0:
 				L.isDebug and L.logDebug(f'Handling latest RETRIEVE for CNT with locationID: {lcpRi}')
 				# Handle Network based location source
@@ -253,7 +257,7 @@ class LocationManager(object):
 		# Get the content if not provided
 		if not content:
 			# Get the location from a location instance
-			if not (cin := CSE.dispatcher.retrieveLatestOldestInstance(info.locationContainerID, ResourceTypes.CIN)):
+			if not (cin := dispatcher.retrieveLatestOldestInstance(info.locationContainerID, ResourceTypes.CIN)):
 				return None	# No resource found, still continue
 			content = cin.con
 		
@@ -291,7 +295,7 @@ class LocationManager(object):
 					eventType: The type of the event
 			"""
 			L.isDebug and L.logDebug(f'Position: {eventType}')
-			cnt = CSE.dispatcher.retrieveResource(info.locationContainerID)
+			cnt = dispatcher.retrieveResource(info.locationContainerID)
 			cnt.createChildResourceFromDict({ 'con': eventType.value }, ty=ResourceTypes.CIN)
 
 		

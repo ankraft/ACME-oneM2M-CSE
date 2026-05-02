@@ -31,13 +31,20 @@ from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.PluginSupport import plugin, start, stop, configure, validate, requires
 from ...runtime.EventManager import EventManager, EventHandler, EventData, onEvent
+from ...runtime.Storage import Storage
+from ...services.Dispatcher import Dispatcher
 
 # TODO for anounceable resource:
 # - update: update resource here
 
-eventManager = EventManager()	# type: ignore
+eventManager:EventManager = EventManager()	# type: ignore
 """ Event manager singleton instance. """
 
+storage:Storage = Storage()	# type: ignore
+""" Storage singleton instance. """
+
+dispatcher:Dispatcher = Dispatcher()	# type: ignore
+""" Dispatcher singleton instance. """
 
 @EventHandler
 @plugin(property='announcementManager', tags=['acme', 'remote'], priority=50)
@@ -199,7 +206,7 @@ class AnnouncementManager(object):
 				# CSEBase has "old" announcement infos
 				remoteRi = t[1] if isSPRelative(t[1]) else f'{announceTo}/{t[1]}'
 				try:
-					_r = CSE.dispatcher.retrieveResource(remoteRi, RC.cseCsi)
+					_r = dispatcher.retrieveResource(remoteRi, RC.cseCsi)
 				except ResponseException as e:	# basically anything that isn't "OK"
 					L.isDebug and L.logDebug('CSEBase is not announced')
 					# No, it's not there anymore -> announce it again.
@@ -260,7 +267,7 @@ class AnnouncementManager(object):
 
 			# Check if parent is announced already to the same remote CSE
 			try:
-				parentResource = CSE.dispatcher.retrieveLocalResource(resource.pi)
+				parentResource = dispatcher.retrieveLocalResource(resource.pi)
 			except ResponseException as e:
 				raise INTERNAL_SERVER_ERROR(L.logErr(f'cannot retrieve parent. Announcement not possible: {e.dbg}'))
 			
@@ -554,5 +561,5 @@ class AnnouncementManager(object):
 					return not isAnnounced
 			return False
 
-		return cast(List[AnnounceableResource], CSE.storage.searchByFilter(_announcedFilter))
+		return cast(List[AnnounceableResource], storage.searchByFilter(_announcedFilter))
 
