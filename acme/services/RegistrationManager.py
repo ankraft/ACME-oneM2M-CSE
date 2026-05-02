@@ -33,7 +33,7 @@ eventManager:EventManager = EventManager()
 storage:Storage = Storage()	# type: ignore
 """ Storage singleton instance. """
 
-dispatcher: "Dispatcher"
+dispatcher: Any = None	# type: ignore
 """ Dispatcher singleton instance. """
 
 @EventHandler

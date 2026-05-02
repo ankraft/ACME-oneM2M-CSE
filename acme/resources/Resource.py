@@ -26,9 +26,13 @@ from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..etc.Constants import Constants
 from ..runtime.EventManager import EventManager, EventData
+from ..runtime.Factory import Factory
 
 eventManager = EventManager()	# type: ignore
 """	Event manager singleton instance. """
+
+factory:Factory = Factory()
+""" Factory singleton instance. """
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 # TODO cleanup optimizations
@@ -1086,12 +1090,10 @@ class Resource(object):
 										  originator: Optional[str]=None,
 										  preCreateCB: Optional[Callable[[Resource], None]]=None
 									) -> Resource:
-		from ..runtime.Factory import resourceFromDict
-
-		resource = resourceFromDict(dct, 
-						   			pi=self.ri, 
-									ty=ty,
-									create=True)
+		resource = factory.resourceFromDict(dct, 
+											pi=self.ri, 
+											ty=ty,
+											create=True)
 	
 		# Perform some checks and adjustments before creating the resource, if necessary
 		if preCreateCB:

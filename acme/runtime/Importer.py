@@ -26,8 +26,11 @@ from ..helpers.TextTools import removeCommentsFromJSON
 from .Logging import Logging as L
 from .ScriptManager import _metaInit
 from ..resources.CSEBase import getCSE
-from .Factory import getResourceClassForType, initResources
+from .Factory import Factory
 from ..services.Dispatcher import Dispatcher
+
+factory: Factory = Factory()
+""" Factory singleton instance. """
 
 dispatcher: Dispatcher = Dispatcher()
 """ Dispatcher singleton instance. """
@@ -190,7 +193,7 @@ class Importer(object):
 		# Initialize the resource factory, e.g. register resource types and their constructors
 		# This can only be done after the importer has imported the resource type definitions, 
 		# which are used in the resource descriptions for the factory registration
-		if not initResources():
+		if not factory.initResources():
 			raise RuntimeError(L.logErr('Failed to initialize resources'))
 
 
@@ -573,7 +576,7 @@ class Importer(object):
 
 		hasErrors = False
 		for ty in ResourceTypes:
-			if (rc := getResourceClassForType(ty)):									# Get the Python class for each Resource (only real resources)
+			if (rc := factory.getResourceClassForType(ty)):									# Get the Python class for each Resource (only real resources)
 				if hasattr(rc, '_attributes') and isinstance(rc._attributes, dict):	# If it has attributes defined
 					for sn in rc._attributes.keys():								# Then add the policies for those attributes
 						if not (ap := CSE.validator.getAttributePolicy(ty, sn)):

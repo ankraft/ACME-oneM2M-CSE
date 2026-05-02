@@ -21,12 +21,14 @@ from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
-from ..runtime import Factory	# attn: circular import
 from ..runtime.EventManager import EventManager, EventData
+from ..runtime.Factory import Factory
 
 eventManager = EventManager()	# type: ignore
 """ Event manager singleton instance. """
 
+factory: Factorys = Factory()	# type: ignore
+""" Factory singleton instance. """
 
 class CNT(ContainerResource):
 	""" Container resource type. """
@@ -186,7 +188,7 @@ class CNT(ContainerResource):
 		if mni is not None:
 			while cni > mni and cni > 0:
 				# Only instantiate the <cin> when needed here for deletion
-				cin = Factory.resourceFromDict(cinsRaw[0])
+				cin = factory.resourceFromDict(cinsRaw[0])
 				L.isDebug and L.logDebug(f'cni > mni: Removing <cin>: {cin.ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
@@ -202,7 +204,7 @@ class CNT(ContainerResource):
 		if mbs is not None:
 			while cbs > mbs and cbs > 0:
 				# Only instantiate the <cin> when needed here for deletion
-				cin = Factory.resourceFromDict(cinsRaw[0])
+				cin = factory.resourceFromDict(cinsRaw[0])
 				L.isDebug and L.logDebug(f'cbs > mbs: Removing <cin>: {cin.ri}')
 				# remove oldest
 				cbs -= cin.cs
@@ -222,7 +224,7 @@ class CNT(ContainerResource):
 		# oldest resource is the first in the list of cinsRaw.
 		# This means that we need to send an "update" event for the oldest resource.
 		if cin is not None and len(cinsRaw):
-			eventManager.changeResource(EventData(payload=(Factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())))	 # type: ignore [attr-defined]
+			eventManager.changeResource(EventData(payload=(factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())))	 # type: ignore [attr-defined]
 	
 		# End validating
 		self.__validating = False

@@ -41,7 +41,7 @@ from ..runtime.Configuration import Configuration
 from ..runtime.EventManager import EventManager, EventData
 from ..runtime.Logging import Logging as L
 from ..runtime.Storage import Storage
-from ..runtime.Factory import resourceFromDict
+from ..runtime.Factory import Factory
 from ..runtime.PluginSupport import requires
 from ..services.RegistrationManager import RegistrationManager
 from ..resources.Resource import Resource
@@ -57,8 +57,10 @@ storage:Storage = Storage()
 """ Storage singleton instance. """
 
 registration: RegistrationManager = RegistrationManager()
-""" RegistrationManager singleton instance. 
-"""
+""" RegistrationManager singleton instance. """
+
+factory:Factory = Factory()
+""" Factory singleton instance. """
 
 # TODO NOTIFY optimize local resource notifications
 # TODO handle config update
@@ -741,11 +743,11 @@ class Dispatcher(metaclass=Singleton):
 
 		# Create resource from the dictionary
 		# newResource = resourceFromDict(deepcopy(request.pc), 
-		newResource = resourceFromDict(request.pc, 
-								 	   pi=parentResource.ri, 
-									   ty=request.ty, 
-									   create=True,
-									   trusted=False)
+		newResource = factory.resourceFromDict(request.pc, 
+								 	   		   pi=parentResource.ri, 
+									   		   ty=request.ty, 
+									   		   create=True,
+									   		   trusted=False)
 
 		# Check whether the parent allows the adding
 		parentResource.childWillBeAdded(newResource, originator)
@@ -845,11 +847,11 @@ class Dispatcher(metaclass=Singleton):
 			parentResource = self.retrieveLocalResource(ri = pID, originator = originator)
 
 			# Build a resource instance
-			resource = resourceFromDict(dct, 
-							   			ty=ty, 
-										pi=pID,
-										create=True,
-										trusted=False)
+			resource = factory.resourceFromDict(dct, 
+							   					ty=ty, 
+												pi=pID,
+												create=True,
+												trusted=False)
 
 			# Check Permission
 			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, resultResource=resource):
@@ -1597,7 +1599,7 @@ class Dispatcher(metaclass=Singleton):
 		if not hit:
 			return None
 		# Instantiate and return resource
-		return resourceFromDict(hit[0])
+		return factory.resourceFromDict(hit[0])
 
 
 	def discoverChildren(self, id:str, 
@@ -1658,7 +1660,7 @@ class Dispatcher(metaclass=Singleton):
 		result = []
 		rss = storage.retrieveResourcesByType(ty)
 		for rs in (rss or []):
-			result.append(resourceFromDict(rs))
+			result.append(factory.resourceFromDict(rs))
 		return result
 
 

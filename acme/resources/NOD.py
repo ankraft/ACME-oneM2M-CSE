@@ -13,6 +13,7 @@ from ..etc.IDUtils import uniqueID
 from ..runtime import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.Resource import Resource
+from ..services.Dispatcher import Dispatcher
 
 
 # TODO Support cmdhPolicy

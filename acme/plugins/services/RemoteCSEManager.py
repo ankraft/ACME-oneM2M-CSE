@@ -26,7 +26,7 @@ from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...resources.CSR import CSR
 from ...resources.CSEBase import CSEBase, getCSE
 from ...resources.Resource import Resource
-from ...runtime.Factory import resourceFromDict
+from ...runtime.Factory import Factory
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime import CSE
 from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
@@ -43,6 +43,9 @@ registration: RegistrationManager = RegistrationManager()	# type: ignore
 
 dispatcher: Dispatcher = Dispatcher()	# type: ignore
 """	Dispatcher singleton instance. """
+
+factory: Factory = Factory()	# type: ignore
+""" Factory singleton instance. """
 
 @EventHandler
 @plugin(property='remoteCSEManager', tags=['acme', 'remote'], priority=20)
@@ -681,7 +684,7 @@ class RemoteCSEManager(object):
 				raise _exc(dbg = L.logDebug(f'cannot retrieve CSR from registrar CSE: {int(res.rsc)} dbg: {res.dbg}')) # type:ignore[call-arg]
 			raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {res.rsc}')
 		# <CSR> found, return it in the result
-		return resourceFromDict(cast(JSON, res.data), pi='')
+		return factory.resourceFromDict(cast(JSON, res.data), pi='')
 
 
 	def _createCSRonRegistrarCSE(self, registrarConfig:CSERegistrar) -> Resource:
@@ -723,7 +726,7 @@ class RemoteCSEManager(object):
 			raise CONFLICT(L.logWarn(f'error creating CSR on registrar CSE: {res.rsc.name} dbg: {res.data}'))
 		else:
 			L.isDebug and L.logDebug(f'created CSR on registrar CSE: {registrarConfig.cseID}')
-		return resourceFromDict(cast(JSON, res.data), pi='')
+		return factory.resourceFromDict(cast(JSON, res.data), pi='')
 
 
 	def _updateOwnCSRonRegistrarCSE(self, registrarConfig:CSERegistrar, hostingCSE:Optional[Resource]=None) -> Resource:
@@ -771,7 +774,7 @@ class RemoteCSEManager(object):
 			raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {res.rsc}')
 
 		L.isDebug and L.logDebug(f'registrar CSR updated on CSE: {registrarConfig.cseID}')
-		return resourceFromDict(cast(JSON, res.data), pi='')
+		return factory.resourceFromDict(cast(JSON, res.data), pi='')
 
 
 	def _deleteOwnCSRonRegistrarCSE(self, registrarConfig:CSERegistrar) -> None:
@@ -933,7 +936,7 @@ class RemoteCSEManager(object):
 		setXPath(cast(JSON, res.data), f'{typeShortname}/{Constants.attrRemoteID}', id)
 
 		# Instantiate
-		return resourceFromDict(cast(JSON, res.data))
+		return factory.resourceFromDict(cast(JSON, res.data))
 
 
 	def getCSRFromPath(self, id:str) -> Optional[Tuple[Resource, List[str]]]:

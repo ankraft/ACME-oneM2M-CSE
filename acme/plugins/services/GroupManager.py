@@ -25,7 +25,7 @@ from ...resources.FCNT import FCNT
 from ...resources.MgmtObj import MgmtObj
 from ...resources.Resource import Resource
 from ...resources.GRP_FOPT import GRP_FOPT
-from ...runtime.Factory import resourceFromDict
+from ...runtime.Factory import Factory
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
@@ -42,6 +42,9 @@ storage: Storage = Storage()
 
 dispatcher: Dispatcher = Dispatcher()
 """ Dispatcher singleton instance. """
+
+factory: Factory = Factory()
+""" Factory singleton instance. """
 
 @plugin(property='groupManager', tags=['acme', 'core'])
 @EventHandler
@@ -168,7 +171,7 @@ class GroupManager():
 					else:  # Member not found
 						raise NOT_FOUND(f'remote resource not found: {mid}')
 				else:
-					resource = resourceFromDict(cast(JSON, remoteResult.data))
+					resource = factory.resourceFromDict(cast(JSON, remoteResult.data))
 
 			# skip if ri is already in the list
 			if isLocalResource:

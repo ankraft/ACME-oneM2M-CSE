@@ -44,7 +44,7 @@ from ..helpers.PluginManager import requires
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
 from ..helpers.NetworkTools import pingTCPServer, isValidPort
-from .Factory import resourceFromDict
+from .Factory import Factory
 from ..resources.Resource import Resource
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
@@ -99,6 +99,9 @@ registration: RegistrationManager = RegistrationManager()
 
 dispatcher: Dispatcher = Dispatcher()
 """ Dispatcher singleton instance. """
+
+factory:Factory = Factory()
+""" Factory singleton instance. """
 
 @requires(textUI='acme.plugins.runtime.TextUI', required=False)
 class ACMEPContext(PContext):
@@ -736,7 +739,7 @@ class ACMEPContext(PContext):
 
 		# resource object
 		pcontext, _resource = valueFromArgument(pcontext, symbol, 2, SType.tJson)
-		_resource = resourceFromDict(cast(dict, _resource), create=True)
+		_resource = factory.resourceFromDict(cast(dict, _resource), create=True)
 
 		# Get a potential parent resource
 		parentResource:Any = None

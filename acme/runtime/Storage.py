@@ -30,12 +30,14 @@ from .Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ACTR import ACTR
 from ..resources.SCH import SCH
-from .Factory import resourceFromDict
+from .Factory import Factory
 from .Logging import Logging as L
 from ..runtime.PluginSupport import requires
 
 from .DBBinding import DBBinding
 
+factory: Factory = Factory()
+""" Factory singleton instance. """
 
 
 # Constants for database and table names
@@ -303,7 +305,7 @@ class Storage(metaclass=Singleton):
 
 		match len(resources):
 			case 1:
-				return resourceFromDict(resources[0])
+				return factory.resourceFromDict(resources[0])
 			case 0:
 				raise NOT_FOUND('resource not found')
 
@@ -406,7 +408,7 @@ class Storage(metaclass=Singleton):
 			docs = [_r[0] 
 		   			for _ri in _ris 
 					if (_r := self.db.searchResources(ri=_ri))]	# get the resource documents for the child resource IDs, only when they exist
-			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
+			return docs if raw else cast(List[Resource], list(map(lambda x: factory.resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
 	
 
@@ -481,7 +483,7 @@ class Storage(metaclass=Singleton):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.searchByFragment(dct) 
-						if (not filter or filter(each)) and (res := resourceFromDict(each)) # either there is no filter or the filter is called to test the resource
+						if (not filter or filter(each)) and (res := factory.resourceFromDict(each)) # either there is no filter or the filter is called to test the resource
 				] 
 
 
@@ -495,7 +497,7 @@ class Storage(metaclass=Singleton):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
-						if (res := resourceFromDict(each))
+						if (res := factory.resourceFromDict(each))
 				]
 
 

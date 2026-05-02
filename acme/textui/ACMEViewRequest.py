@@ -30,9 +30,11 @@ from ..etc.RequestUtils import curlFromRequest
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import removeCommentsFromJSON, flattenJSON, parseJSONDecodingError
 from ..resources.Resource import Resource
-from ..runtime.Factory import resourceFromDict
+from ..runtime.Factory import Factory
 from ..runtime.Configuration import Configuration
 
+factory: Factory = Factory()	# type: ignore
+""" Factory singleton instance. """
 
 class ACMETextArea(TextArea):
 	"""	An extended text area.
@@ -275,7 +277,7 @@ class ACMEViewRequest(VerticalScroll):
 				resource = None
 				if resourceType is not None:
 					# Create a template resource
-					resource = resourceFromDict(ty = resourceType, template = True)
+					resource = factory.resourceFromDict(ty = resourceType, template = True)
 			
 			case _:
 				# Copy the original an used attributes 

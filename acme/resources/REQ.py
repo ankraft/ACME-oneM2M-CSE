@@ -18,8 +18,10 @@ from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
-from ..runtime import Factory	# attn: circular import
+from ..runtime.Factory import Factory	# attn: circular import
 
+factory: Factorys = Factory()	# type: ignore
+""" Factory singleton instance. """
 
 class REQ(Resource):
 	""" Request (REQ) resource type. """
@@ -108,7 +110,7 @@ class REQ(Resource):
 		if (rtu := request.rtu) and len(rtu) > 0:
 			setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
-		return Factory.resourceFromDict(dct, 
+		return factory.resourceFromDict(dct, 
 								  		pi=RC.cseRi, 
 										ty=ResourceTypes.REQ, 
 										create=True)
