@@ -401,7 +401,8 @@ class Resource(object):
 		# Check for blockingRetrieve or blockingRetrieveDirectChild
 		if subCheck and request:
 			CSE.notification.checkPerformBlockingRetrieve(self, request, finished = lambda: self.dbReloadDict())
-		CSE.notification.checkOperationSubscription(self, request.op, originator)	# could also be DISCOVERY
+		if request:
+			CSE.notification.checkOperationSubscription(self, request.op, originator)	# could also be DISCOVERY
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
