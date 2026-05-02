@@ -22,6 +22,10 @@ from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
 from ..runtime import Factory	# attn: circular import
+from ..runtime.EventManager import EventManager, EventData
+
+eventManager = EventManager()	# type: ignore
+""" Event manager singleton instance. """
 
 
 class CNT(ContainerResource):
@@ -128,7 +132,7 @@ class CNT(ContainerResource):
 
 			# Send update event on behalf of the latest resources.
 			# The oldest resource might not be changed. That is handled in the validate() method.
-			CSE.event.changeResource(childResource, self.getLatestRI())	 # type: ignore [attr-defined]
+			eventManager.changeResource(EventData(payload=(childResource, self.getLatestRI())))	 # type: ignore [attr-defined]
 
 
 
@@ -218,7 +222,7 @@ class CNT(ContainerResource):
 		# oldest resource is the first in the list of cinsRaw.
 		# This means that we need to send an "update" event for the oldest resource.
 		if cin is not None and len(cinsRaw):
-			CSE.event.changeResource(Factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())	 # type: ignore [attr-defined]
+			eventManager.changeResource(EventData(payload=(Factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())))	 # type: ignore [attr-defined]
 	
 		# End validating
 		self.__validating = False

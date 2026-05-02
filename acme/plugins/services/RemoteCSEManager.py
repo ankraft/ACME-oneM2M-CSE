@@ -70,14 +70,9 @@ class RemoteCSEManager(object):
 
 	@start
 	def start(self) -> None:
-
 		# Get the configuration settings
 		self._assignConfig()
-
-		# Add a handler when the CSE is started
-		CSE.event.addHandler(CSE.event.cseStartup, self.startConnectionMonitor)	# type: ignore
 		L.isInfo and L.log('RemoteCSEManager initialized')
-
 
 
 	@stop
@@ -143,7 +138,8 @@ class RemoteCSEManager(object):
 	#	Connection Monitor
 	#
 
-	def startConnectionMonitor(self, name:str) -> None:
+	@onEvent(eventManager.cseStartup)
+	def startConnectionMonitor(self, eventData: EventData) -> None:
 		"""	Start the remote monitor as a background worker. 
 
 			Args:

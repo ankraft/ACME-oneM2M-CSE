@@ -1763,10 +1763,6 @@ class ScriptManager(object):
 		self.scriptCronWorker:BackgroundWorker = None
 		""" `BackgroundWorker` worker to run cron-enabled scripts. """
 
-		# Also do some internal handling
-		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
-		CSE.event.addHandler(CSE.event.acmeNotification, self.onNotification)	# type: ignore
-
 		L.isInfo and L.log('ScriptManager initialized')
 
 
@@ -1822,7 +1818,8 @@ class ScriptManager(object):
 	#	Event handlers
 	#
 
-	def cseStarted(self, name:str) -> None:
+	@onEvent(eventManger.cseStartup)	# type: ignore
+	def cseStarted(self, eventData: EventData) -> None:
 		"""	Callback for the *cseStartup* event.
 
 			Start a background worker to monitor directories for scripts.
@@ -1881,16 +1878,17 @@ class ScriptManager(object):
 							 cast(FunctionKey, ch).name if isinstance(ch, FunctionKey) else ch)
 
 
-	def onNotification(self, name:str, uri:str, request:CSERequest) -> None:
+	@onEvent(eventManger.acmeNotification)	# type: ignore
+	def onNotification(self, eventData: EventData) -> None:
 		"""	Callback for the *notification* event.
 
 			Run script(s) with configured meta tags, if any.
 
 			Args:
-				name:Event name.
-				uri: The target URI.
-				request: The notifiction request.
+				eventData: The event data, containing the notification information. The first element is the notification URI, the second element is the request that caused the notification.
 		"""
+		uri = eventData[0]
+		request = eventData[1]
 		try:
 			self.runEventScripts( _metaOnNotification,	# !!! Lower case
 								  uri,

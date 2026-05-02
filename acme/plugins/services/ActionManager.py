@@ -80,20 +80,19 @@ class ActionManager():
 				realRi: The real resource ID, if available.
 		"""
 		resource = eventData[0]
-		realRi = eventData[1] if len(eventData.payload) > 1 else None
+		realRi = eventData[1]
 
 		if resource.isVirtual():
 			return
 		
-		_ri = realRi if realRi else resource.ri
 		_now = utcTime()
-		L.isDebug and L.logDebug(f'Looking for resource actions for resource: {_ri}')
+		L.isDebug and L.logDebug(f'Looking for resource actions for resource: {realRi}')
 
 		# Get actions. Remember, these are NOT <action> resources
-		actions = CSE.storage.searchActionReprsForSubject(_ri)		
+		actions = CSE.storage.searchActionReprsForSubject(realRi)		
 		# sort by action priority
 		actions = sorted(actions, key = lambda x: x['apy'] if x['apy'] is not None else sys.maxsize)
-		L.isDebug and L.logDebug(f'Found {len(actions)} actions for resource: {_ri}')
+		L.isDebug and L.logDebug(f'Found {len(actions)} actions for resource: {realRi}')
 
 		for action in actions:
 

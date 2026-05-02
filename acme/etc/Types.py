@@ -3103,14 +3103,32 @@ JSONLIST:TypeAlias = List[JSON]
 ReqResp:TypeAlias = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """
 
-RequestCallback = NamedTuple('RequestCallback', [('ownRequest', Callable), 
-												 ('dispatcherRequest', Callable), 
-												 ('sendRequest', Callable), 
-												 ('coapEvent', Event),
-												 ('httpEvent', Event),
-												 ('mqttEvent', Event),
-												 ('wsEvent', Event)])
-""" Type definition for a callback function to handle outgoing requests. """
+@dataclass
+class RequestCallback:
+	"""	Structure to hold the callback functions for handling outgoing requests. """
+
+	ownRequest:Callable
+	""" Callback function to handle the request in the RequestManager itself. """
+
+	dispatcherRequest:Callable
+	""" Callback function in the Dispatcher to handle the request """
+
+	sendRequest:Callable
+	""" Callback function to handle the request when sending. """
+
+	coapEvent:Event
+	""" Event to trigger for CoAP requests. This is triggered after the sendRequest callback. """
+
+	httpEvent:Event
+	""" Event to trigger for HTTP requests. This is triggered after the sendRequest callback. """
+
+	mqttEvent:Event
+	""" Event to trigger for MQTT requests. This is triggered after the sendRequest callback. """
+
+	wsEvent:Event
+	""" Event to trigger for WebSockets requests. This is triggered after the sendRequest callback. """
+
+
 RequestHandler:TypeAlias = Dict[Operation, RequestCallback]
 """ Type definition for a map between operations and handler for outgoing request operations. """
 

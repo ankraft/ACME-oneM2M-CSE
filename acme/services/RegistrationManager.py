@@ -13,7 +13,7 @@ from typing import Any, Optional
 from ..etc.Types import ResourceTypes, JSON, CSEType, OriginatorType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, CONFLICT, NOT_IMPLEMENTED, ResponseException
-from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, uniqueRN, originatorToID
+from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, originatorToID
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
@@ -36,23 +36,13 @@ class RegistrationManager(object):
 
 	__slots__ = (
 		'expWorker',
-
-		'_eventAEHasRegistered',
-		'_eventAEHasDeregistered',
-		'_eventExpireResource',
 	)
 
 	def __init__(self) -> None:
 
 		# Start expiration Monitor
 		self.expWorker:BackgroundWorker	= None
-		self.startExpirationMonitor()
-		
-		# Optimized event handling
-		self._eventAEHasRegistered = CSE.event.aeHasRegistered								# type: ignore
-		self._eventAEHasDeregistered = CSE.event.aeHasDeregistered							# type: ignore
-		self._eventExpireResource = CSE.event.expireResource								# type: ignore
-
+		self.startExpirationMonitor()		
 		L.isInfo and L.log('RegistrationManager initialized')
 
 
@@ -137,7 +127,7 @@ class RegistrationManager(object):
 		match resource.ty:
 			case ResourceTypes.AE:
 				# Send event
-				self._eventAEHasRegistered(resource)
+				eventManager.aeHasRegistered(EventData(payload=resource))	# type: ignore [attr-defined]
 			case ResourceTypes.CSR:
 				# send event
 				eventManager.registreeCSEHasRegistered(EventData(payload=resource))
@@ -191,7 +181,7 @@ class RegistrationManager(object):
 		match resource.ty:
 			case ResourceTypes.AE:
 				# Send event
-				self._eventAEHasDeregistered(resource)
+				eventManager.aeHasDeregistered(EventData(payload=resource))
 			case ResourceTypes.CSR:
 				# send event
 				eventManager.registreeCSEHasDeregistered(EventData(payload=resource))
@@ -263,7 +253,7 @@ class RegistrationManager(object):
 		CSE.storage.removeOriginator(ae.aei)	
 
 		# Send event
-		self._eventAEHasDeregistered(ae)
+		eventManager.aeHasDeregistered(EventData(payload=ae))	# type: ignore [attr-defined]
 
 		return True
 
@@ -447,7 +437,7 @@ class RegistrationManager(object):
 				continue
 			L.isDebug and L.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
 			CSE.dispatcher.deleteLocalResource(resource, withDeregistration = True)	# ignore result
-			self._eventExpireResource(resource) 
+			eventManager.expireResource(EventData(payload=resource))
 				
 		return True
 

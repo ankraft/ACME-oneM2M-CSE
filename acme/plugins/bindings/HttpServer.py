@@ -37,7 +37,7 @@ from ...helpers.NetworkTools import isTCPPortAvailable, isValidPort, isValidateI
 from ...helpers import TextTools as TextTools
 from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.EventManager import EventManager
+from ...runtime.EventManager import EventManager, EventData
 from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
@@ -74,13 +74,6 @@ class HttpServer(object):
 		'serverID',
 		'_responseHeaders',
 		'httpActor',
-
-		'_eventHttpRetrieve',
-		'_eventHttpCreate',
-		'_eventHttpNotify',
-		'_eventHttpUpdate',
-		'_eventHttpDelete',
-		'_eventResponseReceived',
 	)
 	""" The slots for the HttpServer class to optimize memory usage. """
 
@@ -109,26 +102,6 @@ class HttpServer(object):
 		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(LogLevel.WARNING)
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
-
-		# Optimize event handling
-
-		self._eventHttpRetrieve =  eventManager.httpRetrieve			# type: ignore [attr-defined]
-		""" Event for HTTP retrieve operations. """
-
-		self._eventHttpCreate = eventManager.httpCreate				# type: ignore [attr-defined]
-		""" Event for HTTP create operations. """
-
-		self._eventHttpNotify =  eventManager.httpNotify				# type: ignore [attr-defined]
-		""" Event for HTTP notify operations. """
-
-		self._eventHttpUpdate = eventManager.httpUpdate				# type: ignore [attr-defined]
-		""" Event for HTTP update operations. """
-
-		self._eventHttpDelete = eventManager.httpDelete				# type: ignore [attr-defined]
-		""" Event for HTTP delete operations. """
-
-		self._eventResponseReceived = eventManager.responseReceived	# type: ignore [attr-defined]
-		""" Event for HTTP response received. """
 
 
 	@start
@@ -350,7 +323,7 @@ class HttpServer(object):
 		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_R')
-		self._eventHttpRetrieve()
+		eventManager.httpRetrieve()
 		return self._handleRequest(path, Operation.RETRIEVE, authResult)
 
 
@@ -364,11 +337,11 @@ class HttpServer(object):
 			return Response(status=401)
 		if self._hasContentType():
 			L.enableScreenLogging and renameThread('HT_C')
-			self._eventHttpCreate()
+			eventManager.httpCreate()
 			return self._handleRequest(path, Operation.CREATE, authResult)
 		else:
 			L.enableScreenLogging and renameThread('HT_N')
-			self._eventHttpNotify()
+			eventManager.httpNotify()
 			return self._handleRequest(path, Operation.NOTIFY, authResult)
 
 
@@ -381,7 +354,7 @@ class HttpServer(object):
 		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_U')
-		self._eventHttpUpdate()
+		eventManager.httpUpdate()
 		return self._handleRequest(path, Operation.UPDATE, authResult)
 
 
@@ -394,7 +367,7 @@ class HttpServer(object):
 		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_D')
-		self._eventHttpDelete()
+		eventManager.httpDelete()
 		return self._handleRequest(path, Operation.DELETE, authResult)
 
 
@@ -409,7 +382,7 @@ class HttpServer(object):
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status=405)
 		L.enableScreenLogging and renameThread('HT_D')
-		self._eventHttpDelete()
+		eventManager.httpDelete()
 		return self._handleRequest(path, Operation.DELETE, authResult)
 
 	#########################################################################
@@ -585,7 +558,7 @@ class HttpServer(object):
 			raise TARGET_NOT_REACHABLE('target not reachable')
 		
 		res = Result(rsc = resp.rsc, data = resp.pc, request = resp)
-		self._eventResponseReceived(resp)
+		eventManager.responseReceived(EventData(payload=resp))
 		return res
 		
 	#########################################################################

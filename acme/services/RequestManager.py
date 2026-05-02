@@ -91,30 +91,6 @@ class RequestManager(object):
 		'sendToFromInResponses',
 		'enableRequestRecording',
 		'requestRingBuffer',
-
-		'_eventRequestReceived',
-		'_eventRequestReceived',
-		'_eventCoAPSendRetrieve',
-		'_eventCoAPSendCreate',
-		'_eventCoAPSendUpdate',
-		'_eventCoAPSendDelete',
-		'_eventCoAPSendNotify',
-		'_eventHttpSendRetrieve',
-		'_eventHttpSendCreate',
-		'_eventHttpSendUpdate',
-		'_eventHttpSendDelete',
-		'_eventHttpSendNotify',
-		'_eventMqttSendRetrieve',
-		'_eventMqttSendCreate',
-		'_eventMqttSendUpdate',
-		'_eventMqttSendDelete',
-		'_eventMqttSendNotify',
-		'_eventWsSendRetrieve',
-		'_eventWsSendCreate',
-		'_eventWsSendUpdate',
-		'_eventWsSendDelete',
-		'_eventWsSendNotify',
-		'_eventAcmeSendNotify',
 	)
 
 	httpServer: Any = None	# type: ignore
@@ -169,123 +145,56 @@ class RequestManager(object):
 		self._receivedResponsesLock = Lock()
 		""" Lock to access the received responses dictionary."""
 
-		# Optimized access to events
-		self._eventRequestReceived = CSE.event.requestReceived		# type:ignore [attr-defined]
-		""" Event for received requests. """
-
-		self._eventCoAPSendRetrieve = CSE.event.coapSendRetrieve 	# type: ignore [attr-defined]
-		""" Event for sending a RETRIEVE request via CoAP. """
-
-		self._eventCoAPSendCreate = CSE.event.coapSendCreate		# type: ignore [attr-defined]
-		""" Event for sending a CREATE request via CoAP. """
-
-		self._eventCoAPSendUpdate = CSE.event.coapSendUpdate		# type: ignore [attr-defined]
-		""" Event for sending an UPDATE request via CoAP. """
-
-		self._eventCoAPSendDelete = CSE.event.coapSendDelete		# type: ignore [attr-defined]
-		""" Event for sending a DELETE request via CoAP. """
-
-		self._eventCoAPSendNotify = CSE.event.coapSendNotify		# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via CoAP. """
-
-		self._eventHttpSendRetrieve = CSE.event.httpSendRetrieve 	# type: ignore [attr-defined]
-		""" Event for sending a RETRIEVE request via HTTP. """
-
-		self._eventHttpSendCreate = CSE.event.httpSendCreate		# type: ignore [attr-defined]
-		""" Event for sending a CREATE request via HTTP. """
-
-		self._eventHttpSendUpdate = CSE.event.mqttSendUpdate		# type: ignore [attr-defined]
-		""" Event for sending an UPDATE request via HTTP. """
-
-		self._eventHttpSendDelete = CSE.event.httpSendDelete		# type: ignore [attr-defined]
-		""" Event for sending a DELETE request via HTTP. """
-
-		self._eventHttpSendNotify = CSE.event.httpSendNotify		# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via HTTP. """
-
-		self._eventMqttSendRetrieve = CSE.event.mqttSendRetrieve	# type: ignore [attr-defined]
-		""" Event for sending a RETRIEVE request via MQTT. """
-
-		self._eventMqttSendCreate = CSE.event.mqttSendCreate		# type: ignore [attr-defined]
-		""" Event for sending a CREATE request via MQTT. """
-
-		self._eventMqttSendUpdate = CSE.event.httpSendUpdate		# type: ignore [attr-defined]
-		""" Event for sending an UPDATE request via MQTT. """
-
-		self._eventMqttSendDelete = CSE.event.mqttSendDelete		# type: ignore [attr-defined]
-		""" Event for sending a DELETE request via MQTT. """
-
-		self._eventMqttSendNotify = CSE.event.mqttSendNotify		# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via MQTT. """
-
-		self._eventWsSendRetrieve = CSE.event.wsSendRetrieve		# type: ignore [attr-defined]
-		""" Event for sending a RETRIEVE request via WebSocket. """
-
-		self._eventWsSendCreate = CSE.event.wsSendCreate			# type: ignore [attr-defined]
-		""" Event for sending a CREATE request via WebSocket. """
-
-		self._eventWsSendUpdate = CSE.event.wsSendUpdate			# type: ignore [attr-defined]
-		""" Event for sending an UPDATE request via WebSocket. """
-
-		self._eventWsSendDelete = CSE.event.wsSendDelete			# type: ignore [attr-defined]
-		""" Event for sending a DELETE request via WebSocket. """
-
-		self._eventWsSendNotify = CSE.event.wsSendNotify			# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via WebSocket. """
 		
-		self._eventAcmeSendNotify = CSE.event.acmeNotification		# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via ACME internally. """
-
-
 		# Map request handlers and events for operations in the RequestManager and the dispatcher
 		self.requestHandlers:RequestHandler = { 		
 			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, 
 												  CSE.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
-												  self._eventCoAPSendRetrieve,
-												  self._eventHttpSendRetrieve,
-												  self._eventMqttSendRetrieve,
-												  self._eventWsSendRetrieve),
+												  eventManager.coapSendRetrieve,
+												  eventManager.httpSendRetrieve,
+												  eventManager.mqttSendRetrieve,
+												  eventManager.wsSendRetrieve),
 												#   self.sendRetrieveRequest),
 			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
 												  CSE.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
-												  self._eventCoAPSendRetrieve,
-												  self._eventHttpSendRetrieve,
-												  self._eventMqttSendRetrieve,
-												  self._eventWsSendRetrieve),
+												  eventManager.coapSendRetrieve,
+												  eventManager.httpSendRetrieve,
+												  eventManager.mqttSendRetrieve,
+												  eventManager.wsSendRetrieve),
 												#   self.sendRetrieveRequest),
 			Operation.CREATE	: RequestCallback(self.createRequest,
 												  CSE.dispatcher.processCreateRequest,
 												  self._sendRequest,
-												  self._eventCoAPSendCreate,
-												  self._eventHttpSendCreate,
-												  self._eventMqttSendCreate,
-												  self._eventWsSendCreate),
+												  eventManager.coAPSendCreate,
+												  eventManager.httpSendCreate,
+												  eventManager.mqttSendCreate,
+												  eventManager.wsSendCreate),
 												#   self.sendCreateRequest),
 			Operation.UPDATE	: RequestCallback(self.updateRequest,
 												  CSE.dispatcher.processUpdateRequest,
 												  self._sendRequest,
-												  self._eventCoAPSendUpdate,
-												  self._eventHttpSendUpdate,
-												  self._eventMqttSendUpdate,
-												  self._eventWsSendUpdate),
+												  eventManager.coAPSendUpdate,
+												  eventManager.httpSendUpdate,
+												  eventManager.mqttSendUpdate,
+												  eventManager.wsSendUpdate),
 												#   self.sendUpdateRequest),
 			Operation.DELETE	: RequestCallback(self.deleteRequest,
 												  CSE.dispatcher.processDeleteRequest,
 												  self._sendRequest,
-												  self._eventCoAPSendDelete,
-												  self._eventHttpSendDelete,
-												  self._eventMqttSendDelete,
-												  self._eventWsSendDelete),
+												  eventManager.coAPSendDelete,
+												  eventManager.httpSendDelete,
+												  eventManager.mqttSendDelete,
+												  eventManager.wsSendDelete),
 												#   self.sendDeleteRequest),
 			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
 												  CSE.dispatcher.processNotifyRequest,
 												  self._sendRequest,
-												  self._eventCoAPSendNotify,
-												  self._eventHttpSendNotify,
-												  self._eventMqttSendNotify,
-												  self._eventWsSendNotify),
+												  eventManager.coAPSendNotify,
+												  eventManager.httpSendNotify,
+												  eventManager.mqttSendNotify,
+												  eventManager.wsSendNotify),
 												#   self.sendNotifyRequest),
 		}
 
@@ -374,7 +283,7 @@ class RequestManager(object):
 		# L.logDebug(f'Handling request: {request}')
 
 		# Send event
-		self._eventRequestReceived(request)
+		eventManager.requestReceived(EventData(payload=request))
 
 		# Validate partial RETRIEVE first
 		# partial RETRIEVE: convert single fragment ID
@@ -1104,7 +1013,7 @@ class RequestManager(object):
 						  dbg = 'Target not reachable or timeout'), None
 		# resp.data = resp.request.pc					# Add the pc to the data, since components excepct this. 
 													# TODO perhaps unify the use of response values throughout the CSE
-		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
+		eventManager.responseReceived(EventData(payload=resp.request))	# type:ignore [attr-defined]
 		return resp, info
 
 
@@ -1234,7 +1143,7 @@ class RequestManager(object):
 					# Special handling for ACME internal events.
 					# This might be more generalize when other opeations are supported as well
 					case _ if isAcmeUrl(url) and request.op == Operation.NOTIFY:
-						self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
+						eventManager.acmeNotification(EventData(payload=(url, _request)))	# Don't wait for any real result
 						results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
 						continue
 

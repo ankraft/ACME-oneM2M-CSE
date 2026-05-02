@@ -66,13 +66,6 @@ class ACMECoAPHandler():
 
 	__slots__ = (
 		'coapServer',
-
-		'_eventCoAPRetrieve',
-		'_eventCoAPCreate',
-		'_eventCoAPNotify',
-		'_eventCoAPUpdate',
-		'_eventCoAPDelete',
-		'_coapServer',
 	)
 	"""	Slots of the ACME CoAP Handler. """
 
@@ -83,18 +76,6 @@ class ACMECoAPHandler():
 			Args:
 				coapServer: The CoAP server object.
 		"""
-
-		# Optimize event handling
-		self._eventCoAPRetrieve =  CSE.event.coapRetrieve			# type: ignore [attr-defined]
-		"""	Event to trigger when a CoAP retrieve request is received. """
-		self._eventCoAPCreate = CSE.event.coapCreate				# type: ignore [attr-defined]
-		"""	Event to trigger when a CoAP create request is received. """
-		self._eventCoAPNotify =  CSE.event.coapNotify				# type: ignore [attr-defined]
-		"""	Event to trigger when a CoAP notify request is received. """
-		self._eventCoAPUpdate = CSE.event.coapUpdate				# type: ignore [attr-defined]
-		"""	Event to trigger when a CoAP update request is received. """
-		self._eventCoAPDelete = CSE.event.coapDelete				# type: ignore [attr-defined]
-		"""	Event to trigger when a CoAP delete request is received. """
 		self.coapServer = coapServer
 		"""	The CoAP server object. """
 
@@ -109,7 +90,7 @@ class ACMECoAPHandler():
 		"""
 		L.enableScreenLogging and renameThread('CO_R')
 		L.isDebug and L.logDebug('CoAP GET request received')
-		self._eventCoAPRetrieve()
+		eventManager.coapRetrieve()
 		self._handleRequest(request, response, Operation.RETRIEVE, options=options)
 
 
@@ -124,7 +105,7 @@ class ACMECoAPHandler():
 		L.enableScreenLogging and renameThread('CO_R')
 		L.isDebug and L.logDebug('CoAP FETCH request received')
 		# TODO handle FETCH requests differently. For R5
-		self._eventCoAPRetrieve()
+		eventManager.coapRetrieve()
 		self._handleRequest(request, response, Operation.RETRIEVE)
 
 
@@ -140,12 +121,12 @@ class ACMECoAPHandler():
 		if defines.OptionRegistry.oneM2M_TY.number in options:	# type:ignore[attr-defined]
 			L.enableScreenLogging and renameThread('CO_C')
 			L.isDebug and L.logDebug('CoAP POST request received')
-			self._eventCoAPCreate()
+			eventManager.coapCreate()
 			self._handleRequest(request, response, Operation.CREATE, options)
 		else:
 			L.enableScreenLogging and renameThread('CO_N')
 			L.isDebug and L.logDebug('CoAP POST/NOTIFY request received')
-			self._eventCoAPCreate()
+			eventManager.coapCreate()
 			self._handleRequest(request, response, Operation.NOTIFY, options)
 
 
@@ -159,7 +140,7 @@ class ACMECoAPHandler():
 		"""
 		L.enableScreenLogging and renameThread('CO_U')
 		L.isDebug and L.logDebug('CoAP PUT request received')
-		self._eventCoAPUpdate()
+		eventManager.coapUpdate()
 		self._handleRequest(request, response, Operation.UPDATE, options = options)
 
 
@@ -173,7 +154,7 @@ class ACMECoAPHandler():
 		"""
 		L.enableScreenLogging and renameThread('CO_D')
 		L.isDebug and L.logDebug('CoAP DELETE request received')
-		self._eventCoAPDelete()
+		eventManager.coapDelete()
 		self._handleRequest(request, response, Operation.DELETE, options = options)
 
 
@@ -542,7 +523,6 @@ class 	ACMECoAPServer(CoAP):
 		'clientCache',
 		'_requestHandler',
 		'_requestLayer',
-		'_eventResponseReceived',
 		'_isPaused',
 	)
 	"""	Slots of the ACME CoAP Server. """
@@ -587,9 +567,6 @@ class 	ACMECoAPServer(CoAP):
 		self.clientCache:ACMELRUCache = ACMELRUCache(maxsize = Configuration.coap_clientConnectionCacheSize, 
 											   		 evict = lambda _, val: val.close() if val else None)
 		"""	A cache for outgoing client connections. """
-
-		self._eventResponseReceived = CSE.event.responseReceived	# type: ignore [attr-defined]
-		"""	The event to trigger when a response is received. """
 
 		self._isPaused = False
 		"""	Flag whether the server is paused. If the server is paused, it will not handle any requests and return an error. """
@@ -871,7 +848,7 @@ class 	ACMECoAPServer(CoAP):
 
 
 			res = Result(rsc = resp.rsc, data = resp.pc, request = resp)
-			self._eventResponseReceived(resp)
+			eventManager.responseReceived(EventData(payload=resp))
 			return res
 	
 		# Catch exceptions and close the client connection
@@ -909,12 +886,12 @@ class CoAPServer():
 		"""	The CoAP server object. """
 
 		self.operationEvents = {
-			Operation.CREATE:		[CSE.event.coapCreate, 'CO_C'],		# type: ignore [attr-defined]
-			Operation.RETRIEVE: 	[CSE.event.coapRetrieve, 'CO_R'],	# type: ignore [attr-defined]
-			Operation.UPDATE:		[CSE.event.coapUpdate, 'CI_U'],		# type: ignore [attr-defined]
-			Operation.DELETE:		[CSE.event.coapDelete, 'CI_D'],		# type: ignore [attr-defined]
-			Operation.NOTIFY:		[CSE.event.coapNotify, 'CO_M'],		# type: ignore [attr-defined]
-			Operation.DISCOVERY:	[CSE.event.coapRetrieve, 'CO_F'],	# type: ignore [attr-defined]
+			Operation.CREATE:		[eventManager.coapCreate, 'CO_C'],		# type: ignore [attr-defined]
+			Operation.RETRIEVE: 	[eventManager.coapRetrieve, 'CO_R'],	# type: ignore [attr-defined]
+			Operation.UPDATE:		[eventManager.coapUpdate, 'CI_U'],		# type: ignore [attr-defined]
+			Operation.DELETE:		[eventManager.coapDelete, 'CI_D'],		# type: ignore [attr-defined]
+			Operation.NOTIFY:		[eventManager.coapNotify, 'CO_M'],		# type: ignore [attr-defined]
+			Operation.DISCOVERY:	[eventManager.coapRetrieve, 'CO_F'],	# type: ignore [attr-defined]
 		}
 		"""	Events for the different operations. """
 

@@ -20,6 +20,11 @@ from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
+from ..runtime.EventManager import EventManager, EventData
+
+eventManager = EventManager()	# type: ignore
+""" Event manager singleton instance. """
+
 
 
 # CSE default:
@@ -236,7 +241,7 @@ class TS(ContainerResource):
 			
 				# Send update event on behalf of the latest resources.
 				# The oldest resource might not be changed. That is handled in the validate() method.
-				CSE.event.changeResource(childResource, self.getLatestRI())	 # type: ignore [attr-defined]
+				eventManager.changeResource(EventData(payload=(childResource, self.getLatestRI())))	 # type: ignore [attr-defined]
 
 			case ResourceTypes.SUB:
 				# start monitoring
@@ -324,7 +329,7 @@ class TS(ContainerResource):
 		# oldest resource is the first in the list of tsis.
 		# This means that we need to send an "update" event for the oldest resource.
 		if tsi is not None and len(tsis) > 0:
-			CSE.event.changeResource(tsis[0], self.getOldestRI())	 # type: ignore [attr-defined]
+			eventManager.changeResource(EventData(payload=(tsis[0], self.getOldestRI())))	 # type: ignore [attr-defined]
 
 		# End validating
 		self.__validating = False

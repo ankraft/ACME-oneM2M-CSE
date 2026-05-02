@@ -17,11 +17,10 @@ from ..etc.DateUtils import getResourceDate
 from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager
+from ..runtime.EventManager import EventManager, EventData
 from ..resources.Resource import Resource, internalAttributes, addToInternalAttributes
 from ..resources.ContainerResource import ContainerResource
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
-
 
 eventManager = EventManager()	# type: ignore
 """ Event manager singleton instance. """
@@ -296,7 +295,7 @@ class FCNT(ContainerResource):
 
 		# Send update event on behalf of the latest resources.
 		# The oldest resource might not be changed. That is handled in the validate() method.
-		eventManager.changeResource(childResource, self.getLatestRI())	 # type: ignore [attr-defined]
+		eventManager.changeResource(EventData(payload=(childResource, self.getLatestRI())))	 # type: ignore [attr-defined]
 
 
 	# Handle the removal of a FCI. 

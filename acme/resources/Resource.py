@@ -25,6 +25,10 @@ from ..etc.DateUtils import getResourceDate
 from ..runtime.Logging import Logging as L
 from ..runtime import CSE
 from ..etc.Constants import Constants
+from ..runtime.EventManager import EventManager, EventData
+
+eventManager = EventManager()	# type: ignore
+"""	Event manager singleton instance. """
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 # TODO cleanup optimizations
@@ -951,7 +955,7 @@ class Resource(object):
 		CSE.storage.updateResource(self)
 		# L.logWarn(f'{finalize} - {self.ri}')
 		if finalize and not self.isVirtual():
-				CSE.event.changeResource(self)	 # type: ignore [attr-defined]
+				eventManager.changeResource(EventData(payload=(self, self.ri)))	 # type: ignore [attr-defined]
 		return self
 
 

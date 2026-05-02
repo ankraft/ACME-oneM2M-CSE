@@ -21,6 +21,10 @@ from ...etc.Constants import RuntimeConstants as RC
 from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...runtime.Logging import Logging as L
 from ...runtime.PluginSupport import plugin, start, stop, restart
+from ...runtime.EventManager import EventManager, EventData, onEvent
+
+eventManager = EventManager()	# type: ignore
+"""	Event manager singleton instance. """
 
 # TODO add check to http request handling
 # TODO add check to http response handling
@@ -52,10 +56,6 @@ class TimeManager(object):
 		# Read all periofics and add them (again)
 		for each in self._getAllPeriodicTimeSyncBeacons():
 			self.addPeriodicTimeSyncBeacon(each)
-		
-		# Register to receive events
-		CSE.event.addHandler(CSE.event.requestReceived, self.requestReveivedHandler)			# type: ignore
-		CSE.event.addHandler(CSE.event.responseReceived, self.responseReveivedHandler)			# type: ignore
 		
 		self.periodicTimeSyncBeacons:dict[str, BackgroundWorker] = {}
 		"""	Table for periodic timeSyncBeacons."""
@@ -97,21 +97,25 @@ class TimeManager(object):
 		self.periodicTimeSyncBeacons.clear()
 
 
-	def requestReveivedHandler(self, name:str, req:CSERequest) -> None:
+	@onEvent(eventManager.requestReceived)
+	def requestReveivedHandler(self, eventData: EventData) -> None:
 		"""	Handle a received request.
 		
 			Args:
-				req: The received request
+				eventData: The event data containing the request.
 		"""
+		#req = eventData.payload
 		# L.logErr(f'Received {req}')
 		...
 
-	def responseReveivedHandler(self, name:str, resp:CSERequest) -> None:
+	@onEvent(eventManager.responseReceived)
+	def responseReveivedHandler(self, eventData: EventData) -> None:
 		"""	Handle a received response.
 		
 			Args:
-				resp: The received response
+				eventData: The event data containing the response.
 		"""
+		#resp = eventData.payload
 		# L.logErr(f'Received {resp}')
 		#L.logWarn(self.isLossOfSynchronization(resp))
 		...

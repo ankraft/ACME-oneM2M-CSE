@@ -49,15 +49,6 @@ class TextUI(object):
 	@start
 	def start(self) -> None:
 		global _textUI
-
-		# Add handlers for registrations here. This is not done in the textUI classes because it it
-		# is not always clear when they are removed and re-created
-
-		CSE.event.addHandler([CSE.event.aeHasRegistered, 									# type:ignore[attr-defined]
-							  CSE.event.aeHasDeregistered, 									# type:ignore[attr-defined]
-							  CSE.event.deregisteredFromRegistrarCSE, 						# type:ignore[attr-defined]
-							  CSE.event.registeredToRemoteCSE], self.registrationUpdate)	# type:ignore[attr-defined]
-
 		_textUI = self
 		L.isInfo and L.log('TextUI initialized')
 
@@ -81,17 +72,15 @@ class TextUI(object):
 
 	# TODO the following parameters do not match the event signatures, but we ignore this for now until
 	# the arguments are used.
-	# def registrationUpdate(self, name:str, resource:Resource, dct:dict=None, anotherResource:Resource=None) -> None:
-	def registrationUpdate(self, *args, **kwargs) -> None:		# type: ignore[no-untyped-def]
-		if self.tuiApp and self.tuiApp.containerRegistrations:
-			self.tuiApp.containerRegistrations.registrationsUpdate()
-
-
+	@onEvent(eventManager.aeHasRegistered)
+	@onEvent(eventManager.aeHasDeregistered)
 	@onEvent(eventManager.registeredToRegistrarCSE)
 	@onEvent(eventManager.registreeCSEHasRegistered)
 	@onEvent(eventManager.registreeCSEHasDeregistered)
+	@onEvent(eventManager.deregisteredFromRegistrarCSE)
+	@onEvent(eventManager.registeredToRemoteCSE)
 	@onEvent(eventManager.csrUpdated)
-	def registrationUpdate2(self, eventData: EventData) -> None:		# type: ignore[no-untyped-def]
+	def registrationUpdate(self, eventData: EventData) -> None:		# type: ignore[no-untyped-def]
 		if self.tuiApp and self.tuiApp.containerRegistrations:
 			self.tuiApp.containerRegistrations.registrationsUpdate()
 
