@@ -117,7 +117,7 @@ class PluginManager(PM):
 
 		L.isDebug and L.logDebug('Resolving and starting plugins')
 		try:
-			self.resolvePlugins() # Resolve dependencies before starting the plugins. 
+			self.resolvePlugins(tags=tags, excludedTags=excludedTags) # Resolve dependencies before starting the plugins. 
 			self.startPlugins(tags=tags, excludedTags=excludedTags)
 		except DependencyError as e:
 			L.logErr(f'Failed to resolve plugin dependencies: {e}')

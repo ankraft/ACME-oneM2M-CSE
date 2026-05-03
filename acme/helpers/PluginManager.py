@@ -64,6 +64,7 @@ class Dependency:
 	className: str
 	required: bool
 	resolved: bool = False
+	provided: bool = False
 
 DependencyGraph = dict[type|str, list[Dependency]]
 """ Type alias for a dependency graph. The keys are (plugin) classes or names, and the values are lists of dependencies. """
@@ -77,6 +78,12 @@ dependentClasses: dict[type, tuple[str, bool]] = {}
 
 	The keys are the classes, the values are tuples containing the names of the plugins they depend
 	 on and a boolean indicating whether the dependency is resolved.
+"""
+
+providedInstances: dict[str, Any] = {}
+""" Dictionary to hold instances that are extra provided class instances. 
+	The keys are the names of the instances, ie. the  module name,
+	the values are the instances themselves. 	
 """
 
 
@@ -625,19 +632,38 @@ class PluginManager(metaclass=Singleton.Singleton):
 		"""
 		self._transition(pluginNames, lambda plugin: plugin.validate(*args, **kwargs), tags=tags, excludedTags=excludedTags)
 	
+	def _checkPluginTags(self, pluginName: str, 
+					  		   tags: Optional[str|list[str]] = None, 
+							   excludedTags: Optional[str|list[str]] = None) -> bool:
+		if pluginName not in self.plugins:
+			return False
+		if tags and not any(tag in self.plugins[pluginName].tags for tag in tags):
+			return False
+		if excludedTags and any(tag in self.plugins[pluginName].tags for tag in excludedTags):
+			return False
+		return True
+	
 
-	def resolvePlugins(self) -> None:
+	def resolvePlugins(self, tags: Optional[str|list[str]] = None,
+					   		 excludedTags: Optional[str|list[str]] = None) -> None:
 		""" Resolve the dependencies of all plugins and other classes.
 			This is called before starting the plugins to ensure that all dependencies are resolved 
 			and the plugin instances have all the required attributes injected.
 
+			Args:
+				tags: The tags of the plugins to match for dependency resolution. Match all if None.
+				excludedTags: The tags of the plugins to exclude from dependency resolution. Exclude none
 			Raises:
 				DependencyError: If a required dependency cannot be resolved.
 		"""
+
 		for cls, deps in dependencies.items():
 			# Resolve all dependency for all registered dependents.
 			# This includes plugins and other clases that have dependencies injected via the @requires decorator. 
+
 			for dep in deps:
+				if not self._checkPluginTags(dep.pluginName, tags, excludedTags):
+					continue
 				if dep.pluginName in self.plugins and self.plugins[dep.pluginName].instance:
 					setattr(cls, dep.attributeName, self.plugins[dep.pluginName].instance)
 					deps[deps.index(dep)] = Dependency(attributeName=dep.attributeName, 
@@ -651,7 +677,9 @@ class PluginManager(metaclass=Singleton.Singleton):
 
 		# Set all plugins (not other classes) to "resolved" state even if they have no dependencies.
 		for plugin in self.plugins.values():
-			plugin.resolve()
+			if self._checkPluginTags(plugin.name, tags, excludedTags):
+				plugin.resolve()
+
 		
 		# Do we have any fullfilled classes (not plugins)? If so, we should call the fulfilled callbacks on them.
 		for cls, (moduleName, resolved) in dependentClasses.items():
@@ -667,6 +695,19 @@ class PluginManager(metaclass=Singleton.Singleton):
 				resolvedCallback(cls, copy.deepcopy(dependencies.get(cls, [])))
 				dependentClasses[cls] = (moduleName, True)	# Mark as resolved	
 		
+		# Now, resolve the provided instances as well, since they are not plugins and therefore not resolved in the previous steps.
+		for moduleName, instance in providedInstances.items():
+			for cls, deps in dependencies.items():
+				for dep in deps:
+					if dep.pluginName == moduleName and not dep.resolved:
+						setattr(cls, dep.attributeName, instance)
+						deps[deps.index(dep)] = Dependency(attributeName=dep.attributeName, 
+														   pluginName=dep.pluginName, 
+														   className=cls.__name__ if isinstance(cls, type) else str(cls),
+														   required=dep.required, 
+														   resolved=True,
+														   provided=True)
+
 
 	def unresolvePlugins(self) -> None:
 		""" Unresolve the plugins. This is called when plugins are unloaded to clean up the injected dependencies 
@@ -702,6 +743,22 @@ class PluginManager(metaclass=Singleton.Singleton):
 					continue
 				resolvedCallback(cls, copy.deepcopy(dependencies.get(cls, [])))
 				dependentClasses[cls] = (moduleName, False)	# Mark as resolved	
+
+	def setupFinished(self) -> None:
+		""" Check if all required dependencies are resolved. This can be called after the resolvePlugins method to check if there are any unresolved dependencies that are required and not provided.
+			This is a separate step because sometimes, we might want to resolve the plugins first and then check for missing dependencies, so that we can provide the missing dependencies before starting the plugins. 
+			For example, we might want to provide some extra instances that are not plugins, but are required by some plugins or other classes. 
+			In this case, we can call resolvePlugins first, then setupFinished to see if there are any missing dependencies, then provide the missing instances, and then start the plugins.
+		"""
+		for cls, deps in dependencies.items():
+			for dep in deps:
+				# plugin = self.plugins.get(dep.pluginName)
+			
+				if dep.required and not dep.provided and not dep.resolved and dep.pluginName not in providedInstances:
+					raise DependencyError(f'Class "{cls}" requires the provided instance "{dep.pluginName}" which could not be resolved. Is it missing?')
+
+	
+	
 
 
 	def __getattr__(self, name:str) -> Any:
@@ -741,6 +798,29 @@ class PluginManager(metaclass=Singleton.Singleton):
 		"""
 		return hasattr(self, instanceName)
 	
+
+	def provide(self, moduleName: str, instance: Any) -> None:
+		""" Provide a instance of any non-plugin class to be injected as a dependency.
+			This can be used to provide instances of classes that are not plugins, 
+			but are required as dependencies by plugins or other classes. 
+
+			The provided instances are injected into the dependent classes during the dependency 
+			resolution phase, just like plugin instances. 
+
+			The provided instances are not managed by the plugin manager, so they are not started, 
+			stopped, etc. They are simply injected as attributes into the dependent classes.
+	
+			Args:
+				moduleName: The name of the module that provides the instance. This is used to identify the instance in the dependency graph and to inject it into the dependent classes.
+				instance: The instance to provide. This can be any instance of any class, as long as it is not a plugin class (i.e. it does not have the @pluginClass decorator).
+				
+			
+		"""
+		if moduleName in self.plugins:
+			raise ValueError(f'Cannot provide instance for module "{moduleName}" because it is already registered as a plugin. Please choose a different name for the provided instance.')
+		providedInstances[moduleName] = instance
+		
+
 
 	def dependencyGraph(self, name: Optional[str] = None) -> dict[str, list[Dependency]]:
 		""" Get the dependency graph of the plugins and other classes.
