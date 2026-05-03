@@ -8,7 +8,7 @@
 
 from ..runtime.PluginManager import PluginManager
 from ..helpers.PluginManager import plugin, init, finish, start, stop, restart, pause, unpause, configure, validate, plugin, requires
-from ..helpers.PluginManager import ServicePlugin as SP, endpoint
+from ..helpers.PluginManager import ServicePlugin as _SP_, endpoint, serviceClasses
 from acme.runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 
 # Get a pluginManager Singleton instance.
@@ -18,8 +18,8 @@ pluginManager:PluginManager = PluginManager()	# type: ignore
 eventManager:EventManager = EventManager()	# type: ignore
 
 @EventHandler
-class ServicePlugin(SP):
+class ServicePlugin(_SP_):
 	"""	Plugin support class. This class provides the base for service plugins. 
 		It is also an event handler to handle plugin-related events. 
 	"""	
-	...
+	pass

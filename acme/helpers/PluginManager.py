@@ -26,6 +26,8 @@ _tagInstanceName = '_pm_instance_name'
 _tagInstancePriority = '_pm_instance_priority'
 _tagInstanceTags = '_pm_instance_tags'
 _tagNoRestartWhilePaused = '_pm_no_restart_while_paused'
+_tagEnpoints = '_pm_endpoints'
+_tagEndpointMap = '_pm_endpointMap'
 
 
 #
@@ -80,10 +82,9 @@ dependentClasses: dict[type, tuple[str, bool]] = {}
 	 on and a boolean indicating whether the dependency is resolved.
 """
 
-providedInstances: dict[str, Any] = {}
-""" Dictionary to hold instances that are extra provided class instances. 
-	The keys are the names of the instances, ie. the  module name,
-	the values are the instances themselves. 	
+serviceClasses: dict[str, type] = {}
+""" Dictionary to hold the service classes. The keys are the service names, the values are 
+the service classes.
 """
 
 
@@ -253,6 +254,11 @@ class PluginManager(metaclass=Singleton.Singleton):
 	unloadedPlugins: list[str] = []
 	_pluginInstances: dict[str, Any] = {}
 	_tagsPluginMap: dict[str, list[tuple[str, Any]]] = {}
+	_providedInstances: dict[str, Any] = {}
+	""" Dictionary to hold instances that are extra provided class instances. 
+		The keys are the names of the instances, ie. the  module name,
+		the values are the instances themselves. 	
+	"""
 
 
 	def loadPlugins(self, directory: str, 
@@ -696,7 +702,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 				dependentClasses[cls] = (moduleName, True)	# Mark as resolved	
 		
 		# Now, resolve the provided instances as well, since they are not plugins and therefore not resolved in the previous steps.
-		for moduleName, instance in providedInstances.items():
+		for moduleName, instance in self._providedInstances.items():
 			for cls, deps in dependencies.items():
 				for dep in deps:
 					if dep.pluginName == moduleName and not dep.resolved:
@@ -754,11 +760,8 @@ class PluginManager(metaclass=Singleton.Singleton):
 			for dep in deps:
 				# plugin = self.plugins.get(dep.pluginName)
 			
-				if dep.required and not dep.provided and not dep.resolved and dep.pluginName not in providedInstances:
+				if dep.required and not dep.provided and not dep.resolved and dep.pluginName not in self._providedInstances:
 					raise DependencyError(f'Class "{cls}" requires the provided instance "{dep.pluginName}" which could not be resolved. Is it missing?')
-
-	
-	
 
 
 	def __getattr__(self, name:str) -> Any:
@@ -818,7 +821,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 		"""
 		if moduleName in self.plugins:
 			raise ValueError(f'Cannot provide instance for module "{moduleName}" because it is already registered as a plugin. Please choose a different name for the provided instance.')
-		providedInstances[moduleName] = instance
+		self._providedInstances[moduleName] = instance
 		
 
 
@@ -842,6 +845,24 @@ class PluginManager(metaclass=Singleton.Singleton):
 			return {name: graph[name] if name in graph else []}
 		return graph
 	
+
+	def dependencyGraphProvidedInstances(self) -> dict[str, list[tuple[str, str, str]]]:
+		""" Get the provided instances that are not plugins, and who is using them.
+
+			Returns:
+				A dictionary where the keys are the names of the provided instances and the values are
+					a list of tuples of the form (dependent module name, class name, attribute name) that are using 
+					the provided instance as a dependency.
+		"""
+		providedGraph: dict[str, list[tuple[str, str, str]]] = {}
+		for cls, deps in dependencies.items():
+			for dep in deps:
+				if dep.provided:
+					if dep.pluginName not in providedGraph:
+						providedGraph[dep.pluginName] = []
+					providedGraph[dep.pluginName].append((cls.__module__, cls.__name__, dep.attributeName))	# type:ignore[union-attr]
+		return providedGraph
+
 
 	def getPluginsByTag(self, tag: str, byPriority: bool = False) -> list[tuple[str, Any]]:
 		""" Get the names of the plugins that have the given tag.
@@ -877,7 +898,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 
 		# Get the plugin instance for the given tag and endpoint
 		plugins = self.getPluginsByTag(tag)
-		plugins = [ (p, i) for p, i in plugins if hasattr(i, '_endpointMap') and endpoint in i._endpointMap ]
+		plugins = [ (p, i) for p, i in plugins if hasattr(i, _tagEndpointMap) and endpoint in i._pm_endpointMap ]
 		if not plugins:
 			raise ValueError(f'No plugin found with tag: {tag}')
 		if len(plugins) > 1:
@@ -889,6 +910,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 		return getattr(plugins[0][1], endpoint)(*args, **kwargs)
 
 
+#############################################################################
 #
 #	Decorators for plugin methods and classes
 #
@@ -1077,33 +1099,28 @@ def requires(*args:Any, **kwargs:Any) -> Callable:
 	return decorator
 
 
-# #############################################################################
-# #
-# #	Create the plugin manager singleton instance. 
-# #
-
-# pluginManager = PluginManager()	
-
-
 #############################################################################
 #
 #	Service Plugin Support
 #
 
+
+
 class ServicePlugin:
 	"""	Base class for service plugins. """
 
-	_endpointMap: dict[str, str]	# mapping of endpoint names to method names
+	_pm_endpointMap: dict[str, str]	# mapping of endpoint names to method names
 
 	def __init_subclass__(cls, **kwargs: Any) -> None:
 		"""	Initialize the plugin class, creating the service endpoint map by checking
 			the methods marked by the @endpoint decorator. 
 		"""
 		super().__init_subclass__(**kwargs)
-		cls._endpointMap = {}
+		serviceClasses[f'{cls.__module__}.{cls.__name__}'] = cls
+		cls._pm_endpointMap = {}
 		for attrName, method in inspect.getmembers(cls, predicate=inspect.isfunction):
-			for endPointname in getattr(method, '_endpoints', []):
-				cls._endpointMap[endPointname] = attrName
+			for endPointname in getattr(method, _tagEnpoints, []):
+				cls._pm_endpointMap[endPointname] = attrName
 
 
 	def __getattribute__(self, name: str) -> Any:
@@ -1116,19 +1133,10 @@ class ServicePlugin:
 			Return:
 				The attribute value. If the name is an endpoint name, the corresponding method is returned.
 		"""
-		endpointMap = object.__getattribute__(self, '_endpointMap')
+		endpointMap = object.__getattribute__(self, _tagEndpointMap)
 		if name in endpointMap:
 			name = endpointMap[name]
 		return object.__getattribute__(self, name)
-	
-
-#############################################################################
-#
-#	Functions for Services Support
-#
-
-# TODO move to -> pluginManager? 
-
 	
 
 #############################################################################
@@ -1142,9 +1150,9 @@ def endpoint(name: str) -> Callable:
 	"""
 
 	def decorator(func: type) -> type:
-		if not hasattr(func, '_endpoints'):
-			func._endpoints = []		# type: ignore[attr-defined]
-		func._endpoints.append(name)	# type: ignore[attr-defined]
+		if not hasattr(func, _tagEnpoints):
+			func._pm_endpoints = []		# type: ignore[attr-defined]
+		func._pm_endpoints.append(name)	# type: ignore[attr-defined]
 		return func
 	
 	return decorator

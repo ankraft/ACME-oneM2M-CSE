@@ -35,7 +35,7 @@ from ..resources.Resource import Resource
 from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
-from ..runtime.PluginSupport import pluginManager
+from ..runtime.PluginSupport import pluginManager, serviceClasses
 from ..runtime.Storage import Storage
 from ..services.Dispatcher import Dispatcher
 
@@ -151,24 +151,30 @@ def getPlugins() -> str:
 			The loaded plugins of the CSE in JSON format.
 	"""
 	dg = pluginManager.dependencyGraph()
+	dgp = pluginManager.dependencyGraphProvidedInstances()
 	return json.dumps(
 		{ 	'unloadedPlugins': sorted(pluginManager.unloadedPlugins, key=lambda p: p.lower()),
+			
 			'loadedPlugins': sorted([ {
-				'name': p.name,
-				'instanceClass': p.instance.__class__.__name__,
+				'module': p.name,
+				'class': p.instance.__class__.__name__,
 				'instanceName': p.instanceAttributeName,
 				'filename': p.fileName,
 				'dependencies': [{	'module': d.pluginName, 
 									'class': pluginManager.plugins[d.pluginName].pluginClass.__name__ if d.pluginName in pluginManager.plugins else None,
 									'attribute': d.attributeName, 
 									'required': d.required, 
-									'resolved': d.resolved } 
-										for d in dg.get(p.name, [])],
-				'requiredBy': [{'module': k,
-								'class': d.className,
-								'attribute': d.attributeName, 
-								'required': d.required, 
-								'resolved': d.resolved } 
+									'resolved': d.resolved,
+									'provided': d.provided
+								 } 
+								 for d in dg.get(p.name, [])],
+				'requiredBy': [{	'module': k,
+									'class': d.className,
+									'attribute': d.attributeName, 
+									'required': d.required, 
+									'resolved': d.resolved,
+									'provided': d.provided
+								} 
 								for k, deps in dg.items() 
 									for d in deps if d.pluginName == p.name],
 				'priority': p.priority,
@@ -198,7 +204,42 @@ def getPlugins() -> str:
 				'doc': p.doc,
 			}
 			for p in pluginManager.plugins.values()
-			], key=lambda p: p['name'].lower()),
+			], key=lambda p: p['module'].lower()),
+			
+			'providedDependencies': sorted([ {
+				'module': moduleName,
+				'providedTo': [
+					{	'module': mod, 
+	  					'class': cls, 
+						'attribute': attr
+					} 
+					for mod, cls, attr in instances
+				]}		
+				for moduleName, instances in dgp.items()
+			], 
+			key=lambda d: d['module'].lower())
+
+		}, indent=4)
+
+
+def getServices() -> str:
+	"""Get the current registered services and their endpoints of the CSE.
+
+		Returns:
+			The registered services and their endpoints of the CSE in JSON format.
+	"""
+	return json.dumps(
+		{ 	name: {
+				'endpoints': [{
+					'name': endpointName,
+					'function': functionName,
+					'signature': str(inspect.signature(getattr(endpoints, functionName)))
+				}
+				for endpointName, functionName in getattr(endpoints, "_pm_endpointMap", {}).items()
+				]
+			} 
+			for name, endpoints in serviceClasses.items()
+			if name != 'acme.runtime.PluginSupport.ServicePlugin'	# Ignore a helper class that is not a real service
 		}, indent=4)
 
 

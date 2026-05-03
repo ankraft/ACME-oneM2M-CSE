@@ -182,12 +182,15 @@ help          Show this help message
 												headers=self.httpServer._responseHeaders)
 							case 'plugins':
 								return Response(response=Mgmt.getPlugins(), mimetype='application/json', headers=self.httpServer._responseHeaders)
+							case 'services':
+								return Response(response=Mgmt.getServices(), mimetype='application/json', headers=self.httpServer._responseHeaders)
 							case 'help':
 								return Response(response='''ACME oneM2M CSE Management Status Commands
 						
 (no command)  Generale status information about the CSE
 modules       Information about the loaded Python modules
 plugins       Information about the loaded plugins
+services      Information about the registered services and endpoints
 help          Show this help message
 ''',
 									status=200,
