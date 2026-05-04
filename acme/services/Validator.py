@@ -340,8 +340,7 @@ class Validator(object):
 	# TODO allowed media type chars
 	cnfRegex = re.compile(
 		r'^[^:/]+/[^:/]+:[0-2]$'
-		r'|^[^:/]+/[^:/]+:[0-2]$'	# TODO why twice?
-		r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
+		+ r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
 	)
 	"""	Compiled regular expression that matches a valid contentInfo string. """
 
