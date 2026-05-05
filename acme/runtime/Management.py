@@ -864,7 +864,7 @@ Platform          : {status['runtime']['platform']}
 Python Version    : {status['runtime']['pythonVersion']}
 ACME CSE Version  : {status['runtime']['version']}'''
 
-		miscHeight = len(miscLeft.split('\n'))
+		miscHeight = len(miscLeft.split('\n', allow_blank=True))
 		panelMiscLeft = Panel(miscLeft, 
 								box=box.ROUNDED, 
 								title=_markupText('[b]Misc[/b]'), 
@@ -890,7 +890,7 @@ Expired  : {_st["expired"]}
 
 ''' 
 			resourceOps += _markupText(f'[dim]Includes virtual\nresources[/dim]')
-			opsHeight = len(resourceOps.split('\n'))
+			opsHeight = len(resourceOps.split('\n', allow_blank=True))
 
 			# Construct the protocol stats columns for all the protocols and request types
 			protColumns = []
@@ -961,6 +961,7 @@ Type     : {_dbType}
 
 
 '''				
+		dbHeight = 6
 
 
 		#
@@ -1013,14 +1014,14 @@ Native   : {status['runtime']["threads"]["native"]}'''
 						padding=(0, 1, workersHeight-4, 1),
 						expand=True,
 						style=style)
-		threadsHeight = 6
+		threadsHeight = workersHeight
 
 		# Last Panel that needs to be adapted in height 
 		panelMiscDB = Panel(miscDB, 
 							box=box.ROUNDED, 
 							title=_markupText('[b]Database[/b]'), 
 							title_align='left', 
-							padding=(0, 1, miscHeight + workersHeight - threadsHeight - logsHeight - 12, 1),	# adapt height accoring to misc panel height
+							padding=(0, 1, miscHeight - (logsHeight + dbHeight + 1), 1),	# adapt height accoring to misc panel height
 							expand=True,
 							style=style)
 
@@ -1109,7 +1110,7 @@ TSI     : {_cts['TSI']}
 		# Not sure why rich does not use 1 per line for padding. For some unknown reasons
 		# we need to multiply the number of lines with 2 to get the correct padding.
 		# _padding = 9 + (miscHeight - 15) * 2
-		_padding = opsHeight + workersHeight + miscHeight + 6 - len(resourceTypes.split('\n'))
+		_padding = opsHeight + workersHeight + miscHeight +6 - len(resourceTypes.split('\n', allow_blank=True))
 		
 		panelResources = Panel(resourceTypes, 
 								box=box.ROUNDED, 
