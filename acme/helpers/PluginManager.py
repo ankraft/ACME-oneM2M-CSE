@@ -66,7 +66,10 @@ class Dependency:
 	className: str
 	required: bool
 	resolved: bool = False
-	provided: bool = False
+	provided: bool = False  
+	"""Dependency is provided by other class instances or a functions."""
+	isFunction: bool = False	
+	""" Whether the dependency is a function (provided by @provide) """
 
 DependencyGraph = dict[type|str, list[Dependency]]
 """ Type alias for a dependency graph. The keys are (plugin) classes or names, and the values are lists of dependencies. """
@@ -85,6 +88,11 @@ dependentClasses: dict[type, tuple[str, bool]] = {}
 serviceClasses: dict[str, type] = {}
 """ Dictionary to hold the service classes. The keys are the service names, the values are 
 the service classes.
+"""
+
+providedFunctions: dict[str, Callable] = {}
+""" Dictionary to hold the provided functions. The keys are the function paths, 
+the values are the functions themselves.
 """
 
 
@@ -701,7 +709,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 				resolvedCallback(cls, copy.deepcopy(dependencies.get(cls, [])))
 				dependentClasses[cls] = (moduleName, True)	# Mark as resolved	
 		
-		# Now, resolve the provided instances as well, since they are not plugins and therefore not resolved in the previous steps.
+		# Now, resolve the provided instances, since they are not plugins and therefore not resolved in the previous steps.
 		for moduleName, instance in self._providedInstances.items():
 			for cls, deps in dependencies.items():
 				for dep in deps:
@@ -714,6 +722,22 @@ class PluginManager(metaclass=Singleton.Singleton):
 														   resolved=True,
 														   provided=True)
 
+		# Now resolve the provided functions as well. They are not plugins and
+		# therefore not resolved in the previous steps. This is for functions that are
+		# marked by the @provide decorator. 
+		for cls, deps in dependencies.items():
+			for dep in deps:
+				if dep.resolved:	# skipp resolved dependencies
+					continue
+				if dep.pluginName in providedFunctions:
+					setattr(cls, dep.attributeName, providedFunctions[dep.pluginName])
+					deps[deps.index(dep)] = Dependency(attributeName=dep.attributeName, 
+														pluginName=dep.pluginName, 
+														className=cls.__name__ if isinstance(cls, type) else str(cls),
+														required=dep.required, 
+														resolved=True,
+														provided=True,
+														isFunction=True)
 
 	def unresolvePlugins(self) -> None:
 		""" Unresolve the plugins. This is called when plugins are unloaded to clean up the injected dependencies 
@@ -731,6 +755,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 													   className=cls.__name__ if isinstance(cls, type) else str(cls),
 													   required=dep.required, 
 													   resolved=False)
+													   
 
 		# Set all plugins (not other classes) to "unresolved" state even if they have no dependencies.
 		for plugin in self.plugins.values():
@@ -846,22 +871,31 @@ class PluginManager(metaclass=Singleton.Singleton):
 		return graph
 	
 
-	def dependencyGraphProvidedInstances(self) -> dict[str, list[tuple[str, str, str]]]:
+	def dependencyGraphProvidedInstances(self) -> dict[tuple[str, bool], list[tuple[str, str, str]]]:
 		""" Get the provided instances that are not plugins, and who is using them.
 
 			Returns:
-				A dictionary where the keys are the names of the provided instances and the values are
-					a list of tuples of the form (dependent module name, class name, attribute name) that are using 
-					the provided instance as a dependency.
+				A dictionary where the keys are tuples of the form 
+					(provided instance name, isFunction flag) and the values are
+					a list of tuples of the form (dependent module name, class name, attribute name)
+					that are using the provided instance as a dependency.
 		"""
-		providedGraph: dict[str, list[tuple[str, str, str]]] = {}
+		providedGraph: dict[tuple[str, bool], list[tuple[str, str, str]]] = {}
 		for cls, deps in dependencies.items():
 			for dep in deps:
 				if dep.provided:
-					if dep.pluginName not in providedGraph:
-						providedGraph[dep.pluginName] = []
-					providedGraph[dep.pluginName].append((cls.__module__, cls.__name__, dep.attributeName))	# type:ignore[union-attr]
+					nm = dep.pluginName
+					if not dep.isFunction:
+						if inst := self._providedInstances.get(dep.pluginName, None):
+							nm = f'{dep.pluginName}.{inst.__class__.__name__}'
+						else:
+							nm = dep.pluginName
+					key = (nm, dep.isFunction)
+					if key not in providedGraph:
+						providedGraph[key] = []
+					providedGraph[key].append((cls.__module__, cls.__name__, dep.attributeName))	# type:ignore[union-attr]
 		return providedGraph
+	
 
 
 	def getPluginsByTag(self, tag: str, byPriority: bool = False) -> list[tuple[str, Any]]:
@@ -1043,6 +1077,25 @@ def plugin(property: str|ClassVar = None,						 # type: ignore
 	return decorator
 
 
+def provide(functionPath: str) -> Callable:
+	""" Decorator to mark a function as provided function that can be called 
+		by other plugins or external code.	
+
+		It can be injected as a dependency into other plugins or classes using the
+		@requires decorator, by using the function path as the plugin name in the dependency.
+	"""
+	def decorator(func: Callable) -> Callable:
+		if not callable(func):
+			raise ValueError(f'Invalid value for "func" parameter in "provide" decorator. Expected a callable, got {type(func)}')
+		if not isinstance(functionPath, str):
+			raise ValueError(f'Invalid value for "functionPath" parameter in "provide" decorator. Expected a string, got {type(functionPath)}')	
+		if functionPath in providedFunctions:
+			raise ValueError(f'Function path "{functionPath}" is already provided by another function. Please choose a different function path.')
+		providedFunctions[functionPath] = func
+		return func
+	return decorator
+
+
 def requires(*args:Any, **kwargs:Any) -> Callable:
 	""" Class decorator to mark plugin and other classes with dependencies. 
 
@@ -1097,6 +1150,8 @@ def requires(*args:Any, **kwargs:Any) -> Callable:
 
 		return cls
 	return decorator
+
+
 
 
 #############################################################################

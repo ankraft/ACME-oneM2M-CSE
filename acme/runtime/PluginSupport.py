@@ -7,8 +7,9 @@
 """	Various plugin support functions . """
 
 from ..runtime.PluginManager import PluginManager
-from ..helpers.PluginManager import plugin, init, finish, start, stop, restart, pause, unpause, configure, validate, plugin, requires
-from ..helpers.PluginManager import ServicePlugin as _SP_, endpoint, serviceClasses
+from ..helpers.PluginManager import plugin, init, finish, start, stop, restart, pause, unpause
+from ..helpers.PluginManager import configure, validate, plugin, requires, provide
+from ..helpers.PluginManager import ServicePlugin as _SP_, endpoint, serviceClasses, DependencyError
 from acme.runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 
 # Get a pluginManager Singleton instance.
