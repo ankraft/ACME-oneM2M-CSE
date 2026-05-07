@@ -730,7 +730,12 @@ class PluginManager(metaclass=Singleton.Singleton):
 				if dep.resolved:	# skipp resolved dependencies
 					continue
 				if dep.pluginName in providedFunctions:
-					setattr(cls, dep.attributeName, providedFunctions[dep.pluginName])
+
+					# In the following line we inject the provided function as a static method
+					# into the dependent class. We need a static method here because we want to
+					# prevent the passing of the "self" argument to the function.
+					setattr(cls, dep.attributeName,staticmethod(providedFunctions[dep.pluginName]))
+
 					deps[deps.index(dep)] = Dependency(attributeName=dep.attributeName, 
 														pluginName=dep.pluginName, 
 														className=cls.__name__ if isinstance(cls, type) else str(cls),
@@ -738,6 +743,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 														resolved=True,
 														provided=True,
 														isFunction=True)
+
 
 	def unresolvePlugins(self) -> None:
 		""" Unresolve the plugins. This is called when plugins are unloaded to clean up the injected dependencies 
