@@ -23,18 +23,13 @@ from ..etc import Types
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Types import JSON
 from ..etc.JSONUtils import pureResource
-from .Logging import Logging as L
-
-
 from ..helpers.Singleton import Singleton
+from .Logging import Logging as L
 
 class Factory(metaclass=Singleton):
 	""" Factory for creating resources. """
 
-
 	resourceClassMapping:dict[ResourceTypes, Tuple[Type[Resource], Callable]] = {}
-
-
 
 	def getResourceClassForType(self, ty:ResourceTypes) -> Optional[Type[Resource]]:
 		""" Get the resource class for a given resource type. 
@@ -150,6 +145,7 @@ class Factory(metaclass=Singleton):
 		from ..resources.mgmtobjs.MNWK import MNWK
 		from ..resources.mgmtobjs.MNWKAnnc import MNWKAnnc
 
+		L.isDebug and L.logDebug('Initializing resource factory, resources and type mappings')
 
 		self.resourceClassMapping = {
 			# Normal resource types
@@ -252,10 +248,6 @@ class Factory(metaclass=Singleton):
 			ResourceTypes.MNWK			: (MNWK,		lambda dct, tySN, create : MNWK(dct, create=create)),
 			ResourceTypes.MNWKAnnc		: (MNWKAnnc,	lambda dct, tySN, create : MNWKAnnc(dct, create=create)),
 		}
-
-
-
-		L.isDebug and L.logDebug('Initializing resource factory, resources and type mappings')
 
 		# Assign attributes and allowed child resource types to the resource classes based on the resource type
 		#  definitions in Types.resourceTypeDetails

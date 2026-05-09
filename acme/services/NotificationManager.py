@@ -11,7 +11,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, Union, Any, cast, Optional
+from typing import Callable, Union, Any, cast, Optional, TYPE_CHECKING
 
 import sys, copy, isodate
 from threading import Lock, current_thread
@@ -31,42 +31,48 @@ from ..etc.IDUtils import toSPRelative
 from ..etc.JSONUtils import pureResource
 from ..etc.Utils import isAcmeUrl
 from ..etc.Constants import RuntimeConstants as RC
+from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, findXPath
-from ..runtime import CSE
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
+from ..runtime.PluginSupport import *
 from ..runtime.Logging import Logging as L
-from ..runtime.Storage import Storage
-from ..resources.Resource import Resource
 from ..resources.CRS import CRS
 from ..resources.SUB import SUB
 from ..resources.NTSR import NTSR
 from ..resources.PDR import PDR
 from ..resources.NTP import NTP
-from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..services.Dispatcher import Dispatcher
+
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..runtime.Storage import Storage
+	from ..services.Dispatcher import Dispatcher
+	from ..services.RequestManager import RequestManager
 
 # TODO: removal policy (e.g. unsuccessful tries)
 
 SenderFunction = Callable[[str], bool]	# type:ignore[misc] # bc cyclic definition 
 """ Type definition for sender callback function. """
 
-eventManager = EventManager()
-""" Event manager singleton instance. """
-
-dispatcher:Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
-
-storage:Storage = Storage()
-""" Storage singleton instance. """
-
 @EventHandler
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(storage='acme.runtime.Storage')
+@requires(request='acme.services.RequestManager')
 class NotificationManager(object):
 	"""	This class defines functionalities to handle subscriptions and notifications.
 
 		Attributes:
 			lockBatchNotification: Internal lock instance for locking certain batch notification methods.
 	"""
+
+	dispatcher:Dispatcher = None
+	""" Dispatcher instance. """
+
+	storage:Storage = None
+	""" Storage instance. """
+
+	request:RequestManager = None
+	""" RequestManager instance. """
+
 
 	__slots__ = (
 		'lockBatchNotification',
@@ -76,7 +82,7 @@ class NotificationManager(object):
 	)
 
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 		"""	Initialization of a *NotificationManager* instance.
 		"""
 
@@ -138,7 +144,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Adding subscription')
 		self._verifyNusInSubscription(subscription, originator = originator)	# verification requests happen here
 		
-		if not storage.upsertSubscription(subscription):
+		if not self.storage.upsertSubscription(subscription):
 			raise INTERNAL_SERVER_ERROR('cannot add subscription to database')
 
 
@@ -168,7 +174,7 @@ class NotificationManager(object):
 		
 		# Finally remove subscriptions from storage
 		try:
-			if not storage.removeSubscription(subscription):
+			if not self.storage.removeSubscription(subscription):
 				raise INTERNAL_SERVER_ERROR('cannot remove subscription from database')
 		except NOT_FOUND:
 			pass	# ignore, could be expected
@@ -190,7 +196,7 @@ class NotificationManager(object):
 			"""
 		L.isDebug and L.logDebug('Updating subscription')
 		self._verifyNusInSubscription(subscription, previousNus, originator = originator)	# verification requests happen here
-		if not storage.upsertSubscription(subscription):
+		if not self.storage.upsertSubscription(subscription):
 			raise INTERNAL_SERVER_ERROR('cannot update subscription in database')
 
 
@@ -206,7 +212,7 @@ class NotificationManager(object):
 			Return:
 				List of storage subscription documents, NOT Subscription resources.
 			"""
-		if not (subs := storage.getSubscriptionsForParent(ri)):
+		if not (subs := self.storage.getSubscriptionsForParent(ri)):
 			return []
 		result:JSONLIST = []
 		for each in subs:
@@ -271,13 +277,13 @@ class NotificationManager(object):
 		# ATTN: The "subscription" returned here are NOT the <sub> resources,
 		# but an internal representation from the 'subscription' DB !!!
 		# Access to attributes is different bc the structure is flattened
-		if (subs := storage.getSubscriptionsForParent(ri)) is None:
+		if (subs := self.storage.getSubscriptionsForParent(ri)) is None:
 			return
 		
 		# EXPERIMENTAL Add "subi" subscriptions to the list of subscriptions to check
 		if resource and (subi := resource.subi) is not None:
 			for eachSubi in subi:
-				if (sub := storage.getSubscription(eachSubi)) is None:
+				if (sub := self.storage.getSubscription(eachSubi)) is None:
 					L.logErr(f'Cannot retrieve subscription: {eachSubi}')
 					continue
 				# TODO ensure uniqueness
@@ -325,7 +331,7 @@ class NotificationManager(object):
 
 			# Check the subscription's schedule, but only if it is not an immediate notification
 			if not ((nec := sub.get('nec')) and nec == EventCategory.Immediate):
-				if (_sc := storage.searchScheduleForTarget(ri)):
+				if (_sc := self.storage.searchScheduleForTarget(ri)):
 					_ts = utcDatetime()
 
 					# Check whether the current time matches the schedule
@@ -452,10 +458,10 @@ class NotificationManager(object):
 
 			# Send notification and handle possible negative response status codes
 			try:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-															   to = eachSub['nus'][0],
-															   originator = originator,
-															   pc = notification)
+				res = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+																to=eachSub['nus'][0],
+																originator=originator,
+																pc=notification)
 												   )[0].result	# there should be at least one result
 				if res.rsc == ResponseStatusCode.OK:
 					if finished:
@@ -554,10 +560,10 @@ class NotificationManager(object):
 				setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
 			countNotifications += 1
-			CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-													 to = eachSub['nus'][0], 
-													 originator = subOriginator,
-										  			 pc = notification))
+			self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+													  to=eachSub['nus'][0], 
+													  originator=subOriginator,
+										  			  pc=notification))
 			# TODO: correct RSC according to 7.3.2.9 - see above!
 		
 		if countNotifications == 0:
@@ -663,7 +669,7 @@ class NotificationManager(object):
 			L.isDebug and L.logDebug(f'Received sufficient notifications - sending notification')
 			
 			# Check the crossResourceSubscription's schedule, if there is one
-			if (_sc := storage.searchScheduleForTarget(crsRi)):
+			if (_sc := self.storage.searchScheduleForTarget(crsRi)):
 				_ts = utcDatetime()
 
 				# Check whether the current time matches any schedule
@@ -676,7 +682,7 @@ class NotificationManager(object):
 					return
 
 			try:
-				resource = dispatcher.retrieveResource(crsRi)
+				resource = self.dispatcher.retrieveResource(crsRi)
 			except ResponseException as e:
 				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}: {e.dbg}')	# Not much we can do here
 				return
@@ -706,7 +712,7 @@ class NotificationManager(object):
 				crs.dbUpdate(True)
 				if exc <= 0:
 					L.isDebug and L.logDebug(f'<crs>: {crs.ri} expiration counter expired. Deleting resources.')
-					dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
+					self.dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
 
 		else:
 			L.isDebug and L.logDebug(f'No notification sent')
@@ -865,10 +871,10 @@ class NotificationManager(object):
 		def _sender(nu: str, originator:str, content:JSON) -> RequestResponseList:
 			if preFunc:
 				preFunc(nu)
-			res = CSE.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
-														   to=nu, 
-														   originator=originator, 
-														   pc=content))
+			res = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+															to=nu, 
+															originator=originator, 
+															pc=content))
 			if postFunc:
 				postFunc(nu)
 			return res
@@ -983,7 +989,7 @@ class NotificationManager(object):
 		"""
 		if sub is None:
 			try:
-				sub = dispatcher.retrieveLocalResource(ri) # type:ignore[assignment]
+				sub = self.dispatcher.retrieveLocalResource(ri) # type:ignore[assignment]
 				# TODO check resource type?
 			except ResponseException as e:
 				return
@@ -1115,10 +1121,10 @@ class NotificationManager(object):
 			originator and setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
 			try:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-															   to = uri, 
-															   originator = RC.cseCsi,
-															   pc = verificationRequest)
+				res = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+																to=uri, 
+																originator=RC.cseCsi,
+																pc=verificationRequest)
 												   )[0].result	# there should be at least one result
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {e.dbg}')
@@ -1154,10 +1160,10 @@ class NotificationManager(object):
 			creator and setXPath(deletionNotification, 'm2m:sgn/cr', creator)
 
 			try:
-				responses = CSE.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
-																	to=uri, 
-																	originator=RC.cseCsi,
-													  				pc=deletionNotification))
+				responses = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+																	  to=uri, 
+																	  originator=RC.cseCsi,
+													  				  pc=deletionNotification))
 				# if (response := responses[0] if len(responses) > 0 else None): 
 				# 	L.inspect(response)
 				
@@ -1198,10 +1204,10 @@ class NotificationManager(object):
 
 		def _doSendNotification(uri:str, subscription:SUB, notificationRequest:JSON) -> bool:
 			try:
-				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-														 to = uri, 
-											  			 originator = RC.cseCsi,
-											  			 pc = notificationRequest))
+				self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+														  to=uri, 
+											  			  originator=RC.cseCsi,
+											  			  pc=notificationRequest))
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Notification failed for: {uri} : {e.dbg}')
 				return False
@@ -1265,7 +1271,7 @@ class NotificationManager(object):
 				subscription = None
 				if sub['nse']:
 					try:
-						subscription = cast(SUB, dispatcher.retrieveResource(sub['ri']))
+						subscription = cast(SUB, self.dispatcher.retrieveResource(sub['ri']))
 					except ResponseException as e:
 						L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {e.dbg}')
 						return False
@@ -1286,14 +1292,14 @@ class NotificationManager(object):
 			L.isDebug and L.logDebug(f'Decrement expirationCounter: {exc} -> {exc-1}')
 
 			exc -= 1
-			subResource = storage.retrieveResource(ri=sub['ri'])
+			subResource = self.storage.retrieveResource(ri=sub['ri'])
 			if exc < 1:
 				L.isDebug and L.logDebug(f'expirationCounter expired. Removing subscription: {subResource.ri}')
-				dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
+				self.dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
 			else:
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
 				subResource.dbUpdate(True)						# Update the real subscription
-				storage.upsertSubscription(subResource)	# Also update the internal sub
+				self.storage.upsertSubscription(subResource)	# Also update the internal sub
 		return result								
 
 
@@ -1337,7 +1343,7 @@ class NotificationManager(object):
 		# Get the subscription information (not the <sub> resource itself!).
 		# Then get all the URIs/notification targets from that subscription. They might already
 		# be filtered.
-		if sub := storage.getSubscription(ri):
+		if sub := self.storage.getSubscription(ri):
 			ln = sub.get('ln', False)
 			for nu in sub['nus']:
 				self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
@@ -1356,11 +1362,11 @@ class NotificationManager(object):
 
 		# Alway add the notification first before doing the other handling
 		ri = sub['ri']
-		storage.addBatchNotification(ri, nu, notificationRequest)
+		self.storage.addBatchNotification(ri, nu, notificationRequest)
 
 		#  Check for actions
 		ln = sub.get('ln', False)
-		if (num := findXPath(sub, 'bn/num')) and (cnt := storage.countBatchNotifications(ri, nu)) >= num:
+		if (num := findXPath(sub, 'bn/num')) and (cnt := self.storage.countBatchNotifications(ri, nu)) >= num:
 			L.isDebug and L.logDebug(f'Sending batch notification: bn/num: {num}  countBatchNotifications: {cnt}')
 
 			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
@@ -1396,7 +1402,7 @@ class NotificationManager(object):
 
 			# Collect the stored notifications for the batch and aggregate them
 			notifications = []
-			for notification in sorted(storage.getBatchNotifications(ri, nu), key = lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
+			for notification in sorted(self.storage.getBatchNotifications(ri, nu), key = lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
 				if n := findXPath(notification['request'], 'sgn'):
 					notifications.append(n)
 			if (notificationCount := len(notifications)) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
@@ -1417,7 +1423,7 @@ class NotificationManager(object):
 			}
 
 			# Delete old notifications
-			if not storage.removeBatchNotifications(ri, nu):
+			if not self.storage.removeBatchNotifications(ri, nu):
 				L.isWarn and L.logWarn('Error removing aggregated batch notifications')
 				return False
 
@@ -1426,7 +1432,7 @@ class NotificationManager(object):
 			nse = sub['nse']
 			if nse:
 				try:
-					subscription = cast(SUB, dispatcher.retrieveResource(sub['ri']))
+					subscription = cast(SUB, self.dispatcher.retrieveResource(sub['ri']))
 				except ResponseException as e:
 					L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {e.dbg}')
 					return False
@@ -1434,11 +1440,11 @@ class NotificationManager(object):
 				
 			# Send the request
 			try:
-				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-														 to = nu, 
-														 originator = RC.cseCsi,
-														 pc = notificationRequest,
-														 ec = ec))
+				self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+														  to=nu, 
+														  originator=RC.cseCsi,
+														  pc=notificationRequest,
+														  ec=ec))
 			except ResponseException as e:
 				L.isWarn and L.logWarn(f'Error sending aggregated batch notifications: {e.dbg}')
 				return False
@@ -1501,7 +1507,7 @@ class NotificationManager(object):
 					L.isDebug and L.logDebug(f'Originator {originator} not found in notification targets of: {parentSubscription.ri}')
 
 		# Get the sibling <notificationTargetMgmtPolicyRef> resources
-		ntprs = dispatcher.retrieveDirectChildResources(ntsr.pi, ResourceTypes.NTPR)
+		ntprs = self.dispatcher.retrieveDirectChildResources(ntsr.pi, ResourceTypes.NTPR)
 
 		# Check if the Originator is listed as one of the Notification Targets in any <notificationTargetMgmtPolicyRef> resource
 		ntp:NTP = None	# This is the linked to ntp resource
@@ -1513,7 +1519,7 @@ class NotificationManager(object):
 						L.isDebug and L.logDebug(f'No <ntp> resource referenced in <ntpr>: {ntpr.ri}')
 						continue
 					try:
-						r = dispatcher.retrieveLocalResource(npi, originator=originator)
+						r = self.dispatcher.retrieveLocalResource(npi, originator=originator)
 						if r.ty != ResourceTypes.NTP:
 							raise NOT_FOUND(f'Referenced resource is not a <ntp> resource: {r.ri}')
 						ntp = cast(NTP, r)
@@ -1527,7 +1533,7 @@ class NotificationManager(object):
 			# but in this implementation this is the same.
 			originalCreator = ntsr.getOriginator()	
 			L.isDebug and L.logDebug(f'No referenced <NTP> resource found, checking for Default <NTP> resource for original creator: {originalCreator}')
-			rs = storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default', 'cr': originalCreator })
+			rs = self.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default', 'cr': originalCreator })
 			match len(rs):
 				case 1:
 					ntp = cast(NTP, rs[0])
@@ -1536,7 +1542,7 @@ class NotificationManager(object):
 				case 0:
 					L.isDebug and L.logDebug(f'Originator {originator} not found in any Default <NTP>. Searching for global Default <NTP>.')
 					# TODO this could be optimized. Cache the default NTP
-					rs = storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default' })	
+					rs = self.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default' })	
 					if len(rs) == 1:
 						ntp = cast(NTP, rs[0])
 						L.isDebug and L.logDebug(f'Found Default <NTP> resource: {ntp.ri}')
@@ -1549,7 +1555,7 @@ class NotificationManager(object):
 		# From here on, we have the <ntp> resource
 
 		# Retrieve the <PDR> child resources of the <ntp> resource
-		pdrs:list[PDR] = cast(list[PDR], dispatcher.retrieveDirectChildResources(ntp.ri, ResourceTypes.PDR))
+		pdrs:list[PDR] = cast(list[PDR], self.dispatcher.retrieveDirectChildResources(ntp.ri, ResourceTypes.PDR))
 		action:NotificationTargetPolicyAction = None
 		match len(pdrs):
 			case 0:	

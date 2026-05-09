@@ -10,21 +10,19 @@
 """	Statistics Module for internal statistics.
 """
 from __future__ import annotations
-from typing import Dict, Union
+from typing import Dict, Union, TYPE_CHECKING
 
 from threading import Lock
 
 from ...etc.Types import JSON
 from ...helpers.BackgroundWorker import BackgroundWorkerPool
-from ...runtime import CSE
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure, validate
-from ...runtime.EventManager import EventManager, EventData
-from ...runtime.Storage import Storage
+from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure, validate, requires
+from ...runtime.EventManager import EventManager, EventData, eventManager
+if TYPE_CHECKING:
+	from ...runtime.Storage import Storage
 
-storage:Storage = Storage()	# type: ignore
-""" Storage singleton instance. """
 
 
 coRetrieves	= 'coqRet'
@@ -128,15 +126,13 @@ cseUpTime = 'cseUT'
 resourceCount = 'ctRes'
 """ Attribute name for number of resources in the storage. """
 
-eventManager = EventManager()	# type: ignore
-""" Event manager singleton instance. """
-
 # TODO  restartcount, 
 
 StatsT = Dict[str, Union[str, int, float]]
 """ Type for statistics records. """
 
 @plugin(property='statistics', tags=['acme', 'core'])
+@requires(storage='acme.runtime.Storage')
 class Statistics(object):
 	"""	Statistics class. Handles all internal statistics.
 
@@ -144,6 +140,8 @@ class Statistics(object):
 			statLock:				Internal lock for statistic handling.
 			stats:					Statistics records
 	"""
+
+	storage: Storage = None
 
 	__slots__ = (
 		'statLock',
@@ -482,7 +480,7 @@ class Statistics(object):
 		"""
 		
 		with self.statLock:
-			return storage.getStatistics()
+			return self.storage.getStatistics()
 
 
 	def storeDBStatistics(self) -> bool:
@@ -492,13 +490,13 @@ class Statistics(object):
 				True if the statistics were stored successfully, False otherwise.
 		"""
 		with self.statLock:
-			return storage.updateStatistics(self.stats)
+			return self.storage.updateStatistics(self.stats)
 	
 
 	def purgeDBStatistics(self) -> None:
 		"""	Purge statistics data.
 		"""
 		with self.statLock:
-			storage.purgeStatistics()
+			self.storage.purgeStatistics()
 
 	

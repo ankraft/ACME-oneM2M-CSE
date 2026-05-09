@@ -9,7 +9,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Any, cast
+from typing import Any, cast, TYPE_CHECKING
 
 import sys, copy
 
@@ -17,32 +17,29 @@ from ...etc.Types import EvalMode, EvalCriteriaOperator, JSON, CSERequest, Basic
 from ...etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR, BAD_REQUEST, NOT_FOUND
 from ...helpers.TextTools import setXPath
 from ...etc.DateUtils import utcTime
-from ...etc.RequestUtils import responseFromResult
-from ...runtime import CSE
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, start, stop, restart
-from ...runtime.EventManager import EventManager, onEvent, EventData, EventHandler
-from ...runtime.Storage import Storage
+from ...runtime.PluginSupport import plugin, start, stop, restart, requires
+from ...runtime.EventManager import eventManager, onEvent, EventData, EventHandler
 from ...resources.Resource import Resource
 from ...resources.ACTR import ACTR
 from ...helpers.ResourceSemaphore import CriticalSection
-from ...services.Dispatcher import Dispatcher
+
+if TYPE_CHECKING:
+	from ...runtime.Storage import Storage
+	from ...services.Dispatcher import Dispatcher
+	from ...services.RequestManager import RequestManager
+	from ...services.Validator import Validator
 
 
 # TODO implement support for input attribute when the procedure is clear
 
-eventManager:EventManager = EventManager()
-""" Event manager singleton instance. """
-
-storage:Storage = Storage()
-""" Storage singleton instance. """
-
-dispatcher:Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
-
-@plugin(property='actionManager', tags=['acme', 'core'])
 @EventHandler
+@plugin(property='actionManager', tags=['acme', 'core'])
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(storage='acme.runtime.Storage')
+@requires(requestManager='acme.services.RequestManager')
+@requires(validator='acme.services.Validator')
 class ActionManager():
 	"""	This class defines functionalities to handle action triggerings, 
 		dependancies and other action related functionalities
@@ -51,6 +48,17 @@ class ActionManager():
 	# Imported here because of circular import
 	from ...resources.Resource import Resource
 
+	dispatcher:Dispatcher = None
+	""" Dispatcher instance. """
+
+	storage:Storage = None
+	""" Storage instance. """
+
+	requestManager:RequestManager = None
+	""" RequestManager instance. """
+
+	validator:Validator = None
+	""" Validator instance. """
 
 
 	@start
@@ -97,7 +105,7 @@ class ActionManager():
 		L.isDebug and L.logDebug(f'Looking for resource actions for resource: {realRi}')
 
 		# Get actions. Remember, these are NOT <action> resources
-		actions = storage.searchActionReprsForSubject(realRi)		
+		actions = self.storage.searchActionReprsForSubject(realRi)		
 		# sort by action priority
 		actions = sorted(actions, key = lambda x: x['apy'] if x['apy'] is not None else sys.maxsize)
 		L.isDebug and L.logDebug(f'Found {len(actions)} actions for resource: {realRi}')
@@ -115,7 +123,7 @@ class ActionManager():
 				
 				# re-read the action document because it might have changed while waiting for the lock
 				# However, it might be under rare circumstances that the action is deleted while waiting
-				if not (action := storage.getActionRepr(ri)):
+				if not (action := self.storage.getActionRepr(ri)):
 					L.logWarn(f'Action {ri} not found anymore. Skipping')
 					continue
 
@@ -125,7 +133,7 @@ class ActionManager():
 
 					# retrieve the real action resource
 					try:
-						actr = cast(ACTR, dispatcher.retrieveLocalResource(ri))
+						actr = cast(ACTR, self.dispatcher.retrieveLocalResource(ri))
 					except ResponseException as e:
 						L.logErr(e.dbg)
 						raise e
@@ -136,18 +144,18 @@ class ActionManager():
 
 					# build request
 					try:
-						resReq = CSE.request.fillAndValidateCSERequest(request := CSERequest(originalRequest = apv))
+						resReq = self.requestManager.fillAndValidateCSERequest(request := CSERequest(originalRequest=apv))
 					except ResponseException as e:
 						L.logWarn(f'Error handling request: {request.originalRequest} : {e.dbg}')
 						continue
 
 					# Send request
 					L.isDebug and L.logDebug(f'Sending request: {resReq.originalRequest}')
-					res = CSE.request.handleRequest(resReq)
+					res = self.requestManager.handleRequest(resReq)
 
 					# Store response in the <actr>
 					res.request = request
-					actr.setAttribute('air', responseFromResult(res).data)	# type: ignore[attr-defined]
+					actr.setAttribute('air', self.requestManager.responseFromResult(res).data)	# type: ignore[attr-defined]
 					try:
 						actr.dbUpdate()
 					except ResponseException as e:
@@ -158,22 +166,22 @@ class ActionManager():
 					evm = action['evm']
 					if evm == EvalMode.once:			# remove if only once
 						L.isDebug and L.logDebug(f'Removing "once" action: {ri}')
-						storage.removeActionRepr(ri)
+						self.storage.removeActionRepr(ri)
 						continue
 					if evm == EvalMode.continous:		# remove from action DB if count reaches 0
 						count = action['count']
 						if (count := count - 1) == 0:
 							L.isDebug and L.logDebug(f'Removing "continuous" action: {ri} (count: {actr.ecp} reached)')
-							storage.removeActionRepr(ri)
+							self.storage.removeActionRepr(ri)
 						else:
 							action['count'] = count
-							storage.updateActionRepr(action)
+							self.storage.updateActionRepr(action)
 						continue
 					if evm == EvalMode.periodic:
 						_ecp = action['ecp'] / 1000.0
 						action['periodTS'] = _now + ((action['periodTS'] - _now) % _ecp)
 						L.isDebug and L.logDebug(f'Setting next period start to: {action["periodTS"]} for "periodic" action: {ri}')
-						storage.updateActionRepr(action)
+						self.storage.updateActionRepr(action)
 				else:
 					L.isDebug and L.logDebug(f'Action: {ri} - conditions evaluated to False')
 
@@ -254,7 +262,7 @@ class ActionManager():
 
 			# Get the dependency resource
 			try:
-				dependency = dispatcher.retrieveLocalResource(dep)
+				dependency = self.dispatcher.retrieveLocalResource(dep)
 			except NOT_FOUND:
 				L.isDebug and L.logDebug(f'Dependency evaluation: {dep} not found. Skipping resource evaluation.')
 				continue
@@ -267,7 +275,7 @@ class ActionManager():
 
 			# Retrieve the referenced resource
 			try:
-				resource = dispatcher.retrieveLocalResource(dependency['rri'])
+				resource = self.dispatcher.retrieveLocalResource(dependency['rri'])
 			except ResponseException as e:
 				L.logErr(f'Dependency evaluation: {e.dbg}. Skipping resource evaluation.')
 				continue
@@ -306,21 +314,21 @@ class ActionManager():
 		evm = action.evm
 		if evm == EvalMode.off:
 			L.isDebug and L.logDebug(f'evm: off for action: {action.ri} - Action inactive.')
-			storage.removeActionRepr(action.ri)	# just remove, ignore result
+			self.storage.removeActionRepr(action.ri)	# just remove, ignore result
 			return
 		if evm == EvalMode.once:
 			L.isDebug and L.logDebug(f'evm: once for action: {action.ri}.')
-			storage.upsertAction(action, 0, 0)
+			self.storage.upsertAction(action, 0, 0)
 			return
 		if evm == EvalMode.periodic:
 			ecp = action.ecp if action.ecp else Configuration.resource_actr_ecpPeriodic
 			L.isDebug and L.logDebug(f'evm: periodic for action: {action.ri}, period: {ecp}.')
-			storage.upsertAction(action, utcTime(), 0)
+			self.storage.upsertAction(action, utcTime(), 0)
 			return
 		if evm == EvalMode.continous:
 			ecp = action.ecp if action.ecp else Configuration.resource_actr_ecpContinuous
 			L.isDebug and L.logDebug(f'evm: continuous for action: {action.ri}, counter: {ecp}')
-			storage.upsertAction(action, 0, ecp)
+			self.storage.upsertAction(action, 0, ecp)
 			return
 		raise INTERNAL_SERVER_ERROR(f'unknown EvalMode: {evm}. This should not happen.')
 		
@@ -331,7 +339,7 @@ class ActionManager():
 			Args:
 				action: The action to unschedule.
 		"""
-		storage.removeActionRepr(action.ri)
+		self.storage.removeActionRepr(action.ri)
 
 	
 	def updateAction(self, actr:ACTR) -> None:
@@ -341,9 +349,9 @@ class ActionManager():
 				actr: The action to update.
 		"""
 		# hack, only update the dep attribute
-		if action := storage.getActionRepr(actr.ri):
+		if action := self.storage.getActionRepr(actr.ri):
 			action['dep'] = actr.dep
-			storage.updateActionRepr(action)
+			self.storage.updateActionRepr(action)
 
 
 	#######################################################################
@@ -413,7 +421,7 @@ class ActionManager():
 		# Check if the subject resource exists and is accessible
 		match subject:
 			case str():
-				subjectResource = dispatcher.retrieveResourceWithPermission(subject, originator, Permission.RETRIEVE)
+				subjectResource = self.dispatcher.retrieveResourceWithPermission(subject, originator, Permission.RETRIEVE)
 			case _:
 				subjectResource = cast(Resource, subject)
 
@@ -454,7 +462,7 @@ class ActionManager():
 		
 		#	Check evalCriteria threshold attribute's value type and operation validity
 		try:
-			typ, _ = CSE.validator.validateAttribute(sbjt, thld, rtype = rtype)
+			typ, _ = self.validator.validateAttribute(sbjt, thld, rtype = rtype)
 		except ResponseException as e:
 			raise BAD_REQUEST(L.logDebug(f'thld - invalid threshold value: {thld} for attribute: {sbjt} : {e.dbg}'))
 		return typ

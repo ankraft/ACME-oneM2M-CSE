@@ -17,8 +17,8 @@ from copy import deepcopy
 from threading import Lock
 
 
-from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, ResourceTypes
-from ..etc.Types import FilterUsage, Operation, RequestCallback, RequestType
+from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, ResourceTypes, TYPE_CHECKING
+from ..etc.Types import FilterUsage, Operation, RequestCallback, RequestType, IdentifierScope
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
 from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result, EventCategory
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
@@ -26,7 +26,7 @@ from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
-from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeContent
+from ..etc.RequestUtils import determineSerialization, deserializeContent, filterAttributes, serializeData
 from ..etc.IDUtils import isCSERelative, toCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
 from ..etc.IDUtils import localResourceID, getIdFromOriginator, getSPFromID, toAbsolute
 from ..etc.ACMEUtils import compareIDs, getIDFromPath
@@ -36,31 +36,24 @@ from ..etc.Utils import isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath
 from ..helpers.RingBuffer import RingBuffer
-from ..helpers.PluginManager import requires, onResolved, onUnresolved, Dependency
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
-from ..runtime import CSE
-from ..services.RegistrationManager import RegistrationManager
-from ..services.Dispatcher import Dispatcher
+from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import *
+from ..helpers.Singleton import Singleton
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..resources.REQ import REQ
 from ..resources.PCH import PCH
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..runtime.Logging import Logging as L
-from ..runtime.Storage import Storage
 
-registration: RegistrationManager = RegistrationManager()
-""" RegistrationManager singleton instance. """
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	from ..services.Dispatcher import Dispatcher
+	from ..services.RegistrationManager import RegistrationManager
+	from ..services.NotificationManager import NotificationManager
+	from ..services.Validator import Validator
+	from ..services.SecurityManager import SecurityManager
 
-eventManager = EventManager()
-""" Event manager singleton instance. """
-
-dispatcher: Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
-
-storage:Storage = Storage()	# type: ignore
-"""	Storage singleton instance. """
 
 # Type definition
 TargetDetails = List[ 						#type: ignore[misc]
@@ -84,9 +77,34 @@ expirationCheckFactor = 2.0
 @requires(mqttClient='acme.plugins.bindings.MQTTClient', required=False)
 @requires(websocketServer='acme.plugins.bindings.WebSocketServer', required=False)
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
-class RequestManager(object):
+@requires(storage='acme.runtime.Storage')
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(registration='acme.services.RegistrationManager')
+@requires(notificationManager='acme.services.NotificationManager')
+@requires(validator='acme.services.Validator')
+@requires(securityManager='acme.services.SecurityManager')
+class RequestManager(metaclass=Singleton):
 	"""	RequestManager class.
 	"""
+
+	storage:Storage = None
+	"""	Storage instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	registration: RegistrationManager = None
+	""" RegistrationManager instance. """
+
+	notificationManager: NotificationManager = None
+	""" NotificationManager instance. """
+
+	validator: Validator = None
+	""" Validator instance. """
+
+	securityManager: SecurityManager = None
+	""" SecurityManager instance. """
+
 
 	__slots__ = (
 		'_requestLock',
@@ -117,21 +135,7 @@ class RequestManager(object):
 	"""	The RemoteCSEManager plugin instance is injected by the PluginManager based on the declared dependency."""
 
 
-	@onResolved
-	def onResolvedHandler(self, dependencies:list[Dependency]) -> None:
-		for dep in dependencies:
-			if dep.resolved:
-				L.isDebug and L.logDebug(f'{dep.pluginName} binding is now resolved.')
-
-
-	@onUnresolved
-	def onUnresolvedHandler(self, dependencies:list[Dependency]) -> None:
-		for dep in dependencies:
-			if not dep.resolved:
-				L.isDebug and L.logDebug(f'{dep.pluginName} binding is now unresolved.')
-
-
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 
 		# Configuration values
 		self._assignConfig()	
@@ -161,7 +165,7 @@ class RequestManager(object):
 		# Map request handlers and events for operations in the RequestManager and the dispatcher
 		self.requestHandlers:RequestHandler = { 		
 			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, 
-												  dispatcher.processRetrieveRequest, 
+												  self.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
 												  eventManager.coapSendRetrieve,
 												  eventManager.httpSendRetrieve,
@@ -169,7 +173,7 @@ class RequestManager(object):
 												  eventManager.wsSendRetrieve),
 												#   self.sendRetrieveRequest),
 			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
-												  dispatcher.processRetrieveRequest, 
+												  self.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
 												  eventManager.coapSendRetrieve,
 												  eventManager.httpSendRetrieve,
@@ -177,7 +181,7 @@ class RequestManager(object):
 												  eventManager.wsSendRetrieve),
 												#   self.sendRetrieveRequest),
 			Operation.CREATE	: RequestCallback(self.createRequest,
-												  dispatcher.processCreateRequest,
+												  self.dispatcher.processCreateRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendCreate,
 												  eventManager.httpSendCreate,
@@ -185,7 +189,7 @@ class RequestManager(object):
 												  eventManager.wsSendCreate),
 												#   self.sendCreateRequest),
 			Operation.UPDATE	: RequestCallback(self.updateRequest,
-												  dispatcher.processUpdateRequest,
+												  self.dispatcher.processUpdateRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendUpdate,
 												  eventManager.httpSendUpdate,
@@ -193,7 +197,7 @@ class RequestManager(object):
 												  eventManager.wsSendUpdate),
 												#   self.sendUpdateRequest),
 			Operation.DELETE	: RequestCallback(self.deleteRequest,
-												  dispatcher.processDeleteRequest,
+												  self.dispatcher.processDeleteRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendDelete,
 												  eventManager.httpSendDelete,
@@ -201,7 +205,7 @@ class RequestManager(object):
 												  eventManager.wsSendDelete),
 												#   self.sendDeleteRequest),
 			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
-												  dispatcher.processNotifyRequest,
+												  self.dispatcher.processNotifyRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendNotify,
 												  eventManager.httpSendNotify,
@@ -291,7 +295,7 @@ class RequestManager(object):
 		"""
 		# Convert JSON to CSERequest
 		if isinstance(request, dict):
-			request = CSE.request.fillAndValidateCSERequest(request)
+			request = self.fillAndValidateCSERequest(request)
 		# L.logDebug(f'Handling request: {request}')
 
 		# Send event
@@ -369,12 +373,12 @@ class RequestManager(object):
 		
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return dispatcher.processRetrieveRequest(request, request.originator)
+				return self.dispatcher.processRetrieveRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return dispatcher.processRetrieveRequest(request, request.originator)
+					return self.dispatcher.processRetrieveRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -395,12 +399,12 @@ class RequestManager(object):
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return dispatcher.processCreateRequest(request, request.originator)
+				return self.dispatcher.processCreateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return dispatcher.processCreateRequest(request, request.originator)
+					return self.dispatcher.processCreateRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -422,12 +426,12 @@ class RequestManager(object):
 		# Check contentType and resourceType
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return dispatcher.processUpdateRequest(request, request.originator)
+				return self.dispatcher.processUpdateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return dispatcher.processUpdateRequest(request, request.originator)
+					return self.dispatcher.processUpdateRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -449,12 +453,12 @@ class RequestManager(object):
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
-				return dispatcher.processDeleteRequest(request, request.originator)
+				return self.dispatcher.processDeleteRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:								# flexBlocking as non-blocking
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return dispatcher.processDeleteRequest(request, request.originator)
+					return self.dispatcher.processDeleteRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 			
@@ -471,12 +475,12 @@ class RequestManager(object):
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
-				return dispatcher.processNotifyRequest(request, request.originator)
+				return self.dispatcher.processNotifyRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return dispatcher.processNotifyRequest(request, request.originator)
+					return self.dispatcher.processNotifyRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -495,13 +499,13 @@ class RequestManager(object):
 
 		# Register <request>
 		cseres = getCSE()
-		registration.checkResourceCreation(resource, request.originator, cseres)
+		self.registration.checkResourceCreation(resource, request.originator, cseres)
 		
 		# set the CSE.ri as indicator that this resource was created internally
 		resource.setCreatedInternally(cseres.pi)
 
 		# create <request>
-		return dispatcher.createLocalResource(resource, cseres, request.originator)
+		return self.dispatcher.createLocalResource(resource, cseres, request.originator)
 
 
 	def _handleNonBlockingRequest(self, request:CSERequest) -> Result:
@@ -587,7 +591,7 @@ class RequestManager(object):
 			nus = [ to ]
 
 		# send notifications.Ignore any errors here
-		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator = RC.cseCsi)
+		self.notificationManager.sendNotificationWithDict(responseNotification, nus, originator=RC.cseCsi)
 
 		return True
 
@@ -645,7 +649,7 @@ class RequestManager(object):
 				pc = { 'm2m:dbg' : e.dbg }
 
 		# Retrieve the <request> resource
-		reqres = cast(REQ, dispatcher.retrieveResource(reqRi, originator = request.originator))
+		reqres = cast(REQ, self.dispatcher.retrieveResource(reqRi, originator = request.originator))
 
 		# Fill the <request>
 		reqres['ors'] = {	# operationResult
@@ -894,7 +898,7 @@ class RequestManager(object):
 						continue
 					# if fall through then there is no further request available.
 					# build the aggregated request
-					agrp = { 'm2m:agrp' : [ requestFromResult(Result(request = each)).data for each in lst ] }
+					agrp = { 'm2m:agrp' : [ self.requestFromResult(Result(request=each)).data for each in lst ] }
 					return Result(resource=agrp, rsc=ResponseStatusCode.OK)
 				
 			else:
@@ -1107,7 +1111,7 @@ class RequestManager(object):
 				(_id := localResourceID(to)) is not None and \
 				not ResourceTypes.isNotificationEntity(targetType) and \
 				targetType != ResourceTypes.UNKNOWN:
-					_result = dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
+					_result = self.dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
 					results.append( RequestResponse(request, _result) )
 					continue
 
@@ -1201,7 +1205,7 @@ class RequestManager(object):
 				if greedy:
 					del dct[attribute]
 				try:
-					_, newValue = CSE.validator.validateAttribute(attribute, value, attributeType, rtype=ResourceTypes.REQRESP)
+					_, newValue = self.validator.validateAttribute(attribute, value, attributeType, rtype=ResourceTypes.REQRESP)
 				except ResponseException as e:
 					e.dbg = f'attribute: {attribute}, value: {value} : {e.dbg}'
 					e.data = cseRequest
@@ -1213,7 +1217,7 @@ class RequestManager(object):
 					newValueList = []
 					for v in newValue:
 						try:
-							_, _nv = CSE.validator.validateAttribute(attribute, v, rtype=ResourceTypes.REQRESP)
+							_, _nv = self.validator.validateAttribute(attribute, v, rtype=ResourceTypes.REQRESP)
 						except ResponseException as e:
 							raise BAD_REQUEST(f'attribute: {attribute}, value: {value} : {e.dbg}', data=cseRequest)
 						newValueList.append(_nv) #type: ignore [index]
@@ -1494,7 +1498,7 @@ class RequestManager(object):
 				cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content
 				cseRequest.topElememt = list(cseRequest.pc.keys())[0] if cseRequest.pc else None
 				try:
-					CSE.validator.validatePrimitiveContent(cseRequest.pc, cseRequest.topElememt)
+					self.validator.validatePrimitiveContent(cseRequest.pc, cseRequest.topElememt)
 				except ResponseException as e:
 					L.isDebug and L.logDebug(e.dbg)
 					e.data = cseRequest
@@ -1584,13 +1588,13 @@ class RequestManager(object):
 		if not originator:
 			return []
 		# First check whether there is an AE with that originator
-		if (l := len(aes := storage.searchByFragment({ 'aei' : originator }))) > 0:
+		if (l := len(aes := self.storage.searchByFragment({ 'aei' : originator }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one AE with the same aei: {originator}')
 				return []
 			csz = aes[0].csz
 		# Else try whether there is a CSE or CSR
-		elif (l := len(cses := storage.searchByFragment({ 'csi' : getIdFromOriginator(originator) }))) > 0:
+		elif (l := len(cses := self.storage.searchByFragment({ 'csi' : getIdFromOriginator(originator) }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one CSE with the same csi: {originator}')
 				return []
@@ -1665,7 +1669,7 @@ class RequestManager(object):
 			if (ri := localResourceID(uri)) is not None:	# If this the local CSE
 
 				try:
-					resource = dispatcher.retrieveResource(ri)
+					resource = self.dispatcher.retrieveResource(ri)
 				except ResponseException as e:
 					L.logWarn(f'Cannot retrieve local resource: {ri}: {e.dbg}')
 					return []
@@ -1686,7 +1690,7 @@ class RequestManager(object):
 		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarding request to: {uri}')
 
 		# If not found: The uri is an indirect resource with poa, retrieve one or more URIs from it
-		if not targetResource and not (targetResource := dispatcher.retrieveResource(uri)):
+		if not targetResource and not (targetResource := self.dispatcher.retrieveResource(uri)):
 			L.isWarn and L.logWarn(f'Resource not found to get URL: {uri}')
 			return []
 		
@@ -1695,7 +1699,7 @@ class RequestManager(object):
 		if not uri.startswith(RC.cseCsiSlash):	# TODO make a utility out of this
 			if originator == RC.cseCsi:
 				L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
-			elif not isForwardedRequest and not CSE.security.hasAccess(originator, targetResource, permission, request = request, resultResource = targetResource):
+			elif not isForwardedRequest and not self.securityManager.hasAccess(originator, targetResource, permission, request=request, resultResource=targetResource):
 				L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
 				return []
 
@@ -1704,7 +1708,7 @@ class RequestManager(object):
 		pollingChannelResources = []
 		if targetResource.rr == False and targetResource.ri != RC.cseRi:
 			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')
-			if not len(pollingChannelResources := dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
+			if not len(pollingChannelResources := self.dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
 				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')
 				return []
 			# Take the first resource and return it. There should hopefully only be one, but we don't check this here
@@ -1746,6 +1750,196 @@ class RequestManager(object):
 							   False))
 		# L.logWarn(resultList)
 		return resultList
+
+
+	def requestFromResult(self,
+						   inResult: Result, 
+						   originator: Optional[str]=None, 
+						   ty: Optional[ResourceTypes]=None, 
+						   op: Optional[Operation]=None, 
+						   isResponse: Optional[bool]=False,
+						   originalRequest: Optional[CSERequest]=None) -> Result:
+		"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
+			with the full Response structure. Recursively do this if the *embeddedRequest* is also
+			a full Request or Response.
+
+			Args:
+				inResult: The input `Result` object.
+				originator: The request originator.
+				ty: Optional resource type.
+				op: Optional request operation type
+				isResponse: Whether the result is actually a response, and not a request.
+			
+			Return:
+				`Result` object with the response. The request or response is in *data*.
+
+			See Also:
+				`responseFromResult`
+		"""
+
+		req:JSON = {}
+		inRequest = inResult.request	# a bit of optimization to avoid too many accesses to the request attribute
+
+		# Assign the From and to of the request. An assigned originator has priority for this
+		# TO and FROM are optional in a response. So, don't put them in by default.
+		if not isResponse or (isResponse and self.sendToFromInResponses):
+			if originator:
+				req['fr'] = RC.cseCsi if isResponse else originator
+				req['to'] = inRequest.id if inRequest.id else originator
+			elif inRequest and inRequest.originator:
+				req['fr'] = RC.cseCsi if isResponse else inRequest.originator
+				req['to'] = inRequest.originator if isResponse else inRequest.id
+			else:
+				req['fr'] = RC.cseCsi
+				req['to'] = inRequest.id if inRequest.id else RC.cseCsi
+
+
+		# Originating Timestamp
+		if inRequest.ot:
+				req['ot'] = inRequest.ot
+		else:
+			# Always add the OT in a response if not already present
+			if isResponse:
+				req['ot'] = getResourceDate()
+		
+		# Response Status Code
+		if inResult.rsc and inResult.rsc != ResponseStatusCode.UNKNOWN:
+			req['rsc'] = int(inResult.rsc)
+		
+		# Operation
+		if not isResponse:
+			if op:
+				req['op'] = int(op)
+			elif inRequest.op:
+				req['op'] = int(inRequest.op)
+
+		# Type
+		if ty:
+			req['ty'] = int(ty)
+		elif inRequest.ty:
+			req['ty'] = int(inRequest.ty)
+		
+		# Request Identifier 
+		if inRequest.rqi:					# copy from the original request
+			req['rqi'] = inRequest.rqi
+		
+		# Release Version Indicator
+		# TODO handle version 1 correctly
+		if inRequest.rvi:			# copy from the original request
+			req['rvi'] = inRequest.rvi
+		
+		# Vendor Information
+		if inRequest.vsi:					# copy from the original request
+			req['vsi'] = inRequest.vsi
+		
+		# Event Category
+		if inRequest.ec:
+			req['ec'] = int(inRequest.ec)
+		
+		# Result Content
+		if inRequest.rcn:
+			req['rcn'] = int(inRequest.rcn)
+
+		# Result Content
+		if inRequest.drt:
+			req['drt'] = int(inRequest.drt)
+		
+		# Result Expiration Timestamp
+		if inRequest.rset is not None:
+			req['rset'] = inRequest.rset
+
+
+		# If the response contains a request (ie. for polling), then add that request to the pc
+		pc = None
+		# L.isDebug and L.logDebug(inResult)
+
+		if inResult.embeddedRequest:
+			if inResult.embeddedRequest.originalRequest:
+				pc = inResult.embeddedRequest.originalRequest
+			else:
+				pc = cast(JSON, self.requestFromResult(Result(request=inResult.embeddedRequest)).data)
+			# L.isDebug and L.logDebug(pc)
+
+		else:
+			# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
+			pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
+		
+		if pc:
+			# If the request has selected attributes, then the pc content must be filtered
+			if originalRequest and originalRequest.selectedAttributes:
+				_typeShortname = list(pc.keys())[0]
+				pc = { _typeShortname : filterAttributes(pc[_typeShortname], originalRequest.selectedAttributes) }
+
+			scope = IdentifierScope.CSERelative
+			if originalRequest:
+				if isAbsolute(originalRequest.originalOriginator):
+					scope = IdentifierScope.Absolute
+				elif isSPRelative(originalRequest.originalOriginator):
+					scope = IdentifierScope.SPRelative
+
+			if scope != IdentifierScope.CSERelative:
+				for k, v in pc.items():
+					pc[k] = self.validator.convertIDsToScope(k, v, ResourceTypes.RESPONSE, scope)
+
+
+			# if the request/result is actually an incoming request targeted to the receiver, then the
+			# whole request must be embeded as a "m2m:rqp" request.
+			if inResult.embeddedRequest and inResult.embeddedRequest.requestType == RequestType.REQUEST:
+				req['pc'] = { 'm2m:rqp' : pc }
+			else:
+				req['pc'] = pc
+
+		# Filter Criteria attributes
+		if inResult.request.fc:
+			fcAttributes:JSON = {}
+			inResult.request.fc.mapAttributes(lambda k,v: fcAttributes.update({k:v}), False)
+			if fcAttributes:
+				req['fc'] = fcAttributes
+
+		return Result(data=req, 
+					resource=inResult.resource, 
+					request=inResult.request, 
+					embeddedRequest=inResult.embeddedRequest, 
+					rsc=inResult.rsc)
+
+
+	def responseFromResult(self, inResult: Result, originator: Optional[str] = None) -> Result:
+		"""	Shortcut for `requestFromResult` to create a response object.
+		
+			Args:
+				inResult: Result that contains the response.
+				originator: Originator for the response.
+			
+			Return:
+				`Result` object with the response.
+		"""
+		return self.requestFromResult(inResult, originator, isResponse=True)
+
+
+
+
+	def prepareResultForSending(self, 
+								inResult: Result, 
+								isResponse: Optional[bool] = False,
+								originalRequest: Optional[CSERequest] = None) -> Tuple[Result, bytes]:
+		"""	Prepare a new request for MQTT or WebSocket sending. 
+		
+			Attention:
+				Remember, a response is actually just a new request. This takes care of the fact that in MQTT or WebSockets
+				a response is very similar to a response.
+		
+			Args:
+				inResult: A `Result` object, that contains a request in its *request* attribute.
+				isResponse: Indicator whether the `Result` object is actually a response or a request.
+				originalRequest: The original request that was received.
+
+			Return:
+				A tuple with an updated `Result` object and the serialized content.
+		"""
+		result = self.requestFromResult(inResult, isResponse=isResponse, originalRequest=originalRequest)
+		return (result, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
+
+
 
 
 ##############################################################################
@@ -1804,7 +1998,7 @@ class RequestManager(object):
 		request.fillOriginalRequest(update = True)
 
 		# Store the request
-		storage.addRequest(request.op,
+		self.storage.addRequest(request.op,
 						   rid, 
 						   srn,
 						   request.originator if request.originator else 'unknown',

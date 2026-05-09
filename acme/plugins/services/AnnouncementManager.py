@@ -11,7 +11,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple, List, cast, Any
+from typing import Optional, Tuple, List, cast, Any, TYPE_CHECKING
 
 import time
 
@@ -25,35 +25,43 @@ from ...etc.Constants import Constants, RuntimeConstants as RC
 from ...resources.Resource import Resource
 from ...resources.AnnounceableResource import AnnounceableResource
 from ...resources.CSEBase import getCSE
-from ...runtime import CSE
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.PluginSupport import plugin, start, stop, configure, validate, requires
-from ...runtime.EventManager import EventManager, EventHandler, EventData, onEvent
-from ...runtime.Storage import Storage
-from ...services.Dispatcher import Dispatcher
+from ...runtime.PluginSupport import *
+
+if TYPE_CHECKING:
+	from ..services.RemoteCSEManager import RemoteCSEManager
+	from ...services.Dispatcher import Dispatcher
+	from ...runtime.Storage import Storage
+	from ...services.RequestManager import RequestManager
+
 
 # TODO for anounceable resource:
 # - update: update resource here
 
-eventManager:EventManager = EventManager()	# type: ignore
-""" Event manager singleton instance. """
-
-storage:Storage = Storage()	# type: ignore
-""" Storage singleton instance. """
-
-dispatcher:Dispatcher = Dispatcher()	# type: ignore
-""" Dispatcher singleton instance. """
 
 @EventHandler
 @plugin(property='announcementManager', tags=['acme', 'remote'], priority=50)
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager')
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(storage='acme.runtime.Storage')
+@requires(requestManager='acme.services.RequestManager')
 class AnnouncementManager(object):
 	"""	This class implements announcement functionalities.
 	"""
-	remoteCSEManager: Optional[Any] = None	# type: ignore
+	remoteCSEManager: Optional[RemoteCSEManager] = None	# type: ignore
 	"""	Reference to the RemoteCSEManager plugin. """
+
+	requestManager: RequestManager = None	# type: ignore
+	"""	RequestManager instance. """
+
+
+	dispatcher:Dispatcher = None	# type: ignore
+	""" Dispatcher instance. """
+
+	storage:Storage = None	# type: ignore
+	""" Storage instance. """
 
 
 	@start
@@ -206,7 +214,7 @@ class AnnouncementManager(object):
 				# CSEBase has "old" announcement infos
 				remoteRi = t[1] if isSPRelative(t[1]) else f'{announceTo}/{t[1]}'
 				try:
-					_r = dispatcher.retrieveResource(remoteRi, RC.cseCsi)
+					_r = self.dispatcher.retrieveResource(remoteRi, RC.cseCsi)
 				except ResponseException as e:	# basically anything that isn't "OK"
 					L.isDebug and L.logDebug('CSEBase is not announced')
 					# No, it's not there anymore -> announce it again.
@@ -228,7 +236,7 @@ class AnnouncementManager(object):
 				# there is a remots CSEBase with that ID. Only THEN we can send the request and
 				# continue with the announcement.
 
-				res = CSE.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
+				res = self.requestManager.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
 															   to=to,
 															   originator=RC.cseCsi,
 															   rcn=ResultContentType.childResourceReferences,
@@ -267,7 +275,7 @@ class AnnouncementManager(object):
 
 			# Check if parent is announced already to the same remote CSE
 			try:
-				parentResource = dispatcher.retrieveLocalResource(resource.pi)
+				parentResource = self.dispatcher.retrieveLocalResource(resource.pi)
 			except ResponseException as e:
 				raise INTERNAL_SERVER_ERROR(L.logErr(f'cannot retrieve parent. Announcement not possible: {e.dbg}'))
 			
@@ -308,7 +316,7 @@ class AnnouncementManager(object):
 
 		L.isDebug and L.logDebug(f'creating announced resource at: {to}')
 		try:
-			res = CSE.request.handleSendRequest(CSERequest(op=Operation.CREATE,
+			res = self.requestManager.handleSendRequest(CSERequest(op=Operation.CREATE,
 						  								   to=to, 
 														   originator=RC.cseCsi, 
 														   ty=tyAnnc, 
@@ -382,9 +390,9 @@ class AnnouncementManager(object):
 		# Delete the announed resource from the remote CSE
 		csrID = f'{csi}/{remoteRI}'
 		L.isDebug and L.logDebug(f'Delete announced resource: {csrID}')	
-		res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
-													   to = csrID, 
-													   originator = RC.cseCsi))[0].result	# there should be at least one result
+		res = self.requestManager.handleSendRequest(CSERequest(op=Operation.DELETE,
+													   		   to=csrID, 
+															   originator=RC.cseCsi))[0].result	# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.DELETED, ResponseStatusCode.OK ]:
 			L.isWarn and L.logWarn(f'Error deleting remote announced resource: {res.rsc}')
 			# ignore the fact that we cannot delete the announced resource.
@@ -432,7 +440,7 @@ class AnnouncementManager(object):
 				self.announceResourceToCSI(resource, csi)
 
 
-	def updateResourceOnCSI(self, resource:AnnounceableResource, csi:str, remoteRI:str) -> None:
+	def updateResourceOnCSI(self, resource: AnnounceableResource, csi: str, remoteRI: str) -> None:
 		"""	Update an announced resource on a specific remote CSE.
 
 			Args:
@@ -444,17 +452,17 @@ class AnnouncementManager(object):
 		# Create the announed resource on the remote CSE
 		csrID = f'{csi}/{remoteRI}'
 		L.isDebug and L.logDebug(f'Updating announced resource at: {csrID}')	
-		res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE, 
-													   to = csrID, 
-													   originator = RC.cseCsi, 
-													   pc = dct))[0].result		# there should be at least one result
+		res = self.requestManager.handleSendRequest(CSERequest(op=Operation.UPDATE, 
+															   to=csrID, 
+															   originator=RC.cseCsi, 
+															   pc=dct))[0].result		# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
 			L.isDebug and L.logDebug(f'Error updating remote announced resource: {int(res.rsc)}')
 			# Ignore and fallthrough
 		L.isDebug and L.logDebug('Announced resource updated')
 
 
-	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:
+	def _removeAnnouncementFromResource(self, resource: Resource, csi: str) -> None:
 		"""	Remove announcement details from a resource.
 
 			Modify the internal *__announcedTo__* attribute as well the *at* attribute
@@ -474,7 +482,7 @@ class AnnouncementManager(object):
 				resource.setAttribute('at', at)
 
 
-	def _isResourceAnnouncedTo(self, resource:Resource, csi:str) -> bool:
+	def _isResourceAnnouncedTo(self, resource: Resource, csi: str) -> bool:
 		"""	Check whether a resource is announced to a specific remote CSE.
 		
 			This is done by looking at the entries in the internal *__announcedTo__* 
@@ -561,5 +569,5 @@ class AnnouncementManager(object):
 					return not isAnnounced
 			return False
 
-		return cast(List[AnnounceableResource], storage.searchByFilter(_announcedFilter))
+		return cast(List[AnnounceableResource], self.storage.searchByFilter(_announcedFilter))
 

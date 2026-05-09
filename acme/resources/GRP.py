@@ -7,23 +7,23 @@
 """ Group (GRP) Resource Type """
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, ConsistencyStrategy, JSON
 from ..etc.ResponseStatusCodes import NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
-from ..runtime import Factory as Factory	# attn: circular import
-from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..plugins.services.GroupManager import GroupManager
 
 @requires(groupManager='acme.plugins.services.GroupManager', required=False)
 class GRP(AnnounceableResource):
 	""" Represents the Group resource. """
 
-	groupManager: Optional[Any] = None
+	groupManager: Optional[GroupManager] = None
 	""" Hold a reference to the GroupManager plugin, if available. """
 
 	def initialize(self, pi: str) -> None:

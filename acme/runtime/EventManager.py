@@ -56,3 +56,7 @@ class EventManager(HelpersEventManager):
 		self.addEvent('acmeNotification', runInBackground=False)		# Special event if a notification targets a URL scheme "acme://"
 		# No finished message bc logging is not not initialized yes
 
+
+# Initialize the event manager singleton instance.
+eventManager: EventManager = EventManager()
+""" Event manager singleton instance. """

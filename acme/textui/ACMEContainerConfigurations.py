@@ -17,7 +17,6 @@ from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Tree as TextualTree, Markdown
 from textual.widgets.tree import TreeNode
-from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 
 
@@ -135,7 +134,7 @@ class ACMEConfigurationTree(TextualTree):
 			node._children.sort(key=lambda x: (len(x._children) == 0, str(x.label)))
 
 		# Add all keys as paths recursively to the tree
-		for k in CSE.Configuration.all().keys():
+		for k in Configuration.all().keys():
 			if k in ('configParser',):
 				# These are not actual configuration settings, but internal attributes
 				# of the Configuration class. Skip them.

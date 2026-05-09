@@ -8,44 +8,50 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import CSERequest, Result
 from ..etc.Constants import Constants
+from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, OPERATION_NOT_ALLOWED
+from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 from ..resources.VirtualResource import VirtualResource
 from ..resources.Resource import addToInternalAttributes
-from ..runtime.Logging import Logging as L
-from ..runtime import CSE
-from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, OPERATION_NOT_ALLOWED
 
+if TYPE_CHECKING:
+	from ..services.NotificationManager import NotificationManager
 
 # Add to internal attributes to ignore in validation etc
 addToInternalAttributes(Constants.attrPCUAggregate)	
 
 
+@requires(notificationManager='acme.services.NotificationManager')
 class NTSR(VirtualResource):
+
+	notificationManager: NotificationManager = None
+	""" NotificationManager instance. """
 
 
 	# Disallowing CREATE is handled in the handleCreateRequest() method in Dispatcher
 
-	def handleRetrieveRequest(self, request: Optional[CSERequest]=None, 
-									id: Optional[str]=None, 
-									originator: Optional[str]=None) -> Result:
+	def handleRetrieveRequest(self, request: Optional[CSERequest] = None, 
+									id: Optional[str] = None, 
+									originator: Optional[str] = None) -> Result:
 		raise OPERATION_NOT_ALLOWED(L.logDebug(f'RETRIEVE not allowed for {self.typeShortname} resource'))
 
 
-	def handleUpdateRequest(self, request: Optional[CSERequest]=None, 
-									id: Optional[str]=None, 
+	def handleUpdateRequest(self, request: Optional[CSERequest] = None, 
+									id: Optional[str] = None, 
 									originator: Optional[str]=None) -> Result:
 		raise OPERATION_NOT_ALLOWED(L.logDebug(f'UPDATE not allowed for {self.typeShortname} resource'))
 
 
-	def handleDeleteRequest(self, request: Optional[CSERequest]=None, 
-									id: Optional[str]=None, 
-									originator: Optional[str]=None) -> Result:
+	def handleDeleteRequest(self, request: Optional[CSERequest] = None, 
+									id: Optional[str] = None, 
+									originator: Optional[str] = None) -> Result:
 			
 		try:
-			CSE.notification.removeNotificationTarget(self, originator)
+			self.notificationManager.removeNotificationTarget(self, originator)
 		except ResponseException as e:
 			return Result(rsc=e.rsc, dbg=e.dbg, request=request)
 

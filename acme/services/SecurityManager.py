@@ -22,22 +22,17 @@ from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
 from ..helpers.TextTools import findXPath, simpleMatch
-from ..helpers.PluginManager import requires
-from ..runtime import CSE
+from ..runtime.PluginSupport import *
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
-from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
 from ..runtime.Storage import Storage
+from ..services.Dispatcher import Dispatcher
 from ..resources.Resource import Resource, isInternalAttribute
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
-from ..services.Dispatcher import Dispatcher
 
-
-eventHandler:EventManager = EventManager()
-""" Event handler singleton instance. """
 
 storage:Storage = Storage()
 """ Storage singleton instance. """
@@ -77,7 +72,7 @@ class SecurityManager(object):
 
 
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 
 		# Get the configuration settings
 		self._initAuthInformation()
@@ -94,7 +89,7 @@ class SecurityManager(object):
 		return True
 	
 
-	@onEvent(eventHandler.cseReset)
+	@onEvent(eventManager.cseReset)
 	def restart(self, eventData: EventData) -> None:
 		"""	Restart the Security manager service.
 		"""
@@ -102,7 +97,7 @@ class SecurityManager(object):
 		L.logDebug('SecurityManager restarted')
 
 
-	@onEvent(eventHandler.configUpdate)
+	@onEvent(eventManager.configUpdate)
 	def configUpdate(self, eventData: EventData) -> None:
 		"""	Handle configuration updates.
 
@@ -768,7 +763,7 @@ class SecurityManager(object):
 						L.isDebug and L.logDebug(f'Originator found in group member')
 						return True
 				except ResponseException as e:
-					L.logErr(f'GRP resource not found for ACP check: {a}', exc = e)
+					L.logErr(f'GRP resource not found for ACP check: {a}', exc=e)
 					continue # Not much that we can do here
 
 			# Otherwise Check for wildcard match

@@ -11,7 +11,7 @@
 
 
 from __future__ import annotations
-from typing import Optional, Any, cast
+from typing import Optional, Any, cast, TYPE_CHECKING
 
 import logging, urllib, socket, os
 import isodate
@@ -22,10 +22,11 @@ from ...etc.Types import ResponseType, ResultContentType, DesiredIdentifierResul
 from ...etc.Utils import renameThread
 from ...etc.DateUtils import getResourceDate, timeUntilAbsRelTimestamp
 from ...etc.IDUtils import uniqueRI
-from ...etc.RequestUtils import fromHttpURL, requestFromResult, serializeData, createRequestResultFromURI, fillRequestWithArguments
+from ...etc.RequestUtils import fromHttpURL, serializeData, createRequestResultFromURI, fillRequestWithArguments
 from ...etc.RequestUtils import toCoAPPath, contentAsString, createPositiveResponseResult, deserializeData
 from ...etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
 from ...etc.ResponseStatusCodes import BAD_REQUEST, REQUEST_TIMEOUT, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, INTERNAL_SERVER_ERROR, NO_CONTENT
+from ...etc.Constants import RuntimeConstants as RC
 from ...helpers.TextTools import toHex
 from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from ...helpers.NetworkTools import isValidPort, isValidateHostname, isValidateIpAddress
@@ -35,10 +36,7 @@ from ...helpers.CoAPthonTools import registerOneM2MContentTypes, registerOneM2MO
 from ...helpers.ACMELRUCache import ACMELRUCache
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.Logging import Logging as L
-from ...runtime import CSE
-from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
-from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
-from ...etc.Constants import RuntimeConstants as RC
+from ...runtime.PluginSupport import *
 
 from coapthon import defines
 from coapthon.client.helperclient import HelperClient
@@ -48,21 +46,23 @@ from coapthon.layers.requestlayer import RequestLayer as CoapthonRequestLayer
 from coapthon.messages.request import Request as CoaptthonRequest
 from coapthon.messages.response import Response as CoapthonResponse
 from coapthon.messages.option import Option as CoapthonOption
-
 from coapthon.transaction import Transaction as CoapthonTransaction
 
-
-eventManager = EventManager()	# type: ignore
-"""	Event manager singleton instance. """
+if TYPE_CHECKING:
+	from ...services.RequestManager import RequestManager
 
 
 # TODO  support DTLS sockets
 # TODO Add R5 support (FETCH requests)
 # TODO log requests for error cases. Perhaps non necessary here
 
+@requires(requestManager='acme.services.RequestManager')
 class ACMECoAPHandler():
 	"""	ACME CoAP request handler.
 	"""
+
+	requestManager: RequestManager = None	# type: ignore
+	""" RequestManager instance. """
 
 	__slots__ = (
 		'coapServer',
@@ -197,7 +197,7 @@ class ACMECoAPHandler():
 										 response)
 
 		# Handle the request. Returns a Result object. 
-		responseResult = CSE.request.handleRequest(dissectResult.request)
+		responseResult = self.requestManager.handleRequest(dissectResult.request)
 
 		if dissectResult.request.rt == ResponseType.noResponse:
 			raise NO_CONTENT()
@@ -333,7 +333,7 @@ class ACMECoAPHandler():
 
 		# do validation and copying of attributes of the whole request
 		try:
-			CSE.request.fillAndValidateCSERequest(cseRequest)
+			self.requestManager.fillAndValidateCSERequest(cseRequest)
 		except REQUEST_TIMEOUT as e:
 			raise e
 		except ResponseException as e:
@@ -344,9 +344,9 @@ class ACMECoAPHandler():
 		return Result(request = cseRequest)
 
 
-	def _prepareResponse(self, result:Result, 
-					  		   response:CoapthonResponse,
-							   originalRequest:Optional[CSERequest] = None) -> CoapthonResponse:
+	def _prepareResponse(self, result: Result, 
+					  		   response: CoapthonResponse,
+							   originalRequest: Optional[CSERequest] = None) -> CoapthonResponse:
 		"""	Prepare a CoAP response.
 		
 			Args:
@@ -371,7 +371,7 @@ class ACMECoAPHandler():
 			result.request.originator = originalRequest.originator
 			if originalRequest.coapAccept:																# accept / contentType
 				result.request.ct = originalRequest.coapAccept
-			elif csz := CSE.request.getSerializationFromOriginator(originalRequest.originator):
+			elif csz := self.requestManager.getSerializationFromOriginator(originalRequest.originator):
 				result.request.ct = csz[0]
 
 			result.request.rqi = originalRequest.rqi
@@ -381,7 +381,7 @@ class ACMECoAPHandler():
 			result.request.rset = originalRequest.rset
 		
 		#	Transform request to oneM2M request
-		outResult = requestFromResult(result, isResponse = True, originalRequest = originalRequest)
+		outResult = self.requestManager.requestFromResult(result, isResponse=True, originalRequest=originalRequest)
 
 		#
 		# 	Transform oneM2M request to CoAP message

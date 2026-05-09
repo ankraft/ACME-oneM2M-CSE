@@ -7,20 +7,26 @@
 """ Application Entity (AE) resource type. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, ContentSerializationType, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE
 from ..etc.IDUtils import uniqueAEI
 from ..etc.Constants import Constants
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
+from ..runtime.PluginSupport import requires
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
+@requires(dispatcher='acme.services.Dispatcher')
 class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 
@@ -42,7 +48,7 @@ class AE(AnnounceableResource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator must be the parent <AE>'))
 
 			# check that there will only by one PCH as a child
-			if CSE.dispatcher.countDirectChildResources(self.ri, ty = ResourceTypes.PCH) > 0:
+			if self.dispatcher.countDirectChildResources(self.ri, ty = ResourceTypes.PCH) > 0:
 				raise BAD_REQUEST('only one PCH per AE is allowed')
 
 
@@ -68,7 +74,7 @@ class AE(AnnounceableResource):
 				self[Constants.attrNode] = nl
 
 				# Add to new node
-				if node := CSE.dispatcher.retrieveResource(nl):	# new node
+				if node := self.dispatcher.retrieveResource(nl):	# new node
 					if not (hael := node.hael):
 						node['hael'] = [ ri ]
 					else:
@@ -123,7 +129,7 @@ class AE(AnnounceableResource):
 				nodeRi: The hosting node's resource ID.
 		"""
 		ri = self.ri
-		if node := CSE.dispatcher.retrieveResource(nodeRi):
+		if node := self.dispatcher.retrieveResource(nodeRi):
 			if (hael := node.hael) and isinstance(hael, list) and ri in hael:
 				hael.remove(ri)
 				if len(hael) == 0:

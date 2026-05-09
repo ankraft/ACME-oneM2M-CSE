@@ -11,7 +11,7 @@
 """	Import various resources, scripts, policies etc into the CSE. """
 
 from __future__ import annotations
-from typing import cast, Optional
+from typing import cast, Optional, TYPE_CHECKING
 
 import json, os, fnmatch, re
 from copy import deepcopy
@@ -20,29 +20,44 @@ from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST, ResourceDescription
 from ..etc.Types import resourceTypeDetails
 from ..etc.Constants import RuntimeConstants as RC
-from .Configuration import Configuration
-from ..runtime import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime.ScriptManager import _metaInit
+from ..runtime.Configuration import Configuration
+from ..helpers.Singleton import Singleton
 from ..helpers.TextTools import removeCommentsFromJSON
-from .Logging import Logging as L
-from .ScriptManager import _metaInit
 from ..resources.CSEBase import getCSE
-from .Factory import Factory
-from ..services.Dispatcher import Dispatcher
+from ..runtime.PluginSupport import requires, ServicePlugin, endpoint
 
-factory: Factory = Factory()
-""" Factory singleton instance. """
+if TYPE_CHECKING:
+	from ..runtime.Factory import Factory
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
+	from ..runtime.ScriptManager import ScriptManager
 
-dispatcher: Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
 
 # TODO Support child specialization in attribute definitionsEv
 
 # TODO change error handling to exceptions
-
-class Importer(object):
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(factory='acme.runtime.Factory')
+@requires(validator='acme.services.Validator')
+@requires(scriptManager='acme.runtime.ScriptManager')
+class Importer(metaclass=Singleton):
 	""" Importer class to import various objects, configurations etc.
 	
 		It is mainly run before the CSE is actually started or restarted."""
+
+	factory: Factory = None
+	""" Factory singleton instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	validator: Validator = None
+	""" Validator instance. """
+
+	scriptManager: ScriptManager = None
+	""" ScriptManager instance. """
 
 	__slots__ = (
 		'resourcePath',
@@ -59,7 +74,7 @@ class Importer(object):
 	_firstImporters = [ 'csebase.json']
 	_enumValues:dict[str, dict[int, str]] = {}
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 		"""	Initialization of an *Importer* instance.
 		"""
 		self.resourcePath = Configuration.cse_resourcesPath
@@ -110,13 +125,13 @@ class Importer(object):
 	def removePolicyImports(self) -> None:
 		"""	Remove all previous imported scripts and definitions.
 		"""
-		CSE.validator.clearAttributePolicies()
-		CSE.validator.clearFlexContainerAttributes()
-		CSE.validator.clearFlexContainerSpecializations()
+		self.validator.clearAttributePolicies()
+		self.validator.clearFlexContainerAttributes()
+		self.validator.clearFlexContainerSpecializations()
 	
 	
 	def removeScripts(self) -> None:
-		CSE.script.removeScripts()
+		self.scriptManager.removeScripts()
 
 
 	###########################################################################
@@ -193,7 +208,7 @@ class Importer(object):
 		# Initialize the resource factory, e.g. register resource types and their constructors
 		# This can only be done after the importer has imported the resource type definitions, 
 		# which are used in the resource descriptions for the factory registration
-		if not factory.initResources():
+		if not self.factory.initResources():
 			raise RuntimeError(L.logErr('Failed to initialize resources'))
 
 
@@ -235,23 +250,23 @@ class Importer(object):
 			self._prepareImporting()
 			try:
 				L.isDebug and L.logDebug(f'Importing scripts from directory(s): {self.extendedScriptPaths}')
-				if (countScripts := CSE.script.loadScriptsFromDirectory(self.extendedScriptPaths)) == -1:
+				if (countScripts := self.scriptManager.loadScriptsFromDirectory(self.extendedScriptPaths)) == -1:
 					return False
 				
 				# Check that there is only one startup script, then execute it
-				match len(scripts := CSE.script.findScripts(meta=_metaInit)):
+				match len(scripts := self.scriptManager.findScripts(meta=_metaInit)):
 					case l if l > 1:
 						L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
 						return False
 					case 1:
 						# Check whether there is already a filled DB, then skip the imports
-						if dispatcher.countResources() > 0:
+						if self.dispatcher.countResources() > 0:
 							L.isInfo and L.log('Resources already imported, skipping boostrap')
 						else:
 							# Run the startup script. There shall only be one.
 							s = scripts[0]
 							L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
-							if not CSE.script.runScript(s):	
+							if not self.scriptManager.runScript(s):	
 								L.logErr(f'Error during startup: {s.error}')
 								return False
 			finally:
@@ -451,7 +466,7 @@ class Importer(object):
 					
 				definedAttrs:list[str] = []
 				for attr in attrs:
-					if not (attributePolicy := self._parseAttribute(attr, fn, typeShortname, checkListType = False)):		# TODO Handle list sub-types for flexContainers
+					if not (attributePolicy := self._parseAttribute(attr, fn, typeShortname, checkListType=False)):		# TODO Handle list sub-types for flexContainers
 						return False
 
 					# Test whether an attribute has been defined twice
@@ -463,7 +478,7 @@ class Importer(object):
 
 					# Add the attribute to the additional policies structure
 					try:
-						if not CSE.validator.addFlexContainerAttributePolicy(attributePolicy):
+						if not self.validator.addFlexContainerAttributePolicy(attributePolicy):
 							L.logErr(f'Cannot add attribute policies for attribute: {attributePolicy.sname} type: {typeShortname}')
 							return False
 						countFCP += 1
@@ -473,11 +488,11 @@ class Importer(object):
 				
 				# Add the available specialization information
 				if cnd:
-					if CSE.validator.hasFlexContainerContainerDefinition(cnd):
+					if self.validator.hasFlexContainerContainerDefinition(cnd):
 						L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
 						return False
 
-					if not CSE.validator.addFlexContainerSpecialization(typeShortname, cnd, lname):
+					if not self.validator.addFlexContainerSpecialization(typeShortname, cnd, lname):
 						L.logErr(f'Cannot add flexContainer specialization for type: {typeShortname}')
 						return False
 
@@ -516,25 +531,25 @@ class Importer(object):
 			# go through all the attributes in that attribute definition file
 			for sname in attributeList:
 				if not isinstance(sname, str):
-					L.logErr(f'Attribute name must be a string: {str(sname)} in file: {fn}', showStackTrace = False)
+					L.logErr(f'Attribute name must be a string: {str(sname)} in file: {fn}', showStackTrace=False)
 					return False
 
 				attributeDefs = attributeList[sname]
 				if not attributeDefs or not isinstance(attributeDefs, list):
-					L.logErr(f'Attribute definition must be a non-empty list for attribute: {sname} in file: {fn}', showStackTrace = False)
+					L.logErr(f'Attribute definition must be a non-empty list for attribute: {sname} in file: {fn}', showStackTrace=False)
 					return False
 
 				# for each definition for this attribute parse it and add one or more attribute Policies
 				for entry in attributeDefs:
-					if not (attributePolicy := self._parseAttribute(entry, fn, sname = sname)):
+					if not (attributePolicy := self._parseAttribute(entry, fn, sname=sname)):
 						return False
 					if not attributePolicy.rtypes:
-						L.logErr(f'Missing or unknown resource type definition for attribute: {sname} in file {fn}', showStackTrace = False)
+						L.logErr(f'Missing or unknown resource type definition for attribute: {sname} in file {fn}', showStackTrace=False)
 						return False
 					for rtype in attributePolicy.rtypes:
 						ap = deepcopy(attributePolicy)
 						try:
-							CSE.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
+							self.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
 							countAP += 1
 						except ValueError as e:
 							L.logErr(str(e))
@@ -543,22 +558,22 @@ class Importer(object):
 
 		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
 		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
-		for p in CSE.validator.getAllAttributePolicies().values():
+		for p in self.validator.getAllAttributePolicies().values():
 			match p.type:
 				case BasicType.complex:
-					for each in CSE.validator.getAllAttributePolicies().values():
+					for each in self.validator.getAllAttributePolicies().values():
 						if p.typeName == each.ctype:	# found a definition
 							break
 					else:
-						L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+						L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace=False)
 						return False
 				case BasicType.list | BasicType.listNE if p.ltype is not None:
 					if p.ltype == BasicType.complex:
-						for each in CSE.validator.getAllAttributePolicies().values():
+						for each in self.validator.getAllAttributePolicies().values():
 							if p.lTypeName == each.ctype:	# found a definition
 								break
 						else:
-							L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+							L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace=False)
 							return False			
 		
 		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
@@ -576,10 +591,10 @@ class Importer(object):
 
 		hasErrors = False
 		for ty in ResourceTypes:
-			if (rc := factory.getResourceClassForType(ty)):									# Get the Python class for each Resource (only real resources)
+			if (rc := self.factory.getResourceClassForType(ty)):									# Get the Python class for each Resource (only real resources)
 				if hasattr(rc, '_attributes') and isinstance(rc._attributes, dict):	# If it has attributes defined
 					for sn in rc._attributes.keys():								# Then add the policies for those attributes
-						if not (ap := CSE.validator.getAttributePolicy(ty, sn)):
+						if not (ap := self.validator.getAttributePolicy(ty, sn)):
 							L.logErr(f'No attribute policy for: {ty.name}.{sn}', showStackTrace=False)
 							hasErrors = True
 							continue

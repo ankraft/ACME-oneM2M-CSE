@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from copy import deepcopy
 
@@ -18,17 +18,28 @@ from ..etc.Types import ResourceTypes, NotificationContentType
 from ..etc.Types import NotificationEventType, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..runtime.Configuration import Configuration
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
-from ..runtime import Factory
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..services.NotificationManager import NotificationManager
+	from ..services.Validator import Validator
 
 # TODO notificationForwardingURI
 # TODO work on more NEC attributes
 
 
+
+@requires(notificationManager='acme.services.NotificationManager')
+@requires(validator='acme.services.Validator')
 class SUB(Resource):
+
+	notificationManager: NotificationManager = None
+	""" NotificationManager instance. """
+
+	validator: Validator = None
+	""" Validator instance. """
 
 	_disallowedBlockingAttributes = [
 		'exc', 'gpi', 'nfu', 'bn', 'rl', 'psn',	'pn', 'nsp', 'ln',
@@ -75,7 +86,7 @@ class SUB(Resource):
 		
 		# "nsi" will be added later during the first stat recording
 
-		CSE.notification.addSubscription(self, originator)
+		self.notificationManager.addSubscription(self, originator)
 
 		# Increment the parent's subscription counter
 		parentResource.incrementSubscriptionCounter()
@@ -89,35 +100,35 @@ class SUB(Resource):
 		)
 
 
-	def deactivate(self, originator:str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		super().deactivate(originator, parentResource)
-		CSE.notification.removeSubscription(self, originator)
+		self.notificationManager.removeSubscription(self, originator)
 		parentResource.decrementSubscriptionCounter()
 		# L.logWarn(f'Decremented subscription counter for {parentResource.ri} to {parentResource.getSubscriptionCounter()}')
 
 
-	def update(self, dct:Optional[JSON] = None, 
-					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+	def update(self, dct: Optional[JSON] = None, 
+					 originator: Optional[str] = None, 
+					 doValidateAttributes: Optional[bool] = True) -> None:
 		previousNus = deepcopy(self.nu)
 
 		# We are validating the attributes here already because this actual update of the resource
 		# (where this happens) is done only after a lot of other stuff hapened.
 		# So, the resource is validated twice in an update :()
-		CSE.validator.validateAttributes(dct, 
-										 self.typeShortname, 
-										 self.ty, 
-										 self._attributes, 
-										 create = False, 
-										 createdInternally = self.isCreatedInternally(),
-										 isAnnounced = self.isAnnounced())
+		self.validator.validateAttributes(dct, 
+										  self.typeShortname, 
+										  self.ty, 
+										  self._attributes, 
+										  create=False, 
+										  createdInternally=self.isCreatedInternally(),
+										  isAnnounced=self.isAnnounced())
 
 
 		# Handle update notificationStatsEnable attribute, but only if present in the resource.
 		# This is important bc it can be set to True, False, or Null.
 		pure = pureResource(dct)[0]
 		if 'nse' in pure:
-			CSE.notification.updateOfNSEAttribute(self, findXPath(dct, 'm2m:sub/nse'))
+			self.notificationManager.updateOfNSEAttribute(self, findXPath(dct, 'm2m:sub/nse'))
 
 		# Reject updates with blocking *
 		if (net := findXPath(pure, 'enc/net')) and self._hasBlockingNET(net):
@@ -127,7 +138,7 @@ class SUB(Resource):
 		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
 			for crsRI in set(self.acrs) - set(newAcrs):
 				L.isDebug and L.logDebug(f'Update of acrs: {crsRI} removed. Sending deletion notification')
-				CSE.notification.sendDeletionNotification(crsRI, self.ri, self.cr)	# TODO ignore result?
+				self.notificationManager.sendDeletionNotification(crsRI, self.ri, self.cr)	# TODO ignore result?
 
 		# Do actual update
 		super().update(dct, originator, doValidateAttributes = False)
@@ -138,7 +149,7 @@ class SUB(Resource):
 			parentResource = self.retrieveParentResource()
 			self._checkAllowedCHTY(parentResource, chty)
 
-		CSE.notification.updateSubscription(self, previousNus, originator)
+		self.notificationManager.updateSubscription(self, previousNus, originator)
 
  
 	def validate(self, originator:Optional[str]=None, 
@@ -187,7 +198,7 @@ class SUB(Resource):
 			# Only one of each blocking UPDATE or RETRIEVE etc must exist for this resource
 			# This works here in validate bc it is only allowed in CREATE/activate, and this resource has 
 			# not been written to DB yet.
-			if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = newNet):
+			if self.notificationManager.getSubscriptionsByNetChty(parentResource.ri, net=newNet):
 				raise BAD_REQUEST(L.logDebug(f'a subscription with blockingRetrieve/blockingUpdate/blockingRetrieveDirectChild already exsists for this resource'))
 
 			# Only one NU is allowed for blocking UPDATE or RETRIEVE

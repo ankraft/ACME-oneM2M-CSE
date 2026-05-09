@@ -18,7 +18,7 @@
 """
 
 from __future__ import annotations
-from typing import cast, Optional, Any, Tuple
+from typing import cast, Optional, Any, Callable, Tuple, TYPE_CHECKING
 
 import webbrowser
 
@@ -28,40 +28,29 @@ from rich.pretty import Pretty
 from rich.style import Style
 from rich.table import Table
 from rich.text import Text
-from rich.tree import Tree
 
 import plotext
 
-from ...runtime import CSE
-
-from ...helpers.KeyHandler import FunctionKey, loop, waitForKeypress, Commands
-from ...helpers.interpreter.PContext import PContext
-from ...helpers.interpreter.Types import PError
 from ...etc.Constants import Constants, RuntimeConstants as RC
 from ...etc.Types import ResourceTypes, TreeMode
 from ...etc.ResponseStatusCodes import ResponseException
+from ...helpers.KeyHandler import FunctionKey, loop, waitForKeypress, Commands
+from ...helpers.interpreter.PContext import PContext
+from ...helpers.interpreter.Types import PError
 from ...resources.Resource import Resource
-from ...runtime.Management import getStatusRich, getRegistrationsRich, getResourceTreeRich, getRequestsRich, doExportResource, doExportInstances
 from ...runtime.ConsoleBase import ConsoleBase
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, init, restart
-from ...runtime.EventManager import EventManager, EventData, EventHandler, onEvent
-from ...runtime.Storage import Storage
-from ...services.Dispatcher import Dispatcher
+from ...runtime.PluginSupport import *
+
+if TYPE_CHECKING:
+	from ...runtime.Storage import Storage
+	from ...services.Dispatcher import Dispatcher
+	from ...runtime.ScriptManager import ScriptManager
+	from ...runtime.Management import ManagementSupport
 
 # TODO support configevent!
 # TODO move some of the functions to a more general place because they are used here and in the TUI
-
-
-eventManager: EventManager = EventManager()	# type: ignore
-""" Event manager singleton instance. """
-
-storage: Storage = Storage()
-""" Storage singleton instance. """
-
-dispatcher: Dispatcher = Dispatcher()	# type: ignore
-""" Dispatcher singleton instance. """
 
 
 ##############################################################################
@@ -69,6 +58,12 @@ dispatcher: Dispatcher = Dispatcher()	# type: ignore
 
 @EventHandler
 @plugin(tags=['acme', 'ui'])
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(scriptManager='acme.runtime.ScriptManager')
+@requires(storage='acme.runtime.Storage')
+@requires(managementSupport='acme.runtime.Management')
+@requires(cseSetConsole='acme.runtime.CSE.setConsole')
+@requires(cseShutdown='acme.runtime.CSE.shutdown')
 class Console(ConsoleBase):
 	"""	Console Manager class.
 	
@@ -84,6 +79,24 @@ class Console(ConsoleBase):
 			previousExportRi: Resource ID of the previous export.
 			previousInstanceExportRi: Resource ID of the previous instance export.
 	"""
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	storage: Storage = None	
+	""" Storage instance. """
+
+	scriptManager: ScriptManager = None
+	""" ScriptManager instance. """
+
+	managementSupport: ManagementSupport = None
+	""" ManagementSupport instance. """
+
+	cseSetConsole: Callable[[ConsoleBase], None] = None
+	""" Function to set the console instance in the CSE. """
+
+	cseShutdown: Callable[[], None] = None
+	""" Function to shutdown the CSE. """
 
 	__slots__ = (
 		'interruptContinous',
@@ -102,11 +115,11 @@ class Console(ConsoleBase):
 	)
 	""" The slots for the Console to optimize memory usage. """
 
-	@init
-	def initConsole(self) -> None:
+	@start
+	def startConsole(self) -> None:
 		"""	Initialize the console plugin. Set the console instance in the CSE. 
 		"""
-		CSE.console = self
+		self.cseSetConsole(self)
 
 		# Get the configuration settings
 		self._assignConfig()
@@ -214,7 +227,7 @@ class Console(ConsoleBase):
 			 nextKey='#' if self.doStartWithTextUI() else None,
 			 ignoreException=False,
 			 exceptionHandler=lambda ch: L.setEnableScreenLogging(True))
-		CSE.shutdown()
+		self.cseShutdown()
 
 	##############################################################################
 	#
@@ -283,7 +296,7 @@ class Console(ConsoleBase):
 			table.add_row(each[0], each[1], '', end_section = each == commands[-1])
 
 		# Add Scripts that have a key binding
-		for eachScript in (scripts :=  sorted(CSE.script.findScripts(meta = 'onKey'), key = lambda x: x.getMeta('onKey'))):
+		for eachScript in (scripts :=  sorted(self.scriptManager.findScripts(meta='onKey'), key=lambda x: x.getMeta('onKey'))):
 			# table.add_row(eachScript.meta.get('onkey'), eachScript.meta.get('description'), '✔︎')
 			table.add_row(eachScript.meta.get('onKey'), eachScript.meta.get('description'), '+')
 		L.console(table, nl=True)
@@ -381,7 +394,7 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		L.console('Resource Tree', isHeader = True)
-		L.console(getResourceTreeRich())
+		L.console(self.managementSupport.getResourceTreeRich())
 		L.console()
 
 
@@ -398,7 +411,7 @@ Available under the BSD 3-Clause License
 			self.previousTreeRi = ri
 			L.console()
 		elif len(ri) > 0:
-			if tree := getResourceTreeRich(parent = ri, withProgress = False):
+			if tree := self.managementSupport.getResourceTreeRich(parent = ri, withProgress = False):
 				L.console(tree)
 			else:
 				L.console('not found', isError = True)
@@ -417,12 +430,12 @@ Available under the BSD 3-Clause License
 		self.interruptContinous = False
 		self.clearScreen(key)
 		self._about('Resource Tree')
-		with Live(getResourceTreeRich(style=L.terminalStyle, withProgress=False), auto_refresh=False) as live:
+		with Live(self.managementSupport.getResourceTreeRich(style=L.terminalStyle, withProgress=False), auto_refresh=False) as live:
 
 			def _updateTree(_: Any, eventData: EventData) -> None:
 				"""	Callback to update the on-screen tree on an event.
 				"""
-				live.update(getResourceTreeRich(style=L.terminalStyle, withProgress=False), refresh=True)
+				live.update(self.managementSupport.getResourceTreeRich(style=L.terminalStyle, withProgress=False), refresh=True)
 			
 			# Register events for which the tree is refreshed
 			eventManager.addHandler([eventManager.createResource, 
@@ -455,7 +468,7 @@ Available under the BSD 3-Clause License
 		L.console('CSE Registrations', isHeader = True)
 		L.console()
 		try:
-			L.console(getRegistrationsRich())
+			L.console(self.managementSupport.getRegistrationsRich())
 		except Exception as e:
 			L.logErr('', exc = e)
 
@@ -467,7 +480,7 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		L.console('Statistics', isHeader=True)
-		L.console(getStatusRich())
+		L.console(self.managementSupport.getStatusRich())
 		L.console()
 
 
@@ -481,9 +494,9 @@ Available under the BSD 3-Clause License
 		self.interruptContinous = False
 		self.clearScreen(key)
 		self._about('Statistics')
-		with Live(getStatusRich(style=L.terminalStyle, withProgress=False), auto_refresh=False) as live:
+		with Live(self.managementSupport.getStatusRich(style=L.terminalStyle, withProgress=False), auto_refresh=False) as live:
 			while not waitForKeypress(Configuration.console_refreshInterval):
-				live.update(getStatusRich(style=L.terminalStyle, withProgress=False), refresh=True)
+				live.update(self.managementSupport.getStatusRich(style=L.terminalStyle, withProgress=False), refresh=True)
 				if self.interruptContinous:
 					break
 
@@ -501,12 +514,12 @@ Available under the BSD 3-Clause License
 		L.off()
 		if (ri := L.consolePrompt('ri')):
 			try:
-				resource = dispatcher.retrieveResource(ri)
+				resource = self.dispatcher.retrieveResource(ri)
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
 			else:
 				try:
-					dispatcher.deleteLocalResource(resource, withDeregistration = True)
+					self.dispatcher.deleteLocalResource(resource, withDeregistration = True)
 				except ResponseException as e:
 					L.console(e.dbg, isError = True)
 				else:
@@ -526,7 +539,7 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
 			self.previousInspectRi = ri
 			try:
-				resource = dispatcher.retrieveResource(ri)
+				resource = self.dispatcher.retrieveResource(ri)
 				L.console(resource.asDict())
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
@@ -544,9 +557,9 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('ri', default = self.previosInspectChildrenRi)):
 			self.previosInspectChildrenRi = ri
 			try:
-				resource = dispatcher.retrieveResource(ri)
-				children = dispatcher.discoverResources(ri, originator = RC.cseOriginator)
-				dispatcher.resourceTreeDict(children, resource.dict)	# the function call add attributes to the target resource
+				resource = self.dispatcher.retrieveResource(ri)
+				children = self.dispatcher.discoverResources(ri, originator = RC.cseOriginator)
+				self.dispatcher.resourceTreeDict(children, resource.dict)	# the function call add attributes to the target resource
 				L.console(resource.asDict())
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
@@ -565,7 +578,7 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('ri', default = self.previousInspectRi)):
 			self.previousInspectRi = ri
 			try:
-				resource = dispatcher.retrieveResource(ri, postRetrieveHook = True)
+				resource = self.dispatcher.retrieveResource(ri, postRetrieveHook = True)
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
 			else: 
@@ -579,7 +592,7 @@ Available under the BSD 3-Clause License
 						"""	Callback to update the on-screen resource on an event.
 						"""
 						try:
-							resource = dispatcher.retrieveResource(ri, postRetrieveHook = True)
+							resource = self.dispatcher.retrieveResource(ri, postRetrieveHook = True)
 						except ResponseException as e:
 							endMessage = f'Resource is not available anymore: {ri}'
 							self.interruptContinous = True
@@ -616,15 +629,15 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		from rich.style import Style
-		L.console('Script Catalog', isHeader = True)
+		L.console('Script Catalog', isHeader=True)
 		L.off()
-		table = Table(row_styles = [ '', L.tableRowStyle])
-		table.add_column('Script', no_wrap = True)
+		table = Table(row_styles=[ '', L.tableRowStyle])
+		table.add_column('Script', no_wrap=True)
 		table.add_column('Description / Usage')
-		table.add_column('UT ', no_wrap = True, justify = 'center')
-		table.add_column('Key ', no_wrap = True, justify = 'center')
-		table.add_column('Run at', no_wrap = True, justify = 'center')
-		for n in CSE.script.findScripts(name = '*'):
+		table.add_column('UT ', no_wrap=True, justify='center')
+		table.add_column('Key ', no_wrap=True, justify='center')
+		table.add_column('Run at', no_wrap=True, justify='center')
+		for n in self.scriptManager.findScripts(name='*'):
 			if 'hidden' not in n.meta:
 				desc = f'{n.getMeta("description")}\n[dim]{n.getMeta("usage")}'
 				ut = n.meta.get('uppertester') is not None
@@ -651,7 +664,7 @@ Available under the BSD 3-Clause License
 		L.off()		
 		if (ri := L.consolePrompt('ri', default=self.previousExportRi)):
 			self.previousExportRi = ri
-			doExportResource(ri)
+			self.managementSupport.doExportResource(ri)
 		L.on()
 
 
@@ -665,7 +678,7 @@ Available under the BSD 3-Clause License
 		L.off()		
 		if (ri := L.consolePrompt('ri', default=self.previousInstanceExportRi)):
 			self.previousInstanceExportRi = ri
-			doExportInstances(ri)
+			self.managementSupport.doExportInstances(ri)
 		L.on()
 
 	# def exportResources(self, key:str) -> None:
@@ -723,12 +736,12 @@ Available under the BSD 3-Clause License
 				L.console(f'Error in {pcontext.scriptName}:{error[1]}: {error[2]}', isError = True)
 
 
-		L.console('Run ACMEScript', isHeader = True)
+		L.console('Run ACMEScript', isHeader=True)
 		L.off()		
-		if (name := L.consolePrompt('Script name', nl = False, default = self.previousScript)):
+		if (name := L.consolePrompt('Script name', nl=False, default=self.previousScript)):
 			self.previousScript = name
-			if len(scripts := CSE.script.findScripts(name = name)) != 1:
-				L.console(f'Script {name} not found', isError = True, nlb = True)
+			if len(scripts := self.scriptManager.findScripts(name=name)) != 1:
+				L.console(f'Script {name} not found', isError=True, nlb=True)
 				L.on()
 				return
 			argument = L.consolePrompt('Arguments', default=self.previousArgument)
@@ -736,7 +749,7 @@ Available under the BSD 3-Clause License
 			pcontext = scripts[0]
 			L.on()	# Turn on log before running the script
 			try:
-				CSE.script.runScript(pcontext, arguments=argument, background=True, finished=finished)
+				self.scriptManager.runScript(pcontext, arguments=argument, background=True, finished=finished)
 			except Exception as e:
 				L.logErr(f'Exception during script execution: {str(e)}', exc=e)
 
@@ -761,7 +774,7 @@ Available under the BSD 3-Clause License
 			
 		# plot
 		try:
-			cins = dispatcher.retrieveDirectChildResources(resource.ri, ResourceTypes.CIN)
+			cins = self.dispatcher.retrieveDirectChildResources(resource.ri, ResourceTypes.CIN)
 			x = range(1, (lcins := len(cins)) + 1)
 			y = [ float(each.con) for each in cins ]
 			cols, rows = plotext.terminal_size()
@@ -796,7 +809,7 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('Container ri', default = self.previousGraphRi)):
 			self.previousGraphRi = ri
 			try:
-				resource = dispatcher.retrieveResource(ri)
+				resource = self.dispatcher.retrieveResource(ri)
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
 			else:
@@ -830,7 +843,7 @@ Available under the BSD 3-Clause License
 		if (ri := L.consolePrompt('Container ri', default = self.previousGraphRi)):
 			self.previousGraphRi = ri
 			try:
-				resource = dispatcher.retrieveResource(ri)
+				resource = self.dispatcher.retrieveResource(ri)
 			except ResponseException as e:
 				L.console(e.dbg, isError = True)
 			else:
@@ -870,7 +883,7 @@ Available under the BSD 3-Clause License
 		L.off()
 		if (ri := L.consolePrompt('ri', default = self.previousRequestRi)):
 			self.previousRequestRi = ri
-			table, uml = getRequestsRich(ri)
+			table, uml = self.managementSupport.getRequestsRich(ri)
 			L.console(table)
 			L.console(uml, plain = True)
 		L.on()		
@@ -883,7 +896,7 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		L.off()
-		table, uml = getRequestsRich()
+		table, uml = self.managementSupport.getRequestsRich()
 		L.console(table)
 		L.console(uml, plain = True)
 		L.on()
@@ -896,7 +909,7 @@ Available under the BSD 3-Clause License
 				key: Input key. Ignored.
 		"""
 		L.console('Delete all requests')
-		storage.deleteRequests()
+		self.storage.deleteRequests()
 
 
 

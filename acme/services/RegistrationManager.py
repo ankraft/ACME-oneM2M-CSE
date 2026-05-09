@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON, CSEType, OriginatorType
 from ..etc.ResponseStatusCodes import APP_RULE_VALIDATION_FAILED, ORIGINATOR_HAS_ALREADY_REGISTERED, INVALID_CHILD_RESOURCE_TYPE
@@ -17,28 +17,45 @@ from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, originatorToID
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
-from ..runtime import CSE
 from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
-from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.Singleton import Singleton
 from ..runtime.Logging import Logging as L
-from ..runtime.PluginSupport import requires
-from ..runtime.Storage import Storage
+from ..runtime.PluginSupport import *
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Dispatcher import Dispatcher
+	from ..services.SecurityManager import SecurityManager
+	from ..runtime.Storage import Storage
+	from ..runtime.Importer import Importer
+	from ..services.Validator import Validator
 
-eventManager:EventManager = EventManager()
-""" Event manager singleton instance. """
-
-storage:Storage = Storage()	# type: ignore
-""" Storage singleton instance. """
-
-dispatcher: Any = None	# type: ignore
-""" Dispatcher singleton instance. """
 
 @EventHandler
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(storage='acme.runtime.Storage')
+@requires(securityManager='acme.services.SecurityManager')
+@requires(importer='acme.runtime.Importer')
+@requires(validator='acme.services.Validator')
 class RegistrationManager(metaclass=Singleton):
+
+	dispatcher: Dispatcher = None	# type: ignore
+	""" Dispatcher instance. """
+
+	storage:Storage = None	# type: ignore
+	""" Storage instance. """
+
+	securityManager: SecurityManager = None	# type: ignore
+	""" SecurityManager instance. """
+
+	importer: Importer = None	# type: ignore
+	""" Importer instance. """
+
+	validator: Validator = None	# type: ignore
+	""" Validator instance. """
+
 
 	remoteCSEManager: Optional[Any] = None	# type: ignore
 
@@ -47,11 +64,6 @@ class RegistrationManager(metaclass=Singleton):
 	)
 
 	def initialize(self) -> None:
-
-		# Prevent circular imports by importing the dispatcher here
-		global dispatcher
-		from ..services.Dispatcher import Dispatcher
-		dispatcher = Dispatcher()
 
 		# Start expiration Monitor
 		self.expWorker:BackgroundWorker	= None
@@ -217,7 +229,7 @@ class RegistrationManager(metaclass=Singleton):
 
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
-		if not CSE.security.isAllowedOriginator(originator, Configuration.cse_registration_allowedAEOriginators):
+		if not self.securityManager.isAllowedOriginator(originator, Configuration.cse_registration_allowedAEOriginators):
 			raise APP_RULE_VALIDATION_FAILED(L.logDebug('Originator not allowed'))
 
 		# Assign originator for the AE
@@ -245,7 +257,7 @@ class RegistrationManager(metaclass=Singleton):
 
 		# Add the originator to the database
 		# TODO distinguid between C and S originators 
-		storage.addOriginator(originator, OriginatorType.CAEID)
+		self.storage.addOriginator(originator, OriginatorType.CAEID)
 
 		return originator
 
@@ -263,7 +275,7 @@ class RegistrationManager(metaclass=Singleton):
 			self.deregisterSOriginator(ae)
 
 		# delete the originator from the database
-		storage.removeOriginator(ae.aei)	
+		self.storage.removeOriginator(ae.aei)	
 
 		# Send event
 		eventManager.aeHasDeregistered(EventData(payload=ae))	# type: ignore [attr-defined]
@@ -282,7 +294,7 @@ class RegistrationManager(metaclass=Singleton):
 			Todo:
 				Currently this is done by searching the storage. This should be optimized by using an index for the originator.
 		"""
-		return storage.getOriginator(originator) is not None	
+		return self.storage.getOriginator(originator) is not None	
 
 	#########################################################################
 
@@ -300,7 +312,7 @@ class RegistrationManager(metaclass=Singleton):
 			raise OPERATION_NOT_ALLOWED(L.logWarn('Registration to ASN CSE is not allowed'))
 	
 		# Check that the originator is not an AE
-		if CSE.security.isAEOriginator(originator):
+		if self.securityManager.isAEOriginator(originator):
 			if originator != RC.cseOriginator:
 				raise OPERATION_NOT_ALLOWED(L.logWarn('AE originator not allowed for CSR registration'))
 			L.isWarn and L.logWarn('Warning: CSR registration with Admin originator')
@@ -311,15 +323,15 @@ class RegistrationManager(metaclass=Singleton):
 			raise OPERATION_NOT_ALLOWED(L.logWarn(f'Originator has already registered an AE: {originator}'))
 		
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
-		if not CSE.importer.isImporting:	# ... except when the resource was just been imported
+		if not self.importer.isImporting:	# ... except when the resource was just been imported
 			csr['csi'] = originator if originator.startswith('/') else f'/{originator}'	# A bit of a HACK to allow Admin AE to register CSR with csi = /CSE-ID
 			csr['ri']  = originatorToID(originator)
 
 		# Validate csi in csr
-		CSE.validator.validateCSICB(csr.csi, 'csi')
+		self.validator.validateCSICB(csr.csi, 'csi')
 
 		# Validate cb in csr
-		CSE.validator.validateCSICB(csr.cb, 'cb')
+		self.validator.validateCSICB(csr.cb, 'cb')
 
 
 	#
@@ -363,7 +375,7 @@ class RegistrationManager(metaclass=Singleton):
 
 		# Check whether the same CSEBase has already registered (-> only once)
 		if (lnk := cbA.lnk):
-			if len(storage.searchByFragment({'lnk': lnk})) > 0:
+			if len(self.storage.searchByFragment({'lnk': lnk})) > 0:
 				raise CONFLICT(L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
 
 		# Assign a rn
@@ -402,11 +414,11 @@ class RegistrationManager(metaclass=Singleton):
 	def handleCSEBaseRegistration(self, cb:Resource, originator:str) -> None:
 		csi = cb.csi
 		L.isDebug and L.logDebug(f'Registering CSEBase. csi: {cb.csi}')
-		if storage.getOriginator(csi):
+		if self.storage.getOriginator(csi):
 			raise CONFLICT(L.logDebug(f'CSEBase with csi: {csi} already exists'))
 		
 		# For now only store the csi as originator
-		storage.addOriginator(csi, OriginatorType.CSEID)
+		self.storage.addOriginator(csi, OriginatorType.CSEID)
 
 
 	#########################################################################
@@ -442,14 +454,14 @@ class RegistrationManager(metaclass=Singleton):
 	def expirationDBMonitor(self) -> bool:
 		# L.isDebug and L.logDebug('Looking for expired resources')
 		now = getResourceDate()
-		resources = storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
+		resources = self.storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
 		for resource in resources:
 			# try to retrieve the resource first bc it might have been deleted as a child resource
 			# of an expired resource
-			if not storage.hasResource(ri=resource.ri):
+			if not self.storage.hasResource(ri=resource.ri):
 				continue
 			L.isDebug and L.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
-			dispatcher.deleteLocalResource(resource, withDeregistration=True)	# ignore result
+			self.dispatcher.deleteLocalResource(resource, withDeregistration=True)	# ignore result
 			eventManager.expireResource(EventData(payload=resource))
 				
 		return True

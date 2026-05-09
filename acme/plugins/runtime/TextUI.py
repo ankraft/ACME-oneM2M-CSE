@@ -14,18 +14,14 @@ from __future__ import annotations
 from typing import Optional, Any, Literal
 import asyncio
 
-from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
-from ...runtime.EventManager import EventManager, onEvent, EventData, EventHandler
+from ...runtime.PluginSupport import *
 from ...etc.Types import CSEStatus
 from ...etc.Constants import RuntimeConstants as RC
 
 from ...textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 
-eventManager = EventManager()	# type: ignore
-"""	Event manager singleton instance. """
 
 # TODO Delete resource? After better dialog option is available
 # TODO Copy resource
@@ -134,12 +130,17 @@ class TextUI(object):
 	#########################################################################
 
 
-	def refreshResources(self) -> None:
+	def refreshResources(self) -> bool:
 		"""	Refresh the resources.
+
+			Returns:
+				Always returns *True*.
 		"""
 		if self.tuiApp:
 			self.tuiApp.refreshResources()
-			
+		return True
+
+
 	def scriptPrint(self, scriptName:str, msg:str) -> None:
 		"""	Print a line to the script output.
 
@@ -151,36 +152,48 @@ class TextUI(object):
 			self.tuiApp.scriptPrint(scriptName, msg)
 	
 
-	def scriptLog(self, scriptName:str, msg:str) -> None:
+	def scriptLog(self, scriptName:str, msg:str) -> bool:
 		"""	Print a line to the script log output.
 
 			Args:
 				scriptName: Name of the script.
 				msg: Message to print.
+			
+			Returns:
+				Always returns *True*.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptLog(scriptName, msg)
+		return True
 	
 
-	def scriptLogError(self, scriptName:str, msg:str) -> None:
+	def scriptLogError(self, scriptName:str, msg:str) -> bool:
 		"""	Print a line to the script log output.
 
 			Args:
 				scriptName: Name of the script.
 				msg: Message to print.
+			
+			Returns:
+				Always returns *True*.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptLogError(scriptName, msg)
+		return True
 	
 
-	def scriptClearConsole(self, scriptName:str) -> None:
+	def scriptClearConsole(self, scriptName:str) -> bool:
 		"""	Clear the script console.
 
 			Args:
 				scriptName: Name of the script.
+			
+			Returns:
+				Always returns *True*.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptClearConsole(scriptName)
+		return True
 	
 
 	def scriptShowConfirmation(self, msg:str, 
@@ -216,14 +229,18 @@ class TextUI(object):
 			self.tuiApp.showNotification(msg, title, severity, timeout)
 
 
-	def scriptVisualBell(self, scriptName:str) -> None:
+	def scriptVisualBell(self, scriptName:str) -> bool:
 		"""	Visual bell.
 
 			Args:
 				scriptName: Name of the script.
+
+			Returns:
+				Always returns *True*.
 		"""
 		if self.tuiApp:
 			self.tuiApp.scriptVisualBell(scriptName)
+		return True
 
 
 	#########################################################################

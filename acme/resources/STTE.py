@@ -8,25 +8,33 @@
 #
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING
 
 from ..etc.Types import JSON, ProcessState
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND, NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires	
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.Resource import Resource
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..plugins.services.ActionManager import ActionManager
 
 # TODO annc version
 # TODO add to UML diagram
 # TODO add to statistics, also in console
 
 @requires(actionManager='acme.plugins.services.ActionManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
 class STTE(AnnounceableResource):
 
-	actionManager: Optional[Any] = None
+	actionManager: Optional[ActionManager] = None
+	""" ActionManager instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -51,7 +59,7 @@ class STTE(AnnounceableResource):
 					self.actionManager.checkEvalCriteria(sttr['evc'], sttr['sri'], _orig)
 
 					# Check parent of references next state resource
-					stateResource = CSE.dispatcher.retrieveResource(nxstID)
+					stateResource = self.dispatcher.retrieveResource(nxstID)
 					if stateResource.pi != self.pi:
 						raise INVALID_PROCESS_CONFIGURATION(f'Referenced state resource "{nxstID}" is not a direct child of this state\'s parent resource')
 
@@ -59,12 +67,12 @@ class STTE(AnnounceableResource):
 					raise INVALID_PROCESS_CONFIGURATION(f'Referenced state resource "{nxstID}" does not exist')
 				
 
-	def update(self, dct:JSON = None, 
-					 originator:Optional[str] = None,
-					 doValidateAttributes:Optional[bool] = True) -> None:
+	def update(self, dct: JSON = None, 
+					 originator: Optional[str] = None,
+					 doValidateAttributes: Optional[bool] = True) -> None:
 		
 		# Get parent resource
-		parentResource = CSE.dispatcher.retrieveResource(self.pi)
+		parentResource = self.dispatcher.retrieveResource(self.pi)
 
 		# Check if state resource is still active (ie. not disabled)
 		if parentResource.prst != ProcessState.Disabled:

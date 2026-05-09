@@ -7,7 +7,7 @@
 """	Validation service and functions. """
 
 from __future__ import annotations
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Tuple, Optional, TYPE_CHECKING
 
 from copy import deepcopy
 import re, json
@@ -24,11 +24,14 @@ from ..etc.Utils import strToBool
 from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
-from ..resources.Resource import Resource
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
 from ..etc.Constants import RuntimeConstants as RC
+from ..helpers.Singleton import Singleton
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:	# only import for type checking to avoid circular imports
+	from ..resources.Resource import Resource
+	from ..runtime.Importer import Importer
 
 # TODO AE Not defined yet: ExternalGroupID?
 # TODO AE CSE Not defined yet: enableTimeCompensation
@@ -79,14 +82,17 @@ _valueNameMappings = {
 """	Mapping of attribute names to value mappings. """
 
 
-class Validator(object):
+@requires(importer='acme.runtime.Importer')
+class Validator(metaclass=Singleton):
 	"""	Validator class. """
+
+	importer: Importer = None
 
 	_scheduleRegex = re.compile(r'(^((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?((2[0-3]|1[0-9]|[0-9]|00))((\,|\-|\/)(2[0-3]|1[0-9]|[0-9]|00))*|\*)\s+((\*\/)?([1-9]|[12][0-9]|3[01])((\,|\-|\/)([1-9]|[12][0-9]|3[01]))*|\*)\s+((\*\/)?([1-9]|1[0-2])((\,|\-|\/)([1-9]|1[0-2]))*|\*)\s+((\*\/)?[0-6]((\,|\-|\/)[0-6])*|\*|00)\s+((\*\/)?(([2-9][0-9][0-9][0-9]))((\,|\-|\/)([2-9][0-9][0-9][0-9]))*|\*)\s*$)')
 	"""	Compiled regular expression that matches a valid cron-like schedule: "second minute hour day month weekday year" """
 
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 		"""	Initialize the validator. """
 		L.isInfo and L.log('Validator initialized')
 
@@ -153,7 +159,7 @@ class Validator(object):
 		L.isDebug and L.logDebug('validating attributes')
 
 		# Just return in case we are in the importing phase
-		if CSE.importer.isImporting:
+		if self.importer.isImporting:
 			return
 
 		# No policies?
@@ -742,8 +748,7 @@ class Validator(object):
 		try:
 			if attr in _valueNameMappings:
 				return _valueNameMappings[attr](value) # type: ignore [no-untyped-call]
-			from ..runtime import CSE
-			return CSE.validator.getEnumInterpretation(rtype, attr, value)
+			return self.getEnumInterpretation(rtype, attr, value)
 		except Exception as e:
 			return str(e)
 
@@ -1176,8 +1181,7 @@ class Validator(object):
 				return [ self.convertIdentifierAttributeToScope(v, policy.ltype, policy, scope) for v in value]
 			case BasicType.complex:
 				_r = {}
-				from ..runtime import CSE	# avoid circular import
-				_gap = CSE.validator.getAttributePolicy	# slight optimization to avoid multiple lookups
+				_gap = self.getAttributePolicy	# slight optimization to avoid multiple lookups
 				typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
 				for k, v in value.items():
 					if not (_policy := _gap(typeName, k)):

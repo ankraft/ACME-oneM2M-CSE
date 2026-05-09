@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Optional, Literal, Union
+from typing import Tuple, Optional, Literal, Union, TYPE_CHECKING
 from dataclasses import dataclass
 
 from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
@@ -19,23 +19,21 @@ from ...etc.DateUtils import fromDuration
 from ...etc.GeoTools import getGeoPoint, getGeoPolygon, isLocationInsidePolygon, geoWithin, geoContains, geoIntersects
 from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ...runtime.Logging import Logging as L
-from ...runtime import CSE
 from ...runtime.Configuration import Configuration
-from ...runtime.PluginSupport import plugin, init, stop, restart, configure
+from ...runtime.PluginSupport import plugin, init, stop, restart, configure, requires
 from ...resources.LCP import LCP
 from ...resources.CIN import CIN
-from ...resources.Resource import Resource
-from ...services.Dispatcher import Dispatcher
 
-dispatcher: Dispatcher = Dispatcher()	# type: ignore
-"""	Dispatcher singleton instance. """
+if TYPE_CHECKING:
+	from ...resources.Resource import Resource
+	from ...services.Dispatcher import Dispatcher
+
 
 GeofencePositionType = Literal[GeofenceEventCriteria.Inside, GeofenceEventCriteria.Outside]
 """ Type alias for the geofence position."""
 
 LocationType = Tuple[float, float]
 """ Type alias for the location type."""
-
 
 @dataclass
 class LocationInformation:
@@ -56,12 +54,16 @@ class LocationInformation:
 
 
 @plugin(property='locationManager', tags=['acme', 'core'])
+@requires(dispatcher='acme.services.Dispatcher')
 class LocationManager(object):
 	"""	The LocationManager class implements the location service and helper functions.
 	
 		Attributes:
 			locationPolicyWorkers: A dictionary of location policy workers
 	"""
+
+	dispatcher: Dispatcher = None
+	"""	Dispatcher instance. """
 
 	__slots__ = (	
 		'locationPolicyInfos',
@@ -193,7 +195,7 @@ class LocationManager(object):
 			return
 		
 		# Check if the location policy is supported
-		if (lcp := dispatcher.retrieveResource(lcpRi)) is not None:
+		if (lcp := self.dispatcher.retrieveResource(lcpRi)) is not None:
 			if lcp.los == LocationSource.Network_based and lcp.lou is not None and lcp.lou == 0:
 				L.isDebug and L.logDebug(f'Handling latest RETRIEVE for CNT with locationID: {lcpRi}')
 				# Handle Network based location source
@@ -238,7 +240,7 @@ class LocationManager(object):
 
 
 
-	def getNewLocation(self, lcpRi: str, content: Optional[str]=None) -> Optional[Tuple[LocationType, LocationType]]:
+	def getNewLocation(self, lcpRi: str, content: Optional[str] = None) -> Optional[Tuple[LocationType, LocationType]]:
 		"""	Get the new location for a location policy. Also, update the internal policy info if necessary.
 		
 			Args:
@@ -257,7 +259,7 @@ class LocationManager(object):
 		# Get the content if not provided
 		if not content:
 			# Get the location from a location instance
-			if not (cin := dispatcher.retrieveLatestOldestInstance(info.locationContainerID, ResourceTypes.CIN)):
+			if not (cin := self.dispatcher.retrieveLatestOldestInstance(info.locationContainerID, ResourceTypes.CIN)):
 				return None	# No resource found, still continue
 			content = cin.con
 		
@@ -295,7 +297,7 @@ class LocationManager(object):
 					eventType: The type of the event
 			"""
 			L.isDebug and L.logDebug(f'Position: {eventType}')
-			cnt = dispatcher.retrieveResource(info.locationContainerID)
+			cnt = self.dispatcher.retrieveResource(info.locationContainerID)
 			cnt.createChildResourceFromDict({ 'con': eventType.value }, ty=ResourceTypes.CIN)
 
 		
@@ -363,7 +365,7 @@ class LocationManager(object):
 	# 	GeoLocation and GeoQuery
 	#
 
-	def checkGeoLocation(self, r:Resource, gmty:GeometryType, geom:list, gsf:GeoSpatialFunctionType) -> bool:
+	def checkGeoLocation(self, r: Resource, gmty: GeometryType, geom: list, gsf: GeoSpatialFunctionType) -> bool:
 		"""	Check if a resource's location confirms to a geo location.
 
 			Args:

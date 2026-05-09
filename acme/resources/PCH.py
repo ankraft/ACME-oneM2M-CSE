@@ -10,15 +10,19 @@
 """
 
 from __future__ import annotations
-from typing import Optional, cast
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import findXPath
 from ..resources.Resource import Resource, addToInternalAttributes
-from ..runtime import CSE
+from ..runtime.PluginSupport import requires
+
 from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
 
 # Add to internal attributes
@@ -28,10 +32,13 @@ addToInternalAttributes(Constants.attrPCURI)
 
 # Tests for special access to PCH resource is done in SecurityManager.hasAccess()
 
+@requires(dispatcher='acme.services.Dispatcher')
 class PCH(Resource):
 	"""	PollingChannel resource class.
 	"""
 
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
 
 	def initialize(self, pi: str) -> None:
 		# Set optional default for requestAggregation
@@ -76,7 +83,7 @@ class PCH(Resource):
 			rqagNew = findXPath(dct, '{*}/rqag')
 			if rqagNew is not None:
 				# Update the aggregation state in the own PCU
-				pcuResource = CSE.dispatcher.retrieveLocalResource(self.attribute(Constants.attrPCURI))
+				pcuResource = self.dispatcher.retrieveLocalResource(self.attribute(Constants.attrPCURI))
 				pcuResource.setAggregate(rqagNew)
 				pcuResource.dbUpdate(True)
 

@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, TYPE_CHECKING
 
 from copy import deepcopy
 from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
@@ -16,21 +16,30 @@ from ..etc.Types import Announced, IdentifierScope
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.IDUtils import isAbsolute, toAbsolute, toSPRelative
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import requires
 from .Resource import Resource, addToInternalAttributes
+
+if TYPE_CHECKING:
+	from ..plugins.services.AnnouncementManager import AnnouncementManager
+	from ..services.Validator import Validator
+
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrAnnouncedTo) # add announcedTo to internal attributes
 
 
 @requires(announcementManager='acme.plugins.services.AnnouncementManager', required=False)
+@requires(validator='acme.services.Validator')
 class AnnounceableResource(Resource):
 	"""	Base class for all announceable resources.
 	"""
 
-	announcementManager: Optional[Any] = None
+	announcementManager: Optional[AnnouncementManager] = None
+	""" AnnouncementManager instance. """
+
+	validator: Validator = None
+	""" Validator instance. """
 
 	def __init__(self, dct:Optional[JSON]=None, create:Optional[bool]=False) -> None:
 		super().__init__(dct, create=create)
@@ -126,7 +135,7 @@ class AnnounceableResource(Resource):
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
-		if (additionalAttributes := CSE.validator.getFlexContainerAttributesFor(self.typeShortname)):
+		if (additionalAttributes := self.validator.getFlexContainerAttributesFor(self.typeShortname)):
 			attributes:AttributePolicyDict = deepcopy(self._attributes)
 			attributes.update(additionalAttributes)
 			return self._createAnnouncedDict(attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo))
@@ -173,10 +182,10 @@ class AnnounceableResource(Resource):
 				ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
 				for attr in announcedAttributes:
 					policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
-					body[attr] = CSE.validator.convertIdentifierAttributeToScope(self[attr], 
-																				 policy.type, 
-																				 policy, 
-																				 scope=IdentifierScope.Absolute if isRemoteSP else IdentifierScope.SPRelative)	# convert to Absolute for remote SP, SP-relative for local CSE
+					body[attr] = self.validator.convertIdentifierAttributeToScope(self[attr], 
+																				  policy.type, 
+																				  policy, 
+																				  scope=IdentifierScope.Absolute if isRemoteSP else IdentifierScope.SPRelative)	# convert to Absolute for remote SP, SP-relative for local CSE
 					# body[attr] = self[attr]
 
 				if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list

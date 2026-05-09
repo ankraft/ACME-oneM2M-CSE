@@ -11,23 +11,30 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, Result, CSERequest
+from ..etc.Types import ResourceTypes, Result
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
+from ..helpers.PluginManager import requires
 from ..resources.VirtualResource import VirtualResource
 from ..resources.CIN import CIN
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 
+if TYPE_CHECKING:
+	from ..etc.Types import CSERequest
+	from ..services.Dispatcher import Dispatcher
 
+@requires(dispatcher='acme.services.Dispatcher')
 class CNT_OL(VirtualResource):
 	"""	This class implements the virtual <oldest> resource for <container> resources.
 	"""
 
-	def handleRetrieveRequest(self, request:Optional[CSERequest] = None,
-									id:Optional[str] = None,
-									originator:Optional[str] = None) -> Result:
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	def handleRetrieveRequest(self, request: Optional[CSERequest] = None,
+									id: Optional[str] = None,
+									originator: Optional[str] = None) -> Result:
 		""" Handle a RETRIEVE request.
 
 			Args:
@@ -39,10 +46,10 @@ class CNT_OL(VirtualResource):
 				The oldest <contentInstance> for the parent <container>, or an error `Result`.
 		"""
 		L.isDebug and L.logDebug('Retrieving oldest CIN from CNT')
-		return self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest = True)
+		return self.retrieveLatestOldest(request, originator, ResourceTypes.CIN, oldest=True)
 
 
-	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleCreateRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle a CREATE request. 
 
 			Args:
@@ -56,7 +63,7 @@ class CNT_OL(VirtualResource):
 		raise OPERATION_NOT_ALLOWED('CREATE operation not allowed for <oldest> resource type')
 
 
-	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleUpdateRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle an UPDATE request.			
 	
 			Args:
@@ -70,7 +77,7 @@ class CNT_OL(VirtualResource):
 		raise OPERATION_NOT_ALLOWED('UPDATE operation not allowed for <oldest> resource type')
 
 
-	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleDeleteRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle a DELETE request.
 
 			Delete the oldest resource.
@@ -87,10 +94,10 @@ class CNT_OL(VirtualResource):
 				`NOT_FOUND`: If there is no oldest instance. 
 		"""
 		L.isDebug and L.logDebug('Deleting oldest CIN from CNT')
-		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.CIN, oldest = True)):
+		if not (r := self.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.CIN, oldest=True)):
 			raise NOT_FOUND('no instance for <oldest>')
-		CSE.dispatcher.deleteLocalResource(r, originator, withDeregistration = True)
-		return Result(rsc = ResponseStatusCode.DELETED, resource = r)
+		self.dispatcher.deleteLocalResource(r, originator, withDeregistration=True)
+		return Result(rsc=ResponseStatusCode.DELETED, resource=r)
 
 
 	def hasAttributeDefined(self, name: str) -> bool:

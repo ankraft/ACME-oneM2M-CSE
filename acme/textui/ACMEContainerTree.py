@@ -7,7 +7,7 @@
 """	This module defines the *Resources* view for the ACME text UI.
 """
 from __future__ import annotations
-from typing import List, Tuple, Optional, Any, cast
+from typing import List, Tuple, Optional, Any, cast, TYPE_CHECKING
 
 import json
 
@@ -19,8 +19,7 @@ from textual.containers import Container, Vertical, Horizontal
 from textual.screen import ModalScreen
 from textual.binding import Binding
 from rich.syntax import Syntax
-from ..runtime import CSE
-from ..runtime.Configuration import Configuration
+
 from ..resources.Resource import Resource
 from ..textui.ACMEContainerRequests import ACMEViewRequests
 from ..etc.ResponseStatusCodes import ResponseException
@@ -28,18 +27,25 @@ from ..etc.Types import ResourceTypes
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import commentJson, limitLines
 from ..services.Dispatcher import Dispatcher
+from ..runtime.Configuration import Configuration
+from ..runtime.PluginSupport import requires
 from .ACMEContainerCreate import ACMEContainerCreate
 from .ACMEContainerDelete import ACMEContainerDelete
 from .ACMEContainerUpdate import ACMEContainerUpdate
 from .ACMEContainerDiagram import ACMEContainerDiagram
 from .ACMEContainerResourceServices import ACMEContainerResourceServices
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
 
-dispatcher: Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
 
+@requires(dispatcher='acme.services.Dispatcher')
 class ACMEResourceTree(TextualTree):
 	"""	The *Resources* tree conmponent view for the ACME text UI."""
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher service instance"""
 
 	_virtualResourcesParameter = {
 		ResourceTypes.CNT_LA: (ResourceTypes.CIN, False),
@@ -173,11 +179,11 @@ class ACMEResourceTree(TextualTree):
 				ri: The resource id of the content.
 		"""
 		try:
-			resource = dispatcher.retrieveLocalResource(ri)
+			resource = self.dispatcher.retrieveLocalResource(ri)
 
 			# retrieve the latest/oldest instance of some virtual resources
 			if (_params := self._virtualResourcesParameter.get(resource.ty)):
-				if (_r := dispatcher.retrieveLatestOldestInstance(resource.pi, _params[0], oldest = _params[1])):
+				if (_r := self.dispatcher.retrieveLatestOldestInstance(resource.pi, _params[0], oldest = _params[1])):
 					resource = _r
 				else:
 					resource = None
@@ -189,7 +195,7 @@ class ACMEResourceTree(TextualTree):
 		self.parentContainer.updateResource(resource)
 
 		# Update the header
-		self.parentContainer.setResourceHeader(f'{resource.rn} ({_getResourceTypeAsString(resource)})' if resource else '')
+		self.parentContainer.setResourceHeader(f'{resource.rn} ({resource.typeAsString()})' if resource else '')
 		self.parentContainer.setResourceSubtitle(f'{resource.getSrn()} ({resource.ri}) | {resource.getOriginator()}' if resource else '')
 
 		# Set the visibility of the tabs
@@ -256,7 +262,7 @@ class ACMEResourceTree(TextualTree):
 				A sorted list of tuples (resource, hasChildren).
 		"""
 		result:List[Tuple[Resource, bool]] = []
-		chs = [ x for x in dispatcher.retrieveDirectChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
+		chs = [ x for x in self.dispatcher.retrieveDirectChildResources(ri) if not x.ty in [ ResourceTypes.GRP_FOPT, ResourceTypes.PCH_PCU ]]
 		
 		# Sort resources: virtual and instance resources first, then by type and name
 		top = []
@@ -270,13 +276,21 @@ class ACMEResourceTree(TextualTree):
 		chs = top + rest
 
 		for resource in chs:
-			result.append((resource, len([ x for x in dispatcher.retrieveDirectChildResources(resource.ri)  ]) > 0))
+			result.append((resource, len([ x for x in self.dispatcher.retrieveDirectChildResources(resource.ri)  ]) > 0))
 		return result
 
 
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(validator='acme.services.Validator')
 class ACMEContainerTree(Container):
 	"""	The *Resources* tree view for the ACME text UI.
 	"""
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher service instance """
+
+	validator: Validator = None
+	""" Validator service instance """
 
 	treeTabResourceID = 'tree-tab-resource'
 	"""	The ID of the resource tab. """
@@ -449,7 +463,7 @@ class ACMEContainerTree(Container):
 			elif event.y == 0:
 				v = self.currentResource.rn
 				rt = ResourceTypes.fullname(self.currentResource.ty)
-				rt = _getResourceTypeAsString(self.currentResource)
+				rt = self.currentResource.typeAsString()
 				t = 'Resource Name Copied'
 				if event.x > len(v) + 3 and event.x < len(v) + 6 + len(rt):
 					v = rt
@@ -533,7 +547,7 @@ class ACMEContainerTree(Container):
 						self.tabs.hide_tab('tree-tab-diagram') 
 
 					case ResourceTypes.CNT | ResourceTypes.TS:
-						instances = dispatcher.retrieveDirectChildResources(self.currentResource.ri, [ResourceTypes.CIN, ResourceTypes.TSI])
+						instances = self.dispatcher.retrieveDirectChildResources(self.currentResource.ri, [ResourceTypes.CIN, ResourceTypes.TSI])
 						
 						# The following lines may fail if the content cannot be converted to a float or a boolean.
 						# This is expected! This just means that any content is not a number and we cannot raw a diagram.
@@ -605,7 +619,7 @@ class ACMEContainerTree(Container):
 				# self.resourceView.update(Syntax(jsns, 'json', theme = self.app.syntaxTheme))	# type: ignore [attr-defined]
 				self.updateResourceView(commentJson(self.currentResource.asDict(sort=True), 
 										explanations=self.app.attributeExplanations,	# type: ignore [attr-defined]
-										getAttributeValueName=lambda a, v: CSE.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None)))	# type: ignore [attr-defined]
+										getAttributeValueName=lambda a, v: self.validator.getAttributeValueName(a, v, self.currentResource.ty if self.currentResource else None)))	# type: ignore [attr-defined]
 
 
 		else:
@@ -637,7 +651,7 @@ class ACMEContainerTree(Container):
 			if isinstance(value, Resource):
 				value = commentJson(value.asDict(sort=True), 
 									explanations=self.app.attributeExplanations,	# type: ignore [attr-defined]
-									getAttributeValueName=lambda a, v: CSE.validator.getAttributeValueName(a, v, value.ty if value else None))	# type: ignore [attr-defined]
+									getAttributeValueName=lambda a, v: self.validator.getAttributeValueName(a, v, value.ty if value else None))	# type: ignore [attr-defined]
 			self.resourceView.update(Syntax(value, 'json', theme=self.app.syntaxTheme))	# type: ignore [attr-defined]
 		elif error:
 			self.resourceView.update(error)
@@ -854,23 +868,4 @@ class ACMEDialog(ModalScreen):
 		else:
 			self.dismiss(False)
 
-#
-# Helper functions
-#
-
-def _getResourceTypeAsString(resource:Resource) -> str:
-	"""	Return the resource type as a string.
-		If the resource is a flex container, the specialization is added.
-
-		Args:
-			resource: The resource to get the type for.
-
-		Returns:
-			The resource type as a string.
-	"""
-	if resource.ty == ResourceTypes.FCNT:
-		# Put the specialization in the header if it is a flex container
-		return f'{ResourceTypes.fullname(resource.ty)} - {resource.typeShortname.split(":")[0]}:{CSE.validator.getFlexContainerSpecialization(resource.typeShortname)[1]}'
-	else:
-		return ResourceTypes.fullname(resource.ty)
 

@@ -11,28 +11,38 @@
 """
 
 from __future__ import annotations
-from typing import Optional, cast, Any
+from typing import Optional, cast, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, Result, CSERequest
+from ..etc.Types import ResourceTypes, Result
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND, NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.VirtualResource import VirtualResource
 from ..resources.CIN import CIN
 from ..resources.Resource import addToInternalAttributes
+
+if TYPE_CHECKING:
+	from ..etc.Types import CSERequest
+	from ..resources.Resource import Resource
+	from ..plugins.services.LocationManager import LocationManager	
+	from ..services.Dispatcher import Dispatcher
 
 # Add to internal attributes to ignore in validation etc
 addToInternalAttributes(Constants.attrLCPLink)
 
 
 @requires(locationManager='acme.plugins.services.LocationManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
 class CNT_LA(VirtualResource):
 	"""	This class implements the virtual <latest> resource for <container> resources.
 	"""
 
-	locationManager: Any = None
+	locationManager: Optional[LocationManager] = None
+	"""	Runtime instance of the `LocationManager` plugin. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
 
 	def handleRetrieveRequest(self, request: Optional[CSERequest]=None,
 									id: Optional[str]=None,
@@ -105,9 +115,9 @@ class CNT_LA(VirtualResource):
 				`NOT_FOUND`: If there is no latest instance. 
 		"""
 		L.isDebug and L.logDebug('Deleting latest CIN from CNT')
-		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.CIN)):
+		if not (resource := self.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.CIN)):
 			raise NOT_FOUND('no instance for <latest>')
-		CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration=True)
+		self.dispatcher.deleteLocalResource(resource, originator, withDeregistration=True)
 		return Result(rsc=ResponseStatusCode.DELETED, resource=resource)
 
 

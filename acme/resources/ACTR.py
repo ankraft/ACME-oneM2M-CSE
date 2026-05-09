@@ -10,27 +10,38 @@
 """ Action (ACTR) resource type. """
 
 from __future__ import annotations
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, TYPE_CHECKING
 
 from ..etc.Types import  EvalMode, JSON, Permission, Operation
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
 from ..helpers.PluginManager import requires
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
+	from ..plugins.services.ActionManager import ActionManager
 
 @requires(actionManager='acme.plugins.services.ActionManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(validator='acme.services.Validator')
 class ACTR(AnnounceableResource):
 	""" Action (ACTR) resource type. """
 
-	actionManager: Optional[Any] = None
+	actionManager: Optional[ActionManager] = None
 	"""	Runtime instance of the `ActionManager` plugin. """
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	validator: Validator = None
+	""" Validator instance. """
+
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
 		# Check referenced resources
@@ -73,7 +84,7 @@ class ACTR(AnnounceableResource):
 					 doValidateAttributes:Optional[bool] = True) -> None:
 		
 		# Preliminary update check before working with the update dictionary
-		CSE.validator.validateResourceUpdate(self, dct, doValidateAttributes)
+		self.validator.validateResourceUpdate(self, dct, doValidateAttributes)
 
 		# Check referenced resources
 		sri = riFromID(findXPath(dct, 'm2m:actr/sri'))
@@ -92,7 +103,7 @@ class ACTR(AnnounceableResource):
 		if dep is not None:
 			for d in dep:
 				_d = riFromID(d)
-				if not CSE.dispatcher.hasDirectChildResource(self.ri, _d):
+				if not self.dispatcher.hasDirectChildResource(self.ri, _d):
 					raise BAD_REQUEST(L.logDebug(f'dep - must be a direct child resources of the <action> resource: {d}'))
 
 		#	Check that the from parameter of the actionPrimitive is the originator
@@ -115,17 +126,17 @@ class ACTR(AnnounceableResource):
 
 		# Check that a new sbjt attribute exists in the (potentially new) subject target
 		# Also check when only the subject target changes
-		sriResource:Resource = None
+		sriResource: Resource = None
 		if dctEvc or dctSri:	# only if there is a new evalCriteria or a new subject resource
 			try:
-				sriResource = CSE.dispatcher.retrieveResource(newSri, originator = self.getOriginator())
+				sriResource = self.dispatcher.retrieveResource(newSri, originator = self.getOriginator())
 			except ResponseException as e:
 				raise BAD_REQUEST(L.logDebug(f'sri - subject resource not found: {newSri}'))
 			# Actual check of the sbjt attribute is done in the checkEvalCriteria method below
 		
 		# Else use the current subject resource
 		elif self.sri:
-			sriResource = CSE.dispatcher.retrieveResource(self.sri)
+			sriResource = self.dispatcher.retrieveResource(self.sri, originator = self.getOriginator())
 
 		#	Check evalCriteria threshold attribute's value type and operation validity
 		if dctEvc or dctSri:	# If we have a evalCriteria at all or a subject resource
@@ -176,7 +187,7 @@ class ACTR(AnnounceableResource):
 			self.actionManager.updateAction(self)
 
 
-	def deactivate(self, originator:str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		# Unschedule the action
 		if not self.actionManager:
 			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
@@ -189,7 +200,7 @@ class ACTR(AnnounceableResource):
 	#	Internals
 	#
 
-	def _checkReferencedResources(self, originator:str, sri:str, orc:str, apvOperation:Operation|int) -> Tuple[Resource, Resource]:
+	def _checkReferencedResources(self, originator :str, sri: str, orc: str, apvOperation: Operation|int) -> Tuple[Resource, Resource]:
 		"""	Check whether all the referenced resources exists and we have access: subjectResourceID, objectResourceID
 		"""
 		# TODO doc
@@ -198,7 +209,7 @@ class ACTR(AnnounceableResource):
 		resOrc = None
 		if sri is not None: # sri is optional
 			try:
-				resSri = CSE.dispatcher.retrieveResourceWithPermission(sri, originator, Permission.RETRIEVE)
+				resSri = self.dispatcher.retrieveResourceWithPermission(sri, originator, Permission.RETRIEVE)
 				L.isDebug and L.logDebug(f'Found subject resource sri: {resSri.ri}')
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)
@@ -206,7 +217,7 @@ class ACTR(AnnounceableResource):
 		if orc is not None:
 			try:
 				apvOperation = Operation(apvOperation) if isinstance(apvOperation, int) else apvOperation
-				resOrc = CSE.dispatcher.retrieveResourceWithPermission(orc, originator, apvOperation.permission())
+				resOrc = self.dispatcher.retrieveResourceWithPermission(orc, originator, apvOperation.permission())
 				L.isDebug and L.logDebug(f'Found object resource orc: {resOrc.ri}')
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)

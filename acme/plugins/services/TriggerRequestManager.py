@@ -11,27 +11,27 @@ from acme.helpers import PluginManager
 from acme.runtime.Logging import Logging as L
 
 @PluginManager.plugin(property='triggerRequestManager', tags=['acme', 'core'])
-class TriggerRequestManagerPlugin:
+class TriggerRequestManager:
 
 
 	@PluginManager.init
 	def init(self) -> None:
-		L.isInfo and L.log('RegistrationManager initialized')
+		L.isInfo and L.log('TriggerRequestManager initialized')
 		
 
 	@PluginManager.finish
 	def shutdown(self) -> None:
-		L.isInfo and L.log('RegistrationManager shut down')
+		L.isInfo and L.log('TriggerRequestManager shut down')
 
 
 	@PluginManager.start
 	def start(self) -> None:
-		L.isInfo and L.log('RegistrationManager started')
+		L.isInfo and L.log('TriggerRequestManager started')
 
 
 	@PluginManager.stop
 	def stop(self) -> None:
-		L.isInfo and L.log('RegistrationManager stopped')
+		L.isInfo and L.log('TriggerRequestManager stopped')
 
 
 	@PluginManager.restart

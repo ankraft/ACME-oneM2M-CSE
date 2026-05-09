@@ -10,7 +10,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, cast
+from typing import Optional, cast, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON, JSONLIST
 from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE
@@ -18,24 +18,39 @@ from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager, EventData
-from ..runtime.Factory import Factory
-from ..runtime.Storage import Storage
+from ..runtime.EventManager import EventManager, EventData, eventManager
+from ..runtime.PluginSupport import requires
 
-eventManager = EventManager()	# type: ignore
-""" Event manager singleton instance. """
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	from ..runtime.Factory import Factory
+	from ..services.Dispatcher import Dispatcher
+	from ..services.RequestManager import RequestManager
 
-factory: Factorys = Factory()	# type: ignore
-""" Factory singleton instance. """
 
-storage:Storage = Storage()	# type: ignore
-""" Storage singleton instance. """
 
+@requires(storage='acme.runtime.Storage')
+@requires(factory='acme.runtime.Factory')
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(requestManager='acme.services.RequestManager')
 class CNT(ContainerResource):
 	""" Container resource type. """
+
+	storage:Storage = None
+	""" Storage instance. """
+
+	factory: Factory = None	# type: ignore
+	""" Factory instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	requestManager: RequestManager = None
+	""" Request manager instance. """
+
+
 
 	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:
 		super().__init__(dct, create = create)
@@ -85,7 +100,7 @@ class CNT(ContainerResource):
 		
 		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
 		if disrOrg and disrNew == False:
-			CSE.dispatcher.deleteChildResources(self, originator, ty = ResourceTypes.CIN)
+			self.dispatcher.deleteChildResources(self, originator, ty = ResourceTypes.CIN)
 
 		# add default values for cni, cbs and mia if not present
 		if self.getFinalResourceAttribute('mni', dct) is None and \
@@ -125,8 +140,8 @@ class CNT(ContainerResource):
 				# Take either mia or the maxExpirationDelta, whatever is smaller. 
 				# Don't change if maxExpirationDelta is 0.
 				maxEt = getResourceDate(mia 
-									    if mia <= CSE.request.maxExpirationDelta 
-									    else CSE.request.maxExpirationDelta)
+									    if mia <= self.requestManager.maxExpirationDelta 
+									    else self.requestManager.maxExpirationDelta)
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
 					childResource.setAttribute('et', maxEt)
@@ -184,7 +199,7 @@ class CNT(ContainerResource):
 
 
 		# Only get the CINs in raw format. Instantiate them as resources if needed
-		cinsRaw = cast(JSONLIST, sorted(storage.directChildResources(self.ri, ResourceTypes.CIN, raw = True), key = lambda x: x['ct']))
+		cinsRaw = cast(JSONLIST, sorted(self.storage.directChildResources(self.ri, ResourceTypes.CIN, raw = True), key = lambda x: x['ct']))
 		cni = len(cinsRaw)			
 		cin:Resource = None
 
@@ -192,12 +207,12 @@ class CNT(ContainerResource):
 		if mni is not None:
 			while cni > mni and cni > 0:
 				# Only instantiate the <cin> when needed here for deletion
-				cin = factory.resourceFromDict(cinsRaw[0])
+				cin = self.factory.resourceFromDict(cinsRaw[0])
 				L.isDebug and L.logDebug(f'cni > mni: Removing <cin>: {cin.ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteLocalResource(cin, parentResource = self, doDeleteCheck = False)
+				self.dispatcher.deleteLocalResource(cin, parentResource = self, doDeleteCheck = False)
 				del cinsRaw[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
 
@@ -208,13 +223,13 @@ class CNT(ContainerResource):
 		if mbs is not None:
 			while cbs > mbs and cbs > 0:
 				# Only instantiate the <cin> when needed here for deletion
-				cin = factory.resourceFromDict(cinsRaw[0])
+				cin = self.factory.resourceFromDict(cinsRaw[0])
 				L.isDebug and L.logDebug(f'cbs > mbs: Removing <cin>: {cin.ri}')
 				# remove oldest
 				cbs -= cin.cs
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteLocalResource(cin, parentResource = self, doDeleteCheck = False)
+				self.dispatcher.deleteLocalResource(cin, parentResource = self, doDeleteCheck = False)
 				del cinsRaw[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
 
@@ -228,7 +243,7 @@ class CNT(ContainerResource):
 		# oldest resource is the first in the list of cinsRaw.
 		# This means that we need to send an "update" event for the oldest resource.
 		if cin is not None and len(cinsRaw):
-			eventManager.changeResource(EventData(payload=(factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())))	 # type: ignore [attr-defined]
+			eventManager.changeResource(EventData(payload=(self.factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())))	 # type: ignore [attr-defined]
 	
 		# End validating
 		self.__validating = False
@@ -245,7 +260,7 @@ class CNT(ContainerResource):
 		self.setAttribute('li', lcpRi)
 
 		# Also, set in the <latest> resource
-		if (latest := CSE.dispatcher.retrieveLocalResource(self.getLatestRI())) is not None:
+		if (latest := self.dispatcher.retrieveLocalResource(self.getLatestRI())) is not None:
 			latest.setLCPLink(lcpRi)
 			latest.dbUpdate()
 

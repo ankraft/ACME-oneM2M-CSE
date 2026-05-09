@@ -918,6 +918,17 @@ class PluginManager(metaclass=Singleton.Singleton):
 			# Sort plugins by priority, with the highest priority first
 			plugins.sort(key=lambda p: self.plugins[p[0]].priority)
 		return plugins
+
+	
+	def isProvidedFunction(self, name: str) -> bool:
+		""" Check if a provided instance with the given name is a function provided by the @provide decorator.
+
+			Args:
+				name: The name of the provided instance to check.
+			Returns:
+				True if a provided instance with the given name is a function provided by the @provide decorator, False otherwise.
+		"""
+		return name in providedFunctions
 	
 
 	def callService(self, tag: str, endpoint: str, *args: Any, **kwargs: Any) -> Any:

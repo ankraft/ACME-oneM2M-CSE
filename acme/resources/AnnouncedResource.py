@@ -7,18 +7,27 @@
 """ This module implements the base class for all announced resources.
 """
 
-from typing import Optional
+from __future__ import annotations
+from typing import Optional, TYPE_CHECKING
+
 from ..etc.Types import AnnounceSyncType, ResourceTypes, JSON, CSERequest, Operation
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.Constants import RuntimeConstants as RC
 from ..resources.Resource import Resource
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..services.RequestManager import RequestManager 
 
+@requires(requestManager='acme.services.RequestManager')
 class AnnouncedResource(Resource):
 	"""	Base class for all announced resources.
 	"""
+
+	requestManager:RequestManager = None
+	""" RequestManager instance. """
+
 
 	def updated(self, dct:Optional[JSON] = None, originator:Optional[str] = None) -> None:
 		"""	Check whether we need to update the original resource.
@@ -35,10 +44,10 @@ class AnnouncedResource(Resource):
 			content:JSON = {}
 			content[ResourceTypes(self.ty).fromAnnounced().typeShortname()] = dct[self.typeShortname]	# take only the resource attributes and assign to the non-announced version
 			try:
-				CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE, 
-														 to = self.lnk, 
-														 originator = RC.cseCsi, 
-														 pc = content))
+				self.requestManager.handleSendRequest(CSERequest(op=Operation.UPDATE, 
+																 to=self.lnk, 
+																 originator=RC.cseCsi, 
+																 pc=content))
 			except ResponseException as e:
 				L.isWarn and L.logWarn(f'Cannot update original resource on remote CSE: {self.lnk} : {e.dbg}')
 				return

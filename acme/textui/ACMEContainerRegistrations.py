@@ -8,20 +8,26 @@
 """
 
 from __future__ import annotations
-from typing import cast
+from typing import cast, TYPE_CHECKING
 
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Static
 from rich.style import Style
 from ..runtime.Logging import fontDark, fontLight
-from ..runtime.Management import getRegistrationsRich
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..runtime.Management import ManagementSupport
 
 
-
+@requires(managementSupport='acme.runtime.Management')
 class ACMEContainerRegistrations(VerticalScroll):
 	"""	The *Registrations* view for the ACME text UI.
 	"""
+
+	managementSupport: ManagementSupport = None
+	""" ManagementSupport instance. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -68,6 +74,6 @@ class ACMEContainerRegistrations(VerticalScroll):
 	def registrationsUpdate(self) -> None:
 		"""	Update the registrations view.
 		"""
-		self.registrationView.update(getRegistrationsRich(style=Style(color=self.app.get_css_variables()['primary']),
-													   	  textStyle=Style(color=fontDark if self._app.dark else fontLight)))
+		self.registrationView.update(self.managementSupport.getRegistrationsRich(style=Style(color=self.app.get_css_variables()['primary']),
+													   	  						 textStyle=Style(color=fontDark if self._app.dark else fontLight)))
 

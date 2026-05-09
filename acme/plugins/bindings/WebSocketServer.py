@@ -10,7 +10,7 @@
 # TODO Support Mcc. Espcially, when closing connections (deregistratinon)
 
 from __future__ import annotations
-from typing import Optional, Any, Tuple, cast
+from typing import Optional, Any, Tuple, cast, TYPE_CHECKING
 import logging, uuid, base64, os
 
 from websockets.sync.connection import Connection as WSConnection
@@ -20,31 +20,37 @@ from websockets.protocol import State
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from ...etc.Constants import Constants,  RuntimeConstants as RC
-from ...etc.RequestUtils import prepareResultForSending, createPositiveResponseResult, createRequestResultFromURI
+from ...etc.RequestUtils import createPositiveResponseResult, createRequestResultFromURI
 from ...etc.IDUtils import uniqueID, csiFromSPRelative
 from ...etc.Utils import renameThread, normalizeURL
 from ...etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, ResponseType, AuthorizationResult, LogLevel
 from ...etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE, ORIGINATOR_HAS_NO_PRIVILEGE
-from ...helpers.EventManager import Event
 from ...helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from ...helpers.ThreadSafeCounter import ThreadSafeCounter
 from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime import CSE
-from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
-from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
+from ...runtime.PluginSupport import *
 from ...resources.Resource import Resource
 from ...runtime.Logging import Logging as L
 
+if TYPE_CHECKING:
+	from ...services.RequestManager import RequestManager
+	from ...services.SecurityManager import SecurityManager
 
-eventManager = EventManager()
-""" Event manager singleton instance. """
 
 @EventHandler
 @plugin(property='webSocketServer', tags=['binding', 'acme'], noRestartWhilePaused=True)
+@requires(requestManager='acme.services.RequestManager')
+@requires(securityManager='acme.services.SecurityManager')
 class WebSocketServer(object):
 	"""	WebSocket Server implementation.
 	"""
+
+	requestManager: RequestManager = None
+	"""	RequestManager instance. """
+
+	securityManager: SecurityManager = None
+	"""	SecurityManager instance. """
 
 	__slots__ = [ 
 		'isPaused', 
@@ -180,7 +186,7 @@ class WebSocketServer(object):
 							   		 Configuration.websocket_listenIF,
 									 Configuration.websocket_port, 
 									 subprotocols=ContentSerializationType.supportedContentSerializationsWS(), # type:ignore[arg-type]
-									 ssl_context=CSE.security.getSSLContextWs())		
+									 ssl_context=self.securityManager.getSSLContextWs())		
 		logging.getLogger('websockets.server').setLevel(Configuration.websocket_loglevel)
 		with self.websocketServer as server:
 			server.serve_forever()	# Will block until the server is shutdown
@@ -446,11 +452,11 @@ class WebSocketServer(object):
 		self.removeConnection(websocket, wsOriginator)
 
 
-	def _handleReceivedMessage(self, websocket:WSConnection, 
-									 message:str|bytes, 
-									 wsOriginator:str, 
-									 contentType:ContentSerializationType,
-									 authResult:AuthorizationResult) -> None:
+	def _handleReceivedMessage(self, websocket: WSConnection, 
+									 message: str|bytes, 
+									 wsOriginator: str, 
+									 contentType: ContentSerializationType,
+									 authResult: AuthorizationResult) -> None:
 		"""	Handle a received message. This is the main entry point for handling a received message, whether the
 			message is a request or a response.
 
@@ -469,9 +475,9 @@ class WebSocketServer(object):
 			
 			dissectResult:Result = None
 			try:
-				dissectResult = CSE.request.dissectRequestFromBytes(message, contentType)
+				dissectResult = self.requestManager.dissectRequestFromBytes(message, contentType)
 			except ResponseException as e:
-				dissectResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
+				dissectResult = Result(rsc=e.rsc, dbg=e.dbg, request=e.data)
 				L.logWarn(f'Error dissecting WS request: {e}')
 				raise
 
@@ -487,7 +493,7 @@ class WebSocketServer(object):
 			if request.requestType == RequestType.RESPONSE:
 				L.isDebug and L.logDebug(f'<== WS response: {wsOriginator}')
 				L.isDebug and L.logDebug(f'Body: {message.decode()}')
-				CSE.request.addResponse(dissectResult)
+				self.requestManager.addResponse(dissectResult)
 				return
 	
 			L.isDebug and L.logDebug(f'==> WS Request: {wsOriginator}')
@@ -518,7 +524,7 @@ class WebSocketServer(object):
 			L.isDebug and L.logDebug(f'Originator: {requestOriginator}')
 			L.isDebug and L.logDebug(f'Authorization: {authResult}')
 
-			responseResult = CSE.request.handleRequest(request)
+			responseResult = self.requestManager.handleRequest(request)
 
 			# Associate the connection with the originator, if not yet done.
 			# wsOriginator is None if the connection is not yet associated with an originator, and this
@@ -544,14 +550,14 @@ class WebSocketServer(object):
 		# add, copy and update some fields from the original request
 		responseResult.prepareResultFromRequest(request)
 
-		_r, _data = prepareResultForSending(responseResult, isResponse = True, originalRequest = request)	
+		_r, _data = self.requestManager.prepareResultForSending(responseResult, isResponse=True, originalRequest=request)	
 		L.isDebug and L.logDebug(f'WS Response <== ({str(_r.rsc)}):')
 
 		L.logRequest(_r, _data) # type:ignore [arg-type]
 		websocket.send(_data)
 
 
-	def _handleAuthentication(self, websocket:WSConnection) -> AuthorizationResult:
+	def _handleAuthentication(self, websocket: WSConnection) -> AuthorizationResult:
 		"""	Handle the authentication of a new connection.
 
 			Args:
@@ -573,13 +579,13 @@ class WebSocketServer(object):
 			"""
 			# Decode the base64 encoded string and split it into username and password
 			username, password = base64.b64decode(auth).decode().split(':')
-			if not CSE.security.validateWSBasicAuth(username, password):
+			if not self.securityManager.validateWSBasicAuth(username, password):
 				L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {username}')
 				return False
 			return True
 		
 
-		def testTokenAuthentication(token:str) -> bool:
+		def testTokenAuthentication(token: str) -> bool:
 			"""	Validate the token.
 
 				Args:
@@ -588,7 +594,7 @@ class WebSocketServer(object):
 				Return:
 					True if the token is valid, False otherwise.
 			"""
-			if not CSE.security.validateWSTokenAuth(token):
+			if not self.securityManager.validateWSTokenAuth(token):
 				L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
 				return False
 			return True
@@ -613,7 +619,7 @@ class WebSocketServer(object):
 			return AuthorizationResult.UNAUTHORIZED
 
 
-	def sendWSRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
+	def sendWSRequest(self, request: CSERequest, url: str, ignoreResponse: bool) -> Result:
 		"""	Send a request to another WebSocket server.
 
 			Args:
@@ -625,7 +631,7 @@ class WebSocketServer(object):
 				The result object of the request.
 		"""
 
-		def connectWS(target:str, ct:ContentSerializationType) -> Tuple[WSConnection, bool]:
+		def connectWS(target: str, ct: ContentSerializationType) -> Tuple[WSConnection, bool]:
 			"""	Connect to a WebSocket server.
 
 				Args:
@@ -685,7 +691,7 @@ class WebSocketServer(object):
 			return websocket, True
 
 
-		def disconnectWS(target:str, doClose:bool) -> None:
+		def disconnectWS(target: str, doClose: bool) -> None:
 			if doClose:
 				L.isDebug and L.logDebug(f'Closing temporary WS connection to: {target}')
 				self.closeConnectionForOriginator(target)
@@ -717,13 +723,13 @@ class WebSocketServer(object):
 
 		# Sending the request
 		try:
-			message = prepareResultForSending(req)[1]
+			message = self.requestManager.prepareResultForSending(req)[1]
 			L.isDebug and L.logDebug(f'WS Request ==>: {targetOriginator if not isSenderWS else self._getWSSendingTargetName(targetOriginator)}')
 			L.isDebug and L.logDebug(f'Body: {message!r}')
 			websocket.send(message)
 		except Exception as e:
 			disconnectWS(targetOriginator, isSenderWS)
-			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg = f'Error sending WS request: {e}')	
+			return Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg=f'Error sending WS request: {e}')	
 
 		# Ignore the response to notifications in some cases
 		if ignoreResponse and request.op == Operation.NOTIFY:
@@ -732,7 +738,7 @@ class WebSocketServer(object):
 			return createPositiveResponseResult()
 
 		# Receiving the response
-		resResp, _ = CSE.request.waitForResponse(req.request.rqi, Configuration.websocket_timeout)
+		resResp, _ = self.requestManager.waitForResponse(req.request.rqi, Configuration.websocket_timeout)
 
 		if resResp is None:
 			disconnectWS(targetOriginator, isSenderWS)

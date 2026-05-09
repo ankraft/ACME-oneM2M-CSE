@@ -8,38 +8,51 @@
 #
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE, CONFLICT, NOT_IMPLEMENTED
+from ..etc.DateUtils import getResourceDate, toISO8601Date
 from ..helpers.TextTools import findXPath
 from ..helpers.PluginManager import requires
-from ..etc.DateUtils import getResourceDate, toISO8601Date
 from ..runtime.Configuration import Configuration
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..resources.Resource import Resource
+from ..runtime.EventManager import EventManager, EventData, eventManager
 from ..resources.ContainerResource import ContainerResource
-from ..runtime.EventManager import EventManager, EventData
-from ..runtime.Storage import Storage
 
-eventManager = EventManager()	# type: ignore
-""" Event manager singleton instance. """
-
-storage:Storage = Storage()	# type: ignore
-"""	Storage singleton instance. """
-
-
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..plugins.services.TimeSeriesManager import TimeSeriesManager
+	from ..runtime.Storage import Storage
+	from ..services.Validator import Validator
+	from ..services.RequestManager import RequestManager
+	from ..services.Dispatcher import Dispatcher
 
 # CSE default:
 #	- peid is set to pei/2 if ommitted, and pei is set
 
 @requires(timeSeriesManager='acme.plugins.services.TimeSeriesManager', required=False)
+@requires(storage='acme.runtime.Storage')
+@requires(validator='acme.services.Validator')
+@requires(requestManager='acme.services.RequestManager')
+@requires(dispatcher='acme.services.Dispatcher')
 class TS(ContainerResource):
 
 
-	timeSeriesManager: Optional[Any] = None
-	""" Holds a reference to the TimeSeriesManager plugin, if available. """
+	timeSeriesManager: Optional[TimeSeriesManager] = None
+	""" TimeSeriesManager plugin instance. """
+
+	storage:Storage = None
+	""" Storage instance. """
+
+	validator: Validator = None
+	""" Validator instance. """
+
+	requestManager: RequestManager = None
+	""" RequestManager instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
 	
 
 	def initialize(self, pi: str) -> None:
@@ -57,7 +70,7 @@ class TS(ContainerResource):
 		super().initialize(pi)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
 		# Validation of CREATE is done in self.validate()
@@ -82,7 +95,7 @@ class TS(ContainerResource):
 		self._validateDataDetect()
 
 
-	def deactivate(self, originator:str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		super().deactivate(originator, parentResource)
 		if not self.timeSeriesManager:
 			raise NOT_IMPLEMENTED(L.logWarn('TimeSeriesManager plugin is disabled, cannot handle timeSeries deactivate request.'))
@@ -163,15 +176,15 @@ class TS(ContainerResource):
 		self._validateDataDetect(updatedAttributes)
 
  
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator: Optional[str] = None, 
+					   dct: Optional[JSON] = None, 
+					   parentResource: Optional[Resource] = None) -> None:
 		L.isDebug and L.logDebug(f'Validating timeSeries: {self.ri}')
 		super().validate(originator, dct, parentResource)
 		
 		# Check the format of the CNF attribute
 		if cnf := self.cnf:
-			CSE.validator.validateCNF(cnf)
+			self.validator.validateCNF(cnf)
 
 		# Check for peid
 		if self.peid is not None and self.pei is not None:	# pei(d) is an int
@@ -196,7 +209,7 @@ class TS(ContainerResource):
 		self._validateChildren()	# dbupdate() happens here
 
 
-	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
 		super().childWillBeAdded(childResource, originator)
 		
 		# Check whether the child's rn is "ol" or "la".
@@ -209,7 +222,7 @@ class TS(ContainerResource):
 				raise NOT_ACCEPTABLE('child content sizes would exceed mbs')
 
 		# Check whether another TSI has the same dgt value set
-		tsis = storage.searchByFragment({'ty': ResourceTypes.TSI,
+		tsis = self.storage.searchByFragment({'ty': ResourceTypes.TSI,
 										 'pi': self.ri,
 										 'dgt': childResource.dgt})
 		if len(tsis) > 0:	# Error if yes
@@ -217,7 +230,7 @@ class TS(ContainerResource):
 
 
 	# Handle the addition of new TSI. Basically, get rid of old ones.
-	def childAdded(self, childResource:Resource, originator:str) -> None:
+	def childAdded(self, childResource: Resource, originator: str) -> None:
 		L.isDebug and L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
 		match childResource.ty:
@@ -226,8 +239,8 @@ class TS(ContainerResource):
 				if self.mia is not None:
 					# Take either mia or the maxExpirationDelta, whatever is smaller
 					maxEt = getResourceDate(self.mia 
-											if self.mia <= CSE.request.maxExpirationDelta 
-											else CSE.request.maxExpirationDelta)
+											if self.mia <= self.requestManager.maxExpirationDelta 
+											else self.requestManager.maxExpirationDelta)
 					# Only replace the childresource's et if it is greater than the calculated maxEt
 					if childResource.et > maxEt:
 						childResource.setAttribute('et', maxEt)
@@ -257,7 +270,7 @@ class TS(ContainerResource):
 
 
 	# Handle the removal of a TSI. 
-	def childRemoved(self, childResource:Resource, originator:str) -> None:
+	def childRemoved(self, childResource: Resource, originator: str) -> None:
 		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
 		match childResource.ty:
@@ -272,7 +285,7 @@ class TS(ContainerResource):
 
 
 	# handle eventuel updates of subscriptions
-	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
+	def childUpdated(self, childResource: Resource, updatedAttributes: JSON, originator: str) -> None:
 		super().childUpdated(childResource, updatedAttributes, originator)
 		if childResource.ty == ResourceTypes.SUB and childResource['enc/md']:
 			if not self.timeSeriesManager:
@@ -292,7 +305,7 @@ class TS(ContainerResource):
 		# TODO Optimize: Do we really need the resources?
 		tsis = self.timeSeriesInstances()	# retrieve TIS child resources
 		cni = len(tsis)		
-		tsi:Resource = None
+		tsi: Resource = None
 			
 		# Check number of instances
 		if (mni := self.mni) is not None:	# mni is an int
@@ -302,7 +315,7 @@ class TS(ContainerResource):
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteLocalResource(tsi, parentResource = self, doDeleteCheck = False)
+				self.dispatcher.deleteLocalResource(tsi, parentResource = self, doDeleteCheck=False)
 				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <cin>
 
@@ -319,7 +332,7 @@ class TS(ContainerResource):
 				cbs -= tsi.cs
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteLocalResource(tsi, parentResource = self, doDeleteCheck = False)
+				self.dispatcher.deleteLocalResource(tsi, parentResource=self, doDeleteCheck=False)
 				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <tsi>
 
@@ -408,7 +421,7 @@ class TS(ContainerResource):
 			Returns:
 				A sorted list of timeSeriesInstances.
 		""" 
-		return sorted(CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.TSI), key = lambda x: x.ct) # type:ignore[no-any-return]
+		return sorted(self.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.TSI), key=lambda x: x.ct) # type:ignore[no-any-return]
 
 
 	def addDgtToMdlt(self, dgtToAdd:float) -> None:

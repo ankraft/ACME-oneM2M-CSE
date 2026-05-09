@@ -7,17 +7,13 @@
 """	Various plugin support functions . """
 
 from ..runtime.PluginManager import PluginManager
-from ..helpers.PluginManager import plugin, init, finish, start, stop, restart, pause, unpause
+from ..helpers.PluginManager import plugin, init, finish, start, stop, restart, pause, unpause, onResolved, onUnresolved
 from ..helpers.PluginManager import configure, validate, plugin, requires, provide
-from ..helpers.PluginManager import ServicePlugin as _SP_, endpoint, serviceClasses, DependencyError
-from acme.runtime.EventManager import EventManager, EventHandler, onEvent, EventData
+from ..helpers.PluginManager import ServicePlugin as _SP_, endpoint, serviceClasses, DependencyError, Dependency
+from ..runtime.EventManager import EventManager, EventHandler, Event, onEvent, EventData, eventManager
 
 # Get a pluginManager Singleton instance.
 pluginManager:PluginManager = PluginManager()	# type: ignore
-
-# Get the event manager instance from the runtime.
-eventManager:EventManager = EventManager()	# type: ignore
-
 @EventHandler
 class ServicePlugin(_SP_):
 	"""	Plugin support class. This class provides the base for service plugins. 

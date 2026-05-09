@@ -8,18 +8,25 @@
 
 from __future__ import annotations
 
-from typing import Optional
-from ....runtime.Management import getStructurePuml, getResourceTreeText
+from typing import Optional, TYPE_CHECKING
 from ....runtime.Logging import Logging as L
 from ....helpers.PluginManager import plugin, start, configure, requires
 from ....runtime.Configuration import Configuration
 
+if TYPE_CHECKING:
+	from ....runtime.Management import ManagementSupport
+
 
 @plugin(tags=['acme', 'core'])
 @requires(httpServer='acme.plugins.bindings.HttpServer')
+@requires(managementSupport='acme.runtime.Management')
 class HttpStructure:
 	"""	Plugin class to add the Structure functionality to the HTTP server.
 	"""
+
+	managementSupport: ManagementSupport = None
+	""" ManagementSupport instance. """
+
 
 	# "httpServer" is injected by the PluginManager, only if the HttpServer plugin is loaded and the dependency can be resolved.
 	httpServer: Any = None	# type: ignore
@@ -53,9 +60,9 @@ class HttpStructure:
 			lvl = request.args.get('lvl', default=0, type=int)
 			match path:
 				case 'puml':
-					return Response(response=getStructurePuml(lvl), headers=self.httpServer._responseHeaders)
+					return Response(response=self.managementSupport.getStructurePuml(lvl), headers=self.httpServer._responseHeaders)
 				case 'text':
-					return Response(response=getResourceTreeText(lvl), headers=self.httpServer._responseHeaders)
+					return Response(response=self.managementSupport.getResourceTreeText(lvl), headers=self.httpServer._responseHeaders)
 				case 'help':
 					return Response(response='''ACME oneM2M CSE Structure Commands
 							

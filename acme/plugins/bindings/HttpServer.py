@@ -8,7 +8,7 @@
 """ This module provides the HTTP server for the CSE. """
 
 from __future__ import annotations
-from typing import Any, Callable, cast, Optional
+from typing import Any, Callable, cast, Optional, TYPE_CHECKING
 
 import logging, sys, urllib3, re, os
 
@@ -28,8 +28,9 @@ from ...etc.Types import Operation, CSERequest, ContentSerializationType, Desire
 from ...etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from ...etc.IDUtils import uniqueRI, toSPRelative, isCSERelative
 from ...etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl, normalizeURL
+from ...etc.Constants import RuntimeConstants as RC
 from ...etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
-from ...etc.RequestUtils import toHttpUrl, serializeData, deserializeData, requestFromResult
+from ...etc.RequestUtils import toHttpUrl, serializeData, deserializeData
 from ...etc.RequestUtils import createPositiveResponseResult, fromHttpURL, contentAsString, fillRequestWithArguments
 from ...helpers.TextTools import findXPath
 from ...helpers.MultiDict import MultiDict
@@ -37,16 +38,13 @@ from ...helpers.NetworkTools import isTCPPortAvailable, isValidPort, isValidateI
 from ...helpers import TextTools as TextTools
 from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.EventManager import EventManager, EventData
-from ...runtime import CSE
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
-from ...etc.Constants import RuntimeConstants as RC
+from ...runtime.PluginSupport import *
 
+if TYPE_CHECKING:
+	from ...services.SecurityManager import SecurityManager
+	from ...services.RequestManager import RequestManager
 
-
-eventManager = EventManager()
-""" Event manager singleton instance. """
 
 #
 # Types definitions for the http server
@@ -56,16 +54,27 @@ FlaskHandler = 	Callable[[str], Response]
 """ Type definition for flask handler. """
 
 
-
 #########################################################################
 #
 #	HTTP Server
 #
 
 @plugin(property='httpServer', tags=['binding', 'acme'], priority=20, noRestartWhilePaused=True)
+@requires(security='acme.services.SecurityManager')
+@requires(requestManager='acme.services.RequestManager')
+@requires(cseShutdown='acme.runtime.CSE.shutdown')
 class HttpServer(object):
 	""" The HTTP server for the CSE.
 	"""
+
+	security: SecurityManager = None
+	""" SecurityManager instance. """
+
+	requestManager: RequestManager = None
+	""" RequestManager instance. """
+
+	cseShutdown: Callable[[], None] = None
+	""" Function to shut down the CSE. """
 
 	__slots__ = (
 		'flaskApp',
@@ -199,7 +208,7 @@ class HttpServer(object):
 									  port=Configuration.http_port,
 									  threaded=True,
 									  request_handler=ACMERequestHandler,
-									  ssl_context=CSE.security.getSSLContextHttp(),
+									  ssl_context= self.security.getSSLContextHttp(),
 									  debug=False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
@@ -213,7 +222,7 @@ class HttpServer(object):
 					L.logErr(m )
 				else:
 					L.logErr(str(e))
-				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
+				self.cseShutdown() 
 
 
 	def addEndpoint(self, endpoint:Optional[str]=None, 
@@ -262,7 +271,7 @@ class HttpServer(object):
 
 		def _runRequest(request:CSERequest) -> Result:
 			try:
-				return CSE.request.handleRequest(request)	# type: ignore[arg-type]
+				return self.requestManager.handleRequest(request)	# type: ignore[arg-type]
 			except Exception as e:
 				return Result.exceptionToResult(e)
 
@@ -296,7 +305,7 @@ class HttpServer(object):
 		if dissectResult.rsc != ResponseStatusCode.UNKNOWN:	# any other value right now indicates an error condition
 			# Something went wrong during dissection
 			if dissectResult.request:
-				CSE.request.recordRequest(dissectResult.request, dissectResult)
+				self.requestManager.recordRequest(dissectResult.request, dissectResult)
 			return self._prepareResponse(dissectResult)
 
 		# Return without a response if the request is a noResponse request
@@ -590,7 +599,7 @@ class HttpServer(object):
 			if not Configuration.http_security_enableBasicAuth:
 				L.isWarn and L.logWarn('Basic authentication is not enabled, but a basic authorization header was found.')
 				return True
-			if not CSE.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
+			if not self.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
 				L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {parameters["username"]}')
 				return False
 			return True
@@ -611,7 +620,7 @@ class HttpServer(object):
 			if not Configuration.http_security_enableTokenAuth:
 				L.isWarn and L.logWarn('Token authentication is not enabled, but a bearer authorization header was found.')
 				return True
-			if not CSE.security.validateHttpTokenAuth(token):
+			if not self.security.validateHttpTokenAuth(token):
 				L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
 				return False
 			return True
@@ -638,12 +647,12 @@ class HttpServer(object):
 
 	#########################################################################
 
-	def _prepareResponse(self, result:Result, 
-							   originalRequest:Optional[CSERequest] = None) -> Response:
+	def _prepareResponse(self, result: Result, 
+							   originalRequest: Optional[CSERequest] = None) -> Response:
 		"""	Prepare the response for a request. If `request` is given then
 			set it for the response.
 		"""
-		content:str|bytes|JSON = ''
+		content: str|bytes|JSON = ''
 		if not result.request:
 			result.request = CSERequest()
 
@@ -660,7 +669,7 @@ class HttpServer(object):
 			result.request.originator = originalRequest.originator
 			if originalRequest.httpAccept:																# accept / contentType
 				result.request.ct = ContentSerializationType.getType(originalRequest.httpAccept[0])
-			elif csz := CSE.request.getSerializationFromOriginator(originalRequest.originator):
+			elif csz := self.requestManager.getSerializationFromOriginator(originalRequest.originator):
 				result.request.ct = csz[0]
 
 			result.request.rqi = originalRequest.rqi
@@ -673,7 +682,7 @@ class HttpServer(object):
 		#
 		#	Transform request to oneM2M request
 		#
-		outResult = requestFromResult(result, isResponse=True, originalRequest=originalRequest)
+		outResult = self.requestManager.requestFromResult(result, isResponse=True, originalRequest=originalRequest)
 
 		#
 		#	Transform oneM2M request to http message
@@ -820,7 +829,7 @@ class HttpServer(object):
 		
 		# do validation and copying of attributes of the whole request
 		try:
-			CSE.request.fillAndValidateCSERequest(cseRequest)
+			self.requestManager.fillAndValidateCSERequest(cseRequest)
 		except REQUEST_TIMEOUT as e:
 			raise e
 		except ResponseException as e:

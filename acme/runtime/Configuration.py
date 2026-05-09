@@ -26,7 +26,7 @@ from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode, C
 from ..helpers.NetworkTools import getIPAddress
 from ..helpers.Zookeeper import Zookeeper
 from ..helpers.ACMEConfiguration import ACMEConfiguration
-from ..runtime.EventManager import EventManager, EventData
+from ..runtime.EventManager import EventManager, EventData, eventManager
 
 # TODO: proper use of the baseDirectory configuration for other values
 
@@ -37,9 +37,6 @@ from ..runtime.EventManager import EventManager, EventData
 # Add deprecated sections here. Format: set of (oldSection, newSection)
 _deprecatedSections:Set[Tuple[str, str]] = None
 """	Deprecated sections. Mapping from old section name to new section name."""
-
-eventManager = EventManager()	# type: ignore
-"""	Event manager singleton instance. """
 
 class Configuration(object):
 	"""	The static class Configuration holds all the configuration values of the CSE. It is initialized only once by calling the static

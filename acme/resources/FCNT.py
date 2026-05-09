@@ -7,29 +7,39 @@
 """  FlexContainer (FCNT) resource type."""
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, BAD_REQUEST
 from ..etc.ACMEUtils import getAttributeSize
 from ..etc.DateUtils import getResourceDate
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager, EventData
+from ..runtime.EventManager import EventManager, EventData, eventManager	
+from ..runtime.PluginSupport import requires
 from ..resources.Resource import Resource, internalAttributes, addToInternalAttributes
 from ..resources.ContainerResource import ContainerResource
 from ..helpers.ResourceSemaphore import criticalResourceSection, inCriticalSection
 
-eventManager = EventManager()	# type: ignore
-""" Event manager singleton instance. """
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrHasFCI)	# Add to internal attributes to ignore in validation etc
 
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(validator='acme.services.Validator')
 class FCNT(ContainerResource):
 	""" FlexContainer (FCNT) resource type. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	validator: Validator = None
+	""" Validator instance. """
 
 	def __init__(self, dct:Optional[JSON]=None, typeShortname:Optional[str]=None, create:Optional[bool]=False) -> None:
 		self.typeShortname = typeShortname
@@ -40,7 +50,7 @@ class FCNT(ContainerResource):
 
 		self.customAttributes: list[str] = []
 		"""	List of custom attributes defined for this particular FlexContainerSpecialization. """
-		if (policies := CSE.validator.getFlexContainerAttributesFor(self.typeShortname)) is not None:
+		if (policies := self.validator.getFlexContainerAttributesFor(self.typeShortname)) is not None:
 			self.customAttributes = list(policies.keys())
 
 		super().__init__(dct, create=create)
@@ -61,7 +71,7 @@ class FCNT(ContainerResource):
 		self.setAttribute('st', 0)
 
 		# Validate containerDefinition
-		if (t := CSE.validator.getFlexContainerSpecialization(self.typeShortname)):
+		if (t := self.validator.getFlexContainerSpecialization(self.typeShortname)):
 			if t[0] != self.cnd:
 				raise BAD_REQUEST(L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.typeShortname}. Must be: {t[0]}'))
 
@@ -240,7 +250,7 @@ class FCNT(ContainerResource):
 				L.isDebug and L.logDebug(f'cbs:{cbs} > mbs:{finMbs} - Removing <fci>:{fci.ri}')
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that FCNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteLocalResource(fci, parentResource = self, doDeleteCheck = False)
+				self.dispatcher.deleteLocalResource(fci, parentResource=self, doDeleteCheck=False)
 				del fcis[0]
 				cbs -= fci.cs			
 				cni -= 1	# decrement cni when deleting a cni
@@ -254,7 +264,7 @@ class FCNT(ContainerResource):
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that FCNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteLocalResource(fci, parentResource = self, doDeleteCheck = False)
+				self.dispatcher.deleteLocalResource(fci, parentResource=self, doDeleteCheck=False)
 				del fcis[0]
 				cni -= 1	# decrement cni when deleting a cni
 				cbs -= fci.cs
@@ -315,13 +325,13 @@ class FCNT(ContainerResource):
 		if super().hasAttributeDefined(name):
 			return True
 		# Check whether the attribute is defined in the containerDefinition
-		return name in CSE.validator.getFlexContainerAttributesFor(self.typeShortname).keys()
+		return name in self.validator.getFlexContainerAttributesFor(self.typeShortname).keys()
 		
 
 	def flexContainerInstances(self) -> list[Resource]:
 		"""	Get all flexContainerInstances of a resource and return a sorted (by st) list
 		""" 
-		return sorted(CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCI), key = lambda x: x.st) # type:ignore[no-any-return]
+		return sorted(self.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCI), key=lambda x: x.st) # type:ignore[no-any-return]
 
 
 	# Add a new FlexContainerInstance for this flexContainer
@@ -427,11 +437,11 @@ class FCNT(ContainerResource):
 		L.isDebug and L.logDebug(f'De-registering latest and oldest virtual resources for: {self.ri}')
 
 		# remove latest
-		if len(chs := CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCNT_LA)) == 1: # type:ignore[no-any-return]
-			CSE.dispatcher.deleteLocalResource(chs[0])	# ignore errors
+		if len(chs := self.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCNT_LA)) == 1: # type:ignore[no-any-return]
+			self.dispatcher.deleteLocalResource(chs[0])	# ignore errors
 		# remove oldest
-		if len(chs := CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCNT_OL)) == 1: # type:ignore[no-any-return]
-			CSE.dispatcher.deleteLocalResource(chs[0])	# ignore errors
+		if len(chs := self.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.FCNT_OL)) == 1: # type:ignore[no-any-return]
+			self.dispatcher.deleteLocalResource(chs[0])	# ignore errors
 	
 		self.setAttribute(Constants.attrHasFCI, False)
 
@@ -443,7 +453,7 @@ class FCNT(ContainerResource):
 				keepLatest: Keep the latest resource. Only remove the oldest resource.
 		"""
 		L.isDebug and L.logDebug(f'Removing FCI child resources for: {self.ri}')
-		chs = CSE.dispatcher.retrieveDirectChildResources(self.ri, ty = ResourceTypes.FCI)
+		chs = self.dispatcher.retrieveDirectChildResources(self.ri, ty=ResourceTypes.FCI)
 		
 		# keepLatest is set, then remove all but the latest
 		if keepLatest:
@@ -451,4 +461,4 @@ class FCNT(ContainerResource):
 			chs = chs[:-1]	# Remove all but the latest
 
 		for ch in chs:
-			CSE.dispatcher.deleteLocalResource(ch, parentResource = self)
+			self.dispatcher.deleteLocalResource(ch, parentResource=self)

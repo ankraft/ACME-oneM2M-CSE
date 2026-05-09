@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import Dict, Any, cast
+from typing import Dict, Any, cast, TYPE_CHECKING
 
 import atexit, argparse, sys, platform, os, signal, platform
 from threading import Lock
@@ -25,22 +25,24 @@ from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, LogLevel
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import ResponseException
-from ..runtime.Configuration import Configuration
 
+from ..runtime.Configuration import Configuration
+from ..runtime.ConsoleBase import ConsoleBase
+from ..runtime.Factory import Factory
+from ..runtime.Importer import Importer
+from ..runtime.Logging import Logging as L
+from ..runtime.Management import ManagementSupport
+from ..runtime.PluginSupport import PluginManager, DependencyError, provide
+from ..runtime.ScriptManager import ScriptManager
+from ..runtime.Storage import Storage
+from ..runtime.EventManager import EventManager, eventManager
 
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
-from .EventManager import EventManager
-from ..runtime.Importer import Importer
 from ..services.NotificationManager import NotificationManager
-from ..runtime.PluginManager import PluginManager, DependencyError
-from ..runtime.ConsoleBase import ConsoleBase
 from ..services.RegistrationManager import RegistrationManager
-from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
-from ..runtime.Storage import Storage
 from ..services.Validator import Validator
-from ..runtime.Logging import Logging as L
 
 ##############################################################################
 
@@ -53,31 +55,37 @@ console:ConsoleBase = None
 dispatcher:Dispatcher = Dispatcher()
 """	Runtime instance of the `Dispatcher`. """
 
-# httpServer:HttpServer = None
-"""	Runtime instance of the `HttpServer`. """
+factory:Factory = Factory()
+"""	Runtime instance of the resource factory. """
 
-importer:Importer = None
+importer:Importer = Importer()
 """	Runtime instance of the `Importer`. """
 
-notification:NotificationManager = None
+managementSupport:ManagementSupport = ManagementSupport()
+"""	Runtime instance of the `ManagementSupport`. """
+
+notification:NotificationManager = NotificationManager()
 """	Runtime instance of the `NotificationManager`. """
+
+pluginManager:PluginManager = PluginManager()
+"""	Runtime instance of the `PluginManager`. """
 
 registration:RegistrationManager = RegistrationManager()
 """	Runtime instance of the `RegistrationManager`. """
 
-request:RequestManager = None
+request:RequestManager = RequestManager()
 """	Runtime instance of the `RequestManager`. """
 
-script:ScriptManager = None
+script:ScriptManager = ScriptManager()
 """	Runtime instance of the `ScriptManager`. """
 
-security:SecurityManager = None
+security:SecurityManager = SecurityManager()
 """	Runtime instance of the `SecurityManager`. """
 
-storage:Storage = None
+storage:Storage = Storage()
 """	Runtime instance of the `Storage`. """
 
-validator:Validator = None
+validator:Validator = Validator()
 """	Runtime instance of the `Validator`. """
 
 # Global variables to hold various (configuation) values.
@@ -85,11 +93,6 @@ validator:Validator = None
 _cseResetLock = Lock()
 """ Internal CSE's lock when resetting. """
 
-event:EventManager = EventManager() # 	# Initialize the event manager before anything else
-"""	Runtime instance of the `EventManager`. """
-
-pluginManager:PluginManager = PluginManager()
-"""	Runtime instance of the `PluginManager`. """
 
 ##############################################################################
 
@@ -103,9 +106,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global dispatcher, importer, storage, validator
-	global notification, pluginManager, request, script, security
-
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
 
@@ -143,33 +143,56 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 										balanceReduceFactor=Configuration.cse_operation_jobs_balanceReduceFactor)
 
 	try:
+		# Provide the main components to the plugin manager, so that they can be injected into 
+		# plugins and other components. 
+		pluginManager.provide('acme.runtime.Factory', factory)
+		pluginManager.provide('acme.runtime.Importer', importer)
+		pluginManager.provide('acme.runtime.Storage', storage)		
+		pluginManager.provide('acme.services.Dispatcher', dispatcher)	
+		pluginManager.provide('acme.services.NotificationManager', notification)
+		pluginManager.provide('acme.services.RegistrationManager', registration)
+		pluginManager.provide('acme.services.RequestManager', request)
+		pluginManager.provide('acme.services.SecurityManager', security)
+		pluginManager.provide('acme.services.Validator', validator)
+		pluginManager.provide('acme.runtime.ScriptManager', script)
+		pluginManager.provide('acme.runtime.Management', managementSupport)
+
+
+		# TODO provide the eventmanger as well? Check the usage in ACME modules
+
+		# TODO add a FORCESHUTDOWN event
+
+		
 		# Initialize the plugin manager
 		# This loads, configures and validates the plugins as well
-		pluginManager.startup()	
+		pluginManager.startup()					# Initialize and starts
+		importer.initialize()					# Call the initialize method
 		
 		# Start the database plugins and the storage first
 		pluginManager.start(tags=['database'])	
 
-		storage = Storage()						# Create the storage singleton instance
 		storage.initialize()					# Initialize the storage manager
 
-		importer = Importer()					# Initialize the importer
 		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
 
-		registration.initialize()				# Initialize the registration manager
-		validator = Validator()					# Initialize the resource validator
-		dispatcher.initialize()					# Initialize the resource dispatcher
-		request = RequestManager()				# Initialize the request manager
-		security = SecurityManager()			# Initialize the security manager
-		notification = NotificationManager()	# Initialize the notification manager
-
-		script = ScriptManager()				# Initialize the script manager
+		# Initialize other components
+		registration.initialize()
+		validator.initialize()
+		dispatcher.initialize()	
+		security.initialize()
+		request.initialize()
+		script.initialize()	
+		notification.initialize()
 		
-		pluginManager.start(tags=['binding'])	# Start the bindings
-		pluginManager.start(tags=['core'])		# Start the remaining core plugins after all components are initialized.
-		pluginManager.start(tags=['remote'])	# Start the remote plugins after the core plugins
-		pluginManager.start(tags=['ui'])		# Start the remaining plugins after the core and remote plugins
+		# Start the remaining plugins
+		pluginManager.start(tags=['binding'])
+		pluginManager.start(tags=['core'])	
+		pluginManager.start(tags=['remote'])
+		pluginManager.start(tags=['ui'])
 
+		# Check whether all plugin dependencies are resolved. This is done after starting the plugins to give them a chance to resolve their dependencies. If this fails, we cannot continue with the CSE startup.
+		pluginManager.setupFinished()				
+		
 		# Import attribute, flexContainer and enum policies, and configuration documentation
 		#
 		# After this, the CSE reads the scripts from the default and runtime init directories.
@@ -189,9 +212,12 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		return False
 	except KeyError as e:
 		L.logErr(f'Error during startup: {e}')
+		import traceback
+		traceback.print_exc()
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
 	except (DependencyError, ValueError) as e:
+		L.logErr(f'Error during startup: {e}')
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
 	except Exception as e:
@@ -212,7 +238,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		RC.startupTime = utcTime()	# Set the startup time when the CSE is fully started and running
 
 		# Send an event that the CSE startup finished
-		event.cseStartup()	# type: ignore
+		eventManager.cseStartup()	# type: ignore
 
 		L.console('CSE started')
 		L.log('CSE started')
@@ -222,6 +248,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	return True
 
 
+@provide('acme.runtime.CSE.shutdown')
 def shutdown() -> None:
 	"""	Gracefully shutdown the CSE programmatically. This will end the main console loop
 		to terminate.
@@ -257,8 +284,8 @@ def _shutdown() -> None:
 	RC.cseStatus = CSEStatus.SHUTTINGDOWN
 	L.queueOff()
 	L.isInfo and L.log('CSE shutting down')
-	if event:	# send shutdown event
-		event.cseShutdown() 	# type: ignore
+	if eventManager:	# send shutdown event
+		eventManager.cseShutdown() 	# type: ignore
 	
 	# shutdown the services
 	# Stop all the plugins, except the database plugins, which are needed during shutdown 
@@ -277,7 +304,6 @@ def _shutdown() -> None:
 
 	storage  and storage.shutdown()
 	pluginManager and pluginManager.stop(tags=['database'])
-	
 	pluginManager and pluginManager.stop(tags=['bindings'])
 
 	# This shutdowns all plugins, stopping the ones that are still running
@@ -293,6 +319,8 @@ def _shutdown() -> None:
 	if _cseStatus == CSEStatus.SHUTTINGDOWNRESTART:
 		os._exit(82) 
 
+
+@provide('acme.runtime.CSE.forceShutdown')
 def forceShutdown() -> None:
 	"""	Force shutdown the CSE. 
 	
@@ -321,6 +349,7 @@ def forceShutdown() -> None:
 			signal.raise_signal(signal.SIGINT)	# raise SIGINT to shutdown the CSE
 
 
+@provide('acme.runtime.CSE.resetCSE')
 def resetCSE() -> None:
 	""" Reset the CSE: Clear databases and import the resources again.
 	"""
@@ -342,7 +371,7 @@ def resetCSE() -> None:
 
 		# The following event is executed synchronously to give every component
 		# a chance to finish
-		event.cseReset()	# type: ignore [attr-defined]
+		eventManager.cseReset()	# type: ignore [attr-defined]
 
 		# We only import policies, documentation and scripts during restart
 		# But we don't import the resource policies again.
@@ -362,7 +391,7 @@ def resetCSE() -> None:
 		L.queueOn()
 
 		# Send restarted event
-		event.cseRestarted()	# type: ignore [attr-defined]   
+		eventManager.cseRestarted()	# type: ignore [attr-defined]   
 
 		RC.cseStatus = CSEStatus.RUNNING
 		RC.startupTime = utcTime()	# Set the startup time when the CSE is fully started and running
@@ -389,11 +418,21 @@ def run() -> None:
 			TimeoutError: If the CSE does not start within the specified time.
 	"""
 	if waitFor(C.cseStartupDelay * 3, lambda: RC.cseStatus==CSEStatus.RUNNING):
-		console.run()
+		if console:
+			console.run()
 	else:
 		raise TimeoutError(L.logErr(f'CSE did not start within {C.cseStartupDelay * 3} seconds'))
 
 
+@provide('acme.runtime.CSE.setConsole')
+def setConsole(consoleInstance: ConsoleBase) -> None:
+	"""	Set the console instance for the CSE. This is used to set the console instance from the main console plugin.
+
+		Args:
+			consoleInstance: The console instance to set.
+	"""
+	global console
+	console = consoleInstance
 
 
 # @event.cseStartup

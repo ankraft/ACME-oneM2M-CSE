@@ -8,24 +8,27 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON, LogicalOperator
 from ..etc.Constants import RuntimeConstants as RC
 from ..resources.Resource import Resource
-from ..runtime import CSE
-from ..runtime.Storage import Storage
 from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..runtime.PluginSupport import requires
 
-
-storage:Storage = Storage()	# type: ignore
-"""	Storage singleton instance. """
-
-
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	
 _defaultPLBL = 'Default'
 """ Default policy label for NTP resources. """
 
+@requires(storage='acme.runtime.Storage')
 class NTP(Resource):
+
+	storage: Storage =None
+	"""	Storage instance. """
+
+
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 		super().activate(parentResource, originator)
@@ -44,7 +47,7 @@ class NTP(Resource):
 			self.setAttribute('rrs', LogicalOperator.AND.value)	# EXPERIMENTAL Check spec change for default value
 
 		# Validate that only one NTP resource with the same creator and label exists
-		res = storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'cr': self.cr, 'plbl': self.plbl })
+		res = self.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'cr': self.cr, 'plbl': self.plbl })
 		for r in res:
 			if r.ri != self.ri:	# ignore self
 				if r.plbl == self.plbl and r.cr == self.cr:

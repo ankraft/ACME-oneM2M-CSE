@@ -9,19 +9,25 @@
 """ RemoteCSE resource class. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, BAD_REQUEST
 from ..etc.IDUtils import originatorToID
-from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Dispatcher import Dispatcher
 
+@requires(dispatcher='acme.services.Dispatcher')
 class CSR(AnnounceableResource):
 	""" RemoteCSE resource class."""
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
 
 	def initialize(self, pi: str) -> None:
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
@@ -52,5 +58,5 @@ class CSR(AnnounceableResource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator must be the parent <CSR>'))
 
 			# check that there will only by one PCH as a child
-			if CSE.dispatcher.countDirectChildResources(self.ri, ty=ResourceTypes.PCH) > 0:
+			if self.dispatcher.countDirectChildResources(self.ri, ty=ResourceTypes.PCH) > 0:
 				raise BAD_REQUEST(L.logDebug('Only one <PCH> per <CSR> is allowed'))

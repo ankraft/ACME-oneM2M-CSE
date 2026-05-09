@@ -8,30 +8,37 @@
 """
 
 from __future__ import annotations
+from typing import Optional, List, cast, Any, TYPE_CHECKING
+
 import json
 
-from typing import Optional, List, cast, Any
 from textual import events
 from textual.app import ComposeResult
-from textual.containers import Vertical, Horizontal, Center, VerticalScroll
+from textual.containers import Vertical, Horizontal, VerticalScroll
 from textual.binding import Binding
 from textual.widgets import Static, Label, ListView, ListItem
 from textual.widget import Widget
-from rich.pretty import Pretty
 from rich.syntax import Syntax
 from ..etc.Types import JSONLIST, JSON, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
 from ..etc.Utils import reverseEnumerate
-from ..runtime import CSE
 from ..runtime.Configuration import Configuration
+from ..runtime.Storage import Storage
 from ..helpers.TextTools import commentJson, limitLines
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	from ..services.Validator import Validator
+	from ..services.RequestManager import RequestManager
+
 
 class ACMEContainerRequests(Vertical):
 	"""	Requests view for the ACME text UI.
 	"""
 
-	def __init__(self, id:str) -> None:
+	def __init__(self, id: str) -> None:
 		""" Initialize the Requests view.
 
 			Args:
@@ -87,9 +94,22 @@ class ACMEListItem(ListItem):
 		self._data:Any = None
 		"""	The data of the list item. """
 
+@requires(storage='acme.runtime.Storage')
+@requires(validator='acme.services.Validator')
+@requires(requestManager='acme.services.RequestManager')
 class ACMEViewRequests(Vertical):
 	"""	View to show the requests in the ACME text UI.
 	"""
+
+	storage: Storage = None
+	"""	The storage. """
+
+	validator: Validator = None
+	"""	The validator. """
+
+	requestManager: RequestManager = None
+	"""	The request manager. """
+
 
 	BINDINGS = 	[ Binding('r', 'refresh_requests', 'Refresh'),
 				  Binding('D', 'delete_requests', 'Delete ALL Requests', key_display = 'SHIFT+D'),
@@ -259,7 +279,7 @@ class ACMEViewRequests(Vertical):
 		self._showRequests(cast(ACMEListItem, selected.item))
 
 
-	async def on_list_view_highlighted(self, selected:ListView.Highlighted) -> None:
+	async def on_list_view_highlighted(self, selected: ListView.Highlighted) -> None:
 		""" Handle the highlighting of a request in the list.
 
 			Args:
@@ -270,7 +290,7 @@ class ACMEViewRequests(Vertical):
 			self._showRequests(cast(ACMEListItem, selected.item))
 
 
-	def _showRequests(self, item:ACMEListItem) -> None:
+	def _showRequests(self, item: ACMEListItem) -> None:
 		""" Show the request and response of a request. 
 
 			Args:
@@ -286,20 +306,20 @@ class ACMEViewRequests(Vertical):
 		self.currentRequest = self._currentRequests[cast(ACMEListItem, item)._data]['req']
 		jsns = commentJson(	self.currentRequest, 
 							explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
-							getAttributeValueName = CSE.validator.getAttributeValueName,					# type: ignore [attr-defined]
+							getAttributeValueName = self.validator.getAttributeValueName,					# type: ignore [attr-defined]
 							width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
 		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Request is too large to display'
 			type = 'text'
 
 		# Add syntax highlighting and explanations, and add to the view
-		self.requestListRequest.update(Syntax(jsns, type, theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
+		self.requestListRequest.update(Syntax(jsns, type, theme=self.app.syntaxTheme)) # type: ignore [attr-defined]
 
 		# Get the response's json
 		self.currentResponse = self._currentRequests[cast(ACMEListItem, item)._data]['rsp']
 		jsns = commentJson(	self.currentResponse, 
-							explanations = self.app.attributeExplanations,									# type: ignore [attr-defined]
-							getAttributeValueName = CSE.validator.getAttributeValueName, 					# type: ignore [attr-defined]
+							explanations=self.app.attributeExplanations,									# type: ignore [attr-defined]
+							getAttributeValueName=self.validator.getAttributeValueName, 					# type: ignore [attr-defined]
 							width = None if self.commentsOneLine else self.requestListRequest.size[0] - 2)	# type: ignore [attr-defined]
 		if len(jsns) > Configuration.textui_maxRequestSize:
 			jsns = 'Response is too large to display'
@@ -307,7 +327,7 @@ class ACMEViewRequests(Vertical):
 		_l2 = jsns.count('\n')
 
 		# Add syntax highlighting and explanations, and add to the view
-		self.requestListResponse.update(Syntax(jsns, type, theme = self.app.syntaxTheme)) # type: ignore [attr-defined]
+		self.requestListResponse.update(Syntax(jsns, type, theme=self.app.syntaxTheme)) # type: ignore [attr-defined]
 
 
 	def action_refresh_requests(self) -> None:
@@ -325,14 +345,14 @@ class ACMEViewRequests(Vertical):
 	def action_enable_requests(self) -> None:
 		""" Enable request recording.
 		"""
-		CSE.request.enableRequestRecording = True
+		self.requestManager.enableRequestRecording = True
 		self.updateBindings()
 
 
 	def action_disable_requests(self) -> None:
 		""" Disable request recording.
 		"""
-		CSE.request.enableRequestRecording = False
+		self.requestManager.enableRequestRecording = False
 		self.updateBindings()
 	
 
@@ -355,7 +375,7 @@ class ACMEViewRequests(Vertical):
 		"""
 		#CSE.textUI.tuiApp.bell()
 
-		if CSE.request.enableRequestRecording:
+		if self.requestManager.enableRequestRecording:
 			self._bindings.bind('e', 'disable_requests', 'Record Requests: Enabled')
 		else:
 			self._bindings.bind('e', 'enable_requests', 'Record Requests: Disabled')
@@ -388,7 +408,7 @@ class ACMEViewRequests(Vertical):
 		self.requestListRequest.update()
 		self.requestListResponse.update()
 
-		self._currentRequests = cast(JSONLIST, CSE.storage.getRequests(self._currentRI, sortedByOt = True))
+		self._currentRequests = cast(JSONLIST, self.storage.getRequests(self._currentRI, sortedByOt = True))
 
 		# Add the requests to the list in reverse order
 		for i, r in reverseEnumerate(self._currentRequests):
@@ -418,7 +438,7 @@ class ACMEViewRequests(Vertical):
 	def deleteRequests(self) -> None:
 		""" Delete the requests from the storage.
 		"""
-		CSE.storage.deleteRequests(self._currentRI)
+		self.storage.deleteRequests(self._currentRI)
 		self.updateRequests()
 
 

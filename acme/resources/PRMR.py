@@ -9,25 +9,39 @@
 
 from __future__ import annotations
 
-from typing import Optional, Any
+from typing import Optional, TYPE_CHECKING
 
-from ..resources.Resource import Resource
 from ..etc.Types import ResourceTypes, JSON, ProcessState, ProcessControl, Permission
-from ..resources.AnnounceableResource import AnnounceableResource
+from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION, NOT_IMPLEMENTED	
 from ..helpers.TextTools import findXPath
 from ..helpers.PluginManager import requires
-from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION, NOT_IMPLEMENTED	
-from ..runtime import CSE
+from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..services.SecurityManager import SecurityManager
+	from ..plugins.services.ActionManager import ActionManager
+	from ..resources.Resource import Resource
 
 # TODO annc version
 # TODO add to UML diagram
 # TODO add to statistics, also in console
 
 @requires(actionManager='acme.plugins.services.ActionManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(security='acme.services.SecurityManager')
 class PRMR(AnnounceableResource):
 
-	actionManager: Optional[Any] = None
+	actionManager: Optional[ActionManager] = None
+	""" ActionManager instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	security: SecurityManager = None
+	""" SecurityManager instance. """
+
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -85,11 +99,11 @@ class PRMR(AnnounceableResource):
 		if newInst:
 			# Try to retrieve the new state resource
 			try:
-				newInstResource = CSE.dispatcher.retrieveResource(newInst, originator)
+				newInstResource = self.dispatcher.retrieveResource(newInst, originator)
 			except NOT_FOUND:
 				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The referenced state resource does not exist'))
 			# Check if the originator has access to the new state resource
-			if not CSE.security.hasAccess(originator, newInstResource, Permission.RETRIEVE):	# Check if the originator has RETRIEVE access to the state resource
+			if not self.security.hasAccess(originator, newInstResource, Permission.RETRIEVE):	# Check if the originator has RETRIEVE access to the state resource
 				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The originator does not have the necessary privileges to access the referenced state resource'))
 			# Check if the new state resource is a child resource of this process resource
 			if newInstResource.pi != self.ri:
@@ -163,7 +177,7 @@ class PRMR(AnnounceableResource):
 				self.setAttribute('prst', ProcessState.Disabled.value)
 				# Set the stateActive attribute of the activate <state> resource to false
 				try:
-					_state = CSE.dispatcher.retrieveResource(self.cust)
+					_state = self.dispatcher.retrieveResource(self.cust)
 					_state.setAttribute('sact', False)
 					_state.dbUpdate()
 				except:

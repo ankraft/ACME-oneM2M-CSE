@@ -9,7 +9,7 @@
 """ CSEBase (CSEBase) resource type. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import CSERequest, ResourceTypes, ContentSerializationType, JSON, CSEType
 from ..etc.ResponseStatusCodes import BAD_REQUEST
@@ -17,15 +17,24 @@ from ..etc.IDUtils import isValidCSI
 from ..etc.ACMEUtils import resourceFromCSI
 from ..etc.Constants import Constants
 from ..etc.DateUtils import getResourceDate
-from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..runtime import CSE
 from ..etc.Constants import RuntimeConstants as RC
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Dispatcher import Dispatcher
+
 
 # TODO notificationCongestionPolicy
 
+@requires(dispatcher='acme.services.Dispatcher')
 class CSEBase(AnnounceableResource):
 	""" CSEBase (CSEBase) resource type. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
 
 	def initialize(self, pi: str) -> None:
 
@@ -64,12 +73,12 @@ class CSEBase(AnnounceableResource):
 		if nl or _nl_:
 			if nl != _nl_:
 				if _nl_:
-					if nresource := CSE.dispatcher.retrieveResource(_nl_):
+					if nresource := self.dispatcher.retrieveResource(_nl_):
 						nresource['hcl'] = None # remove old link
-						CSE.dispatcher.updateLocalResource(nresource)
+						self.dispatcher.updateLocalResource(nresource)
 				self[Constants.attrNode] = nl
 
-				nresource = CSE.dispatcher.retrieveResource(nl)
+				nresource = self.dispatcher.retrieveResource(nl)
 				nresource['hcl'] = self['ri']
 				nresource.dbUpdate(True)
 				#CSE.dispatcher.updateLocalResource(nresource)
@@ -96,7 +105,7 @@ class CSEBase(AnnounceableResource):
 	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
 		super().childWillBeAdded(childResource, originator)
 		if childResource.ty == ResourceTypes.SCH:
-			if CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.SCH):
+			if self.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.SCH):
 				raise BAD_REQUEST('Only one <schedule> resource is allowed for the CSEBase')
 
 

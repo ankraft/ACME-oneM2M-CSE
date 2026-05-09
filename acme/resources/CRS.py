@@ -10,7 +10,7 @@
 """	<crossResourceSubscription> resource type """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from copy import deepcopy
 
@@ -24,9 +24,13 @@ from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, CROSS_RESOURCE_OPERATION_FAILURE
 from ..resources.Resource import Resource, addToInternalAttributes
-from ..runtime import CSE
+from ..runtime.PluginSupport import requires
 from ..runtime.Logging import Logging as L
 
+if TYPE_CHECKING:
+	from ..services.NotificationManager import NotificationManager
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
 
 # add internal attribute to store the references to the created <sub> resources
 # Add to internal attributes to ignore in validation etc
@@ -34,9 +38,20 @@ addToInternalAttributes(Constants.attrSubSratRIs)
 addToInternalAttributes(Constants.attrSudRI)
 
 
+@requires(notification='acme.services.NotificationManager')
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(validator='acme.services.Validator')
 class CRS(Resource):
 	"""	This class implements the <crossResourceSubscription> resource type. """
 
+	notification: NotificationManager = None
+	""" NotificationManager instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	validator: Validator = None
+	""" Validator instance. """
 
 	def initialize(self, pi: str) -> None:
 		self.setAttribute(Constants.attrSubSratRIs, {}, overwrite=False)	
@@ -51,7 +66,7 @@ class CRS(Resource):
 		# encs validation happens in validate()
 
 		# Check owns NU's etc
-		CSE.notification.addCrossResourceSubscription(self, originator)
+		self.notification.addCrossResourceSubscription(self, originator)
 		
 		# Handle subscriptionResourcesAsTarget
 		if (_srat := self.srat):
@@ -76,7 +91,7 @@ class CRS(Resource):
 	
 		# Start periodic window immediately if necessary
 		if self.twt == TimeWindowType.PERIODICWINDOW:
-			CSE.notification.startCRSPeriodicWindow(self.ri, self.tws, self._countSubscriptions(), self.eem)
+			self.notification.startCRSPeriodicWindow(self.ri, self.tws, self._countSubscriptions(), self.eem)
 
 		# "nsi" will be added later during the first stat recording
 		
@@ -93,17 +108,17 @@ class CRS(Resource):
 		
 		# We are validating the attributes already here because the actual update of the resource
 		# (where this happens) is done only after other procedures hapened.
-		CSE.validator.validateAttributes(dct, self.typeShortname, 
-				   							  self.ty, 
-											  self._attributes, 
-											  create = False, 
-											  createdInternally = self.isCreatedInternally(), 
-											  isAnnounced = self.isAnnounced())
+		self.validator.validateAttributes(dct, self.typeShortname, 
+				   							   self.ty, 
+											   self._attributes, 
+											   create=False, 
+											   createdInternally=self.isCreatedInternally(), 
+											   isAnnounced=self.isAnnounced())
 
 		# Handle update notificationStatsEnable attribute, but only if present in the resource.
 		# This is important bc it can be set to True, False, or Null.
 		if 'nse' in pureResource(dct)[0]:
-			CSE.notification.updateOfNSEAttribute(self, findXPath(dct, 'm2m:crs/nse'))
+			self.notification.updateOfNSEAttribute(self, findXPath(dct, 'm2m:crs/nse'))
 
 		# Check new NU's
 		previousNus = deepcopy(self.nu)
@@ -111,7 +126,7 @@ class CRS(Resource):
 			self.setAttribute('nu', newNus)
 		
 		# Update the CRS for notifications
-		CSE.notification.updateCrossResourceSubscription(self, previousNus, originator)
+		self.notification.updateCrossResourceSubscription(self, previousNus, originator)
 
 		# Update TimeWindowType and TimeWindowSize
 		oldTwt = self.twt
@@ -120,17 +135,17 @@ class CRS(Resource):
 
 		if newTwt is not None or newTws is not None:
 			if oldTwt == TimeWindowType.PERIODICWINDOW:
-				CSE.notification.stopCRSPeriodicWindow(self.ri)
+				self.notification.stopCRSPeriodicWindow(self.ri)
 			else:
-				CSE.notification.stopCRSSlidingWindow(self.ri)
+				self.notification.stopCRSSlidingWindow(self.ri)
 			
 			# Start periodic window with new tws if given, and when twt is still periodic
 			# Sliding window will be activated when first notification is received
 			if (newTwt is not None and newTwt == TimeWindowType.PERIODICWINDOW) or \
 			   (newTwt is None     and oldTwt == TimeWindowType.PERIODICWINDOW):
-				CSE.notification.startCRSPeriodicWindow(self.ri, self.tws if newTws is None else newTws, self._countSubscriptions())
+				self.notification.startCRSPeriodicWindow(self.ri, self.tws if newTws is None else newTws, self._countSubscriptions())
 		
-		super().update(dct, originator, doValidateAttributes = False)	# Was vaildated before
+		super().update(dct, originator, doValidateAttributes=False)	# Was vaildated before
 	
 
 	@criticalResourceSection(state = 'deactivate')
@@ -139,15 +154,15 @@ class CRS(Resource):
 		# Deactivate time windows
 		match self.twt:
 			case TimeWindowType.PERIODICWINDOW:
-				CSE.notification.stopCRSPeriodicWindow(self.ri)
+				self.notification.stopCRSPeriodicWindow(self.ri)
 			case TimeWindowType.SLIDINGWINDOW:
-				CSE.notification.stopCRSSlidingWindow(self.ri)
+				self.notification.stopCRSSlidingWindow(self.ri)
 
 		# Delete rrat and srat subscriptions
 		self._deleteSubscriptions(originator)
 
 		# Handle removing the csr by the notification manager
-		CSE.notification.removeCrossResourceSubscription(self)
+		self.notification.removeCrossResourceSubscription(self)
 
 		super().deactivate(originator, parentResource)
 
@@ -215,7 +230,7 @@ class CRS(Resource):
 			self.dbUpdate()
 
 			# Delete self. Use the resource's creator for the creator
-			CSE.dispatcher.deleteLocalResource(self, originator = self.getOriginator(), withDeregistration = True)
+			self.dispatcher.deleteLocalResource(self, originator=self.getOriginator(), withDeregistration=True)
 			return
 		
 		# Log any other notification
@@ -225,7 +240,7 @@ class CRS(Resource):
 		# Test whether the received sur points to one of the rrat or srat resources	
 		_subRIs = self.attribute(Constants.attrSubSratRIs)
 		if (self.rrats and sur in self.rrats) or (self.srat and sur in self.srat) or (_subRIs.values() and sur in _subRIs.values()):
-			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)		
+			self.notification.receivedCrossResourceSubscriptionNotification(sur, self)		
 		else:
 			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in rrats: {self.rrats} or srat: {self.srat}')
 
@@ -268,9 +283,9 @@ class CRS(Resource):
 		# create (possibly remote) subscription
 		L.logDebug(f'Adding <sub> to {rrat}: ')
 		try:
-			tup = CSE.dispatcher.createResourceFromDict(dct, parentID = rrat, 
-															 ty = ResourceTypes.SUB, 
-															 originator = originator)
+			tup = self.dispatcher.createResourceFromDict(dct, parentID=rrat, 
+															  ty=ResourceTypes.SUB, 
+															  originator=originator)
 		except ResponseException as e:
 			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot create subscription for {rrat}: {e.dbg}'))
 		
@@ -299,7 +314,7 @@ class CRS(Resource):
 		L.logDebug(f'Retrieving srat <sub>: {srat}')
 
 		try:
-			resource = CSE.dispatcher.retrieveResource((_sratSpRelative := toSPRelative(srat)), originator = originator)	# local or remote
+			resource = self.dispatcher.retrieveResource((_sratSpRelative := toSPRelative(srat)), originator=originator)	# local or remote
 		except ResponseException as e:
 			self._deleteSubscriptions(originator)
 			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot retrieve subscription for {srat} uri: {_sratSpRelative}'))
@@ -328,7 +343,7 @@ class CRS(Resource):
 		# # Send UPDATE request
 		L.logDebug(f'Updating srat <sub>: {srat}')
 		try:
-			CSE.dispatcher.updateResourceFromDict(newDct, _sratSpRelative, originator = originator, resource =resource)
+			self.dispatcher.updateResourceFromDict(newDct, _sratSpRelative, originator=originator, resource=resource)
 		except:
 			self._deleteSubscriptions(originator)
 			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot update subscription for {srat} uri: {_sratSpRelative}'))
@@ -382,7 +397,7 @@ class CRS(Resource):
 		if subRI is not None:
 			L.isDebug and L.logDebug(f'Deleting <sub>: {subRI}')
 			try:
-				CSE.dispatcher.deleteResource(subRI, originator = originator)
+				self.dispatcher.deleteResource(subRI, originator=originator)
 			except Exception as e:
 				# ignore not found resources here
 				L.logWarn(f'Cannot delete subscription for {subRI}: {e}')
@@ -404,7 +419,7 @@ class CRS(Resource):
 		_subRIs = self.attribute(Constants.attrSubSratRIs)
 		if (subRI := _subRIs.get(srat)) is not None:
 			try:
-				resource = CSE.dispatcher.retrieveResource(subRI, originator = originator)
+				resource = self.dispatcher.retrieveResource(subRI, originator=originator)
 			except Exception as e:
 				L.logWarn(f'Cannot retrieve subscription for {subRI}: {e}')
 
@@ -426,7 +441,7 @@ class CRS(Resource):
 
 			# Send UPDATE request
 			try:
-				resource = CSE.dispatcher.updateResourceFromDict(newDct, subRI, originator = originator, resource = resource)
+				resource = self.dispatcher.updateResourceFromDict(newDct, subRI, originator=originator, resource=resource)
 			except ResponseException as e:
 				L.logWarn(f'Cannot update subscription for {srat} uri: {subRI}: {e} {e.dbg}')
 

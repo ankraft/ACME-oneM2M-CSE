@@ -11,23 +11,29 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 from ..resources.VirtualResource import VirtualResource
 from ..resources.FCI import FCI
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
+@requires(dispatcher='acme.services.Dispatcher')
 class FCNT_LA(VirtualResource):
 	"""	This class implements the virtual <latest> resource for <flexContainer> resources.
 	"""
 
-	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
-									id:Optional[str] = None, 
-									originator:Optional[str] = None) -> Result:
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	def handleRetrieveRequest(self, request: Optional[CSERequest] = None, 
+									id: Optional[str] = None, 
+									originator: Optional[str] = None) -> Result:
 		""" Handle a RETRIEVE request.
 
 			Args:
@@ -42,7 +48,7 @@ class FCNT_LA(VirtualResource):
 		return self.retrieveLatestOldest(request, originator, ResourceTypes.FCI, oldest = False)
 
 
-	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleCreateRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle a CREATE request. 
 
 			Args:
@@ -56,7 +62,7 @@ class FCNT_LA(VirtualResource):
 		raise OPERATION_NOT_ALLOWED('CREATE operation not allowed for <latest> resource type')
 
 
-	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleUpdateRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle an UPDATE request.			
 	
 			Args:
@@ -70,7 +76,7 @@ class FCNT_LA(VirtualResource):
 		raise OPERATION_NOT_ALLOWED('UPDATE operation not allowed for <latest> resource type')
 
 
-	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleDeleteRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle a DELETE request.
 
 			Delete the latest resource.
@@ -84,10 +90,10 @@ class FCNT_LA(VirtualResource):
 				Result object indicating success or failure.
 		"""
 		L.isDebug and L.logDebug('Deleting latest FCI from FCNT')
-		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.FCI)):
+		if not (resource := self.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.FCI)):
 			raise NOT_FOUND('no instance for <latest>')
-		CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
-		return Result(rsc = ResponseStatusCode.DELETED, resource = resource)
+		self.dispatcher.deleteLocalResource(resource, originator, withDeregistration=True)
+		return Result(rsc=ResponseStatusCode.DELETED, resource=resource)
 
 
 	def hasAttributeDefined(self, name: str) -> bool:

@@ -9,18 +9,26 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ..etc.IDUtils import uniqueID
-from ..runtime import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources.Resource import Resource
-from ..services.Dispatcher import Dispatcher
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Dispatcher import Dispatcher
 
 
 # TODO Support cmdhPolicy
 # TODO Support storage
 
 
+@requires(dispatcher='acme.services.Dispatcher')
 class NOD(AnnounceableResource):
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
 
 	def initialize(self, pi: str) -> None:
 		self.setAttribute('ni', uniqueID(), overwrite=False)
@@ -40,7 +48,7 @@ class NOD(AnnounceableResource):
 
 	def _removeNODfromAE(self, aeRI: str, ri: str) -> None:
 		""" Remove NOD.ri from AE node link. """
-		if aeResource := CSE.dispatcher.retrieveResource(aeRI):
+		if aeResource := self.dispatcher.retrieveResource(aeRI):
 			if (nl := aeResource.nl) and isinstance(nl, str) and ri == nl:
 				aeResource.delAttribute('nl')
 				aeResource.dbUpdate(True)

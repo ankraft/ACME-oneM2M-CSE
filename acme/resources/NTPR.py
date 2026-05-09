@@ -8,29 +8,36 @@
 #
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON
 from ..etc.Constants import Constants
+from ..etc.ResponseStatusCodes import CONFLICT
 from ..resources.Resource import Resource
 from ..resources.Resource import addToInternalAttributes
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
-from ..etc.ResponseStatusCodes import CONFLICT
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
 
 # Add to internal attributes to ignore in validation etc
 addToInternalAttributes(Constants.attrPCUAggregate)	
 
 
+@requires(dispatcher='acme.services.Dispatcher')
 class NTPR(Resource):
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance """
 
 	def validate(self, originator: Optional[str]=None, 
 					   dct: Optional[JSON]=None, 
 					   parentResource: Optional[Resource]=None) -> None:
 		
 		# Check if other NTPR resources exist for the same subscription that have the same notificationTargetURI elements
-		ntprResources = CSE.dispatcher.retrieveDirectChildResources(self.pi, ResourceTypes.NTPR)
+		ntprResources = self.dispatcher.retrieveDirectChildResources(self.pi, ResourceTypes.NTPR)
 		if ntprResources:
 			for ntpr in ntprResources:
 				if ntpr != self:

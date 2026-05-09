@@ -7,28 +7,35 @@
 """ AccessControlPolicy (ACP) resource type. """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from ..helpers.TextTools import findXPath
 from ..etc.Types import ResourceTypes, Permission, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Storage import Storage
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
+from ..runtime.PluginSupport import requires
 
-
-storage:Storage = Storage()	# type: ignore
-"""	Storage singleton instance. """
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..runtime.Storage import Storage
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrRiTyMapping)
 
-
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(storage='acme.runtime.Storage')
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	storage:Storage = None
+	"""	Storage instance. """
+
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
 
@@ -68,9 +75,10 @@ class ACP(AnnounceableResource):
 					if (acor := acr.get('acor')):
 						for o in acor:
 							try:
-								r = CSE.dispatcher.retrieveResource(o)
+								r = self.dispatcher.retrieveResource(o)
 								riTyDict[o] = r.ty		
-							except:
+							except Exception as ex:
+								L.isDebug and L.logDebug(f'Unable to retrieve resource for acor entry: {o}. Error: {ex}')	
 								# ignore any errors here. The acor might not be a resource yet
 								continue
 
@@ -86,7 +94,7 @@ class ACP(AnnounceableResource):
 
 		# Remove own resourceID from all acpi
 		L.isDebug and L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
-		for r in storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi):	# search for presence in acpi, not perfect match
+		for r in self.storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi):	# search for presence in acpi, not perfect match
 			acpi = r.acpi
 			if self.ri in acpi:
 				acpi.remove(self.ri)

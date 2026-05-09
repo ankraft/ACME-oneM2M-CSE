@@ -8,17 +8,19 @@
 
 from __future__ import annotations
 
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING
 import sys, json
 from ....runtime.Logging import Logging as L
 from ....etc.Types import LogLevel, AuthorizationResult
 from ....helpers.PluginManager import plugin, start, configure, requires
 from ....runtime.Configuration import Configuration
-from ....runtime import Management as Mgmt
 
-
+if TYPE_CHECKING:
+	from ....runtime.Management import ManagementSupport
+	
 @plugin(tags=['acme', 'core'])
-@requires(httpServer='acme.plugins.bindings.HttpServer') 
+@requires(httpServer='acme.plugins.bindings.HttpServer')
+@requires(managementSupport='acme.runtime.Management') 
 class HttpManagement:
 	"""	Plugin class to add the Management functionality to the HTTP server.
 
@@ -32,6 +34,9 @@ class HttpManagement:
 	httpServer: Any = None	# type: ignore
 	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
 
+
+	managementSupport: ManagementSupport = None
+	""" ManagementSupport instance. """
 
 	@start
 	def startManagement(self) -> None:
@@ -76,18 +81,18 @@ class HttpManagement:
 				match command:
 
 					case 'config':
-						return Response(response=Mgmt.getConfig(), mimetype='application/json',	headers=self.httpServer._responseHeaders)
+						return Response(response=self.managementSupport.getConfig(), mimetype='application/json',	headers=self.httpServer._responseHeaders)
 				
 					case 'log':
-						return Response(Mgmt.getLogGenerator(), mimetype='text/event-stream')
+						return Response(self.managementSupport.getLogGenerator(), mimetype='text/event-stream')
 
 					case 'loglevel':
 						if param is None: # No parameter given, return the current log level
-							return Response(response=Mgmt.getLoglevel(), headers=self.httpServer._responseHeaders)
+							return Response(response=self.managementSupport.getLoglevel(), headers=self.httpServer._responseHeaders)
 						else: # A parameter is given, try to set the log level
 							match param.lower():
 								case 'info' | 'debug' | 'warning' | 'error' | 'off':
-									_n = Mgmt.setLogLevel(param)
+									_n = self.managementSupport.setLogLevel(param)
 									return Response(response=f'Log level set to {_n}', headers=self.httpServer._responseHeaders)
 								case 'help':
 									return Response(response='''ACME oneM2M CSE Management Log Commands
@@ -109,11 +114,14 @@ help            Show this help message
 
 					case 'registrations':
 						if param is None:
-							return Response(response=Mgmt.getRegistrations(), mimetype='application/json', headers=self.httpServer._responseHeaders)
+							return Response(response=self.managementSupport.getRegistrations(), 
+					   						mimetype='application/json', 
+											headers=self.httpServer._responseHeaders)
 						else:
 							match param.lower():
 								case 'refresh':
-									return Response(response=Mgmt.refreshRegistrations(), headers=self.httpServer._responseHeaders)
+									return Response(response=self.managementSupport.refreshRegistrations(), 
+						 							headers=self.httpServer._responseHeaders)
 								case 'help':
 									return Response(response='''ACME oneM2M CSE Management Registrations Commands
 							
@@ -131,14 +139,18 @@ help          Show this help message
 
 					case 'requests':
 						if param is None:
-							return Response(response=Mgmt.getRequests(), mimetype='application/json', headers=self.httpServer._responseHeaders)
+							return Response(response=self.managementSupport.getRequests(), 
+					   						mimetype='application/json', 
+											headers=self.httpServer._responseHeaders)
 						else:
 							match param.lower():
 								case 'enable' | 'on' | 'disable' | 'off' | 'status':
-									return Response(response=Mgmt.setRequestRecording(param), headers=self.httpServer._responseHeaders)
+									return Response(response=self.managementSupport.setRequestRecording(param), 
+						 							headers=self.httpServer._responseHeaders)
 								case 'puml':
-									_, puml = Mgmt.getRequestsRich()
-									return Response(response=puml, headers=self.httpServer._responseHeaders)
+									_, puml = self.managementSupport.getRequestsRich()
+									return Response(response=puml, 
+						 							headers=self.httpServer._responseHeaders)
 								case 'help':
 									return Response(response='''ACME oneM2M CSE Management Requests Commands
 							
@@ -159,20 +171,21 @@ help          Show this help message
 							
 							
 					case 'reset':
-						Mgmt.resetCSE()
+						self.managementSupport.resetCSE()
 						return Response(response='CSE resetting', headers=self.httpServer._responseHeaders)
 					
 					case 'restart':
-						Mgmt.restartCSE()	# This might not return (e.g. under Windows)
+						self.managementSupport.restartCSE()	# This might not return (e.g. under Windows)
 						return Response(response='CSE is shutting down to restart', headers=self.httpServer._responseHeaders)
 
 					case 'shutdown':
-						Mgmt.shutdownCSE()	# This might not return (e.g. under Windows)
+						self.managementSupport.shutdownCSE()	# This might not return (e.g. under Windows)
 						return Response(response='CSE is shutting down', headers=self.httpServer._responseHeaders)
 
 					case 'status':
 						if param is None:
-							return Response(response=Mgmt.getCSEStatus(), mimetype='application/json', headers=self.httpServer._responseHeaders)
+							return Response(response=self.managementSupport.getCSEStatus(), 
+					   mimetype='application/json', headers=self.httpServer._responseHeaders)
 						match param.lower():
 							case 'modules':
 								return Response(response=json.dumps(sorted([ { 'name': k, 'file': getattr(m, '__file__', 'built-in') } for k, m in sys.modules.items() ], 
@@ -181,9 +194,13 @@ help          Show this help message
 												mimetype='application/json', 
 												headers=self.httpServer._responseHeaders)
 							case 'plugins':
-								return Response(response=Mgmt.getPlugins(), mimetype='application/json', headers=self.httpServer._responseHeaders)
+								return Response(response=self.managementSupport.getPlugins(), 
+												mimetype='application/json', 
+												headers=self.httpServer._responseHeaders)
 							case 'services':
-								return Response(response=Mgmt.getServices(), mimetype='application/json', headers=self.httpServer._responseHeaders)
+								return Response(response=self.managementSupport.getServices(), 
+												mimetype='application/json', 
+												headers=self.httpServer._responseHeaders)
 							case 'help':
 								return Response(response='''ACME oneM2M CSE Management Status Commands
 						

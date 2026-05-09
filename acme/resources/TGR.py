@@ -10,22 +10,30 @@
 """ TriggerRequest (TGR) resource type. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict,CSEType, EvalMode, ResourceTypes, JSON, TriggerStatus
+from ..etc.Types import CSEType, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, NOT_IMPLEMENTED
-from ..etc.ACMEUtils import riFromID, compareIDs
-from ..helpers.TextTools import findXPath
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
-from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..etc.Constants import RuntimeConstants as RC
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..plugins.services.TriggerRequestManager import TriggerRequestManager
+	from ..services.Dispatcher import Dispatcher
 
+@requires(triggerRequestManager='acme.plugins.services.TriggerRequestManager')
+@requires(dispatcher='acme.services.Dispatcher')
 class TGR(AnnounceableResource):
 	""" TriggerRequest (TGR) resource type. """
+
+	triggerRequestManager: Optional[TriggerRequestManager] = None
+	""" TriggerRequestManager plugin instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
 
 	# resourceType = ResourceTypes.TGR
 	# """ The resource type """
@@ -65,7 +73,7 @@ class TGR(AnnounceableResource):
 	def activate(self, parentResource: Resource, originator: str) -> None:
 
 		# Check whether the TriggerRequestManager plugin is available
-		if not (triggerManager := CSE.pluginManager.triggerRequestManager):
+		if not self.triggerRequestManager:
 			raise NOT_IMPLEMENTED(L.logWarn('TriggerRequestManager plugin not available'))
 
 		# Check whether the CSE is an IN-CSE, otherwise send an error
@@ -76,7 +84,7 @@ class TGR(AnnounceableResource):
 		# Otherwise, reject the request with TRIGGERING_DISABLED_FOR_RECIPIENT
 		if (tri := self.tri):
 			try:
-				targetResource = CSE.dispatcher.retrieveResource(tri, originator)
+				targetResource = self.dispatcher.retrieveResource(tri, originator)
 				if (tren := targetResource.tren) is not None and tren == False:
 					raise BAD_REQUEST(L.logWarn(f'Triggering is disabled for the target resource: {tri}'))
 			except NOT_FOUND:
@@ -114,9 +122,9 @@ class TGR(AnnounceableResource):
 
 
 
-	def update(self, dct: JSON=None,
-					 originator: Optional[str]=None, 
-					 doValidateAttributes: Optional[bool]=True) -> None:
+	def update(self, dct: JSON = None,
+					 originator: Optional[str] = None, 
+					 doValidateAttributes: Optional[bool] = True) -> None:
 		super().update(dct, originator, doValidateAttributes)
 	
 

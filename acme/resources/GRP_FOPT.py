@@ -7,15 +7,16 @@
 """ Group fanOutPoint (GRP_FOPT) resource type. """
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, Operation, CSERequest, JSON
+from ..etc.Types import Result, Operation, CSERequest
 from ..etc.ResponseStatusCodes import NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
 from ..resources.VirtualResource import VirtualResource
-from ..resources.Resource import Resource
+
+if TYPE_CHECKING:
+	from ..plugins.services.GroupManager import GroupManager
 
 # TODO - Handle Group Request Target Members parameter
 # TODO - Handle Group Request Identifier parameter
@@ -27,11 +28,12 @@ from ..resources.Resource import Resource
 class GRP_FOPT(VirtualResource):
 	""" Group fanOutPoint (GRP_FOPT) resource type. This is a virtual resource. """
 
-	groupManager: Optional[Any] = None
+	groupManager: Optional[GroupManager] = None
+	""" GroupManager plugin instance. """
 
-	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
-									id:Optional[str] = None, 
-									originator:Optional[str] = None) -> Result:
+	def handleRetrieveRequest(self, request: Optional[CSERequest] = None, 
+									id: Optional[str] = None, 
+									originator: Optional[str] = None) -> Result:
 		L.isDebug and L.logDebug(f'RETRIEVE resources from fopt. ID: {id}')
 		if not self.groupManager:
 			raise NOT_IMPLEMENTED(L.logWarn('GroupManager plugin is disabled, cannot handle fopt retrieve request.'))

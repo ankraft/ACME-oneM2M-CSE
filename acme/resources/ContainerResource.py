@@ -11,21 +11,29 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import Constants
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.Resource import Resource, addToInternalAttributes
-from ..runtime import CSE
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrLaRi)
 addToInternalAttributes(Constants.attrOlRi)
 
+@requires(dispatcher='acme.services.Dispatcher')
 class ContainerResource(AnnounceableResource):
 	"""	The *ContainerResource* class is the base class for all container resources.
 	"""
 
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
 
 	def getOldestRI(self) -> str:
 		"""	Retrieve a *oldest* resource's resource ID.
@@ -68,12 +76,12 @@ class ContainerResource(AnnounceableResource):
 		"""
 		lt = getResourceDate()
 		# Update latest
-		resource = CSE.dispatcher.retrieveLocalResource(self.getLatestRI())
+		resource = self.dispatcher.retrieveLocalResource(self.getLatestRI())
 		resource.setAttribute('lt', lt)
 		resource.dbUpdate(True)
 
 		# Update oldest
-		resource = CSE.dispatcher.retrieveLocalResource(self.getOldestRI())
+		resource = self.dispatcher.retrieveLocalResource(self.getOldestRI())
 		resource.setAttribute('lt', lt)
 		resource.dbUpdate(True)
 

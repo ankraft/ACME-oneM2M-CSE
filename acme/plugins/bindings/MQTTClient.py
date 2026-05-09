@@ -8,14 +8,14 @@
 """
 
 from __future__ import annotations
-from typing import Tuple, cast, Dict, Optional, Any
+from typing import Tuple, cast, Dict, Optional, Callable, Any, TYPE_CHECKING
 
 from urllib.parse import unquote
 
 from ...etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes
 from ...etc.Types import Result, ResponseStatusCode, ResourceTypes, ResponseType
 from ...etc.ResponseStatusCodes import ResponseException
-from ...etc.RequestUtils import prepareResultForSending, createRequestResultFromURI
+from ...etc.RequestUtils import createRequestResultFromURI
 from ...etc.DateUtils import waitFor
 from ...etc.IDUtils import getIdFromOriginator
 from ...etc.Utils import renameThread
@@ -23,21 +23,30 @@ from ...etc.Constants import RuntimeConstants as RC
 from ...helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ...helpers.NetworkTools import isValidPort
 from ...helpers import TextTools
-from ...helpers.EventManager import Event
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime import CSE
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate
-from ...runtime.EventManager import EventManager, onEvent, EventData, EventHandler
+from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate, requires
+from ...runtime.EventManager import EventManager, onEvent, EventData, Event, EventHandler, eventManager
 
+if TYPE_CHECKING:
+	from ...services.RequestManager import RequestManager
+	from ...services.SecurityManager import SecurityManager
 
-eventManager = EventManager()
-""" Event manager singleton instance. """
-
-
+@requires(requestManager='acme.services.RequestManager')
+@requires(securityManager='acme.services.SecurityManager')
+@requires(cseShutdown='acme.runtime.CSE.shutdown')
 class MQTTClientHandler(MQTTHandler):
 	"""	Handler registering oneM2M topics and handling resceived requests.
 	"""
+
+	requestManager: RequestManager = None
+	""" Request manager instance. """
+
+	securityManager: SecurityManager = None
+	""" Security manager instance. """
+
+	cseShutdown: Callable[[], None] = None
+	""" Function to shut down the CSE. """
 
 	__slots__ = (
 		'mqttClient',
@@ -109,10 +118,11 @@ class MQTTClientHandler(MQTTHandler):
 	def onError(self, _:MQTTConnection, rc:Optional[int] = -1) -> bool:
 		"""	Callback for error handlings.
 		"""
-		if rc in [5]:		# authorization error
-			CSE.shutdown()
-		if rc == -1: 	# unknown. probably connection error?
-			CSE.shutdown()
+		match rc:
+			case 5:		# authorization error, e.g. wrong username/password or not allowed credential ID
+				self.cseShutdown()
+			case -1: 	# unknown. probably connection error?
+				self.cseShutdown()
 		# ignore all others
 		return True
 	
@@ -156,14 +166,14 @@ class MQTTClientHandler(MQTTHandler):
 		contentType:str = ts[-1]
 		ct = ContentSerializationType.getType(contentType)
 		try:
-			dissectResult = CSE.request.dissectRequestFromBytes(data, ct, isResponse = True)
+			dissectResult = self.requestManager.dissectRequestFromBytes(data, ct, isResponse=True)
 		except ResponseException as e:
 			e.dbg = L.logWarn(f'Error receiving MQTT response: {e.dbg}')
 			raise e
 		
 		# Add it to a response queue in the manager
 		dissectResult.request.requestType = RequestType.RESPONSE
-		CSE.request.addResponse(dissectResult, topic)
+		self.requestManager.addResponse(dissectResult, topic)
 	
 
 	def _handleIncommingRequest(self, connection:MQTTConnection, 
@@ -182,7 +192,7 @@ class MQTTClientHandler(MQTTHandler):
 					result: The result to send.
 					originalRequest: The original request.
 			"""
-			(_r, _data) = prepareResultForSending(result, isResponse = True, originalRequest = originalRequest)	# may throw an exception
+			(_r, _data) = self.requestManager.prepareResultForSending(result, isResponse=True, originalRequest=originalRequest)	# may throw an exception
 			topic = f'{Configuration.mqtt_topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 			logRequest(_r, _data, topic, isResponse=True, isIncoming=False)
 			connection.publish(topic, _data)
@@ -225,12 +235,12 @@ class MQTTClientHandler(MQTTHandler):
 
 		# dissect and validate request (calls: fillAndValidateCSERequest())
 		try:
-			dissectResult = CSE.request.dissectRequestFromBytes(data, ContentSerializationType.getType(contentType))
+			dissectResult = self.requestManager.dissectRequestFromBytes(data, ContentSerializationType.getType(contentType))
 			request = dissectResult.request
 		except ResponseException as e:
 			# something went wrong during dissection
 			dissectResult = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
-			CSE.request.recordRequest(dissectResult.request, dissectResult)
+			self.requestManager.recordRequest(dissectResult.request, dissectResult)
 			_logRequest(dissectResult)
 			_sendResponse(dissectResult)
 			return
@@ -240,12 +250,12 @@ class MQTTClientHandler(MQTTHandler):
 			if Configuration.mqtt_security_allowedCredentialIDs:
 				#L.logWarn(Configuration.mqtt_security_allowedCredentialIDs)
 				# The requestOriginator is actually a Credential ID. Check whether it is allowed
-				if not CSE.security.isAllowedOriginator(requestOriginator, Configuration.mqtt_security_allowedCredentialIDs):
-					CSE.request.recordRequest(dissectResult.request, dissectResult)
+				if not self.securityManager.isAllowedOriginator(requestOriginator, Configuration.mqtt_security_allowedCredentialIDs):
+					self.requestManager.recordRequest(dissectResult.request, dissectResult)
 					_logRequest(dissectResult)
-					_sendResponse(Result(rsc = ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
-										 request = request, 
-										 dbg = f'Invalid credential ID: {requestOriginator}'))
+					_sendResponse(Result(rsc=ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
+										 request=request, 
+										 dbg=f'Invalid credential ID: {requestOriginator}'))
 					return
 			
 			# TODO Is it necessary to check here the originator for None, empty, C, S?
@@ -253,29 +263,29 @@ class MQTTClientHandler(MQTTHandler):
 
 			if request.op != Operation.CREATE:
 				# Registration must be a CREATE operation
-				CSE.request.recordRequest(dissectResult.request, dissectResult)
+				self.requestManager.recordRequest(dissectResult.request, dissectResult)
 				_logRequest(dissectResult)
-				_sendResponse(Result(rsc = ResponseStatusCode.BAD_REQUEST,
-									 request = request, 
-									 dbg = L.logWarn(f'Invalid operation for registration: {request.op.name}')))
+				_sendResponse(Result(rsc=ResponseStatusCode.BAD_REQUEST,
+									 request=request, 
+									 dbg=L.logWarn(f'Invalid operation for registration: {request.op.name}')))
 				return
 
 			if request.ty not in [ ResourceTypes.AE, ResourceTypes.CSR]:
 				# Registration type must be AE
-				CSE.request.recordRequest(dissectResult.request, dissectResult)
+				self.requestManager.recordRequest(dissectResult.request, dissectResult)
 				_logRequest(dissectResult)
-				_sendResponse(Result(rsc = ResponseStatusCode.BAD_REQUEST,
-									 request = request, 
-									 dbg = L.logWarn(f'Invalid resource type for registration: {request.ty.name}')))
+				_sendResponse(Result(rsc=ResponseStatusCode.BAD_REQUEST,
+									 request=request, 
+									 dbg=L.logWarn(f'Invalid resource type for registration: {request.ty.name}')))
 				return
 			
 		_logRequest(dissectResult)
 
 		# server stopped
 		if self.mqttClient.isStopped:
-			_sendResponse(Result(rsc = ResponseStatusCode.INTERNAL_SERVER_ERROR, 
-								 request = dissectResult.request, 
-								 dbg = 'mqtt server not running'))
+			_sendResponse(Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, 
+								 request=dissectResult.request, 
+								 dbg='mqtt server not running'))
 			return
 
 		# Handle the request
@@ -286,7 +296,7 @@ class MQTTClientHandler(MQTTHandler):
 		L.enableScreenLogging and renameThread(_t[1]) # rename threads
 
 		try:
-			responseResult = CSE.request.handleRequest(request)
+			responseResult = self.requestManager.handleRequest(request)
 		except Exception as e:
 			responseResult = Result.exceptionToResult(e)
 		
@@ -309,10 +319,14 @@ class MQTTClientHandler(MQTTHandler):
 
 @EventHandler
 @plugin(property='mqttClient', tags=['binding', 'acme'], noRestartWhilePaused=True)
+@requires(requestManager='acme.services.RequestManager')
 class MQTTClient(object):
 	"""	The general MQTT manager for this CSE.
 	"""
-	# TODO doc
+
+	requestManager: RequestManager = None
+	""" Request manager instance. """
+
 
 	__slots__ = (
 		'mqttConnection',
@@ -530,7 +544,7 @@ class MQTTClient(object):
 
 		# construct the actual request and topic.
 		# Some work is needed here because we take a normal URL for the address
-		(preq, _data) = prepareResultForSending(req)
+		(preq, _data) = self.requestManager.prepareResultForSending(req)
 		topic = urlParsed.path	# We cannot unquote the path here, yet (s.b.)
 		topicSplit = urlParsed.path.split('/')
 

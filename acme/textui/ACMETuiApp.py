@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, Optional
+from typing import Callable, Optional, TYPE_CHECKING
 
 from typing_extensions import Literal, get_args
 import asyncio
@@ -32,10 +32,14 @@ from ..textui.ACMEContainerRequests import ACMEContainerRequests
 from ..textui.ACMEContainerTools import ACMEContainerTools
 from ..textui.ACMEContentConfirmDialog import ACMEContentConfirmDialog
 
-from ..runtime import CSE
-from ..runtime.Configuration import Configuration
 from ..etc.Types import ResourceTypes
+from ..runtime.Configuration import Configuration
+from ..runtime.PluginSupport import requires
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+
+if TYPE_CHECKING:
+	from ..services.Validator import Validator
+
 
 tabResources = 'tab-resources'
 """ The ID of the resource tab. """
@@ -73,9 +77,12 @@ class ACMETuiQuitReason(IntEnum):
 	restart = auto()
 	"""	Restart the TUI. """
 
-
+@requires(validator='acme.services.Validator')
 class ACMETuiApp(App):
 	"""A Textual app to manage the ACME text UI."""
+
+	validator: Validator = None
+	""" Validator instance. """
 
 	# from ..plugins.runtime import TextUI
 
@@ -103,7 +110,7 @@ class ACMETuiApp(App):
 		self.quitReason = ACMETuiQuitReason.undefined
 		"""	The reason for quitting the TUI. """
 
-		self.attributeExplanations = CSE.validator.getShortnameLongNameMapping()
+		self.attributeExplanations = self.validator.getShortnameLongNameMapping()
 		"""	The attribute explanations dictionary. """
 
 		# Set some default color values

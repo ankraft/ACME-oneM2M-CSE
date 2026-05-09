@@ -10,20 +10,31 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import  JSON, CSERequest
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 from ..resources.Resource import Resource
-from ..runtime import CSE
 from ..etc.ACMEUtils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
 
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(validator='acme.services.Validator')
 class CIN(AnnounceableResource):
 	""" ContentInstance resource type.
 	"""
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance """
+
+	validator: Validator = None
+	""" Validator instance """
 
 	def initialize(self, pi: str) -> None:
 	# 	# Initializations must happen just after the resource is created
@@ -91,7 +102,7 @@ class CIN(AnnounceableResource):
 				self.setAttribute('dcnt', dcnt+1)
 			else:
 				L.isDebug and L.logDebug(f'Deleting <cin>, ri: {self.ri} because dcnt reached 0')
-				CSE.dispatcher.deleteLocalResource(self, originator=originator)
+				self.dispatcher.deleteLocalResource(self, originator=originator)
 
 
 	def validate(self, originator: Optional[str]=None, 
@@ -101,5 +112,5 @@ class CIN(AnnounceableResource):
 
 		# Check the format of the CNF attribute
 		if cnf := self.cnf:
-			CSE.validator.validateCNF(cnf)
+			self.validator.validateCNF(cnf)
 		

@@ -9,26 +9,24 @@
 """
 
 from __future__ import annotations
-from typing import Sequence, cast, Optional, Union, List
+from typing import Sequence, cast, Optional, Union, List, Any, TYPE_CHECKING
 
 import sys
 from abc import ABC, abstractmethod
 from xml.etree import ElementTree
 import base64, binascii
 
-from ...resources.SMD import SMD
-from ...resources.Resource import Resource
 from ...etc.Types import Permission, ResourceTypes, Result, SemanticFormat, ContentSerializationType
 from ...etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
-from ...runtime import CSE
+from ...resources.SMD import SMD
 from ...runtime.Configuration import Configuration
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure
-from ...services.Dispatcher import Dispatcher
+from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure, requires
 
-dispatcher: Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
-
+if TYPE_CHECKING:
+	from ...resources.Resource import Resource
+	from ...services.Dispatcher import Dispatcher
+	from ...services.SecurityManager import SecurityManager
 
 class SemanticHandler(ABC):
 	"""	Abstract base class for semantic graph store handlers.
@@ -124,6 +122,8 @@ class SemanticHandler(ABC):
 
 
 @plugin(property='semanticManager', tags=['acme', 'core'])
+@requires(security='acme.services.SecurityManager')
+@requires(dispatcher='acme.services.Dispatcher')
 class SemanticManager(object):
 	"""	This class implements semantic service and helper functions.
 
@@ -136,6 +136,12 @@ class SemanticManager(object):
 			semanticHandler: The semantic graph store handler to be used for the CSE.
 			defaultFormat: Serialization format to use as a default
 	"""
+
+	security: SecurityManager = None
+	"""	Runtime instance of the `SecurityManager` plugin. """
+
+	dispatcher: Dispatcher = None  # type: ignore
+	""" Dispatcher instance. """
 
 	__slots__ = (
 		'semanticHandler',
@@ -161,7 +167,7 @@ class SemanticManager(object):
 		"""
 
 		# Re-Build graph in memory from <SMD> resources.
-		for smd in cast(Sequence[SMD], dispatcher.retrieveResourcesByType(ResourceTypes.SMD)):
+		for smd in cast(Sequence[SMD], self.dispatcher.retrieveResourcesByType(ResourceTypes.SMD)):
 			self.addDescriptor(smd)
 		L.isInfo and L.log('SemanticManager started')
 
@@ -435,7 +441,7 @@ class SemanticManager(object):
 				# Retrieve the resource for the ri and check permissions
 
 				try:
-					resource = dispatcher.retrieveResource(ri, originator)
+					resource = self.dispatcher.retrieveResource(ri, originator)
 				except ResponseException as e:
 					L.isDebug and L.logDebug(f'skipping unavailable resource: {resource.ri}')
 					continue
@@ -443,7 +449,7 @@ class SemanticManager(object):
 				if ri in graphIDs:	# Skip over existing IDS
 					# TODO warning or error when finding duplicates?
 					continue
-				if not CSE.security.hasAccess(originator, resource, Permission.DISCOVERY):
+				if not self.security.hasAccess(originator, resource, Permission.DISCOVERY):
 					L.isDebug and L.logDebug(f'no DISCOVERY access to: {ri} for: {originator}')
 					continue
 

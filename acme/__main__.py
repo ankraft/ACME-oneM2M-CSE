@@ -53,6 +53,8 @@ except ImportError as e:
 		
 		case _:
 			print(f'\nError during import: {e.msg}\n')
+			import traceback
+			traceback.print_exc()
 
 	quit(1)
 

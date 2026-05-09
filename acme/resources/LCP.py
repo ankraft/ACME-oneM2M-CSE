@@ -11,28 +11,35 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON, LocationSource
 from ..etc.Constants import Constants
+from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..plugins.services.LocationManager import LocationManager
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrGTA)
 
 
 @requires(locationManager='acme.plugins.services.LocationManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
 class LCP(AnnounceableResource):
 	""" LocationPolicy (LCP) resource type. """
 
-	locationManager: Any = None
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	locationManager: Optional[LocationManager] = None
+	""" LocationManager instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -85,10 +92,10 @@ class LCP(AnnounceableResource):
 		self.locationManager.updateLocationPolicy(self)
 
 
-	def deactivate(self, originator:str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		# Delete the extra <container> resource
 		if self.loi is not None:
-			CSE.dispatcher.deleteResource(self.loi, originator)
+			self.dispatcher.deleteResource(self.loi, originator)
 
 		if not self.locationManager:
 			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be removed from periodic positioning procedure.'))

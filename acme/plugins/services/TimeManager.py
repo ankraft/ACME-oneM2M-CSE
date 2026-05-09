@@ -10,25 +10,22 @@
 """
 
 from __future__ import annotations
-from typing import cast, List, Tuple, Optional, Any
+from typing import cast, List, Tuple, Optional, Any, TYPE_CHECKING
 
 from ...resources.TSB import TSB
-from ...runtime import CSE
 from ...etc.Types import BeaconCriteria, CSERequest, ResourceTypes
 from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ...etc.DateUtils import isodateDelta, toDuration, getResourceDate
 from ...etc.Constants import RuntimeConstants as RC
 from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, start, stop, restart
-from ...runtime.EventManager import EventManager, EventData, onEvent
-from ...runtime.Storage import Storage
+from ...runtime.PluginSupport import plugin, start, stop, restart, requires
+from ...runtime.EventManager import EventManager, EventData, onEvent, eventManager
 
-eventManager:EventManager = EventManager()	# type: ignore
-"""	Event manager singleton instance. """
+if TYPE_CHECKING:
+	from ...runtime.Storage import Storage
+	from ...services.NotificationManager import NotificationManager
 
-storage:Storage = Storage()	# type: ignore
-"""	Storage singleton instance. """
 
 # TODO add check to http request handling
 # TODO add check to http response handling
@@ -38,9 +35,17 @@ storage:Storage = Storage()	# type: ignore
 # TODO add check to ws response handling
 
 @plugin(property='timeManager', tags=['acme', 'core'])
+@requires(storage='acme.runtime.Storage')
+@requires(notification='acme.services.NotificationManager')
 class TimeManager(object):
 	"""	Managing time related CSE functions.
 	"""
+
+	storage:Storage = None
+	""" Storage instance. """
+
+	notification:NotificationManager = None
+	""" NotificationManager instance. """
 
 	__slots__ = (
 		'periodicTimeSyncBeacons',
@@ -136,7 +141,7 @@ class TimeManager(object):
 			Return:
 				List of periodic timeSyncBeacons
 		"""
-		return cast(List[TSB], storage.searchByFragment( { 'ty': ResourceTypes.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
+		return cast(List[TSB], self.storage.searchByFragment( { 'ty': ResourceTypes.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
 
 	def addTimeSyncBeacon(self, tsb:TSB) -> None:
@@ -171,7 +176,7 @@ class TimeManager(object):
 					'ctm' : getResourceDate()
 				}
 			}
-			CSE.notification.sendNotificationWithDict(notification, tsb.bcnu, originator = RC.cseCsi)
+			self.notification.sendNotificationWithDict(notification, tsb.bcnu, originator=RC.cseCsi)
 			return True
 
 		
@@ -180,7 +185,7 @@ class TimeManager(object):
 		worker = BackgroundWorkerPool.newWorker(tsb.getInterval(), 
 												periodicWorker, 
 												f'tsbPeriodic_{ri}', 
-												startWithDelay = True).start()
+												startWithDelay=True).start()
 		self.periodicTimeSyncBeacons[ri] = worker
 
 

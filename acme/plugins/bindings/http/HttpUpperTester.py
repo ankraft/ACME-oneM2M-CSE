@@ -8,29 +8,40 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from flask import Response
-from ....runtime import CSE
 from ....runtime.Logging import Logging as L
 from ....etc.Utils import renameThread
 from ....etc.Types import ResponseStatusCode, ContentSerializationType, AuthorizationResult
 from ....helpers.PluginManager import plugin, start, configure, requires
 from ....helpers.interpreter.Interpreter import SType
 from ....etc.ResponseStatusCodes import ResponseException
-from ....etc.RequestUtils import prepareResultForSending
 from ....runtime.Configuration import Configuration
 
+if TYPE_CHECKING:
+	from ....services.RequestManager import RequestManager
+	from ....runtime.ScriptManager import ScriptManager
+	from ..HttpServer import HttpServer
 
 @plugin(tags=['acme', 'core'])
 @requires(httpServer='acme.plugins.bindings.HttpServer')
+@requires(requestManager='acme.services.RequestManager')
+@requires(script='acme.runtime.ScriptManager')
 class HttpUpperTester:
 	"""	Plugin class to add the Upper Tester functionality to the HTTP server.
 
 		See TS-0019 for details about the Upper Tester specification.
 	"""
 
+
+	requestManager: RequestManager = None	# type: ignore
+	""" RequestManager instance. """
+
+	script: ScriptManager = None	# type: ignore
+	""" ScriptManager instance. """
+
 	# "httpServer" is injected by the PluginManager, only if the HttpServer plugin is loaded and the dependency can be resolved.
-	httpServer: Any = None	# type: ignore
+	httpServer: HttpServer = None	# type: ignore
 	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
 
 	@start
@@ -96,7 +107,7 @@ class HttpUpperTester:
 			# Handle special commands
 			if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
 				cmd, _, arg = cmd.partition(' ')
-				if not (res := CSE.script.run(cmd, arg, metaFilter=[ 'uppertester' ], ignoreCase=True))[0]:
+				if not (res := self.script.run(cmd, arg, metaFilter=[ 'uppertester' ], ignoreCase=True))[0]:
 					return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, str(res[1]))
 				
 				if res[1].type in [SType.tList, SType.tListQuote]:
@@ -112,16 +123,16 @@ class HttpUpperTester:
 			if request.data:
 				try:
 					# Dissect the request
-					dissectResult = CSE.request.dissectRequestFromBytes(request.data, ContentSerializationType.getType(request.content_type))
+					dissectResult = self.requestManager.dissectRequestFromBytes(request.data, ContentSerializationType.getType(request.content_type))
 					# Directly handle the request
-					responseResult = CSE.request.handleRequest(dissectResult.request)
+					responseResult = self.requestManager.handleRequest(dissectResult.request)
 				except ResponseException as e:
 					return prepareUTResponse(ResponseStatusCode.BAD_REQUEST, body=f'{{ "m2m:dbg" : "{e.dbg}" }}')
 				
 				# Prepare and send the response
-				_rs, _b = prepareResultForSending(responseResult.prepareResultFromRequest(dissectResult.request),
-												True, 
-												dissectResult.request)
+				_rs, _b = self.requestManager.prepareResultForSending(responseResult.prepareResultFromRequest(dissectResult.request),
+																	  True, 
+																	  dissectResult.request)
 				return prepareUTResponse(ResponseStatusCode.OK, body=_b)
 
 			# Return an error if no body or command is present

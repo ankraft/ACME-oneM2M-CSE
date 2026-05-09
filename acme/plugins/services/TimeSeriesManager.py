@@ -8,25 +8,32 @@
 
 from __future__ import annotations
 
-from ...etc.Types import NotificationEventType, MissingData, LastTSInstance, ResourceTypes
+from ...etc.Types import NotificationEventType, MissingData, LastTSInstance, ResourceTypes, TYPE_CHECKING
 from ...etc.DateUtils import toISO8601Date, fromAbsRelTimestamp, fromDuration
-from ...resources.Resource import Resource
 from ...helpers.BackgroundWorker import BackgroundWorkerPool
-from ...runtime import CSE
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, start, stop, restart
-from ...services.Dispatcher import Dispatcher
+from ...runtime.PluginSupport import plugin, start, stop, restart, requires
 
-dispatcher: Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
+if TYPE_CHECKING:
+	from ...services.Dispatcher import Dispatcher
+	from ...resources.Resource import Resource
+	from ...services.NotificationManager import NotificationManager
 
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects
 """	Active TimeSeries instances. Maps the resourceID of the <TS> resource to the LastTSInstance object. """
 
 @plugin(property='timeSeriesManager', tags=['acme', 'core'])
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(notificationManager='acme.services.NotificationManager')
 class TimeSeriesManager(object):
 	""" Manager for TimeSeries handlings
 	"""
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	notificationManager: NotificationManager = None
+	""" Notification manager instance. """
 
 	@start
 	def start(self) -> None:
@@ -60,7 +67,7 @@ class TimeSeriesManager(object):
 			Return:
 				True if the structures have been restored.
 		"""
-		for each in dispatcher.retrieveResourcesByType(ResourceTypes.SUB):
+		for each in self.dispatcher.retrieveResourcesByType(ResourceTypes.SUB):
 			if NotificationEventType.reportOnGeneratedMissingDataPoints in each.attribute('enc/net', []): # enc/net might be empty
 				L.isDebug and L.logDebug(f'Restoring structures for TSI subscription: {each.ri}')
 				self.addSubscription(each.retrieveParentResource(), each)
@@ -119,8 +126,8 @@ class TimeSeriesManager(object):
 
 				# If not, then add the expected arrival time as the dgt to the parent's mdlt list.
 				if tsRes is None:
-					if not (tsRes := dispatcher.retrieveResource(tsRi)):
-						L.logErr(f'Cannot retrieve original <ts> resource: {tsRi}', showStackTrace = False)			# might (very rarely) happen when this monitor runs while the <ts> was deleted in another request
+					if not (tsRes := self.dispatcher.retrieveResource(tsRi)):
+						L.logErr(f'Cannot retrieve original <ts> resource: {tsRi}', showStackTrace=False)			# might (very rarely) happen when this monitor runs while the <ts> was deleted in another request
 						return False	# stop monitoring (actor not restarted)
 				tsRes.addDgtToMdlt(rts.expectedDgt)
 
@@ -133,11 +140,11 @@ class TimeSeriesManager(object):
 				
 				# L.logDebug(rts.missingData)
 				# Check for sending the missing data subscriptions in  general
-				CSE.notification.checkSubscriptions(None, 
-													NotificationEventType.reportOnGeneratedMissingDataPoints, 
-													None,
-													ri = tsRi, 
-													missingData = rts.missingData)
+				self.notificationManager.checkSubscriptions(None, 
+															NotificationEventType.reportOnGeneratedMissingDataPoints, 
+															None,
+															ri=tsRi, 
+															missingData=rts.missingData)
 			else:
 				L.isDebug and L.logDebug(f'<tsi> with dgt:{dgt} within expected dataGenerationTimeRange')
 

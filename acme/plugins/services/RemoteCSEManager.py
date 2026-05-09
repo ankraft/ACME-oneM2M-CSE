@@ -5,14 +5,14 @@
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
 #	This entity handles the registration to remote CSEs as well as the management
-#	of remotly registered CSEs in this CSE. It also handles the forwarding of
+#	of remotly registered CSEs in this CSE . It also handles the forwarding of
 #	transit requests to remote CSEs.
 #
 
 """	This module implements remote CSR registration service and helper functions. """
 
 from __future__ import annotations
-from typing import List, Tuple, Dict, cast, Optional, Any
+from typing import List, Tuple, Dict, cast, Optional, Any, TYPE_CHECKING
 
 from ...etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
 from ...etc.Types import ContentSerializationType, BindingType, CSERegistrar
@@ -26,29 +26,26 @@ from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ...resources.CSR import CSR
 from ...resources.CSEBase import CSEBase, getCSE
 from ...resources.Resource import Resource
-from ...runtime.Factory import Factory
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime import CSE
-from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
+from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData, eventManager
 from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
-from ...services.RegistrationManager import RegistrationManager
-from ...services.Dispatcher import Dispatcher
+from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate, requires
 
-eventManager = EventManager()	# type: ignore
-"""	Event manager singleton instance. """
+if TYPE_CHECKING:
+	from ...runtime.Factory import Factory
+	from ...services.RegistrationManager import RegistrationManager
+	from ...services.Dispatcher import Dispatcher
+	from ...services.RequestManager import RequestManager
+	from ...services.SecurityManager import SecurityManager
 
-registration: RegistrationManager = RegistrationManager()	# type: ignore
-"""	Registration manager singleton instance. """
-
-dispatcher: Dispatcher = Dispatcher()	# type: ignore
-"""	Dispatcher singleton instance. """
-
-factory: Factory = Factory()	# type: ignore
-""" Factory singleton instance. """
 
 @EventHandler
 @plugin(property='remoteCSEManager', tags=['acme', 'remote'], priority=20)
+@requires(registration='acme.services.RegistrationManager')
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(factory='acme.runtime.Factory')
+@requires(request='acme.services.RequestManager')
+@requires(security='acme.services.SecurityManager')
 class RemoteCSEManager(object):
 	"""	This class defines functionalities to handle remote CSE/CSR registrations.
 
@@ -59,7 +56,21 @@ class RemoteCSEManager(object):
 			spRegistrarConfigs: A dictionary of all SP registrar configurations except the own one.
 	"""
 
-	remoteCSEManager: Optional[Any] = None
+	registration: RegistrationManager = None
+	"""	Registration manager instance. """
+
+	dispatcher: Dispatcher = None
+	"""	Dispatcher instance. """
+
+	factory: Factory = None
+	""" Factory instance. """
+
+	request: RequestManager = None
+	"""	RequestManager instance. """
+
+	security: SecurityManager = None
+	"""	SecurityManager instance. """
+
 
 	__slots__ = (
 		'connectionMonitor',
@@ -162,7 +173,7 @@ class RemoteCSEManager(object):
 		# Internal optimization: collect all descendant CSEs in a dictionary
 		L.isDebug and L.logDebug('Rebuild internal descendants list')
 		self.descendantCSR.clear()
-		for eachCsr in dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
+		for eachCsr in self.dispatcher.retrieveResourcesByType(ResourceTypes.CSR):
 
 			if self.registrarConfig and self.registrarConfig.spID == RC.cseSPid and (csi := eachCsr.csi) != self.registrarConfig.cseID:			# Skipping the own registrar csr
 				L.isDebug and L.logDebug(f'Addind remote CSE: {csi}')
@@ -576,7 +587,7 @@ class RemoteCSEManager(object):
 						originator = f'{RC.cseSPid}{RC.cseCsi}'	# SP-relative originator
 
 				L.isDebug and L.logDebug(f'Requesting remote CSEBase: {eachCsr.csi} originator: {originator}')
-				res = CSE.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
+				res = self.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
 															   to=to,
 															#    originator=RC.cseCsi)
 															   originator=originator)
@@ -607,7 +618,7 @@ class RemoteCSEManager(object):
 				A list of found CSR resources.
 		"""
 		registreeCsrList = []
-		for eachCSR in dispatcher.retrieveDirectChildResources(pi=RC.cseRi, ty=ResourceTypes.CSR):
+		for eachCSR in self.dispatcher.retrieveDirectChildResources(pi=RC.cseRi, ty=ResourceTypes.CSR):
 
 
 		# TODO in this search, instead of a fixed cseid use a list and accept all cseIDs that are in the list
@@ -635,8 +646,8 @@ class RemoteCSEManager(object):
 
 		# add local CSR and ACP's
 		try:
-			dispatcher.createLocalResource(csrResource, localCSE, originator=remoteCSE.csi)
-			registration.handleCSRRegistration(csrResource, csrResource.csi)
+			self.dispatcher.createLocalResource(csrResource, localCSE, originator=remoteCSE.csi)
+			self.registration.handleCSRRegistration(csrResource, csrResource.csi)
 		except ResponseException as e:
 			raise BAD_REQUEST(f'cannot register CSR: {e.dbg}')
 
@@ -652,11 +663,11 @@ class RemoteCSEManager(object):
 		L.isDebug and L.logDebug(f'Deleting registree CSR: {registreeCSR.ri}')
 
 		# De-register the registree CSR first
-		if not registration.handleRegistreeCSRDeRegistration(registreeCSR):
+		if not self.registration.handleRegistreeCSRDeRegistration(registreeCSR):
 			raise BAD_REQUEST('cannot de-register registree CSR')
 
 		# Delete local CSR
-		dispatcher.deleteLocalResource(registreeCSR)
+		self.dispatcher.deleteLocalResource(registreeCSR)
 
 
 	#
@@ -671,12 +682,12 @@ class RemoteCSEManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Retrieve own CSR from registrar CSE: {registrarConfig.registrarAbsoluteCSI} ID: {registrarConfig.csrOnRegistrarSRN}')
 		
-		res = CSE.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
-													   to=registrarConfig.csrOnRegistrarSRN,
-													   _directURL=registrarConfig.csrOnRegistrarSRN,	# Fallback, because there might be no registration yet
-													   originator=registrarConfig.originator,
-													   ct=cast(ContentSerializationType, registrarConfig.serialization),
-						  							   credentials=registrarConfig.security.credentials)
+		res = self.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
+														to=registrarConfig.csrOnRegistrarSRN,
+														_directURL=registrarConfig.csrOnRegistrarSRN,	# Fallback, because there might be no registration yet
+														originator=registrarConfig.originator,
+														ct=cast(ContentSerializationType, registrarConfig.serialization),
+						  								credentials=registrarConfig.security.credentials)
 										   )[0].result	# there should be at least one result
 		if not res.rsc == ResponseStatusCode.OK:
 			_exc = exceptionFromRSC(res.rsc)
@@ -684,7 +695,7 @@ class RemoteCSEManager(object):
 				raise _exc(dbg = L.logDebug(f'cannot retrieve CSR from registrar CSE: {int(res.rsc)} dbg: {res.dbg}')) # type:ignore[call-arg]
 			raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {res.rsc}')
 		# <CSR> found, return it in the result
-		return factory.resourceFromDict(cast(JSON, res.data), pi='')
+		return self.factory.resourceFromDict(cast(JSON, res.data), pi='')
 
 
 	def _createCSRonRegistrarCSE(self, registrarConfig:CSERegistrar) -> Resource:
@@ -702,15 +713,15 @@ class RemoteCSEManager(object):
 						  forOwnCSR=True)	# type: ignore[name-defined]
 		
 		# Create the <csr> on the registrar CSE
-		res = CSE.request.handleSendRequest(CSERequest(op=Operation.CREATE,
-													   to=registrarConfig.registrarCSESRN,
-													   _directURL=registrarConfig.registrarCSEURL,	# We may not have the resource yet, so we need to use the configured URL
-													#    originator=RC.cseCsi, # own CSE.csi is the originator
-													   originator=registrarConfig.originator,
-													   ty=ResourceTypes.CSR, 
-													   pc=csrResource.asDict(),
-													   ct=cast(ContentSerializationType, registrarConfig.serialization),
-													   credentials=registrarConfig.security.credentials)
+		res = self.request.handleSendRequest(CSERequest(op=Operation.CREATE,
+														to=registrarConfig.registrarCSESRN,
+														_directURL=registrarConfig.registrarCSEURL,	# We may not have the resource yet, so we need to use the configured URL
+													# 	  originator=RC.cseCsi, # own CSE.csi is the originator
+														originator=registrarConfig.originator,
+														ty=ResourceTypes.CSR, 
+														pc=csrResource.asDict(),
+														ct=cast(ContentSerializationType, registrarConfig.serialization),
+														credentials=registrarConfig.security.credentials)
 										   )[0].result	# there should be at least one result
 		# The result contains the transmitted data in .data, even when it is an error.
 
@@ -726,7 +737,7 @@ class RemoteCSEManager(object):
 			raise CONFLICT(L.logWarn(f'error creating CSR on registrar CSE: {res.rsc.name} dbg: {res.data}'))
 		else:
 			L.isDebug and L.logDebug(f'created CSR on registrar CSE: {registrarConfig.cseID}')
-		return factory.resourceFromDict(cast(JSON, res.data), pi='')
+		return self.factory.resourceFromDict(cast(JSON, res.data), pi='')
 
 
 	def _updateOwnCSRonRegistrarCSE(self, registrarConfig:CSERegistrar, hostingCSE:Optional[Resource]=None) -> Resource:
@@ -758,12 +769,12 @@ class RemoteCSEManager(object):
 						  forOwnCSR=True)	# type: ignore[name-defined]
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates!)
 		
-		res = CSE.request.handleSendRequest(CSERequest(op=Operation.UPDATE,
-													   to=registrarConfig.csrOnRegistrarSRN, 
-													   originator=registrarConfig.originator,
-													   pc=csr.asDict(), 
-													   ct=cast(ContentSerializationType, registrarConfig.serialization),
-													   credentials=registrarConfig.security.credentials)
+		res = self.request.handleSendRequest(CSERequest(op=Operation.UPDATE,
+														to=registrarConfig.csrOnRegistrarSRN, 
+														originator=registrarConfig.originator,
+														pc=csr.asDict(), 
+														ct=cast(ContentSerializationType, registrarConfig.serialization),
+														credentials=registrarConfig.security.credentials)
 										   )[0].result	# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
 			if res.rsc != ResponseStatusCode.CONFLICT:
@@ -774,7 +785,7 @@ class RemoteCSEManager(object):
 			raise INTERNAL_SERVER_ERROR(f'unknown/unsupported RSC: {res.rsc}')
 
 		L.isDebug and L.logDebug(f'registrar CSR updated on CSE: {registrarConfig.cseID}')
-		return factory.resourceFromDict(cast(JSON, res.data), pi='')
+		return self.factory.resourceFromDict(cast(JSON, res.data), pi='')
 
 
 	def _deleteOwnCSRonRegistrarCSE(self, registrarConfig:CSERegistrar) -> None:
@@ -785,12 +796,12 @@ class RemoteCSEManager(object):
 		"""
 		if registrarConfig:
 			L.isDebug and L.logDebug(f'Deleting own CSR on registrar CSE: {registrarConfig.cseID} URI: {registrarConfig.csrOnRegistrarSRN}')
-			res = CSE.request.handleSendRequest(CSERequest(op=Operation.DELETE,
-														   to=registrarConfig.csrOnRegistrarSRN,
-														   _directURL=registrarConfig.registrarCSEURL,	# Fallback, because there might be no registration yet
-													  	   originator=registrarConfig.originator,
-														   ct=cast(ContentSerializationType, registrarConfig.serialization),
-														   credentials=registrarConfig.security.credentials)
+			res = self.request.handleSendRequest(CSERequest(op=Operation.DELETE,
+															to=registrarConfig.csrOnRegistrarSRN,
+															_directURL=registrarConfig.registrarCSEURL,	# Fallback, because there might be no registration yet
+													  		originator=registrarConfig.originator,
+															ct=cast(ContentSerializationType, registrarConfig.serialization),
+															credentials=registrarConfig.security.credentials)
 											)[0].result	# there should be at least one result
 
 			# NOT_FOUND might be raised above
@@ -822,12 +833,12 @@ class RemoteCSEManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Retrieving registrar CSEBase from: {registrarConfig.registrarAbsoluteCSI}')	
 		
-		res = CSE.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
-													   to=registrarConfig.registrarCSESRN,
-													   _directURL=registrarConfig.registrarCSEURL,	# Fallback, because there might be no registration yet
-													   originator=registrarConfig.originator,
-													   ct=cast(ContentSerializationType, registrarConfig.serialization),
-													   credentials=registrarConfig.security.credentials)
+		res = self.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
+														to=registrarConfig.registrarCSESRN,
+														_directURL=registrarConfig.registrarCSEURL,	# Fallback, because there might be no registration yet
+														originator=registrarConfig.originator,
+														ct=cast(ContentSerializationType, registrarConfig.serialization),
+														credentials=registrarConfig.security.credentials)
 										   )[0].result	# there should be at least one result
 
 		if (_registrarCSI := findXPath(cast(JSON, res.data), 'm2m:cb/csi')) == None:
@@ -924,9 +935,9 @@ class RemoteCSEManager(object):
 		
 		# Retrieve the remote resource via its SP-relative ID
 		L.isDebug and L.logDebug(f'Retrieve remote resource id: {id}')
-		res = CSE.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
-													   to=id, 
-													   originator=originator)
+		res = self.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
+														to=id, 
+														originator=originator)
 											)[0].result		# there should be at least one result
 		if res.rsc != ResponseStatusCode.OK:
 			raise exceptionFromRSC(res.rsc)
@@ -936,7 +947,7 @@ class RemoteCSEManager(object):
 		setXPath(cast(JSON, res.data), f'{typeShortname}/{Constants.attrRemoteID}', id)
 
 		# Instantiate
-		return factory.resourceFromDict(cast(JSON, res.data))
+		return self.factory.resourceFromDict(cast(JSON, res.data))
 
 
 	def getCSRFromPath(self, id:str) -> Optional[Tuple[Resource, List[str]]]:
@@ -988,7 +999,7 @@ class RemoteCSEManager(object):
 		# registree CSE as a descendant CSE.
 
 		try:
-			registreeCSR = dispatcher.retrieveLocalResource(ri=ri)
+			registreeCSR = self.dispatcher.retrieveLocalResource(ri=ri)
 		except ResponseException as e:
 			L.isDebug and L.logDebug(f'getCSRFromPath: {e.dbg}')
 			registreeCSR = getCSRWithDescendant(f'/{ri}')
@@ -1025,10 +1036,10 @@ class RemoteCSEManager(object):
 			L.isDebug and L.logDebug(f'Updating descendant CSR: {csrID} with body: {data}')
 
 			# Send the request
-			res = CSE.request.handleSendRequest(CSERequest(op=Operation.UPDATE, 
-														to=f'{self.descendantCSR[csrID][0].cb}{RC.cseCsi}', 
-														originator=RC.cseCsi, 
-														pc=data))[0].result		# there should be at least one result
+			res = self.request.handleSendRequest(CSERequest(op=Operation.UPDATE, 
+															to=f'{self.descendantCSR[csrID][0].cb}{RC.cseCsi}', 
+															originator=RC.cseCsi, 
+															pc=data))[0].result		# there should be at least one result
 			if res.rsc != ResponseStatusCode.UPDATED:
 				L.isWarn and L.logWarn(f'Error updating descendant CSR: {csrID} RSC: {int(res.rsc)} dbg: {res.data}')
 			else:
@@ -1100,7 +1111,7 @@ class RemoteCSEManager(object):
 
 				# Get the credentials for the remote CSE
 				# targetCsi might be None, but then we want create a URL to be used in the creation of the localCSR
-				username, password = CSE.security.getPOACredentialsForCSEID(registrarConfig, targetCsi, binding=bindingType)
+				username, password = self.security.getPOACredentialsForCSEID(registrarConfig, targetCsi, binding=bindingType)
 				if username and password:
 					# Check if we need to add basic auth to the URL (http or ws) and do so
 					if (bindingType == BindingType.HTTP and Configuration.http_security_enableBasicAuth) or (bindingType == BindingType.WS and Configuration.websocket_security_enableBasicAuth):

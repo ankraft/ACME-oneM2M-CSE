@@ -11,30 +11,33 @@
 
 from __future__ import annotations
 
-from typing import Optional, Any
+from typing import Optional, TYPE_CHECKING
 from ..etc.Constants import Constants as C
 from ..etc.Types import ResourceTypes, JSON
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
 from ..runtime.PluginSupport import requires
-from ..runtime.Storage import Storage
-from ..resources.Resource import Resource
 from ..etc.ResponseStatusCodes import CONTENTS_UNACCEPTABLE, NOT_IMPLEMENTED
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..runtime.Storage import Storage
+	from ..plugins.services.TimeManager import TimeManager
 
-storage:Storage = Storage()	# type: ignore
-"""	Storage singleton instance. """
 
 @requires(timeManager='acme.plugins.services.TimeManager', required=False)
+@requires(storage='acme.runtime.Storage')
 class SCH(AnnounceableResource):
 	""" Schedule (SCH) resource type. """
 
-	timeManager: Optional[Any] = None
+	timeManager: Optional[TimeManager] = None
 	"""	Reference to the TimeManager plugin instance. """
 
+	storage:Storage = None
+	"""	Storage singleton instance. """
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
 		# Check if the parent is not a <node> resource then the "nco" attribute is not set
@@ -49,7 +52,7 @@ class SCH(AnnounceableResource):
 			raise NOT_IMPLEMENTED (L.logWarn(f'Network Coordinated Operation is not supported by this CSE'))
 
 		# Add the schedule to the schedules DB
-		storage.upsertSchedule(self)
+		self.storage.upsertSchedule(self)
 
 		# TODO When <SoftwareCampaign> is supported
 		# c)The request shall be rejected with the "OPERATION_NOT_ALLOWED" Response Status Code if the target resource 
@@ -77,7 +80,7 @@ class SCH(AnnounceableResource):
 		super().update(dct, originator, doValidateAttributes)
 
 		# Update the schedule in the schedules DB
-		storage.upsertSchedule(self)
+		self.storage.upsertSchedule(self)
 	
 
 	def validate(self, originator: str | None = None, dct: JSON | None = None, parentResource: Resource | None = None) -> None:
@@ -91,7 +94,7 @@ class SCH(AnnounceableResource):
 			L.isDebug and L.logDebug(f'Setting active schedule in CSE to {self.timeManager.cseActiveSchedule}')
 
 
-	def deactivate(self, originator: str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 
 		# TODO When <SoftwareCampaign> is supported
 		# a) The request shall be rejected with the "OPERATION_NOT_ALLOWED" Response Status Code 
@@ -100,5 +103,5 @@ class SCH(AnnounceableResource):
 		super().deactivate(originator, parentResource)
 
 		# Remove the schedule from the schedules DB
-		storage.removeSchedule(self)
+		self.storage.removeSchedule(self)
 

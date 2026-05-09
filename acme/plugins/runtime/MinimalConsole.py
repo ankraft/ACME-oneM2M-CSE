@@ -16,29 +16,30 @@
 	directly by the CSE. 
 """
 
-# The import parth is a bit tricky here, because it is set to "acme.runtime"
+from __future__ import annotations
+from typing import Callable
 
-from ...runtime import CSE
 from ...helpers.KeyHandler import loop, Commands, FunctionKey
 from ...etc.Constants import RuntimeConstants as RC
 from ...runtime.Logging import Logging as L											# type: ignore
 from ...runtime.ConsoleBase import ConsoleBase
-from ...runtime.PluginSupport import plugin, init
-from ...runtime.EventManager import EventManager, EventData
-
-eventManager = EventManager()	# type: ignore
-""" Event manager singleton instance. """
+from ...runtime.PluginSupport import plugin, start, requires
+from ...runtime.EventManager import EventManager, EventData, eventManager
 
 @plugin(tags=['acme', 'ui'])
+@requires(cseSetConsole='acme.runtime.CSE.setConsole')
 class MinimalConsole(ConsoleBase):
 	"""	Plugin class to add a minimal console functionality to the CSE. 
 	"""
 
-	@init
-	def initMinimalConsole(self) -> None:
+	cseSetConsole: Callable[[ConsoleBase], None] = None
+	""" Function to set the console instance in the CSE. """
+
+	@start
+	def startMinimalConsole(self) -> None:
 		"""	Initialize the minimal console plugin. Set the console instance in the CSE. 
 		"""
-		CSE.console = self
+		self.cseSetConsole(self)
 		L.isDebug and L.logDebug('Minimal Console initialized')
 
 

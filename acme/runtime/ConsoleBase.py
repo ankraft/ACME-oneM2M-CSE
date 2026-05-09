@@ -12,7 +12,6 @@ import sys
 from ..helpers.KeyHandler import FunctionKey, stopLoop, waitForKeypress
 from ..helpers.PluginManager import requires
 from ..etc.Constants import RuntimeConstants as RC
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
 

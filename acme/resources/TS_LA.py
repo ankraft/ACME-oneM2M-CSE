@@ -11,19 +11,26 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
-from ..resources.VirtualResource import VirtualResource
+from ..runtime.PluginSupport import requires
 from ..resources.TSI import TSI
+from ..resources.VirtualResource import VirtualResource
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
+@requires(dispatcher='acme.services.Dispatcher')
 class TS_LA(VirtualResource):
 	"""	This class implements the virtual <latest> resource for <timeSeries> resources.
 	"""
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
 
 	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
 									id:Optional[str] = None, 
@@ -84,9 +91,9 @@ class TS_LA(VirtualResource):
 				Result object indicating success or failure.
 		"""
 		L.isDebug and L.logDebug('Deleting latest TSI from TS')
-		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.TSI)):
+		if not (resource := self.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.TSI)):
 			raise NOT_FOUND('no instance for <latest>')
-		CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
+		self.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
 		return Result(rsc = ResponseStatusCode.DELETED, resource = resource)
 
 	def hasAttributeDefined(self, name: str) -> bool:

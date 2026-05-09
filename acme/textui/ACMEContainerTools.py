@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import cast, Optional, List, Any
+from typing import cast, Optional, List, Any, TYPE_CHECKING
 from time import sleep
 from textual import on
 from textual.app import ComposeResult
@@ -16,19 +16,26 @@ from textual.binding import Binding
 from textual.containers import Vertical, Center, Horizontal, Container
 from textual.widgets import Button, Tree as TextualTree, Markdown, RichLog
 from textual.widgets.tree import TreeNode
-from ..runtime import CSE
 from ..runtime.ScriptManager import PContext
 from ..helpers.ResourceSemaphore import CriticalSection
 from ..helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ..helpers.interpreter.Interpreter import SSymbol, SBooleanSymbol
+from ..helpers.interpreter.Interpreter import SBooleanSymbol
 from ..textui.ACMEFieldOriginator import ACMEInputField
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..runtime.ScriptManager import ScriptManager
 
 # TODO Add editing of configuration values
 
 
+@requires(scriptManager='acme.runtime.ScriptManager')
 class ACMEToolsTree(TextualTree):
 	"""	The tree view for the tools and commands.
 	"""
+
+	scriptManager: ScriptManager = None
+	"""	The script manager. """
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:	# type: ignore[no-untyped-def]
 		"""	Initialize the tree view.
@@ -74,7 +81,7 @@ class ACMEToolsTree(TextualTree):
 		root = self.root
 
 		# Iterate over all scripts and add them to the tree. Sort them by the meta tag "tuiSortOrder" and then by name.
-		for name, context in dict( sorted(CSE.script.scripts.items(), key = lambda x: (int(x[1].meta.get('tuiSortOrder', '500')), x[1].scriptName)) ).items():
+		for name, context in dict( sorted(self.scriptManager.scripts.items(), key=lambda x: (int(x[1].meta.get('tuiSortOrder', '500')), x[1].scriptName)) ).items():
 		# for name, context in CSE.script.scripts.items():
 			if 'tuiTool' in context.meta:	# Only add scripts marked as tools
 				_n = root	# Fallback: add to root
@@ -133,13 +140,13 @@ class ACMEToolsTree(TextualTree):
 		if node.children:	
 			# This is a category node, so set the description, clear the button etc.
 			self.parentContainer.updateHeader(str(node.label), 
-									 		  f'{CSE.script.categoryDescriptions.get(str(node.label), "")}')
+									 		  f'{self.scriptManager.categoryDescriptions.get(str(node.label), "")}')
 			self.parentContainer.toolsExecButton.display = False
 			self.parentContainer.toolsInput.display = False
 			self.parentContainer.toolsLog.clear()
 
 
-		elif (ctx := _getContext(str(node.label))):
+		elif (ctx := self.scriptManager.getContext(str(node.label))):
 			# Get the description from the meta data and format it for Markdown
 			description = ctx.meta.get('description')
 			description = description.replace('\n', '\n\n') if description is not None else ''
@@ -183,7 +190,7 @@ class ACMEToolsTree(TextualTree):
 						if _interval <= 0.0:
 							raise Exception('tuiAutoRun interval must be >= 0')
 						self.autoRunWorker = BackgroundWorkerPool.newWorker(_interval, 
-				     														lambda:_executeScript(ctx.scriptName, autoRun = True), 
+				     														lambda:self._executeScript(ctx.scriptName, autoRun=True), 
 													   						f'ts_{ctx.scriptName}').start()
 						self.autoRunName = ctx.scriptName
 					except Exception as e:
@@ -191,7 +198,7 @@ class ACMEToolsTree(TextualTree):
 						pass
 				else:
 					# Run the script once
-					_executeScript(ctx.scriptName, autoRun = True)
+					self._executeScript(ctx.scriptName, autoRun = True)
 
 		else:
 			self.parentContainer.updateHeader('')
@@ -228,9 +235,30 @@ class ACMEToolsTree(TextualTree):
 				self.autoRunName = None
 
 
+	def _executeScript(self, name: str, autoRun: Optional[bool] = False, argument: Optional[str] = '') -> bool:
+		""" Executes the given script context.
+
+			Args:
+				name: The name of the script.
+		"""
+		if (ctx := self.scriptManager.getContext(str(name))) and not ctx.state.isRunningState():
+			return self.scriptManager.runScript(ctx,
+										arguments=argument,
+										background=True,
+										environment={ 'tui.autorun': SBooleanSymbol(autoRun),
+													}
+										)
+		return False
+
+
+
+@requires(scriptManager='acme.runtime.ScriptManager')
 class ACMEContainerTools(Horizontal):
 	"""	The container for the tools and commands.
 	"""
+
+	scriptManager: ScriptManager = None
+	"""	Script manager instance. """
 
 	BINDINGS = 	[ Binding('C', 'clear_log', 'Clear Log', key_display = 'SHIFT+C'),
 	      		  Binding('l', 'toggle_log', 'Toggle Log') ]
@@ -376,7 +404,7 @@ class ACMEContainerTools(Horizontal):
 	def buttonExecute(self) -> None:
 		"""	Callback for the execute button.
 		"""
-		_executeScript(str(self.toolsTree.cursor_node.label), argument = str(self.toolsInput.value))
+		self._toolsTree._executeScript(str(self.toolsTree.cursor_node.label), argument=str(self.toolsInput.value))
 	
 
 	@on(ACMEInputField.Submitted)
@@ -498,37 +526,6 @@ class ACMEContainerTools(Horizontal):
 			sleep(0.3)
 			self.toolsTree.nodes[scriptName].set_label(oldLabel)
 			self.toolsTree.refresh()
-
-
-def _getContext(name:str) -> Optional[PContext]:
-	"""	Returns the context for the given script name or None if not found. 
-
-		Args:
-			name: The name of the script.
-	
-		Return:
-			The context for the given script name or None if not found.
-	"""
-	if (res := CSE.script.findScripts(name)):
-		return res[0]
-	return None
-
-
-def _executeScript(name:str, autoRun:Optional[bool] = False, argument:Optional[str] = '') -> bool:
-	""" Executes the given script context.
-
-		Args:
-			name: The name of the script.
-	"""
-	if (ctx := _getContext(str(name))) and not ctx.state.isRunningState():
-		return CSE.script.runScript(ctx,
-			      					arguments = argument,
-			      					background = True,
-									environment = { 'tui.autorun': SBooleanSymbol(autoRun),
-												  }
-									)
-	return False
-
 
 
 # TODO add input field for arguments

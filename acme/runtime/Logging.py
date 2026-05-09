@@ -41,10 +41,7 @@ from ..helpers import TextTools
 from ..helpers.RingBuffer import RingBuffer
 from ..helpers.BackgroundWorker import BackgroundWorker
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventData
-
-eventManager: Any = None
-"""	Event manager singleton instance. """
+from ..runtime.EventManager import EventData, eventManager
 
 
 levelName = {
@@ -217,11 +214,6 @@ class Logging:
 		"""Init the logging system.
 		"""
 
-		# We have to do this here to avoid circular imports
-		from ..runtime.EventManager import EventManager
-		global eventManager
-		eventManager = EventManager()	# type: ignore
-
 		if Logging.logger:
 			return
 
@@ -262,14 +254,13 @@ class Logging:
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			from ..runtime import CSE as CSE
 
 			logpath = Configuration.logging_path
-			os.makedirs(logpath, exist_ok = True)# create log directory if necessary
+			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
 			logfile = f'{logpath}/cse-{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}.log'
 			logfp = logging.handlers.RotatingFileHandler(logfile,
-														 maxBytes = Configuration.logging_size,
-														 backupCount = Configuration.logging_count)
+														 maxBytes=Configuration.logging_size,
+														 backupCount=Configuration.logging_count)
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(ACMESimpleLogFormatter('%(levelname)s %(asctime)s %(message)s'))
 			logfp.addFilter(LogFilter(Logging.filterSources))
@@ -277,7 +268,7 @@ class Logging:
 			Logging._handlers.append(logfp)
 
 		# config the logging system
-		logging.basicConfig(level = Logging.logLevel, format = '%(message)s', datefmt = '[%X]', handlers = Logging._handlers)
+		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=Logging._handlers)
 
 		# Start worker to handle logs in the background
 		from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -425,7 +416,6 @@ class Logging:
 			Return:
 				Return the log *msg* again. 
 		"""
-		from ..runtime import CSE
 		# raise logError event
 		Logging._eventLogError()
 
@@ -440,7 +430,7 @@ class Logging:
 
 
 	@staticmethod
-	def logWarn(msg:Any, stackOffset:Optional[int] = 0) -> str:
+	def logWarn(msg:Any, stackOffset: Optional[int] = 0) -> str:
 		"""	Print a log message with log-level **WARNING**. 
 
 			Args:
@@ -449,10 +439,9 @@ class Logging:
 			Return:
 				Return the log *msg* again. 
 		"""
-		from ..runtime import CSE as CSE
 		# raise logWarning event
 		Logging._eventLogWarning()
-		return Logging._log(logging.WARNING, msg, stackOffset = stackOffset)
+		return Logging._log(logging.WARNING, msg, stackOffset=stackOffset)
 
 
 	@staticmethod

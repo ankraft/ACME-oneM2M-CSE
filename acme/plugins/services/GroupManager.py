@@ -10,7 +10,7 @@
 """	This module implements the group service manager functionality. """
 
 from __future__ import annotations
-from typing import cast, List, Optional, Any
+from typing import cast, List, Optional, Any, TYPE_CHECKING
 
 from ...etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
 from ...etc.Types import CSERequest, JSON, ResponseType
@@ -20,37 +20,49 @@ from ...etc.ACMEUtils import structuredPathFromRI
 from ...etc.IDUtils import isSPRelative, csiFromSPRelative
 from ...etc.DateUtils import utcTime
 from ...etc.Constants import RuntimeConstants as RC
-from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate
+from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate, requires
 from ...resources.FCNT import FCNT
 from ...resources.MgmtObj import MgmtObj
 from ...resources.Resource import Resource
-from ...resources.GRP_FOPT import GRP_FOPT
-from ...runtime.Factory import Factory
-from ...runtime import CSE
 from ...runtime.Logging import Logging as L
 from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData
-from ...runtime.Storage import Storage
-from ...services.Dispatcher import Dispatcher
+from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData, eventManager
+
+if TYPE_CHECKING:
+	from ...resources.GRP_FOPT import GRP_FOPT
+	from ...services.Dispatcher import Dispatcher
+	from ...runtime.Storage import Storage
+	from ...runtime.Factory import Factory
+	from ...services.RequestManager import RequestManager
+	from ...services.SecurityManager import SecurityManager
 
 
-eventManager: EventManager = EventManager()
-""" Event manager singleton instance. """
-
-storage: Storage = Storage()
-""" Storage singleton instance. """
-
-dispatcher: Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
-
-factory: Factory = Factory()
-""" Factory singleton instance. """
-
-@plugin(property='groupManager', tags=['acme', 'core'])
 @EventHandler
+@plugin(property='groupManager', tags=['acme', 'core'])
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(storage='acme.runtime.Storage')
+@requires(factory='acme.runtime.Factory')
+@requires(request='acme.services.RequestManager')
+@requires(security='acme.services.SecurityManager')
 class GroupManager():
 	"""	Manager for the CSE's group service. 
 	"""
+
+	storage: Storage = None
+	""" Storage instance. """
+
+	dispatcher: Dispatcher = None
+	""" Dispatcher instance. """
+
+	factory: Factory = None
+	""" Factory instance. """
+
+	request: RequestManager = None
+	""" Request manager instance. """
+
+	security: SecurityManager = None
+	""" Security manager instance. """
+
 
 	groupManager: Optional[Any] = None
 
@@ -126,7 +138,7 @@ class GroupManager():
 		# TODO: check virtual resources
 
 
-	def _checkMembersAndPrivileges(self, group:Resource, originator:str) -> None:
+	def _checkMembersAndPrivileges(self, group: Resource, originator: str) -> None:
 		"""	Internally check a group's member resources and privileges.
 		
 			Args:
@@ -148,10 +160,10 @@ class GroupManager():
 			if isSPRelative(mid) and csiFromSPRelative(mid) != RC.cseCsi:
 				# RETRIEVE member from a remote CSE
 				isLocalResource = False
-				# if not (url := CSE.request._getForwardURL(mid)):
+				# if not (url := self.request._getForwardURL(mid)):
 				# 	raise NOT_FOUND(f'forwarding URL not found for group member: {mid}')
 				L.isDebug and L.logDebug(f'RETRIEVE request to: {mid}')
-				remoteResult = CSE.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
+				remoteResult = self.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
 																		to=mid,
 																		originator=originator)
 															)[0].result	# there should be at least one result
@@ -163,7 +175,7 @@ class GroupManager():
 			if isLocalResource:
 				hasFopt = mid.endswith('/fopt')
 				id = mid[:-5] if len(mid) > 5 and hasFopt else mid 	# remove /fopt to retrieve the resource
-				resource = dispatcher.retrieveResource(id)
+				resource = self.dispatcher.retrieveResource(id)
 			else:
 				if not remoteResult.data or len(remoteResult.data) == 0:
 					if remoteResult.rsc == ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE:  # CSE has no privileges for retrieving the member
@@ -171,7 +183,7 @@ class GroupManager():
 					else:  # Member not found
 						raise NOT_FOUND(f'remote resource not found: {mid}')
 				else:
-					resource = factory.resourceFromDict(cast(JSON, remoteResult.data))
+					resource = self.factory.resourceFromDict(cast(JSON, remoteResult.data))
 
 			# skip if ri is already in the list
 			if isLocalResource:
@@ -183,7 +195,7 @@ class GroupManager():
 
 			# check privileges
 			if isLocalResource:
-				if not CSE.security.hasAccess(originator, resource, Permission.RETRIEVE, resultResource=resource):
+				if not self.security.hasAccess(originator, resource, Permission.RETRIEVE, resultResource=resource):
 					raise RECEIVER_HAS_NO_PRIVILEGES(f'insufficient privileges for originator to retrieve local resource: {mid}')
 
 			# if it is a group + fopt, then recursively check members
@@ -228,11 +240,11 @@ class GroupManager():
 		group.setAttribute('mtv', True)
 
 
-	def foptRequest(self, operation:Operation, 
-						  fopt:GRP_FOPT, 
-						  request:CSERequest, 
-						  id:str, 
-						  originator:str) -> Result:
+	def foptRequest(self, operation: Operation, 
+						  fopt: GRP_FOPT, 
+						  request: CSERequest, 
+						  id: str, 
+						  originator: str) -> Result:
 		"""	Handle requests to a <`GRP`>'s  <`GRP_FOPT`> fanOutPoint. This method might be called recursivly,
 			in case there are groups in groups.
 		
@@ -256,7 +268,7 @@ class GroupManager():
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
-		if not CSE.security.hasAccess(originator, groupResource, requestedPermission = permission, ty = request.ty):
+		if not self.security.hasAccess(originator, groupResource, requestedPermission = permission, ty = request.ty):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE('insufficient privileges for originator')
 		
 
@@ -288,7 +300,7 @@ class GroupManager():
 			else:
 				mid = mid + tail
 			# Invoke the request
-			_result = CSE.request.processRequest(request, originator, mid)
+			_result = self.request.processRequest(request, originator, mid)
 			# Check for RSET expiration
 			if _timeoutTS and _timeoutTS < utcTime():
 				# Check for blocking request. Then raise a timeout
@@ -345,7 +357,7 @@ class GroupManager():
 		deletedResource = eventData.payload	
 
 		ri = deletedResource.ri		# type:ignore [union-attr]
-		groups = storage.searchByFragment(	{ 'ty' : ResourceTypes.GRP }, 
+		groups = self.storage.searchByFragment(	{ 'ty' : ResourceTypes.GRP }, 
 											lambda r: (mid := r.get('mid')) and ri in mid)	# type: ignore # Filter all <grp> where mid contains ri
 		for group in groups:
 			L.isDebug and L.logDebug(f'Removing deleted resource: {ri} from group: {group.ri}')
