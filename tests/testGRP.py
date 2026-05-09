@@ -25,8 +25,10 @@ class TestGRP(unittest.TestCase):
 	ae 			= None
 	cnt1 		= None
 	cnt2 		= None
+	cnt3 		= None
 	cnt1RI 		= None
 	cnt2RI 		= None
+	cnt3RI 		= None
 	originator 	= None
 
 	@classmethod
@@ -173,9 +175,9 @@ class TestGRP(unittest.TestCase):
 				}}
 		self.cnt3, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED)
-		self.cnt3RI = findXPath(self.cnt3, 'm2m:cnt/ri')
+		TestGRP.cnt3RI = findXPath(self.cnt3, 'm2m:cnt/ri')
 		mid = findXPath(r, 'm2m:grp/mid')
-		mid.append(self.cnt3RI)
+		mid.append(TestGRP.cnt3RI)
 
 		dct = 	{ 'm2m:grp' : { 
 					'mid'  : mid

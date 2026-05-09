@@ -7,7 +7,6 @@
 #	Unit tests for all kind of MgmtObj specialisations
 #
 
-from audioop import getsample
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
