@@ -133,7 +133,7 @@ class Event(list):	# type:ignore[type-arg]
 				The callbacks are called sequentially (not in parallel!).
 
 				Args:
-					args: Unnamed function arguments.
+					args: Unnamed function arguments. This should only contain a single argument of type `EventData`.
 					kwargs: Keyword function arguments.
 			"""
 			for function in self:
@@ -142,22 +142,12 @@ class Event(list):	# type:ignore[type-arg]
 				# else:
 				# 	function(name, *args, **kwargs)
 
-				
-				
-				
-				
-				
-				# TODO after the conversion to eventdata simplify this.
-				# name is not necessary any more
+				function(name, *args, **kwargs)
 
-
-				if hasattr(function, '_onEvents'):
-					if args and isinstance(args[0], EventData):
-						function(args[0])
-					else:
-						function(EventData(name=name, payload=tuple(args)))	# type: ignore[attr-defined]
-				else:
-					function(name, *args, **kwargs)
+				# if hasattr(function, '_onEvents'):
+				# 	function(args[0])
+				# else:
+				# 	function(name, *args, **kwargs)
 
 		# If the first argument is a callable function and not an EventData, then we are in the decorator path, 
 		# so we just add the function to the list of handlers.
@@ -166,17 +156,49 @@ class Event(list):	# type:ignore[type-arg]
 			return args[0]
 
 		# Add event name to the event data if not already set
-		if args and isinstance(args[0], EventData):
-			if len(args) > 1:
-				raise RuntimeError('When passing an EventData as argument, it must be the only argument.')
-			if not args[0].name:
-				args[0].name = self.name
-
+		# We leave kwargs as they are
+		if args:
+			if isinstance(args[0], EventData):
+				if len(args) > 1:
+					raise RuntimeError(f'When passing an EventData as argument, it must be the only argument, but got {len(args)} arguments')
+				if args[0].name == self.name:
+					# If the first argument is an EventData and has the same name as the event, we can use it directly.
+					pass
+				elif not args[0].name:
+					# If the first argument is an EventData but does not have a name, we set the name to the event name.
+					args[0].name = self.name
+				else:
+					# If the first argument is an EventData but has a different name, we raise an error.
+					raise RuntimeError(f'EventData name {args[0].name} does not match event name {self.name}')
+			else:
+				# If the first argument is not an EventData, we create an EventData with the event name and the data
+				args = (EventData(name=self.name, payload=tuple(args)),)	# type: ignore[attr-defined]
+		else:
+			# If no arguments are passed, we create an EventData with the event name and no payload
+			args = (EventData(name=self.name),)
+		
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			BackgroundWorkerPool.runJob(lambda args=args, kwargs=kwargs: _runner(self.name, *args, **kwargs), name=self.name)
+			BackgroundWorkerPool.runJob(lambda args=args, kwargs=kwargs: _runner(*args, **kwargs), name=self.name)
 		else:
-			_runner(self.name, *args, **kwargs)
+			_runner(*args, **kwargs)
+
+			
+
+		# 	if isinstance(args[0], EventData):
+		# 		if len(args) > 1:
+		# 			raise RuntimeError('When passing an EventData as argument, it must be the only argument.')
+		# 		if not args[0].name:
+		# 			args[0].name = self.name
+		# else:
+		# 	# If no arguments are passed, create an EventData with the event name as payload
+		# 	args = (EventData(name=self.name),)
+
+		# if self.runInBackground:
+		# 	# Call the handlers in a thread so that we don't block everything
+		# 	BackgroundWorkerPool.runJob(lambda args=args, kwargs=kwargs: _runner(self.name, *args, **kwargs), name=self.name)
+		# else:
+		# 	_runner(self.name, *args, **kwargs)
 		# _runner(self.name, *args, **kwargs)
 
 

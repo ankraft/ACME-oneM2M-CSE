@@ -166,11 +166,11 @@ class Statistics(object):
 		if Configuration.cse_statistics_enable:
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
-			eventManager.addHandler(eventManager.retrieveResource, lambda n, _: self._handleStatsEvent(retrievedResources))	# type: ignore
-			eventManager.addHandler(eventManager.createResource, lambda n, _: self._handleStatsEvent(createdResources)) 		# type: ignore
-			eventManager.addHandler(eventManager.updateResource, lambda n, _: self._handleStatsEvent(updatedResources))		# type: ignore
-			eventManager.addHandler(eventManager.deleteResource, lambda n, _: self._handleStatsEvent(deletedResources))		# type: ignore
-			eventManager.addHandler(eventManager.expireResource, lambda n, _: self._handleStatsEvent(expiredResources))		# type: ignore
+			eventManager.addHandler(eventManager.retrieveResource, lambda n: self._handleStatsEvent(retrievedResources))	# type: ignore
+			eventManager.addHandler(eventManager.createResource, lambda n: self._handleStatsEvent(createdResources)) 		# type: ignore
+			eventManager.addHandler(eventManager.updateResource, lambda n: self._handleStatsEvent(updatedResources))		# type: ignore
+			eventManager.addHandler(eventManager.deleteResource, lambda n: self._handleStatsEvent(deletedResources))		# type: ignore
+			eventManager.addHandler(eventManager.expireResource, lambda n: self._handleStatsEvent(expiredResources))		# type: ignore
 			eventManager.addHandler(eventManager.coapRetrieve, lambda n: self._handleStatsEvent(coRetrieves))					# type: ignore
 			eventManager.addHandler(eventManager.coapCreate, lambda n: self._handleStatsEvent(coCreates))						# type: ignore
 			eventManager.addHandler(eventManager.coapUpdate, lambda n: self._handleStatsEvent(coUpdates))						# type: ignore
@@ -434,14 +434,12 @@ class Statistics(object):
 	#	Event handlers
 	#
 
-	def _handleStatsEvent(self, data:str|EventData) -> None:
+	def _handleStatsEvent(self, eventType:str) -> None:
 		"""	Generic handling of statist events.
 
 			Args:
-				eventType:	The type of event that occurred.
+				eventType: The event short name as a string. The event name is used to identify the statistic to update.
 		"""
-		# TODO remove this when everything is migrated to using EventData
-		eventType = data.name if isinstance(data, EventData) else data	# type: ignore [attr-defined]
 		try:
 			with self.statLock:
 				self.stats[eventType] += 1		# type: ignore
