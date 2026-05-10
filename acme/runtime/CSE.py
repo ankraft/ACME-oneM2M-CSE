@@ -169,7 +169,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		importer.initialize()					# Call the initialize method
 		
 		# Start the database plugins and the storage first
-		pluginManager.start(tags=['database'])	
+		pluginManager.start(tags=['acme', 'database'])	
 
 		storage.initialize()					# Initialize the storage manager
 
@@ -185,10 +185,11 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		notification.initialize()
 		
 		# Start the remaining plugins
-		pluginManager.start(tags=['binding'])
-		pluginManager.start(tags=['core'])	
-		pluginManager.start(tags=['remote'])
-		pluginManager.start(tags=['ui'])
+		pluginManager.start(tags=['acme', 'binding'])
+		pluginManager.start(tags=['acme', 'core'])	
+		pluginManager.start(tags=['acme', 'remote'])
+		pluginManager.start(tags=['acme', 'ui'])
+
 
 		# Check whether all plugin dependencies are resolved. This is done after starting the plugins to give them a chance to resolve their dependencies. If this fails, we cannot continue with the CSE startup.
 		pluginManager.setupFinished()				
@@ -202,6 +203,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		if not importer.importPolicies() or not importer.importScripts():
 			RC.cseStatus = CSEStatus.STOPPED
 			return False
+
+		# Start any non-ACME plugins 
+		pluginManager.start(excludedTags=['acme'])
 
 		# event.cseBootstrap()	# Send an event that the CSE bootstrap finished. This is executed after all components are initialized and started, but before importing policies and scripts.
 		
@@ -287,12 +291,15 @@ def _shutdown() -> None:
 	if eventManager:	# send shutdown event
 		eventManager.cseShutdown() 	# type: ignore
 	
+	# Shutdown any non-ACME plugins 
+	pluginManager.stop(excludedTags=['acme'])
+
 	# shutdown the services
 	# Stop all the plugins, except the database plugins, which are needed during shutdown 
 	# This leaves only the database plugins running
-	pluginManager and pluginManager.stop(tags=['ui'])
-	pluginManager and pluginManager.stop(tags=['remote'])
-	pluginManager and pluginManager.stop(tags=['core'])
+	pluginManager and pluginManager.stop(tags=['acme', 'ui'])
+	pluginManager and pluginManager.stop(tags=['acme', 'remote'])
+	pluginManager and pluginManager.stop(tags=['acme', 'core'])
 
 	script and script.shutdown()
 	notification and notification.shutdown()
@@ -303,8 +310,8 @@ def _shutdown() -> None:
 	registration and registration.shutdown()
 
 	storage  and storage.shutdown()
-	pluginManager and pluginManager.stop(tags=['database'])
-	pluginManager and pluginManager.stop(tags=['bindings'])
+	pluginManager and pluginManager.stop(tags=['acme', 'database'])
+	pluginManager and pluginManager.stop(tags=['acme', 'bindings'])
 
 	# This shutdowns all plugins, stopping the ones that are still running
 	pluginManager and pluginManager.shutdown()	
@@ -362,12 +369,14 @@ def resetCSE() -> None:
 		L.queueOff()	# Disable log queuing for restart
 		
 		# Pause all binding plugins to stop receiving requests during reset.
-		pluginManager.pausePlugins(tags='binding')
+		pluginManager.pausePlugins(tags=['acme', 'binding'])
 		# Restart all plugins, except core plugins. They are restarted via an event
-		pluginManager.restartPlugins(tags='core')	
-		pluginManager.restartPlugins(tags='ui')	
+		pluginManager.restartPlugins(tags=['acme', 'core'])	
+		pluginManager.restartPlugins(tags=['acme', 'ui'])	
 
 		storage.purge()
+
+		pluginManager.restartPlugins(excludedTags=['acme'])
 
 		# The following event is executed synchronously to give every component
 		# a chance to finish
@@ -381,10 +390,10 @@ def resetCSE() -> None:
 			sys.exit()	# what else can we do?
 
 		# Unpause all binding plugins to start receiving requests again after reset.
-		pluginManager.unpausePlugins(tags='binding')	
+		pluginManager.unpausePlugins(tags=['acme', 'binding'])	
 
 		# Restart remote plugins after the main
-		pluginManager.restartPlugins(tags='remote')	
+		pluginManager.restartPlugins(tags=['acme', 'remote'])	
 
 
 		# Enable log queuing again

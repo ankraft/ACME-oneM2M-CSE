@@ -488,7 +488,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Plugins can be filtered by name, pattern and/or tags. If no filters are provided, the action will be applied to all plugins.
 
 			Args:
-				pluginName: The name of the plugin to transition. If None, all plugins are transitioned. If a string is provided, it is treated as a pattern to match plugin names.
+				pluginNames: The name(s) of the plugin(s) to transition. If None, all plugins are transitioned. If a string is provided, it is treated as a pattern to match plugin names.
 				tags: The tags to match for the plugins to transition. If None, all plugins are transitioned.
 				excludedTags: The tags to exclude from the plugins to transition. If None, no plugins are excluded.
 				action: The action to perform during the state transition.
@@ -514,7 +514,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 				if not plugin.tags:	# Plugin must have tags to match, if it has no tags, it does not match
 					continue
 				# Check if the plugin has any of the specified tags
-				if not any(tag in self.plugins[name].tags for tag in tags):
+				if not all(tag in self.plugins[name].tags for tag in tags):
 					continue
 				# fall through if tags match
 
@@ -936,7 +936,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 
 			Args:
 				tag: The tag of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, the one with the highest priority is called.
-				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `@endpoint` decorator.
+				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `endpoint` decorator.
 				*args: Positional arguments to pass to the endpoint method.
 				**kwargs: Keyword arguments to pass to the endpoint method.
 
@@ -1218,7 +1218,7 @@ class ServicePlugin:
 
 def endpoint(name: str) -> Callable:
 	"""	Decorator to mark a method as an endpoint for a Serviceplugin. 
-		The name of the endpoint is given as an argument.
+		The service name of the endpoint is given as an argument.
 	"""
 
 	def decorator(func: type) -> type:
