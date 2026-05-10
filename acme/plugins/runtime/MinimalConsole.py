@@ -19,12 +19,12 @@
 from __future__ import annotations
 from typing import Callable
 
-from ...helpers.KeyHandler import loop, Commands, FunctionKey
-from ...etc.Constants import RuntimeConstants as RC
-from ...runtime.Logging import Logging as L											# type: ignore
-from ...runtime.ConsoleBase import ConsoleBase
-from ...runtime.PluginSupport import plugin, start, requires
-from ...runtime.EventManager import EventManager, EventData, eventManager
+from acme.helpers.KeyHandler import loop, Commands, FunctionKey
+from acme.etc.Constants import RuntimeConstants as RC
+from acme.runtime.Logging import Logging as L											# type: ignore
+from acme.runtime.ConsoleBase import ConsoleBase
+from acme.runtime.PluginSupport import plugin, start, requires
+from acme.runtime.EventManager import EventManager, EventData, eventManager
 
 @plugin(tags=['acme', 'ui'])
 @requires(cseSetConsole='acme.runtime.CSE.setConsole')

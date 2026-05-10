@@ -31,23 +31,25 @@ from rich.text import Text
 
 import plotext
 
-from ...etc.Constants import Constants, RuntimeConstants as RC
-from ...etc.Types import ResourceTypes, TreeMode
-from ...etc.ResponseStatusCodes import ResponseException
-from ...helpers.KeyHandler import FunctionKey, loop, waitForKeypress, Commands
-from ...helpers.interpreter.PContext import PContext
-from ...helpers.interpreter.Types import PError
-from ...resources.Resource import Resource
-from ...runtime.ConsoleBase import ConsoleBase
-from ...runtime.Configuration import Configuration
-from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import *
+from acme.etc.Constants import Constants, RuntimeConstants as RC
+from acme.etc.Types import ResourceTypes, TreeMode
+from acme.etc.ResponseStatusCodes import ResponseException
+from acme.helpers.KeyHandler import FunctionKey, loop, waitForKeypress, Commands
+from acme.helpers.interpreter.PContext import PContext
+from acme.helpers.interpreter.Types import PError
+from acme.resources.Resource import Resource
+from acme.runtime.ConsoleBase import ConsoleBase
+from acme.runtime.Configuration import Configuration
+from acme.runtime.Logging import Logging as L
+from acme.runtime.PluginSupport import *
+from acme.runtime.EventManager import *
+
 
 if TYPE_CHECKING:
-	from ...runtime.Storage import Storage
-	from ...services.Dispatcher import Dispatcher
-	from ...runtime.ScriptManager import ScriptManager
-	from ...runtime.Management import ManagementSupport
+	from acme.runtime.Storage import Storage
+	from acme.services.Dispatcher import Dispatcher
+	from acme.runtime.ScriptManager import ScriptManager
+	from acme.runtime.Management import ManagementSupport
 
 # TODO support configevent!
 # TODO move some of the functions to a more general place because they are used here and in the TUI
@@ -438,6 +440,7 @@ Available under the BSD 3-Clause License
 				live.update(self.managementSupport.getResourceTreeRich(style=L.terminalStyle, withProgress=False), refresh=True)
 			
 			# Register events for which the tree is refreshed
+			# Only used temporarily during the continuous tree display to update the tree on changes. 
 			eventManager.addHandler([eventManager.createResource, 
 									 eventManager.deleteResource, 
 									 eventManager.updateResource],  _updateTree)		# type:ignore[attr-defined]

@@ -9,12 +9,12 @@
 from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
-from ....runtime.Logging import Logging as L
-from ....helpers.PluginManager import plugin, start, configure, requires
-from ....runtime.Configuration import Configuration
+from acme.runtime.Logging import Logging as L
+from acme.helpers.PluginManager import plugin, start, configure, requires
+from acme.runtime.Configuration import Configuration
 
 if TYPE_CHECKING:
-	from ....runtime.Management import ManagementSupport
+	from acme.runtime.Management import ManagementSupport
 
 
 @plugin(tags=['acme', 'core'])

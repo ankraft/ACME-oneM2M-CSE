@@ -10,18 +10,18 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 from flask import Response
-from ....runtime.Logging import Logging as L
-from ....etc.Utils import renameThread
-from ....etc.Types import ResponseStatusCode, ContentSerializationType, AuthorizationResult
-from ....helpers.PluginManager import plugin, start, configure, requires
-from ....helpers.interpreter.Interpreter import SType
-from ....etc.ResponseStatusCodes import ResponseException
-from ....runtime.Configuration import Configuration
+from acme.runtime.Logging import Logging as L
+from acme.etc.Utils import renameThread
+from acme.etc.Types import ResponseStatusCode, ContentSerializationType, AuthorizationResult
+from acme.helpers.PluginManager import plugin, start, configure, requires
+from acme.helpers.interpreter.Interpreter import SType
+from acme.etc.ResponseStatusCodes import ResponseException
+from acme.runtime.Configuration import Configuration
 
 if TYPE_CHECKING:
-	from ....services.RequestManager import RequestManager
-	from ....runtime.ScriptManager import ScriptManager
-	from ..HttpServer import HttpServer
+	from acme.services.RequestManager import RequestManager
+	from acme.runtime.ScriptManager import ScriptManager
+	from acme.plugins.bindings.HttpServer import HttpServer
 
 @plugin(tags=['acme', 'core'])
 @requires(httpServer='acme.plugins.bindings.HttpServer')

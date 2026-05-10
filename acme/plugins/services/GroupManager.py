@@ -12,29 +12,29 @@
 from __future__ import annotations
 from typing import cast, List, Optional, Any, TYPE_CHECKING
 
-from ...etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
-from ...etc.Types import CSERequest, JSON, ResponseType
-from ...etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
-from ...etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
-from ...etc.ACMEUtils import structuredPathFromRI
-from ...etc.IDUtils import isSPRelative, csiFromSPRelative
-from ...etc.DateUtils import utcTime
-from ...etc.Constants import RuntimeConstants as RC
-from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate, requires
-from ...resources.FCNT import FCNT
-from ...resources.MgmtObj import MgmtObj
-from ...resources.Resource import Resource
-from ...runtime.Logging import Logging as L
-from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData, eventManager
+from acme.etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
+from acme.etc.Types import CSERequest, JSON, ResponseType
+from acme.etc.ResponseStatusCodes import MAX_NUMBER_OF_MEMBER_EXCEEDED, INVALID_ARGUMENTS, NOT_FOUND, RECEIVER_HAS_NO_PRIVILEGES
+from acme.etc.ResponseStatusCodes import ResponseStatusCode, GROUP_MEMBER_TYPE_INCONSISTENT, ORIGINATOR_HAS_NO_PRIVILEGE, REQUEST_TIMEOUT
+from acme.etc.ACMEUtils import structuredPathFromRI
+from acme.etc.IDUtils import isSPRelative, csiFromSPRelative
+from acme.etc.DateUtils import utcTime
+from acme.etc.Constants import RuntimeConstants as RC
+from acme.runtime.PluginSupport import plugin, start, stop, restart, configure, validate, requires
+from acme.resources.FCNT import FCNT
+from acme.resources.MgmtObj import MgmtObj
+from acme.resources.Resource import Resource
+from acme.runtime.Logging import Logging as L
+from acme.runtime.Configuration import Configuration, ConfigurationError
+from acme.runtime.EventManager import EventManager, EventHandler, onEvent, EventData, eventManager
 
 if TYPE_CHECKING:
-	from ...resources.GRP_FOPT import GRP_FOPT
-	from ...services.Dispatcher import Dispatcher
-	from ...runtime.Storage import Storage
-	from ...runtime.Factory import Factory
-	from ...services.RequestManager import RequestManager
-	from ...services.SecurityManager import SecurityManager
+	from acme.resources.GRP_FOPT import GRP_FOPT
+	from acme.services.Dispatcher import Dispatcher
+	from acme.runtime.Storage import Storage
+	from acme.runtime.Factory import Factory
+	from acme.services.RequestManager import RequestManager
+	from acme.services.SecurityManager import SecurityManager
 
 
 @EventHandler
@@ -49,22 +49,19 @@ class GroupManager():
 	"""
 
 	storage: Storage = None
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	factory: Factory = None
-	""" Factory instance. """
+	""" Injected Factory instance. """
 
 	request: RequestManager = None
-	""" Request manager instance. """
+	""" Injected Request manager instance. """
 
 	security: SecurityManager = None
-	""" Security manager instance. """
-
-
-	groupManager: Optional[Any] = None
+	""" Injected Security manager instance. """
 
 	@start
 	def start(self) -> None:
@@ -86,7 +83,7 @@ class GroupManager():
 
 	@restart
 	def restart(self) -> None:
-		"""	Restart the registration services.
+		"""	Restart the Group Manager.
 		"""
 		L.isDebug and L.logDebug('GroupManager restarted')
 
@@ -245,7 +242,7 @@ class GroupManager():
 						  request: CSERequest, 
 						  id: str, 
 						  originator: str) -> Result:
-		"""	Handle requests to a <`GRP`>'s  <`GRP_FOPT`> fanOutPoint. This method might be called recursivly,
+		"""	Handle requests to a <`acme.resources.GRP.GRP`>'s <`GRP_FOPT`> fanOutPoint. This method might be called recursivly,
 			in case there are groups in groups.
 		
 			Args:

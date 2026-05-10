@@ -14,29 +14,29 @@
 from __future__ import annotations
 from typing import List, Tuple, Dict, cast, Optional, Any, TYPE_CHECKING
 
-from ...etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
-from ...etc.Types import ContentSerializationType, BindingType, CSERegistrar
-from ...etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
-from ...etc.JSONUtils import pureResource
-from ...etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isValidSPID, isValidCSI, isAbsolute, getSPFromID, toSPRelative	# cannot import at the top because of circel import
-from ...etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl, normalizeURL
-from ...etc.Constants import Constants, RuntimeConstants as RC
-from ...helpers.TextTools import findXPath, setXPath
-from ...helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ...resources.CSR import CSR
-from ...resources.CSEBase import CSEBase, getCSE
-from ...resources.Resource import Resource
-from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.EventManager import EventManager, EventHandler, onEvent, EventData, eventManager
-from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, start, stop, restart, configure, validate, requires
+from acme.etc.Types import CSEStatus, ResourceTypes, CSEType, ResponseStatusCode, JSON, CSERequest, Operation
+from acme.etc.Types import ContentSerializationType, BindingType, CSERegistrar
+from acme.etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
+from acme.etc.JSONUtils import pureResource
+from acme.etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isValidSPID, isValidCSI, isAbsolute, getSPFromID, toSPRelative	# cannot import at the top because of circel import
+from acme.etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl, normalizeURL
+from acme.etc.Constants import Constants, RuntimeConstants as RC
+from acme.helpers.TextTools import findXPath, setXPath
+from acme.helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from acme.resources.CSR import CSR
+from acme.resources.CSEBase import CSEBase, getCSE
+from acme.resources.Resource import Resource
+from acme.runtime.Configuration import Configuration, ConfigurationError
+from acme.runtime.EventManager import EventManager, EventHandler, onEvent, EventData, eventManager
+from acme.runtime.Logging import Logging as L
+from acme.runtime.PluginSupport import plugin, start, stop, restart, configure, validate, requires
 
 if TYPE_CHECKING:
-	from ...runtime.Factory import Factory
-	from ...services.RegistrationManager import RegistrationManager
-	from ...services.Dispatcher import Dispatcher
-	from ...services.RequestManager import RequestManager
-	from ...services.SecurityManager import SecurityManager
+	from acme.runtime.Factory import Factory
+	from acme.services.RegistrationManager import RegistrationManager
+	from acme.services.Dispatcher import Dispatcher
+	from acme.services.RequestManager import RequestManager
+	from acme.services.SecurityManager import SecurityManager
 
 
 @EventHandler

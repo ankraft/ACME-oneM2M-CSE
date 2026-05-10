@@ -16,17 +16,17 @@ from abc import ABC, abstractmethod
 from xml.etree import ElementTree
 import base64, binascii
 
-from ...etc.Types import Permission, ResourceTypes, Result, SemanticFormat, ContentSerializationType
-from ...etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
-from ...resources.SMD import SMD
-from ...runtime.Configuration import Configuration
-from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, init, start, stop, restart, configure, requires
+from acme.etc.Types import Permission, ResourceTypes, Result, SemanticFormat, ContentSerializationType
+from acme.etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, INTERNAL_SERVER_ERROR
+from acme.resources.SMD import SMD
+from acme.runtime.Configuration import Configuration
+from acme.runtime.Logging import Logging as L
+from acme.runtime.PluginSupport import plugin, init, start, stop, restart, configure, requires
 
 if TYPE_CHECKING:
-	from ...resources.Resource import Resource
-	from ...services.Dispatcher import Dispatcher
-	from ...services.SecurityManager import SecurityManager
+	from acme.resources.Resource import Resource
+	from acme.services.Dispatcher import Dispatcher
+	from acme.services.SecurityManager import SecurityManager
 
 class SemanticHandler(ABC):
 	"""	Abstract base class for semantic graph store handlers.

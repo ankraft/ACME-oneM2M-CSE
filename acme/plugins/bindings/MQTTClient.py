@@ -12,25 +12,25 @@ from typing import Tuple, cast, Dict, Optional, Callable, Any, TYPE_CHECKING
 
 from urllib.parse import unquote
 
-from ...etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes
-from ...etc.Types import Result, ResponseStatusCode, ResourceTypes, ResponseType
-from ...etc.ResponseStatusCodes import ResponseException
-from ...etc.RequestUtils import createRequestResultFromURI
-from ...etc.DateUtils import waitFor
-from ...etc.IDUtils import getIdFromOriginator
-from ...etc.Utils import renameThread
-from ...etc.Constants import RuntimeConstants as RC
-from ...helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
-from ...helpers.NetworkTools import isValidPort
-from ...helpers import TextTools
-from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, init, start, stop, pause, unpause, configure, validate, requires
-from ...runtime.EventManager import EventManager, onEvent, EventData, Event, EventHandler, eventManager
+from acme.etc.Types import Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes
+from acme.etc.Types import Result, ResponseStatusCode, ResourceTypes, ResponseType
+from acme.etc.ResponseStatusCodes import ResponseException
+from acme.etc.RequestUtils import createRequestResultFromURI
+from acme.etc.DateUtils import waitFor
+from acme.etc.IDUtils import getIdFromOriginator
+from acme.etc.Utils import renameThread
+from acme.etc.Constants import RuntimeConstants as RC
+from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
+from acme.helpers.NetworkTools import isValidPort
+from acme.helpers import TextTools
+from acme.runtime.Configuration import Configuration, ConfigurationError
+from acme.runtime.Logging import Logging as L
+from acme.runtime.PluginSupport import *
+from acme.runtime.EventManager import *
 
 if TYPE_CHECKING:
-	from ...services.RequestManager import RequestManager
-	from ...services.SecurityManager import SecurityManager
+	from acme.services.RequestManager import RequestManager
+	from acme.services.SecurityManager import SecurityManager
 
 @requires(requestManager='acme.services.RequestManager')
 @requires(securityManager='acme.services.SecurityManager')

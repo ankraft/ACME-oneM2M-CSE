@@ -10,13 +10,13 @@ from __future__ import annotations
 
 from typing import Optional, Any, TYPE_CHECKING
 import sys, json
-from ....runtime.Logging import Logging as L
-from ....etc.Types import LogLevel, AuthorizationResult
-from ....helpers.PluginManager import plugin, start, configure, requires
-from ....runtime.Configuration import Configuration
+from acme.runtime.Logging import Logging as L
+from acme.etc.Types import LogLevel, AuthorizationResult
+from acme.helpers.PluginManager import plugin, start, configure, requires
+from acme.runtime.Configuration import Configuration
 
 if TYPE_CHECKING:
-	from ....runtime.Management import ManagementSupport
+	from acme.runtime.Management import ManagementSupport
 	
 @plugin(tags=['acme', 'core'])
 @requires(httpServer='acme.plugins.bindings.HttpServer')

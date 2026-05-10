@@ -8,16 +8,16 @@
 
 from __future__ import annotations
 
-from ...etc.Types import NotificationEventType, MissingData, LastTSInstance, ResourceTypes, TYPE_CHECKING
-from ...etc.DateUtils import toISO8601Date, fromAbsRelTimestamp, fromDuration
-from ...helpers.BackgroundWorker import BackgroundWorkerPool
-from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, start, stop, restart, requires
+from acme.etc.Types import NotificationEventType, MissingData, LastTSInstance, ResourceTypes, TYPE_CHECKING
+from acme.etc.DateUtils import toISO8601Date, fromAbsRelTimestamp, fromDuration
+from acme.helpers.BackgroundWorker import BackgroundWorkerPool
+from acme.runtime.Logging import Logging as L
+from acme.runtime.PluginSupport import plugin, start, stop, restart, requires
 
 if TYPE_CHECKING:
-	from ...services.Dispatcher import Dispatcher
-	from ...resources.Resource import Resource
-	from ...services.NotificationManager import NotificationManager
+	from acme.services.Dispatcher import Dispatcher
+	from acme.resources.Resource import Resource
+	from acme.services.NotificationManager import NotificationManager
 
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects
 """	Active TimeSeries instances. Maps the resourceID of the <TS> resource to the LastTSInstance object. """

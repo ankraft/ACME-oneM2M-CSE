@@ -14,13 +14,14 @@ from __future__ import annotations
 from typing import Optional, Any, Literal
 import asyncio
 
-from ...runtime.Logging import Logging as L
-from ...runtime.Configuration import Configuration, ConfigurationError
-from ...runtime.PluginSupport import *
-from ...etc.Types import CSEStatus
-from ...etc.Constants import RuntimeConstants as RC
+from acme.runtime.Logging import Logging as L
+from acme.runtime.Configuration import Configuration, ConfigurationError
+from acme.runtime.PluginSupport import *
+from acme.runtime.EventManager import *
+from acme.etc.Types import CSEStatus
+from acme.etc.Constants import RuntimeConstants as RC
 
-from ...textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
+from acme.textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 
 
 # TODO Delete resource? After better dialog option is available

@@ -9,12 +9,12 @@
 from __future__ import annotations
 
 from typing import Optional
-from ....runtime.Logging import Logging as L
-from ....etc.Constants import Constants
-from ....etc.Constants import RuntimeConstants as RC
-from ....helpers.PluginManager import plugin, start, configure, validate, requires
-from ....runtime.Configuration import Configuration
-from ....webui.webUI import WebUI
+from acme.runtime.Logging import Logging as L
+from acme.etc.Constants import Constants
+from acme.etc.Constants import RuntimeConstants as RC
+from acme.helpers.PluginManager import plugin, start, configure, validate, requires
+from acme.runtime.Configuration import Configuration
+from acme.webui.webUI import WebUI
 
 
 @plugin(tags=['acme', 'core', 'ui'])

@@ -13,23 +13,24 @@ from typing import Any, cast, TYPE_CHECKING
 
 import sys, copy
 
-from ...etc.Types import EvalMode, EvalCriteriaOperator, JSON, CSERequest, BasicType, ResourceTypes, Permission
-from ...etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR, BAD_REQUEST, NOT_FOUND
-from ...helpers.TextTools import setXPath
-from ...etc.DateUtils import utcTime
-from ...runtime.Configuration import Configuration
-from ...runtime.Logging import Logging as L
-from ...runtime.PluginSupport import plugin, start, stop, restart, requires
-from ...runtime.EventManager import eventManager, onEvent, EventData, EventHandler
-from ...resources.Resource import Resource
-from ...resources.ACTR import ACTR
-from ...helpers.ResourceSemaphore import CriticalSection
+from acme.etc.Types import EvalMode, EvalCriteriaOperator, JSON, CSERequest, BasicType, ResourceTypes, Permission
+from acme.etc.ResponseStatusCodes import ResponseException, INTERNAL_SERVER_ERROR, BAD_REQUEST, NOT_FOUND
+from acme.helpers.TextTools import setXPath
+from acme.etc.DateUtils import utcTime
+from acme.runtime.Configuration import Configuration
+from acme.runtime.Logging import Logging as L
+from acme.runtime.PluginSupport import plugin, start, stop, restart, requires
+from acme.runtime.EventManager import eventManager, onEvent, EventData, EventHandler
+from acme.resources.Resource import Resource
+from acme.resources.ACTR import ACTR
+from acme.helpers.ResourceSemaphore import CriticalSection
 
 if TYPE_CHECKING:
-	from ...runtime.Storage import Storage
-	from ...services.Dispatcher import Dispatcher
-	from ...services.RequestManager import RequestManager
-	from ...services.Validator import Validator
+	from acme.runtime.Storage import Storage
+	from acme.services.Dispatcher import Dispatcher
+	from acme.services.RequestManager import RequestManager
+	from acme.services.Validator import Validator
+	from acme.resources.Resource import Resource
 
 
 # TODO implement support for input attribute when the procedure is clear
@@ -44,9 +45,6 @@ class ActionManager():
 	"""	This class defines functionalities to handle action triggerings, 
 		dependancies and other action related functionalities
 	"""
-
-	# Imported here because of circular import
-	from ...resources.Resource import Resource
 
 	dispatcher:Dispatcher = None
 	""" Dispatcher instance. """

@@ -13,20 +13,20 @@ from __future__ import annotations
 from typing import Tuple, Optional, Literal, Union, TYPE_CHECKING
 from dataclasses import dataclass
 
-from ...helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
-from ...etc.Types import LocationInformationType, LocationSource, GeofenceEventCriteria, ResourceTypes, GeometryType, GeoSpatialFunctionType
-from ...etc.DateUtils import fromDuration
-from ...etc.GeoTools import getGeoPoint, getGeoPolygon, isLocationInsidePolygon, geoWithin, geoContains, geoIntersects
-from ...etc.ResponseStatusCodes import BAD_REQUEST
-from ...runtime.Logging import Logging as L
-from ...runtime.Configuration import Configuration
-from ...runtime.PluginSupport import plugin, init, stop, restart, configure, requires
-from ...resources.LCP import LCP
-from ...resources.CIN import CIN
+from acme.helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
+from acme.etc.Types import LocationInformationType, LocationSource, GeofenceEventCriteria, ResourceTypes, GeometryType, GeoSpatialFunctionType
+from acme.etc.DateUtils import fromDuration
+from acme.etc.GeoTools import getGeoPoint, getGeoPolygon, isLocationInsidePolygon, geoWithin, geoContains, geoIntersects
+from acme.etc.ResponseStatusCodes import BAD_REQUEST
+from acme.runtime.Logging import Logging as L
+from acme.runtime.Configuration import Configuration
+from acme.runtime.PluginSupport import plugin, init, stop, restart, configure, requires
+from acme.resources.LCP import LCP
+from acme.resources.CIN import CIN
 
 if TYPE_CHECKING:
-	from ...resources.Resource import Resource
-	from ...services.Dispatcher import Dispatcher
+	from acme.resources.Resource import Resource
+	from acme.services.Dispatcher import Dispatcher
 
 
 GeofencePositionType = Literal[GeofenceEventCriteria.Inside, GeofenceEventCriteria.Outside]
