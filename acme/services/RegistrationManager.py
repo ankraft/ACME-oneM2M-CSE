@@ -22,6 +22,8 @@ from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.Singleton import Singleton
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
+
 
 if TYPE_CHECKING:
 	from ..resources.Resource import Resource

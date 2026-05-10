@@ -35,6 +35,7 @@ from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, findXPath
 from ..runtime.Configuration import Configuration
 from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
 from ..runtime.Logging import Logging as L
 from ..resources.CRS import CRS
 from ..resources.SUB import SUB

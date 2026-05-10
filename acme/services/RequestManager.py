@@ -40,6 +40,7 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
 from ..helpers.Singleton import Singleton
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE

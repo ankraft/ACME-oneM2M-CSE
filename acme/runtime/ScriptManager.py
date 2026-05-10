@@ -39,6 +39,7 @@ from ..helpers.TextTools import setXPath, simpleMatch
 from ..helpers.NetworkTools import pingTCPServer, isValidPort
 from ..helpers.interpreter.PContext import PContext
 from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 
@@ -770,7 +771,7 @@ class ACMEPContext(PContext):
 		_resource = self.factory.resourceFromDict(cast(dict, _resource), create=True)
 
 		# Get a potential parent resource
-		parentResource:Any = None
+		parentResource:Resource = None
 		if _resource.pi:
 			try:
 				parentResource = self.dispatcher.retrieveLocalResource(ri=_resource.pi)

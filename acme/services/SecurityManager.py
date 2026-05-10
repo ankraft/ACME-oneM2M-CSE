@@ -23,6 +23,7 @@ from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..runtime.Storage import Storage

@@ -10,7 +10,7 @@ from ..runtime.PluginManager import PluginManager
 from ..helpers.PluginManager import plugin, init, finish, start, stop, restart, pause, unpause, onResolved, onUnresolved
 from ..helpers.PluginManager import configure, validate, plugin, requires, provide
 from ..helpers.PluginManager import ServicePlugin as _SP_, endpoint, serviceClasses, DependencyError, Dependency
-from ..runtime.EventManager import EventManager, EventHandler, Event, onEvent, EventData, eventManager
+from ..runtime.EventManager import EventHandler
 
 # Get a pluginManager Singleton instance.
 pluginManager:PluginManager = PluginManager()	# type: ignore

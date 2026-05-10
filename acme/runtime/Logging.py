@@ -277,6 +277,7 @@ class Logging:
 									# actor callback is executed, and this might result in a None exception
 
 		# React on config update. Only assig if it hasn't assigned before
+		# We need to use addHandler instead of a decorator because we use static methods.
 		if not eventManager.hasHandler(eventManager.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
 			eventManager.addHandler(eventManager.configUpdate, Logging.configUpdate)			# type: ignore
 
@@ -294,7 +295,7 @@ class Logging:
 
 
 	@staticmethod
-	def configUpdate(_:str, eventData: EventData) -> None:
+	def configUpdate(eventData: EventData) -> None:
 		"""	Handle configuration update.
 		"""
 		key:Optional[str] = eventData[0]
