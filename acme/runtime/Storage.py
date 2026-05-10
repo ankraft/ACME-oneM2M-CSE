@@ -27,18 +27,17 @@ from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
 from ..helpers.Singleton import Singleton
 from .Configuration import Configuration
+from .Logging import Logging as L
+from ..runtime.PluginSupport import requires
+from .DBBinding import DBBinding
+
 if TYPE_CHECKING:
 	from ..resources.Resource import Resource
 	from ..resources.ACTR import ACTR
 	from ..resources.SCH import SCH
-from .Factory import Factory
-from .Logging import Logging as L
-from ..runtime.PluginSupport import requires
-
-from .DBBinding import DBBinding
-
-factory: Factory = Factory()
-""" Factory singleton instance. """
+	from ..runtime.Factory import Factory
+	from ..plugins.database.TinyDBBinding import TinyDBBinding
+	from ..plugins.database.PostgreSQLBinding import PostgreSQLBinding
 
 
 # Constants for database and table names
@@ -64,12 +63,14 @@ _schedules = 'schedules'
 
 @requires(tinyDBBinding='acme.plugins.database.TinyDBBinding', required=False)
 @requires(postgreSQLBinding='acme.plugins.database.PostgreSQLBinding', required=False)
+@requires(factory='acme.runtime.Factory')
 class Storage(metaclass=Singleton):
 	"""	This class implements the entry points to the CSE's underlying database functions.
 	"""
 
-	tinyDBBinding: Optional[Any] = None
-	postgreSQLBinding: Optional[Any] = None
+	tinyDBBinding: TinyDBBinding = None
+	postgreSQLBinding: PostgreSQLBinding = None
+	factory: Factory = None
 
 	__slots__ = (
 		'db',
@@ -306,7 +307,7 @@ class Storage(metaclass=Singleton):
 
 		match len(resources):
 			case 1:
-				return factory.resourceFromDict(resources[0])
+				return self.factory.resourceFromDict(resources[0])
 			case 0:
 				raise NOT_FOUND('resource not found')
 
@@ -409,7 +410,7 @@ class Storage(metaclass=Singleton):
 			docs = [_r[0] 
 		   			for _ri in _ris 
 					if (_r := self.db.searchResources(ri=_ri))]	# get the resource documents for the child resource IDs, only when they exist
-			return docs if raw else cast(List, list(map(lambda x: factory.resourceFromDict(x), docs)))
+			return docs if raw else cast(List, list(map(lambda x: self.factory.resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
 	
 
@@ -484,7 +485,7 @@ class Storage(metaclass=Singleton):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.searchByFragment(dct) 
-						if (not filter or filter(each)) and (res := factory.resourceFromDict(each)) # either there is no filter or the filter is called to test the resource
+						if (not filter or filter(each)) and (res := self.factory.resourceFromDict(each)) # either there is no filter or the filter is called to test the resource
 				] 
 
 
@@ -498,7 +499,7 @@ class Storage(metaclass=Singleton):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
-						if (res := factory.resourceFromDict(each))
+						if (res := self.factory.resourceFromDict(each))
 				]
 
 
