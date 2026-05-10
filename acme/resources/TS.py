@@ -79,12 +79,12 @@ class TS(ContainerResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.TS_LA, originator=originator)		# rn is assigned by resource itself
-		self.setLatestRI(resource.ri)	# Set the latest resource ID
+		_ri = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.TS_LA, originator=originator)[1]		# rn is assigned by resource itself
+		self.setLatestRI(_ri)	# Set the latest resource ID
 
 		# add oldest
-		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.TS_OL, originator=originator)		# rn is assigned by resource itself
-		self.setOldestRI(resource.ri)	# Set the oldest resource ID
+		_ri = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.TS_OL, originator=originator)[1]		# rn is assigned by resource itself
+		self.setOldestRI(_ri)	# Set the oldest resource ID
 
 		# Set mni, mbn and mia to the default values if not present
 		if Configuration.resource_ts_enableLimits:

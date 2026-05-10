@@ -54,9 +54,9 @@ class LCP(AnnounceableResource):
 			_cnt['rn'] = self.lon
 
 		try:
-			container = parentResource.createChildResourceFromDict(_cnt,
-																   ty=ResourceTypes.CNT,
-																   originator=originator)
+			(container, cRi) = parentResource.createChildResourceFromDict(_cnt,
+																		  ty=ResourceTypes.CNT,
+																		  originator=originator)
 		except Exception as e:
 			raise BAD_REQUEST(L.logWarn(f'Could not create container for LCP: {e}. Resource name: {self.lon} already exists?'))
 		
@@ -64,7 +64,7 @@ class LCP(AnnounceableResource):
 		container.setLCPLink(self.ri)
 
 		# Set backlink to container in LCP
-		self.setAttribute('loi', container.ri)
+		self.setAttribute('loi', cRi)
 
 		# Register the LCP for periodic positioning procedure
 		if not self.locationManager:

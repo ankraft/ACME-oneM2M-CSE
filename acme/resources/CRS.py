@@ -283,7 +283,7 @@ class CRS(Resource):
 		# create (possibly remote) subscription
 		L.logDebug(f'Adding <sub> to {rrat}: ')
 		try:
-			tup = self.dispatcher.createResourceFromDict(dct, parentID=rrat, 
+			tup = self.dispatcher.createResourceFromDict(dct, parent=rrat, 
 															  ty=ResourceTypes.SUB, 
 															  originator=originator)
 		except ResponseException as e:

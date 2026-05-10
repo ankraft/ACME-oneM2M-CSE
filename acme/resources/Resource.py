@@ -10,7 +10,7 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Callable, cast, Optional, List, TYPE_CHECKING
+from typing import Any, Callable, cast, Optional, List, Tuple, TYPE_CHECKING
 
 from copy import deepcopy
 
@@ -26,6 +26,8 @@ from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
+
 
 if TYPE_CHECKING:
 	from ..runtime.Storage import Storage
@@ -1120,18 +1122,27 @@ class Resource(object):
 								 		  ty: Optional[ResourceTypes]=None, 
 										  originator: Optional[str]=None,
 										  preCreateCB: Optional[Callable[[Resource], None]]=None
-									) -> Resource:
-		resource = self.factory.resourceFromDict(dct, 
-												 pi=self.ri, 
-												 ty=ty,
-												 create=True)
-	
-		# Perform some checks and adjustments before creating the resource, if necessary
-		if preCreateCB:
-			preCreateCB(resource)
+									) -> Tuple[Resource, str]:
+		""" Create a child resource from a JSON dictionary.
 
+			Args:
+				dct: The JSON dictionary with the resource attributes.
+				ty: Optional resource type. If not provided, then the type is determined from the dictionary.
+				originator: Optional request originator.
+				preCreateCB: Optional callback function that is called with the resource instance before it is stored in the database. This can be used to perform some checks and adjustments before the resource is created.
+			Return:
+				Tuple with the created resource and its resource ID.
+		"""
 		# Store the new resource
-		return self.dispatcher.createLocalResource(resource, self, originator=originator)
+		# return self.dispatcher.createLocalResource(resource, self, originator=originator)
+		res = self.dispatcher.createResourceFromDict(dct, 
+													 parent=self, 
+													 ty=ty, 
+													 originator=originator, 
+													 trustedSource=True, 
+													 doCheckCreation=True,
+													 preCreateCB=preCreateCB)
+		return (res[0], res[1]) # return the resource and its resource ID from the tuple
 
 
 	def getOriginator(self) -> str:

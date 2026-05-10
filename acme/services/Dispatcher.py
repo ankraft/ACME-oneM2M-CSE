@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, cast, Sequence, Optional, TYPE_CHECKING
+from typing import List, Tuple, cast, Sequence, Optional, Callable, TYPE_CHECKING
 
 import operator
 import sys
@@ -843,10 +843,14 @@ class Dispatcher(metaclass=Singleton):
 		# TODO C.rcnDiscoveryResultReferences 
 
 
-	def createResourceFromDict(self, dct:JSON, 
-									 parentID:str, 
-									 ty:ResourceTypes, 
-									 originator:str) -> Tuple[str, str, str]:
+	def createResourceFromDict(self, dct: JSON, 
+									 parent: str | Resource,
+									 ty: ResourceTypes, 
+									 originator: str,
+									 doCheckCreation: bool = True,
+									 trustedSource: bool = False,
+									 preCreateCB: Optional[Callable[[Resource], None]] = None
+									 ) -> Tuple[Optional[Resource], str, str, str]:
 		"""	Create a resource from a JSON dictionary.
 		
 			Args:
@@ -854,34 +858,62 @@ class Dispatcher(metaclass=Singleton):
 				parentID: The parent ID.
 				ty: The resource type.
 				originator: The originator.
+				doCheck: If Tue, then perform the resource creation check.
+				trustedSource: If True, then the resource is created from a trusted source and some checks can be skipped.
+				preCreateCB: A callback function that is called before the resource is created. The function takes the resource as an argument and can be used to modify the resource before it is created.
 			
 			Return:
-				A tuple of (resource ID, CSE-ID, parent ID).
+				A tuple of (resource or None, resource ID, CSE-ID, parent ID).
 
 			Raises:
 				INTERNAL_SERVER_ERROR: If an unknown/unsupported RSC is returned.
 				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
 			
 		"""
-		# Create locally
-		if (pID := localResourceID(parentID)) is not None:
-			L.isDebug and L.logDebug(f'Creating local resource with ID: {pID} originator: {originator}')
+		parentResource: Optional[Resource] = None
+	
+		# parent is either an ID or a resource.
+		if isinstance(parent, str):
+			parentID = parent
+			pID = localResourceID(parentID)
+		else:
+			parentID = parent.ri
+			parentResource = parent
+			pID = parent.ri
 
-			# Get the unstructured resource ID if necessary
-			pID = riFromStructuredPath(pID) if isStructured(pID) else pID
+		# If the parent is local, then create the resource locally.
+		# Either the parent resource is provided or the ID is a local one
+		
+		# TODO Add check if parentID is "" and the type is a CSEBase resource. This might be allowed during bootstrap
 
-			# Retrieve the parent resource
-			parentResource = self.retrieveLocalResource(ri = pID, originator = originator)
+		if parentResource or pID is not None:
 
+			# Get the parent if it is not provided
+			if not parentResource:
+				# Get the unstructured resource ID if necessary
+				pID = riFromStructuredPath(pID) if isStructured(pID) else pID
+
+				# Retrieve the parent resource
+				parentResource = self.retrieveLocalResource(ri=pID, originator=originator)
+
+			L.isDebug and L.logDebug(f'Creating local resource under parent RI: {pID} ty: {ty} originator: {originator}')
 			# Build a resource instance
 			resource = self.factory.resourceFromDict(dct, 
 							   					ty=ty, 
-												pi=pID,
+												pi=parentResource.ri,
 												create=True,
-												trusted=False)
+												trusted=trustedSource)
+		
+			# Call the pre-create callback if provided
+			if preCreateCB:
+				preCreateCB(resource)
+			
+			# Check resource creation if required
+			if doCheckCreation:
+				self.registrationManager.checkResourceCreation(resource, originator)
 
 			# Check Permission
-			if not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, resultResource=resource):
+			if not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=ty, parentResource=parentResource, resultResource=resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
 
 			# Create it locally
@@ -892,8 +924,8 @@ class Dispatcher(metaclass=Singleton):
 		
 		# Create remotely
 		else:
-			L.isDebug and L.logDebug(f'Creating remote resource with ID: {pID} originator: {originator}')
-			res = self.requestManager.handleSendRequest(CSERequest(to=(pri := toSPRelative(parentID)),
+			L.isDebug and L.logDebug(f'Creating remote resource with RI: {parentID} originator: {originator}')
+			res = self.requestManager.handleSendRequest(CSERequest(to=(pri := toSPRelative(parentID)),	# TODO check whether this needs to be an unaltered ID in order to send across SP domains
 																   originator=originator,
 																   ty=ty,
 																   pc=dct,
@@ -910,9 +942,10 @@ class Dispatcher(metaclass=Singleton):
 
 			resRi = findXPath(res.request.pc, '{*}/ri')
 			resCsi = csiFromSPRelative(pri)
+			createdResource = None
 		
-		# Return success and created resource and its (resouce ID, CSE-ID, parent ID)
-		return (resRi, resCsi, pID)
+		# Return success and created resource and its (rresource, esouce ID, CSE-ID, parent ID)
+		return (createdResource, resRi, resCsi, pID)
 
 
 	def createLocalResource(self,

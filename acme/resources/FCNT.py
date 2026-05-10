@@ -379,12 +379,12 @@ class FCNT(ContainerResource):
 
 		# Create the FCI resource
 		# For a FCIN, we need to provide both the shortname (for the specialization) and the resource type
-		fciRes = self.createChildResourceFromDict({ self.typeShortname : dct }, 
-												  ty=ResourceTypes.FCI,
+		self.createChildResourceFromDict({ self.typeShortname : dct }, 
+										   ty=ResourceTypes.FCI,
 
-												  # Mark as instantiated to avoid validation. This needs to be done before the resource is created and stored
-												  preCreateCB=lambda res: res.setAttribute(Constants.attrIsManuallyInstantiated, True) 
-												 )
+										   # Mark as instantiated to avoid validation. This needs to be done before the resource is created and stored
+										   preCreateCB=lambda res: res.setAttribute(Constants.attrIsManuallyInstantiated, True) 
+										)
 
 
 	def prepareForInstances(self) -> None:
@@ -399,12 +399,12 @@ class FCNT(ContainerResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.FCNT_LA)	# rn is assigned by resource itself
-		self.setLatestRI(resource.ri)
+		_ri = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.FCNT_LA)[1]	# rn is assigned by resource itself
+		self.setLatestRI(_ri)
 
 		# add oldest
-		resource = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.FCNT_OL)	# rn is assigned by resource itself
-		self.setOldestRI(resource.ri)
+		_ri = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.FCNT_OL)[1]	# rn is assigned by resource itself
+		self.setOldestRI(_ri)
 		
 		# Set the hasFCI attribute to indicate that the virtual resources are present
 		self.setAttribute(Constants.attrHasFCI, True)

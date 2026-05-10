@@ -55,21 +55,22 @@ class PCH(Resource):
 		"""
 		super().activate(parentResource, originator)
 
-		L.isDebug and L.logDebug(f'Registering <PCU> for: {self.ri}')
-		pcuResource = self.createChildResourceFromDict({ 'rn' : 'pcu'}, 
-											  		ty=ResourceTypes.PCH_PCU, 
-													originator=originator)		# rn is assigned by resource itself. Activation later!
-		self.setAttribute(Constants.attrPCURI, pcuResource.ri)	# store own PCU ri
-
-		# Set the aggregation state in the own PCU
-		pcuResource.setAggregate(self.rqag)
-		pcuResource.dbUpdate(True)
-
 		# Store the parent's orginator/AE-ID/CSE-ID
 		if parentResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.AE]:
 			self.setAttribute(Constants.attrParentOriginator, parentResource.getOriginator())
 		else:
 			raise BAD_REQUEST(L.logWarn(f'PCH must be registered under CSE or AE, not {str(ResourceTypes(parentResource.ty))}'))
+
+		L.isDebug and L.logDebug(f'Registering <PCU> for: {self.ri}')
+		(pcuResource, pcuRi) = self.createChildResourceFromDict({ 'rn' : 'pcu'}, 
+											  					ty=ResourceTypes.PCH_PCU, 
+																originator=originator)		# rn is assigned by resource itself. Activation later!
+		self.setAttribute(Constants.attrPCURI, pcuRi)	# store own PCU ri
+
+		# Set the aggregation state in the own PCU
+		pcuResource.setAggregate(self.rqag)
+		pcuResource.dbUpdate(True)
+
 
 		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
 		
