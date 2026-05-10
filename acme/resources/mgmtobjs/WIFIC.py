@@ -20,8 +20,7 @@ class WIFIC(MgmtObj):
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
-		self.setAttribute('ssi', '', overwrite = False)
-		self.setAttribute('scan', False)
+		self.setAttribute('ssi', '', overwrite=False)
 		self.setAttribute('scan', False)
 		self.setAttribute('scanr', [])
 		self.setAttribute('ud', False)
@@ -30,9 +29,9 @@ class WIFIC(MgmtObj):
 		self.setAttribute('uds', { 'acn' : '', 'sus' : Status.UNINITIALIZED }, False)
 
 
-	def validate(self, originator: Optional[str]=None, 
-					   dct: Optional[JSON]=None, 
-					   parentResource: Optional[Resource]=None) -> None:
+	def validate(self, originator: Optional[str] = None, 
+					   dct: Optional[JSON] = None, 
+					   parentResource: Optional[Resource] = None) -> None:
 		super().validate(originator, dct, parentResource)
 		if self.wcrds:
 			enct = self.attribute('wcrds/enct')
