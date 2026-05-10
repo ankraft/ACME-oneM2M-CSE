@@ -13,7 +13,8 @@
 #		- clean - clean up generated files
 #
 
-DOCDIR = ../../docs
+ROOTDIR= ../..
+DOCDIR = ${ROOTDIR}/docs
 APIDOCS = ${DOCDIR}/apidocs
 TITLE = ACME oneM2M CSE
 DASHDOCSET = ${DOCDIR}
@@ -21,6 +22,7 @@ DASHDOCSET = ${DOCDIR}
 build: pydoctor
 
 pydoctor:				## Build API documentation (default)
+	find ${ROOTDIR} -type d -name __pycache__ -exec rm -rf {}  + 2>/dev/null || true
 	pydoctor
 
 open:					## Open API documentation in the default web browser
