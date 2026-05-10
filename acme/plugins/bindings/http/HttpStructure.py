@@ -15,6 +15,7 @@ from acme.runtime.Configuration import Configuration
 
 if TYPE_CHECKING:
 	from acme.runtime.Management import ManagementSupport
+	from acme.plugins.bindings.HttpServer import HttpServer
 
 
 @plugin(tags=['acme', 'core'])
@@ -25,12 +26,11 @@ class HttpStructure:
 	"""
 
 	managementSupport: ManagementSupport = None
-	""" ManagementSupport instance. """
-
+	""" Injected ManagementSupport instance. """
 
 	# "httpServer" is injected by the PluginManager, only if the HttpServer plugin is loaded and the dependency can be resolved.
-	httpServer: Any = None	# type: ignore
-	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
+	httpServer: HttpServer = None	# type: ignore
+	"""	The injected HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
 
 	@start
 	def startStructure(self) -> None:

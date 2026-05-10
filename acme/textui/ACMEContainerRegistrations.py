@@ -27,7 +27,7 @@ class ACMEContainerRegistrations(VerticalScroll):
 	"""
 
 	managementSupport: ManagementSupport = None
-	""" ManagementSupport instance. """
+	""" Injected ManagementSupport instance. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.

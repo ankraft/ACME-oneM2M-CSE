@@ -40,13 +40,13 @@ class MQTTClientHandler(MQTTHandler):
 	"""
 
 	requestManager: RequestManager = None
-	""" Request manager instance. """
+	""" Injected RequestManager instance. """
 
 	securityManager: SecurityManager = None
-	""" Security manager instance. """
+	""" Injected SecurityManager instance. """
 
 	cseShutdown: Callable[[], None] = None
-	""" Function to shut down the CSE. """
+	""" Injected function to shut down the CSE. """
 
 	__slots__ = (
 		'mqttClient',
@@ -325,7 +325,7 @@ class MQTTClient(object):
 	"""
 
 	requestManager: RequestManager = None
-	""" Request manager instance. """
+	""" Injected RequestManager instance. """
 
 
 	__slots__ = (

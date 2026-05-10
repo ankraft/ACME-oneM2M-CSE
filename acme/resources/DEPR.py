@@ -9,9 +9,7 @@
 """ Dependency (DEPR) resource type. """
 
 from __future__ import annotations
-from typing import Optional
-
-from pyparsing.common import Any
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import JSON
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, NOT_IMPLEMENTED
@@ -20,12 +18,16 @@ from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from acme.plugins.services.ActionManager import ActionManager
+
 
 @requires(actionManager='acme.plugins.services.ActionManager', required=False)
 class DEPR(AnnounceableResource):
 	""" Dependency (DEPR) resource type. """
 
-	actionManager: Optional[Any] = None
+	actionManager: ActionManager = None
+	"""	Injected ActionManager instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 

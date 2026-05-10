@@ -36,10 +36,10 @@ if TYPE_CHECKING:
 class SUB(Resource):
 
 	notificationManager: NotificationManager = None
-	""" NotificationManager instance. """
+	""" Injected NotificationManager instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	_disallowedBlockingAttributes = [
 		'exc', 'gpi', 'nfu', 'bn', 'rl', 'psn',	'pn', 'nsp', 'ln',

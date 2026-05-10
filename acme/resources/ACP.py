@@ -31,10 +31,10 @@ class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	storage:Storage = None
-	"""	Storage instance. """
+	"""	Injected Storage instance. """
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

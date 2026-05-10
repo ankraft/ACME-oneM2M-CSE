@@ -30,7 +30,7 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 class NTPR(Resource):
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance """
+	"""	Injected Dispatcher instance """
 
 	def validate(self, originator: Optional[str]=None, 
 					   dct: Optional[JSON]=None, 

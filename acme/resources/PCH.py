@@ -38,7 +38,7 @@ class PCH(Resource):
 	"""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	def initialize(self, pi: str) -> None:
 		# Set optional default for requestAggregation

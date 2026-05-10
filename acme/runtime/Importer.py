@@ -48,13 +48,13 @@ class Importer(metaclass=Singleton):
 		It is mainly run before the CSE is actually started or restarted."""
 
 	factory: Factory = None
-	""" Factory singleton instance. """
+	""" Injected Factory instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	scriptManager: ScriptManager = None
 	""" ScriptManager instance. """

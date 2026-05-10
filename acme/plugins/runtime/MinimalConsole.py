@@ -33,7 +33,7 @@ class MinimalConsole(ConsoleBase):
 	"""
 
 	cseSetConsole: Callable[[ConsoleBase], None] = None
-	""" Function to set the console instance in the CSE. """
+	""" Injected function to set the console instance in the CSE. """
 
 	@start
 	def startMinimalConsole(self) -> None:

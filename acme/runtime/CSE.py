@@ -50,7 +50,7 @@ from ..services.Validator import Validator
 # components that are used throughout the CSE implementation.
 
 console:ConsoleBase = None
-""" Runtime instance of the `Console`. """
+""" Runtime instance of the `Console.Console` or `MinimalConsole.MinimalConsole`. """
 
 dispatcher:Dispatcher = Dispatcher()
 """	Runtime instance of the `Dispatcher`. """

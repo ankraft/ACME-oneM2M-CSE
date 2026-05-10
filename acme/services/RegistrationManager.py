@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 	from ..runtime.Storage import Storage
 	from ..runtime.Importer import Importer
 	from ..services.Validator import Validator
+	from acme.plugins.services.RemoteCSEManager import RemoteCSEManager
 
 
 @EventHandler
@@ -44,22 +45,22 @@ if TYPE_CHECKING:
 class RegistrationManager(metaclass=Singleton):
 
 	dispatcher: Dispatcher = None	# type: ignore
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	storage:Storage = None	# type: ignore
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	securityManager: SecurityManager = None	# type: ignore
-	""" SecurityManager instance. """
+	""" Injected SecurityManager instance. """
+
+	remoteCSEManager: Optional[RemoteCSEManager] = None	# type: ignore
+	""" Injected RemoteCSEManager plugin, if available. """
 
 	importer: Importer = None	# type: ignore
-	""" Importer instance. """
+	""" Injected Importer instance. """
 
 	validator: Validator = None	# type: ignore
 	""" Validator instance. """
-
-
-	remoteCSEManager: Optional[Any] = None	# type: ignore
 
 	__slots__ = (
 		'expWorker',

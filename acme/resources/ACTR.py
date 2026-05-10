@@ -33,13 +33,13 @@ class ACTR(AnnounceableResource):
 	""" Action (ACTR) resource type. """
 
 	actionManager: Optional[ActionManager] = None
-	"""	Runtime instance of the `ActionManager` plugin. """
+	"""	Injected ActionManager instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	"""	Injected Dispatcher instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	"""	Injected Validator instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)

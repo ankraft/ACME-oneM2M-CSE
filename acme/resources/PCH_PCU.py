@@ -33,10 +33,10 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 class PCH_PCU(VirtualResource):
 
 	requestManager: RequestManager = None
-	""" RequestManager instance. """
+	"""	Injected RequestManager instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	"""	Injected Validator instance. """
 
 
 	def initialize(self, pi: str) -> None:

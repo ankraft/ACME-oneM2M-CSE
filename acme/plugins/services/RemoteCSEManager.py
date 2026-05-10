@@ -57,19 +57,19 @@ class RemoteCSEManager(object):
 	"""
 
 	registration: RegistrationManager = None
-	"""	Registration manager instance. """
+	"""	Injected Registration manager instance. """
 
 	dispatcher: Dispatcher = None
-	"""	Dispatcher instance. """
+	"""	Injected Dispatcher instance. """
 
 	factory: Factory = None
-	""" Factory instance. """
+	"""	Injected Factory instance. """
 
 	request: RequestManager = None
-	"""	RequestManager instance. """
+	"""	Injected RequestManager instance. """
 
 	security: SecurityManager = None
-	"""	SecurityManager instance. """
+	"""	Injected SecurityManager instance. """
 
 
 	__slots__ = (
@@ -78,6 +78,7 @@ class RemoteCSEManager(object):
 		'registrarConfig',
 		'spRegistrarConfigs',
 	)
+	""" Slots for RemoteCSEManager class. """
 
 
 	def __init__(self) -> None:
@@ -165,7 +166,7 @@ class RemoteCSEManager(object):
 		"""	Start the remote monitor as a background worker. 
 
 			Args:
-				name: Event name.
+				eventData: The event data. Not used in this handler.
 		"""
 		if not Configuration.cse_enableRemoteCSE:
 			return

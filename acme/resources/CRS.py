@@ -45,13 +45,13 @@ class CRS(Resource):
 	"""	This class implements the <crossResourceSubscription> resource type. """
 
 	notification: NotificationManager = None
-	""" NotificationManager instance. """
+	""" Injected NotificationManager instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	def initialize(self, pi: str) -> None:
 		self.setAttribute(Constants.attrSubSratRIs, {}, overwrite=False)	

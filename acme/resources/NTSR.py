@@ -29,7 +29,7 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 class NTSR(VirtualResource):
 
 	notificationManager: NotificationManager = None
-	""" NotificationManager instance. """
+	"""	Injected NotificationManager instance. """
 
 
 	# Disallowing CREATE is handled in the handleCreateRequest() method in Dispatcher

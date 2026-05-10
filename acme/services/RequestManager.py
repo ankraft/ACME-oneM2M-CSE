@@ -89,22 +89,22 @@ class RequestManager(metaclass=Singleton):
 	"""
 
 	storage:Storage = None
-	"""	Storage instance. """
+	"""	Injected Storage instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	registration: RegistrationManager = None
-	""" RegistrationManager instance. """
+	""" Injected RegistrationManager instance. """
 
 	notificationManager: NotificationManager = None
-	""" NotificationManager instance. """
+	""" Injected NotificationManager instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	securityManager: SecurityManager = None
-	""" SecurityManager instance. """
+	""" Injected SecurityManager instance. """
 
 
 	__slots__ = (
@@ -123,17 +123,18 @@ class RequestManager(metaclass=Singleton):
 		'enableRequestRecording',
 		'requestRingBuffer',
 	)
+	""" Slots for RequestManager class. """
 
 	httpServer: Any = None	# type: ignore
-	"""	The HttpServer plugin instance is injected by the PluginManager based on the declared dependency."""
+	"""	The injected HttpServer plugin instance is injected by the PluginManager based on the declared dependency."""
 	coapServer: Any = None	# type: ignore
-	"""	The CoAPServer plugin instance is injected by the PluginManager based on the declared dependency."""
+	"""	The injected CoAPServer plugin instance is injected by the PluginManager based on the declared dependency."""
 	mqttClient: Any = None	# type: ignore
-	"""	The MQTTClient plugin instance is injected by the PluginManager based on the declared dependency."""
+	"""	The injected MQTTClient plugin instance is injected by the PluginManager based on the declared dependency."""
 	websocketServer: Any = None	# type: ignore
-	"""	The WebSocketServer plugin instance is injected by the PluginManager based on the declared dependency."""
+	"""	The injected WebSocketServer plugin instance is injected by the PluginManager based on the declared dependency."""
 	remoteCSEManager: Any = None	# type: ignore
-	"""	The RemoteCSEManager plugin instance is injected by the PluginManager based on the declared dependency."""
+	"""	The injected RemoteCSEManager plugin instance is injected by the PluginManager based on the declared dependency."""
 
 
 	def initialize(self) -> None:

@@ -81,25 +81,25 @@ class Dispatcher(metaclass=Singleton):
 	"""
 
 	registrationManager: RegistrationManager = None
-	""" RegistrationManager instance. """
+	""" Injected RegistrationManager instance. """
 
 	storage:Storage = None
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	factory:Factory = None
-	""" Factory instance. """
+	""" Injected Factory instance. """
 
 	security:SecurityManager = None
-	""" SecurityManager instance. """
+	""" Injected SecurityManager instance. """
 
 	requestManager:RequestManager = None
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 	validator:Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	scriptManager:ScriptManager = None
-	""" ScriptManager instance. """
+	""" Injected ScriptManager instance. """
 
 	locationManager: Optional[LocationManager] = None	# type: ignore
 	semanticManager: Optional[SemanticManager] = None	# type: ignore
@@ -855,10 +855,10 @@ class Dispatcher(metaclass=Singleton):
 		
 			Args:
 				dct: The dictionary.
-				parentID: The parent ID.
+				parent: The parent ID or parent resource.
 				ty: The resource type.
 				originator: The originator.
-				doCheck: If Tue, then perform the resource creation check.
+				doCheckCreation: If True, then perform the resource creation check.
 				trustedSource: If True, then the resource is created from a trusted source and some checks can be skipped.
 				preCreateCB: A callback function that is called before the resource is created. The function takes the resource as an argument and can be used to modify the resource before it is created.
 			

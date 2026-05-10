@@ -27,7 +27,7 @@ class CSR(AnnounceableResource):
 	""" RemoteCSE resource class."""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	def initialize(self, pi: str) -> None:
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen

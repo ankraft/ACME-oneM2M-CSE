@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class PDR(Resource):
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 

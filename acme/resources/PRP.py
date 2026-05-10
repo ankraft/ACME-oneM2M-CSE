@@ -32,7 +32,7 @@ notAllowedAttributes = [ 'op', 'to', 'fr', 'rqi', 'rvi', 'rsc', 'fc', 'ot', 'gid
 class PRP(AnnounceableResource):
 
 	validator: Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)

@@ -83,22 +83,22 @@ class Console(ConsoleBase):
 	"""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected IDispatcher instance. """
 
 	storage: Storage = None	
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	scriptManager: ScriptManager = None
-	""" ScriptManager instance. """
+	""" Injected ScriptManager instance. """
 
 	managementSupport: ManagementSupport = None
-	""" ManagementSupport instance. """
+	""" Injected ManagementSupport instance. """
 
 	cseSetConsole: Callable[[ConsoleBase], None] = None
-	""" Function to set the console instance in the CSE. """
+	""" Injected function to set the console instance in the CSE. """
 
 	cseShutdown: Callable[[], None] = None
-	""" Function to shutdown the CSE. """
+	""" Injected function to shutdown the CSE. """
 
 	__slots__ = (
 		'interruptContinous',
@@ -801,7 +801,7 @@ Available under the BSD 3-Clause License
 		"""	Plot a graph from the instance data of a container.
 
 			Attention:
-				Only `CNT` and `CIN` resources are currently supported.
+				Only `CNT.CNT` and `CIN.CIN` resources are currently supported.
 
 			Args:
 				key: Input key. Ignored.

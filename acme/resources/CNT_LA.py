@@ -39,10 +39,10 @@ class CNT_LA(VirtualResource):
 	"""
 
 	locationManager: Optional[LocationManager] = None
-	"""	Runtime instance of the `LocationManager` plugin. """
+	"""	Injected LocationManager instance."""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	"""	Injected Dispatcher instance. """
 
 	def handleRetrieveRequest(self, request: Optional[CSERequest]=None,
 									id: Optional[str]=None,

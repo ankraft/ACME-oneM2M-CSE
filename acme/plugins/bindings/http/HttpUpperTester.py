@@ -33,12 +33,11 @@ class HttpUpperTester:
 		See TS-0019 for details about the Upper Tester specification.
 	"""
 
-
 	requestManager: RequestManager = None	# type: ignore
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 	script: ScriptManager = None	# type: ignore
-	""" ScriptManager instance. """
+	""" InjectedScriptManager instance. """
 
 	# "httpServer" is injected by the PluginManager, only if the HttpServer plugin is loaded and the dependency can be resolved.
 	httpServer: HttpServer = None	# type: ignore

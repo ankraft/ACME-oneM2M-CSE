@@ -26,7 +26,7 @@ class AnnouncedResource(Resource):
 	"""
 
 	requestManager:RequestManager = None
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 
 	def updated(self, dct:Optional[JSON] = None, originator:Optional[str] = None) -> None:

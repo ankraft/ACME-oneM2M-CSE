@@ -26,7 +26,7 @@ class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance """
+	"""	Injected Dispatcher instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 

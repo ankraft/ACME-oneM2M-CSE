@@ -348,10 +348,12 @@ class GroupManager():
 			This method is called by the `EventManager`. 
 
 			Args:
-				deletedResource: The deleted resource to check.
+				eventData: The event data containing the deleted resource in `EventData.payload`.
 		"""
 		L.isDebug and L.logDebug('Looking for and removing deleted resource from groups')
 		deletedResource = eventData.payload	
+
+		# TODO posibly optimize by searching for groups with a filter for mid containing the deleted resource's ri. Extra table?
 
 		ri = deletedResource.ri		# type:ignore [union-attr]
 		groups = self.storage.searchByFragment(	{ 'ty' : ResourceTypes.GRP }, 

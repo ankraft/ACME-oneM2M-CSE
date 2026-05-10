@@ -27,8 +27,8 @@ class ACMEContainerResourceServices(Container):
 	"""	The *Services* view for the ACME text UI.
 	"""
 
-	manangementSupport: ManagementSupport = None
-	""" The management support instance. """
+	managementSupport: ManagementSupport = None
+	"""	Injected ManagementSupport instance. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -209,7 +209,7 @@ class ACMEContainerResourceServices(Container):
 		def _exportResource() -> None:
 			"""	Background runner callback to xport the resource.
 			"""
-			count, filename = self.manangementSupport.doExportResource(self.resource.ri, self.exportIncludingChildResources)
+			count, filename = self.managementSupport.doExportResource(self.resource.ri, self.exportIncludingChildResources)
 			self.exportResourceLoadingIndicator.display = False
 			self.exportResourceResult.display = True
 			self.exportResourceResult.update(n := f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
@@ -236,7 +236,7 @@ class ACMEContainerResourceServices(Container):
 		def _exportInstances() -> None:
 			"""	Background runner callback to export the instances.
 			"""
-			count, filename = self.manangementSupport.doExportInstances(self.resource.ri)
+			count, filename = self.managementSupport.doExportInstances(self.resource.ri)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
 			self.exportInstancesResult.update(n := f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
@@ -258,7 +258,7 @@ class ACMEContainerResourceServices(Container):
 		def _copyInstances() -> None:
 			"""	Background runner callback to copy the instances to the clipboard.
 			"""
-			count, data = self.manangementSupport.doExportInstances(self.resource.ri, asString=True)
+			count, data = self.managementSupport.doExportInstances(self.resource.ri, asString=True)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
 			if self._app.copyToClipboard(data):

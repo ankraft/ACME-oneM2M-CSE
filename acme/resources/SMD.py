@@ -12,7 +12,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import JSON, CSERequest
 from ..etc.Constants import Constants
@@ -24,6 +24,8 @@ from ..runtime import Factory as Factory
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from ..plugins.services.SemanticManager import SemanticManager
 
 # internal attributes
 addToInternalAttributes(Constants.attrDecodedDsp)
@@ -35,7 +37,8 @@ class SMD(AnnounceableResource):
 		resource and potentially subresources.
 	"""
 
-	semanticManager: Optional[Any] = None
+	semanticManager: Optional[SemanticManager] = None
+	""" The injected SemanticManager plugin instance."""
 
 # TODO SOE cannot be retrieved. Also in Updates?
 # TODO clarify: or is RW or WO?

@@ -39,17 +39,16 @@ class CNT(ContainerResource):
 	""" Container resource type. """
 
 	storage:Storage = None
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	factory: Factory = None	# type: ignore
-	""" Factory instance. """
+	""" Injected Factory instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	requestManager: RequestManager = None
-	""" Request manager instance. """
-
+	""" Injected RequestManager instance. """
 
 
 	def __init__(self, dct:Optional[JSON] = None, create:Optional[bool] = False) -> None:

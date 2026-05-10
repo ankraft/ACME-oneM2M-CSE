@@ -73,25 +73,25 @@ class Resource(object):
 	"""
 
 	storage:Storage = None
-	"""	Storage instance. """
+	"""	Injected Storage instance. """
 
 	factory:Factory = None
-	""" Factory instance. """
+	""" Injected Factory instance. """
 
 	validator:Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	dispatcher:Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	notificationManager:NotificationManager = None
-	""" NotificationManager instance. """
+	""" Injected NotificationManager instance. """
 
 	requestManager:RequestManager = None
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 	importer:Importer = None
-	""" Importer instance. """
+	""" Injected Importer instance. """
 
 
 	# inheritACP = False
@@ -151,7 +151,6 @@ class Resource(object):
 
 			Args:
 				pi: The parent resource's ID.
-				originator: The request originator.
 		"""
 		# Store the shortname of the resource type
 		self.setAttribute(Constants.attrRtype, self.typeShortname)

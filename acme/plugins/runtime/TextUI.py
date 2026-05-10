@@ -38,6 +38,7 @@ class TextUI(object):
 	__slots__ = (
 		'tuiApp'
 	)
+	""" Slots for TextUI class. """
 	
 	def __init__(self) -> None:
 		self.tuiApp:ACMETuiApp = None

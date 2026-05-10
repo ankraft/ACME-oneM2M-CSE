@@ -66,13 +66,13 @@ class NotificationManager(object):
 	"""
 
 	dispatcher:Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	storage:Storage = None
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	request:RequestManager = None
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 
 	__slots__ = (
@@ -111,7 +111,7 @@ class NotificationManager(object):
 		"""	Restart the NotificationManager service.
 
 			Args:
-				name: The name of the event.
+				eventData: The event data. Not used in this handler.
 		"""
 		L.isInfo and L.log('NotificationManager: Stopping all <CRS> window workers')
 

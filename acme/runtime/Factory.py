@@ -37,7 +37,7 @@ class Factory(metaclass=Singleton):
 			Args:
 				ty: The resource type.
 			Returns:
-				The resource class for the given resource type, or `None` if not found.
+				The resource class for the given resource type, or *None* if not found.
 			
 		"""
 		tup = self.resourceClassMapping.get(ty)
@@ -461,7 +461,6 @@ class Factory(metaclass=Singleton):
 				pi: The parent's resource ID.
 				ty: The resource type of the resource that shall be created.
 				create: The resource will be newly created.
-				isImported: True when the resource is imported, or created by the `ScriptManager`. In this case some checks may not be performed.
 				template: True when the resource is used as a template. In this case some checks may not be performed.
 				trusted: True when the resource is created from a trusted source, such as an internal process, or was already validated.
 

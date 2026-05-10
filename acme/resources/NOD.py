@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 class NOD(AnnounceableResource):
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	def initialize(self, pi: str) -> None:
 		self.setAttribute('ni', uniqueID(), overwrite=False)

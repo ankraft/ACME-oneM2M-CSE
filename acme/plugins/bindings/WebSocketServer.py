@@ -48,10 +48,10 @@ class WebSocketServer(object):
 	"""
 
 	requestManager: RequestManager = None
-	"""	RequestManager instance. """
+	"""	Injected RequestManager instance. """
 
 	securityManager: SecurityManager = None
-	"""	SecurityManager instance. """
+	"""	Injected SecurityManager instance. """
 
 	__slots__ = [ 
 		'isPaused', 

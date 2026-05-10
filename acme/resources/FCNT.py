@@ -36,10 +36,10 @@ class FCNT(ContainerResource):
 	""" FlexContainer (FCNT) resource type. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	"""	Injected Dispatcher instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	"""	Injected Validator instance. """
 
 	def __init__(self, dct:Optional[JSON]=None, typeShortname:Optional[str]=None, create:Optional[bool]=False) -> None:
 		self.typeShortname = typeShortname

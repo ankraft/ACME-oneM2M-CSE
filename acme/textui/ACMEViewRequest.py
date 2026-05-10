@@ -79,13 +79,13 @@ class ACMEViewRequest(VerticalScroll):
 	"""
 
 	validator: Validator = None
-	""" Validator instance. """
+	"""	Injected Validator instance. """
 
 	factory: Factory = None
-	""" Factory instance. """
+	"""	Injected Factory instance. """
 
 	requestManager: RequestManager = None
-	""" RequestManager instance. """
+	"""	Injected RequestManager instance. """
 
 	def __init__(self, id:str, 
 			  		   title:str,

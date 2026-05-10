@@ -31,10 +31,10 @@ class SCH(AnnounceableResource):
 	""" Schedule (SCH) resource type. """
 
 	timeManager: Optional[TimeManager] = None
-	"""	Reference to the TimeManager plugin instance. """
+	"""	Injected TimeManager plugin instance. """
 
 	storage:Storage = None
-	"""	Storage singleton instance. """
+	"""	Injected Storage singleton instance. """
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

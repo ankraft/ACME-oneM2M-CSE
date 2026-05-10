@@ -52,18 +52,18 @@ if TYPE_CHECKING:
 class AnnouncementManager(object):
 	"""	This class implements announcement functionalities.
 	"""
+
 	remoteCSEManager: Optional[RemoteCSEManager] = None	# type: ignore
-	"""	Reference to the RemoteCSEManager plugin. """
+	"""	Injected RemoteCSEManager instance. """
 
 	requestManager: RequestManager = None	# type: ignore
-	"""	RequestManager instance. """
-
+	"""	Injected RequestManager instance. """
 
 	dispatcher:Dispatcher = None	# type: ignore
-	""" Dispatcher instance. """
+	"""	Injected Dispatcher instance. """
 
 	storage:Storage = None	# type: ignore
-	""" Storage instance. """
+	"""	Injected Storage instance. """
 
 
 	@start
@@ -148,7 +148,7 @@ class AnnouncementManager(object):
 		"""	Check all resources in the resource tree and announce them if necessary.
 
 			Args:
-				remoteCSR: The registree or registrar CSE's `CSR` resource.
+				remoteCSR: The registree or registrar CSE's `CSR.CSR` resource.
 			
 			See Also:
 				- `announceResource`
@@ -349,7 +349,7 @@ class AnnouncementManager(object):
 			if they do.
 
 			Args:
-				remoteCSR: The `CSR` remote resource.
+				remoteCSR: The `CSR.CSR` remote resource.
 			
 			See also:
 				- searchAnnounceableResourcesForCSI
@@ -381,7 +381,7 @@ class AnnouncementManager(object):
 
 
 	def deAnnounceResourceFromCSI(self, resource:AnnounceableResource, csi:str, remoteRI:str) -> None:
-		"""	De-Announce a resource from a specific `CSR`.
+		"""	De-Announce a resource from a specific `CSR.CSR`.
 
 			Args:
 				resource: The announceable resource to de-announce.

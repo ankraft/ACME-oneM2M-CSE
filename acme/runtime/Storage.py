@@ -69,8 +69,13 @@ class Storage(metaclass=Singleton):
 	"""
 
 	tinyDBBinding: TinyDBBinding = None
+	""" Injected TinyDBBinding instance. """
+
 	postgreSQLBinding: PostgreSQLBinding = None
+	""" Injected PostgreSQLBinding instance. """
+
 	factory: Factory = None
+	""" Injected Factory instance. """
 
 	__slots__ = (
 		'db',

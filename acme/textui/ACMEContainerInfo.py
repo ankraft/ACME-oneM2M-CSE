@@ -28,7 +28,7 @@ class ACMEContainerInfo(VerticalScroll):
 	"""	The *Infos* view for the ACME text UI. """
 
 	managementSupport: ManagementSupport = None
-	""" ManagementSupport instance. """
+	""" Injected ManagementSupport instance. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.

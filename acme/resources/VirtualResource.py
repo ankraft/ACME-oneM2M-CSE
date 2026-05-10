@@ -27,10 +27,10 @@ class VirtualResource(Resource):
 	"""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	notificationManager: NotificationManager = None
-	""" NotificationManager instance. """
+	""" Injected NotificationManager instance. """
 
 	def initialize(self, pi: str) -> None:
 

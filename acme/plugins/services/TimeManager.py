@@ -42,10 +42,10 @@ class TimeManager(object):
 	"""
 
 	storage:Storage = None
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	notification:NotificationManager = None
-	""" NotificationManager instance. """
+	""" Injected NotificationManager instance. """
 
 	__slots__ = (
 		'periodicTimeSyncBeacons',

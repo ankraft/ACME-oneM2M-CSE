@@ -102,13 +102,13 @@ class ACMEViewRequests(Vertical):
 	"""
 
 	storage: Storage = None
-	"""	The storage. """
+	"""	Injected Storage instance. """
 
 	validator: Validator = None
-	"""	The validator. """
+	"""	Injected Validator instance. """
 
 	requestManager: RequestManager = None
-	"""	The request manager. """
+	"""	Injected RequestManager instance. """
 
 
 	BINDINGS = 	[ Binding('r', 'refresh_requests', 'Refresh'),

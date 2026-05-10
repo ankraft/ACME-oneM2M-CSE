@@ -47,16 +47,16 @@ class ActionManager():
 	"""
 
 	dispatcher:Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	storage:Storage = None
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	requestManager:RequestManager = None
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 	validator:Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 
 	@start
@@ -89,9 +89,7 @@ class ActionManager():
 		"""	Eventhandler to evaluate actions for a resource in case a resource changes.
 
 			Args:
-				name: The name of the resource.
-				resource: The resource instance that triggered the event.
-				realRi: The real resource ID, if available.
+				eventData: The event data containing the resource and the real resource ID in the payload.
 		"""
 		resource = eventData[0]
 		realRi = eventData[1]

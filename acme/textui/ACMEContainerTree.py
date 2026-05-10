@@ -45,7 +45,7 @@ class ACMEResourceTree(TextualTree):
 	"""	The *Resources* tree conmponent view for the ACME text UI."""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher service instance"""
+	"""	Injected Dispatcher instance. """
 
 	_virtualResourcesParameter = {
 		ResourceTypes.CNT_LA: (ResourceTypes.CIN, False),
@@ -287,10 +287,10 @@ class ACMEContainerTree(Container):
 	"""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher service instance """
+	"""	Injected Dispatcher instance. """
 
 	validator: Validator = None
-	""" Validator service instance """
+	"""	Injected Validator instance. """
 
 	treeTabResourceID = 'tree-tab-resource'
 	"""	The ID of the resource tab. """

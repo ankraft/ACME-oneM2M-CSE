@@ -64,7 +64,7 @@ class ACMECoAPHandler():
 	"""
 
 	requestManager: RequestManager = None	# type: ignore
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 	__slots__ = (
 		'coapServer',

@@ -10,7 +10,7 @@
 
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any, Tuple
+from typing import List, cast, Optional, Any, Tuple, TYPE_CHECKING
 
 import ssl
 from dataclasses import dataclass
@@ -26,20 +26,17 @@ from ..runtime.PluginSupport import *
 from ..runtime.EventManager import *
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
-from ..runtime.Storage import Storage
-from ..services.Dispatcher import Dispatcher
 from ..resources.Resource import Resource, isInternalAttribute
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
 
-
-storage:Storage = Storage()
-""" Storage singleton instance. """
-
-dispatcher:Dispatcher = Dispatcher()
-""" Dispatcher singleton instance. """
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	from ..services.Dispatcher import Dispatcher
+	from acme.plugins.bindings.HttpServer import HttpServer
+	from acme.plugins.bindings.WebSocketServer import WebSocketServer
 
 
 @dataclass
@@ -55,9 +52,24 @@ class ACPResult():
 @requires(httpServer='acme.plugins.bindings.HttpServer', 
 		  websocketServer='acme.plugins.bindings.WebSocketServer',
 		  required=False)
+@requires(storage='acme.runtime.Storage')
+@requires(dispatcher='acme.services.Dispatcher')
 class SecurityManager(object):
 	"""	This manager entity handles access to resources and requests.
 	"""
+
+	storage:Storage = None
+	""" Injected Storage instance. """
+
+	dispatcher:Dispatcher = None
+	""" Injected Dispatcher instance. """
+
+	httpServer: HttpServer = None	# type: ignore
+	"""	The injected HttpServer plugin instance."""
+
+	websocketServer: WebSocketServer = None	# type: ignore
+	"""	The injected WebSocketServer plugin instance."""
+
 
 	__slots__ = (
 		'httpBasicAuthData',
@@ -67,10 +79,7 @@ class SecurityManager(object):
 		'requestCredentials',
 		'allowedCSIOriginators',
 	)
-
-	httpServer: Any = None	# type: ignore
-	websocketServer: Any = None	# type: ignore
-
+	""" Slots for SecurityManager class. """
 
 
 	def initialize(self) -> None:
@@ -156,7 +165,7 @@ class SecurityManager(object):
 
 			"""
 			try:
-				if not (acp := dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
+				if not (acp := self.dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
 					L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}')
 					return ACPResult(False, [])
 				
@@ -287,7 +296,7 @@ class SecurityManager(object):
 					# TODO perhaps have a DB with all originators and their kind?
 
 					# TODO add a "raw" attribute that returns the JSON, but doesn't intantiate the object
-					if storage.retrieveResource(aei = originator):
+					if self.storage.retrieveResource(aei = originator):
 						L.isDebug and L.logDebug(f'Grant registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
 						return True
 				except NOT_FOUND:
@@ -381,7 +390,7 @@ class SecurityManager(object):
 
 				for daciRi in daci:
 					try:
-						if not (daciResource := dispatcher.retrieveResource(daciRi)):
+						if not (daciResource := self.dispatcher.retrieveResource(daciRi)):
 							L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DACI> resource not found: {daciRi}')
 							continue
 					except ResponseException as e:
@@ -438,7 +447,7 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Checking parent\'s permission')
 					try:
 						if not parentResource:
-							parentResource = dispatcher.retrieveResource(resource.pi)
+							parentResource = self.dispatcher.retrieveResource(resource.pi)
 						return self.hasAccess(originator, parentResource, requestedPermission, ty)
 					except ResponseException as e:
 						L.isWarn and L.logWarn(f'Parent resource not found: {resource.pi}: {e.dbg}')
@@ -565,7 +574,7 @@ class SecurityManager(object):
 				# test the current acpi whether the originator is allowed to update the acpi
 				for acpRi in targetResource.acpi:
 					try:
-						if not (acp := dispatcher.retrieveResource(acpRi)):
+						if not (acp := self.dispatcher.retrieveResource(acpRi)):
 							L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {acpRi}')
 							continue
 						if self.checkACPSelfPermission(cast(ACP, acp), _originator, Permission.UPDATE):
@@ -760,7 +769,7 @@ class SecurityManager(object):
 			# Check for group. If the originator is a member of a group, then the originator has access
 			if acp.getTypeForRI(a) == ResourceTypes.GRP:
 				try:
-					if originator in dispatcher.retrieveResource(a).mid:
+					if originator in self.dispatcher.retrieveResource(a).mid:
 						L.isDebug and L.logDebug(f'Originator found in group member')
 						return True
 				except ResponseException as e:

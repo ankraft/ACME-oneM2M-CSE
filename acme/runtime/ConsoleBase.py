@@ -6,7 +6,7 @@
 #
 """	Base class for console plugins. """
 
-from typing import Optional, Any
+from typing import Optional, TYPE_CHECKING
 import sys
 
 from ..helpers.KeyHandler import FunctionKey, stopLoop, waitForKeypress
@@ -15,13 +15,16 @@ from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
 
+if TYPE_CHECKING:
+	from acme.plugins.runtime.TextUI import TextUI
 
 @requires(textUI='acme.plugins.runtime.TextUI', required=False)
 class ConsoleBase:
 	"""	Base class for console plugins. 
 	"""
 
-	textUI: Any = None	# type: ignore
+	textUI: TextUI = None	# type: ignore
+	""" Injected TextUI instance. """
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the *Console* instance.

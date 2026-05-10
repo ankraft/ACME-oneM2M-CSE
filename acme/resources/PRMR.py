@@ -34,13 +34,13 @@ if TYPE_CHECKING:
 class PRMR(AnnounceableResource):
 
 	actionManager: Optional[ActionManager] = None
-	""" ActionManager instance. """
+	""" Injected ActionManager instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	security: SecurityManager = None
-	""" SecurityManager instance. """
+	""" Injected SecurityManager instance. """
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:

@@ -36,10 +36,10 @@ class AnnounceableResource(Resource):
 	"""
 
 	announcementManager: Optional[AnnouncementManager] = None
-	""" AnnouncementManager instance. """
+	""" Injected AnnouncementManager instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	def __init__(self, dct:Optional[JSON]=None, create:Optional[bool]=False) -> None:
 		super().__init__(dct, create=create)

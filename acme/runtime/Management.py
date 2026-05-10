@@ -59,22 +59,22 @@ class ManagementSupport(metaclass=Singleton):
 	"""
 
 	storage: Storage = None
-	"""	Storage instance. """
+	"""	Injected Storage instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	requestManager: RequestManager = None
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	cseForceShutdown: Callable[[], None] = None
-	""" Function to shutdown the CSE. """
+	""" Injected function to shutdown the CSE. """
 
 	cseReset: Callable[[], None] = None
-	""" Function to reset the CSE. """
+	""" Injected function to reset the CSE. """
 	
 
 	# TODO usual life cycle stuff

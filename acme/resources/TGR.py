@@ -30,10 +30,10 @@ class TGR(AnnounceableResource):
 	""" TriggerRequest (TGR) resource type. """
 
 	triggerRequestManager: Optional[TriggerRequestManager] = None
-	""" TriggerRequestManager plugin instance. """
+	""" Injected TriggerRequestManager plugin instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	# resourceType = ResourceTypes.TGR
 	# """ The resource type """

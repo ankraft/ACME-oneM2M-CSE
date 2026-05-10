@@ -29,7 +29,7 @@ class FCNT_LA(VirtualResource):
 	"""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	"""	Injected Dispatcher instance. """
 
 	def handleRetrieveRequest(self, request: Optional[CSERequest] = None, 
 									id: Optional[str] = None, 

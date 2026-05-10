@@ -26,8 +26,7 @@ _defaultPLBL = 'Default'
 class NTP(Resource):
 
 	storage: Storage =None
-	"""	Storage instance. """
-
+	"""	Injected Storage instance. """
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

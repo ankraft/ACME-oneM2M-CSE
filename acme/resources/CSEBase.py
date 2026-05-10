@@ -33,7 +33,7 @@ class CSEBase(AnnounceableResource):
 	""" CSEBase (CSEBase) resource type. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 
 	def initialize(self, pi: str) -> None:

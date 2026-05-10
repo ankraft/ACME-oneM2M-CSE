@@ -138,15 +138,16 @@ class SemanticManager(object):
 	"""
 
 	security: SecurityManager = None
-	"""	Runtime instance of the `SecurityManager` plugin. """
+	""" Injected SecurityManager instance. """
 
 	dispatcher: Dispatcher = None  # type: ignore
-	""" Dispatcher instance. """
+	"""	Injected Dispatcher instance. """
 
 	__slots__ = (
 		'semanticHandler',
 		'defaultFormat',
 	)
+	""" Slots for SemanticManager class. """
 
 	# TODO: configurable store
 

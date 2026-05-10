@@ -35,7 +35,7 @@ class ACMEToolsTree(TextualTree):
 	"""
 
 	scriptManager: ScriptManager = None
-	"""	The script manager. """
+	"""	Injected ScriptManager instance. """
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:	# type: ignore[no-untyped-def]
 		"""	Initialize the tree view.
@@ -258,7 +258,7 @@ class ACMEContainerTools(Horizontal):
 	"""
 
 	scriptManager: ScriptManager = None
-	"""	Script manager instance. """
+	"""	Injected ScriptManager instance. """
 
 	BINDINGS = 	[ Binding('C', 'clear_log', 'Clear Log', key_display = 'SHIFT+C'),
 	      		  Binding('l', 'toggle_log', 'Toggle Log') ]

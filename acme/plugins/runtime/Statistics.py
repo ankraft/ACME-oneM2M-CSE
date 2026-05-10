@@ -142,6 +142,7 @@ class Statistics(object):
 	"""
 
 	storage: Storage = None
+	""" Injected Storage instance. """
 
 	__slots__ = (
 		'statLock',

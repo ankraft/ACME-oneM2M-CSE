@@ -70,13 +70,13 @@ class HttpServer(object):
 	"""
 
 	security: SecurityManager = None
-	""" SecurityManager instance. """
+	""" Injected SecurityManager instance. """
 
 	requestManager: RequestManager = None
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 	cseShutdown: Callable[[], None] = None
-	""" Function to shut down the CSE. """
+	""" Injected function to shut down the CSE. """
 
 	__slots__ = (
 		'flaskApp',

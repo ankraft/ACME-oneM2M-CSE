@@ -38,18 +38,17 @@ if TYPE_CHECKING:
 @requires(dispatcher='acme.services.Dispatcher')
 class TS(ContainerResource):
 
-
 	timeSeriesManager: Optional[TimeSeriesManager] = None
-	""" TimeSeriesManager plugin instance. """
+	""" Injected TimeSeriesManager plugin instance. """
 
 	storage:Storage = None
-	""" Storage instance. """
+	""" Injected Storage instance. """
 
 	validator: Validator = None
-	""" Validator instance. """
+	""" Injected Validator instance. """
 
 	requestManager: RequestManager = None
-	""" RequestManager instance. """
+	""" Injected RequestManager instance. """
 
 	dispatcher: Dispatcher = None
 	""" Dispatcher instance. """

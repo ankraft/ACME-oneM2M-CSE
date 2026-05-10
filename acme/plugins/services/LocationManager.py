@@ -63,12 +63,13 @@ class LocationManager(object):
 	"""
 
 	dispatcher: Dispatcher = None
-	"""	Dispatcher instance. """
+	"""	Injected IDispatcher instance. """
 
 	__slots__ = (	
 		'locationPolicyInfos',
 		'deviceDefaultPosition'
 	)
+	""" Slots for LocationManager class. """
 
 
 	@init

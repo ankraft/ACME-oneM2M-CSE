@@ -31,10 +31,10 @@ if TYPE_CHECKING:
 class STTE(AnnounceableResource):
 
 	actionManager: Optional[ActionManager] = None
-	""" ActionManager instance. """
+	""" Injected ActionManager instance. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)

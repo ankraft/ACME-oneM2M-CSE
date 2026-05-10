@@ -82,7 +82,7 @@ class ACMETuiApp(App):
 	"""A Textual app to manage the ACME text UI."""
 
 	validator: Validator = None
-	""" Validator instance. """
+	"""	Injected Validator instance. """
 
 	# from ..plugins.runtime import TextUI
 

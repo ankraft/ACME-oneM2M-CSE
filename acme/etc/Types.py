@@ -1753,13 +1753,22 @@ class EventEvaluationMode(ACMEIntEnum):
 
 
 class BatteryStatus(ACMEIntEnum):
+	"""	Battery Status. This represents the "m2m:batteryStatus" data type.
+	"""
 	NORMAL = 1
+	"""	The battery is operating normally and not on power. """
 	CHARGING =  2
+	"""	The battery is currently charging. """
 	CHARGING_COMPLETE = 3
+	""" The battery is fully charged and still on power. """
 	DAMAGED = 4
+	""" The battery has some problem. """
 	LOW_BATTERY = 5
+	""" The battery is low on charge. """
 	NOT_INSTALLED = 6
+	""" The battery is not installed. """
 	UNKNOWN = 7
+	""" The battery information is not available. """
 
 class Status(ACMEIntEnum):
 	"""	Status of Firmware Update and Software Update. This represents the "m2m:status" data type.

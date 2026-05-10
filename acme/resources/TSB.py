@@ -38,7 +38,7 @@ class TSB(AnnounceableResource):
 
 
 	timeManager: Optional[Any] = None
-	"""	Reference to the TimeManager plugin instance. """
+	"""	Injected TimeManager plugin instance. """
 
 	def initialize(self, pi:str) -> None:
 		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite=False)

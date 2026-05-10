@@ -31,10 +31,10 @@ class CIN(AnnounceableResource):
 	"""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance """
+	"""	Injected Dispatcher instance. """
 
 	validator: Validator = None
-	""" Validator instance """
+	"""	Injected Validator instance. """
 
 	def initialize(self, pi: str) -> None:
 	# 	# Initializations must happen just after the resource is created

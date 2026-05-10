@@ -30,10 +30,10 @@ class TimeSeriesManager(object):
 	"""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	notificationManager: NotificationManager = None
-	""" Notification manager instance. """
+	""" Injected NotificationManager instance. """
 
 	@start
 	def start(self) -> None:

@@ -36,10 +36,10 @@ class LCP(AnnounceableResource):
 	""" LocationPolicy (LCP) resource type. """
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	""" Injected Dispatcher instance. """
 
 	locationManager: Optional[LocationManager] = None
-	""" LocationManager instance. """
+	""" Injected LocationManager instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)

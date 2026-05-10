@@ -29,7 +29,7 @@ class GRP_FOPT(VirtualResource):
 	""" Group fanOutPoint (GRP_FOPT) resource type. This is a virtual resource. """
 
 	groupManager: Optional[GroupManager] = None
-	""" GroupManager plugin instance. """
+	""" Injected GroupManager plugin instance. """
 
 	def handleRetrieveRequest(self, request: Optional[CSERequest] = None, 
 									id: Optional[str] = None, 

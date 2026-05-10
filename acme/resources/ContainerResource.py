@@ -33,7 +33,7 @@ class ContainerResource(AnnounceableResource):
 	"""
 
 	dispatcher: Dispatcher = None
-	""" Dispatcher instance. """
+	"""	Injected Dispatcher instance. """
 
 	def getOldestRI(self) -> str:
 		"""	Retrieve a *oldest* resource's resource ID.
