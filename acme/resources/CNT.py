@@ -78,11 +78,15 @@ class CNT(ContainerResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		_ri = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.CNT_LA, originator=originator)[1]		# rn is assigned by resource itself
+		_ri = self.createChildResourceFromDict({ 'et': self.et }, 
+											   ty=ResourceTypes.CNT_LA, 
+											   originator=originator)[1]		# rn is assigned by resource itself
 		self.setLatestRI(_ri)
 
 		# add oldest
-		_ri = self.createChildResourceFromDict({ 'et': self.et }, ty=ResourceTypes.CNT_OL, originator=originator)[1]		# rn is assigned by resource itself
+		_ri = self.createChildResourceFromDict({ 'et': self.et }, 
+										 	   ty=ResourceTypes.CNT_OL, 
+											   originator=originator)[1]		# rn is assigned by resource itself
 		self.setOldestRI(_ri)
 
 

@@ -747,6 +747,11 @@ class TestACP(unittest.TestCase):
 		r, rsc = RETRIEVE(cntURL, TestACP.originator)
 		self.assertEqual(rsc, RC.OK, r)
 
+		# try to create a CNT under the CNT -> Success
+		dct = { "m2m:cnt": { } }
+		r, rsc = CREATE(cntURL, TestACP.originator, T.CNT, dct	)
+		self.assertEqual(rsc, RC.CREATED, r)
+
 
 #
 #	Test ACP with acor & Groups

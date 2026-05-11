@@ -1138,8 +1138,8 @@ class Resource(object):
 													 parent=self, 
 													 ty=ty, 
 													 originator=originator, 
-													 trustedSource=True, 
-													 doCheckCreation=True,
+													 trustedSource=True, 	# This is an internal call, therefore we can trust it
+													 checkCreation=True,
 													 preCreateCB=preCreateCB)
 		return (res[0], res[1]) # return the resource and its resource ID from the tuple
 

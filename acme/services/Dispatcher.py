@@ -847,7 +847,7 @@ class Dispatcher(metaclass=Singleton):
 									 parent: str | Resource,
 									 ty: ResourceTypes, 
 									 originator: str,
-									 doCheckCreation: bool = True,
+									 checkCreation: bool = True,
 									 trustedSource: bool = False,
 									 preCreateCB: Optional[Callable[[Resource], None]] = None
 									 ) -> Tuple[Optional[Resource], str, str, str]:
@@ -858,8 +858,8 @@ class Dispatcher(metaclass=Singleton):
 				parent: The parent ID or parent resource.
 				ty: The resource type.
 				originator: The originator.
-				doCheckCreation: If True, then perform the resource creation check.
-				trustedSource: If True, then the resource is created from a trusted source and some checks can be skipped.
+				checkCreation: If True, then perform the resource creation check.
+				trustedSource: If True, then the resource is created from a trusted source and some checks can be skipped. **Note**: Also access control is ignores.
 				preCreateCB: A callback function that is called before the resource is created. The function takes the resource as an argument and can be used to modify the resource before it is created.
 			
 			Return:
@@ -909,11 +909,11 @@ class Dispatcher(metaclass=Singleton):
 				preCreateCB(resource)
 			
 			# Check resource creation if required
-			if doCheckCreation:
+			if checkCreation:
 				self.registrationManager.checkResourceCreation(resource, originator)
 
 			# Check Permission
-			if not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=ty, parentResource=parentResource, resultResource=resource):
+			if not trustedSource and not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=ty, parentResource=parentResource, resultResource=resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
 
 			# Create it locally
