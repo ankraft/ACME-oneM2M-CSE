@@ -6,6 +6,7 @@
 #
 #	ResourceType: State
 #
+"""	Implementation of the State (STTE) resource type. """
 
 from __future__ import annotations
 from typing import Optional, Any, TYPE_CHECKING
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
 @requires(actionManager='acme.plugins.services.ActionManager', required=False)
 @requires(dispatcher='acme.services.Dispatcher')
 class STTE(AnnounceableResource):
+	"""	Class for the State (STTE) resource type. """
 
 	actionManager: Optional[ActionManager] = None
 	""" Injected ActionManager instance. """

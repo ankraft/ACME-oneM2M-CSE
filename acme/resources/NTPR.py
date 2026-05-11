@@ -6,6 +6,7 @@
 #
 #	ResourceType: notificationTargetMgmtPolicyRef 
 #
+"""	Implementation of the notificationTargetMgmtPolicyRef (NTPR) resource type. """
 
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
@@ -28,6 +29,7 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 
 @requires(dispatcher='acme.services.Dispatcher')
 class NTPR(Resource):
+	"""	Class for the notificationTargetMgmtPolicyRef (NTPR) resource type. """
 
 	dispatcher: Dispatcher = None
 	"""	Injected Dispatcher instance """

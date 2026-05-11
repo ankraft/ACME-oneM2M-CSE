@@ -6,9 +6,11 @@
 #
 #	SMD : Announceable variant
 #
+"""	Implementation of the ServiceManagement (SMD) resource type, announceable variant. """
 
 from .AnnouncedResource import AnnouncedResource
 
 class SMDAnnc(AnnouncedResource):
+	"""	Class for the Announced variant of the ServiceManagement (SMD) resource type. """
 
 	pass

@@ -102,9 +102,16 @@ class Dispatcher(metaclass=Singleton):
 	""" Injected ScriptManager instance. """
 
 	locationManager: Optional[LocationManager] = None	# type: ignore
+	""" Injected LocationManager instance. """
+
 	semanticManager: Optional[SemanticManager] = None	# type: ignore
+	""" Injected SemanticManager instance. """
+	
 	timeManager: Optional[TimeManager] = None		# type: ignore
+	""" Injected TimeManager instance. """
+	
 	remoteCSEManager: Optional[RemoteCSEManager] = None	# type: ignore
+	""" Injected RemoteCSEManager instance. """
 
 	__slots__ = (
 		'sortDiscoveryResources',

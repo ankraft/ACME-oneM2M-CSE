@@ -17,6 +17,11 @@ from ..helpers.TextTools import simpleMatch
 
 
 class PluginManager(PM):
+	"""	PluginManager class to manage plugins. 
+	
+		This class extends the base PluginManager class and implements the logic to 
+		load, configure, validate, start, stop and unload plugins based on the configuration settings.
+	"""
 
 	_pluginChecks:dict[str, Callable] = {
 		'acme.plugins.bindings.CoAPServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),

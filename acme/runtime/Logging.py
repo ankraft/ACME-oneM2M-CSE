@@ -54,6 +54,8 @@ levelName = {
 	# logging.ERROR :   'ERROR  ',
 	# logging.WARNING : 'WARNING'
 }
+""" Mapping of log levels to their corresponding names and emojis for console output. 
+"""
 
 # Color Schemes for the terminal
 terminalColorDark		= '#2DFE54' 
@@ -95,6 +97,8 @@ class LogFilter(logging.Filter):
 		"""
 		super().__init__()
 		self.sources = sources if sources else ()
+		""" Tuple of sources to filter out. If empty, no filtering is done. 
+		"""
 
 
 	def filter(self, record:LogRecord) -> bool:
@@ -288,6 +292,11 @@ class Logging:
 
 	@staticmethod
 	def _configureColors(theme:str) -> None:
+		""" Configure the colors for the terminal output based on the given theme.
+		
+			Args:
+				theme: The name of the theme to use. Supported values are 'dark' and 'light'.
+		"""
 		Logging.terminalStyle 		= Style(color = terminalColorDark if theme == 'dark' else terminalColorLight)
 		Logging.tableRowStyle		= Style(bgcolor = tableRowColorDark if theme == 'dark' else tableRowColorLight)
 		Logging.terminalStyleError	= Style(color = terminalColorErrorDark if theme == 'dark' else terminalColorErrorLight)
@@ -345,6 +354,16 @@ class Logging:
 
 	@staticmethod
 	def _logMessageToLoggerConsole(level: int, msg: str, caller: inspect.Traceback, threadName: str) -> None:
+		""" Log a message to the console logger. This is used to log messages to the console with the correct formatting.
+		
+			Args:
+				level: The log level of the message.
+				msg: The log message.
+				caller: The caller information from the stack frame. 
+					The caller information is used to determine the source file and line number of the log message.
+				threadName: The name of the current thread.
+		"""
+				
 		if isinstance(msg, str):
 			
 			# optimize determining the source file's basename
@@ -361,6 +380,11 @@ class Logging:
 			
 	@staticmethod
 	def loggingActor() -> bool:
+		""" Actor method to handle logging in the background. 
+		
+			Returns:
+				*True* if the actor should continue running, False otherwise.
+		"""
 		while Logging._logWorker.running:
 			# Check queue and give up the CPU
 			if Logging.queue.empty():
@@ -726,10 +750,13 @@ class Logging:
 #
 
 class ACMERichLogHandler(RichHandler):
+	""" Custom Rich log handler to support the log formatting for the console output.
+	"""
 
 	__slots__ = (
 		'_fromtimestamp',
 	)
+	""" Slots for the ACMERichLogHandler"""
 
 
 	_levels = {
@@ -738,8 +765,11 @@ class ACMERichLogHandler(RichHandler):
 		'WARNING': Text(f'{"WARNING":<7}', style='WARNING'),
 		'ERROR': Text(f'{"ERROR":<7}', style='ERROR'),
 	}
+	""" Custom log level styles for the console output."""
 
 	def __init__(self, level: int = logging.NOTSET) -> None:
+		""" Initialize the ACMERichLogHandler with the given log level. This also adds custom styles for the console output.
+		"""
 
 		# Add own styles to the default styles and create a new theme for the console
 		ACMEStyles = { 
@@ -802,6 +832,9 @@ class ACMERichLogHandler(RichHandler):
 		]
 
 		# Set the time conversion function, depending on the setting of UTC time
+		self._fromtimestamp: Callable
+		"""	Function to convert a timestamp to a datetime object. This is set depending on the setting of UTC time.
+		"""
 		if Logging.utcTime:
 			self._fromtimestamp = lambda t : datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc)
 		else:

@@ -81,6 +81,7 @@ class NotificationManager(object):
 
 		'_eventNotification',
 	)
+	""" Slots for NotificationManager instance attributes."""
 
 
 	def initialize(self) -> None:
@@ -750,15 +751,32 @@ class NotificationManager(object):
 
 
 	def stopCRSPeriodicWindow(self, crsRi:str) -> None:
+		""" Stop a periodic window for a <crs> resource.
+
+			Args:
+				crsRi: Resource ID of the <crs> resource for which to stop the periodic window.
+		"""
 		L.isDebug and L.logDebug(f'Stopping PeriodicWindow for crs: {crsRi}')
 		BackgroundWorkerPool.stopWorkers(self._getPeriodicWorkerName(crsRi))
 
 
-	def _crsPeriodicWindowMonitor(self, _data:list[str], 
-							   			_worker:BackgroundWorker,
-			       						crsRi:str, 
-										expectedCount:int,
-										eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool: 
+	def _crsPeriodicWindowMonitor(self, _data: list[str], 
+							   			_worker: BackgroundWorker,
+			       						crsRi: str, 
+										expectedCount: int,
+										eem: EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool: 
+		""" Check for a <crs> periodic window and send notifications if the window requirements are met.
+		
+			Args:
+				_data: List of notification sources.
+				_worker: The background worker handling this periodic window.
+				crsRi: Resource ID of the <crs>.
+				expectedCount: The expected number of notifications.
+				eem: Event evaluation mode.
+			
+			Return:
+				Always returns *True*.
+		"""
 		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
 		self._crsCheckForNotification(_data, crsRi, expectedCount, eem)
 		_worker.data = []

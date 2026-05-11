@@ -6,6 +6,7 @@
 #
 #	ResourceType: NotificationTargetSelfReference virtual resource
 #
+"""	Implementation of the NotificationTargetSelfReference (NTSR) virtual resource type. """
 
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
@@ -27,6 +28,7 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 
 @requires(notificationManager='acme.services.NotificationManager')
 class NTSR(VirtualResource):
+	"""	Class for the NotificationTargetSelfReference (NTSR) virtual resource type. """
 
 	notificationManager: NotificationManager = None
 	"""	Injected NotificationManager instance. """

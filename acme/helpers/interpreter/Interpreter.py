@@ -3169,4 +3169,5 @@ builtinFunctions:PSymbolDict = {
 	
 	# argc
 }
-""" Dictionary to map the functions to Python functions. """
+""" Dictionary to map the interpreter functions to Python functions. 
+"""

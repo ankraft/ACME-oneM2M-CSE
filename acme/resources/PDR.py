@@ -6,6 +6,7 @@
 #
 #	ResourceType: PolicyDeletionRules
 #
+"""	Implementation of the PolicyDeletionRules (PDR) resource type. """
 
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
 
 @requires(dispatcher='acme.services.Dispatcher')
 class PDR(Resource):
+	"""	Class for the PolicyDeletionRules (PDR) resource type. """
 
 	dispatcher: Dispatcher = None
 	""" Injected Dispatcher instance. """

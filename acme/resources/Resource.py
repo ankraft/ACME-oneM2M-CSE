@@ -143,6 +143,7 @@ class Resource(object):
 		# required later
 		if create:
 			self._originalDict = deepcopy(self.dict)	# keep for validation in activate() later
+			"""	Original dictionary as it was created. This is used for validation in activate() later. """
 
 
 

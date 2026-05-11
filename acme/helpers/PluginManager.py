@@ -22,13 +22,25 @@ except ImportError:
 
 
 _tagType = '_pm_type'
-_tagInstanceName = '_pm_instance_name'
-_tagInstancePriority = '_pm_instance_priority'
-_tagInstanceTags = '_pm_instance_tags'
-_tagNoRestartWhilePaused = '_pm_no_restart_while_paused'
-_tagEnpoints = '_pm_endpoints'
-_tagEndpointMap = '_pm_endpointMap'
+""" Internal tag to identify plugin classes and methods. """
 
+_tagInstanceName = '_pm_instance_name'
+""" Internal tag to specify the attribute name under which the plugin instance should be accessible in the PluginManager. """
+
+_tagInstancePriority = '_pm_instance_priority'
+""" Internal tag to specify the priority of the plugin. Lower values mean higher priority. """
+
+_tagInstanceTags = '_pm_instance_tags'
+""" Internal tag to specify the tags of the plugin. """
+
+_tagNoRestartWhilePaused = '_pm_no_restart_while_paused'
+""" Internal tag to specify that the plugin should not be restarted while paused. """
+
+_tagEnpoints = '_pm_endpoints'
+""" Internal tag to specify the endpoints of the plugin. """
+
+_tagEndpointMap = '_pm_endpointMap'
+""" Internal tag to specify the endpoint map of the plugin. """
 
 #
 #	Exceptions
@@ -49,23 +61,37 @@ class PluginConfigurationError(PluginError):
 class PluginState(IntEnum):
 	"""	Plugin states. """
 	LOADED		= auto()
+	""" The plugin is loaded but not yet initialized. """
 	INITIALIZED	= auto()
+	""" The plugin is initialized but not yet resolved. """
 	RESOLVED	= auto()
+	""" The plugin's dependencies are resolved. """
 	RUNNING		= auto()
+	""" The plugin is running. """
 	PAUSED		= auto()
+	""" The plugin is paused. """
 	STOPPED		= auto()
+	""" The plugin is stopped. """
 	UNRESOLVED	= auto()
+	""" The plugin is unresolved. """
 	FINALIZED	= auto()
+	""" The plugin is finalized. """
 	ERROR		= auto()
+	""" The plugin is in an error state. """
 
 @dataclass
 class Dependency:
 	""" Dataclass to hold information about a dependency. """
 	attributeName: str
+	""" Name of the attribute that holds the dependency in the `PluginManager` instance. """
 	pluginName: str
+	""" Name of the plugin that provides the dependency. """
 	className: str
+	""" Name of the class that provides the dependency. """
 	required: bool
+	""" Whether the dependency is required or optional. """
 	resolved: bool = False
+	""" Whether the dependency is resolved. """
 	provided: bool = False  
 	"""Dependency is provided by other class instances or a functions."""
 	isFunction: bool = False	
@@ -259,9 +285,13 @@ class PluginManager(metaclass=Singleton.Singleton):
 	"""
 
 	plugins: dict[str, PluginInfo] = {}
+	""" Dictionary to hold the loaded plugins. The keys are the plugin names, the values are PluginInfo objects."""
 	unloadedPlugins: list[str] = []
+	""" List to hold the names of the plugins that were *not* loaded due to filtering. """
 	_pluginInstances: dict[str, Any] = {}
+	""" Dictionary for the mapping between instance attribute names and the instances itself. """
 	_tagsPluginMap: dict[str, list[tuple[str, Any]]] = {}
+	""" Dictionary to map tags to plugin names and instances for easier lookup by tag. """
 	_providedInstances: dict[str, Any] = {}
 	""" Dictionary to hold instances that are extra provided class instances. 
 		The keys are the names of the instances, ie. the  module name,
@@ -649,6 +679,16 @@ class PluginManager(metaclass=Singleton.Singleton):
 	def _checkPluginTags(self, pluginName: str, 
 					  		   tags: Optional[str|list[str]] = None, 
 							   excludedTags: Optional[str|list[str]] = None) -> bool:
+		""" Check if a plugin matches the specified tags and excluded tags.
+			
+			Args:
+				pluginName: The name of the plugin to check.
+				tags: The tags to match. Match all if None.
+				excludedTags: The tags to exclude. Exclude none if None.
+
+			Returns:
+				*True* if the plugin matches the tags and excluded tags, False otherwise.
+		"""
 		if pluginName not in self.plugins:
 			return False
 		if tags and not any(tag in self.plugins[pluginName].tags for tag in tags):
@@ -1181,7 +1221,8 @@ def requires(*args:Any, **kwargs:Any) -> Callable:
 class ServicePlugin:
 	"""	Base class for service plugins. """
 
-	_pm_endpointMap: dict[str, str]	# mapping of endpoint names to method names
+	_pm_endpointMap: dict[str, str]
+	""" Mapping of endpoint names to method names """
 
 	def __init_subclass__(cls, **kwargs: Any) -> None:
 		"""	Initialize the plugin class, creating the service endpoint map by checking

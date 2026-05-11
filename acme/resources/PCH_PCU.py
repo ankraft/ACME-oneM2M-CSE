@@ -6,6 +6,7 @@
 #
 #	ResourceType: PollingChannelURI for PollingChannel
 #
+"""	Implementation of the PollingChannelURI (PCH_PCU) resource type. """
 
 from __future__ import annotations
 from typing import cast, Optional, TYPE_CHECKING
@@ -31,6 +32,9 @@ addToInternalAttributes(Constants.attrPCUAggregate)
 @requires(requestManager='acme.services.RequestManager')
 @requires(validator='acme.services.Validator')
 class PCH_PCU(VirtualResource):
+	"""	Class for the PollingChannelURI (PCH_PCU) resource type. This is a virtual resource that represents the 
+		polling channel URI of a PollingChannel resource. 
+	"""
 
 	requestManager: RequestManager = None
 	"""	Injected RequestManager instance. """

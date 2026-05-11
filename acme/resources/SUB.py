@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 @requires(notificationManager='acme.services.NotificationManager')
 @requires(validator='acme.services.Validator')
 class SUB(Resource):
+	""" Class for the <subscription> resource type. """
 
 	notificationManager: NotificationManager = None
 	""" Injected NotificationManager instance. """
@@ -51,6 +52,8 @@ class SUB(Resource):
 	_allowedENCAttributes = {
 		'atr', 'net'
 	}
+	""" These are the only allowed ENC attributes.
+	"""
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:

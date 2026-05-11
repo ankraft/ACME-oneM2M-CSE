@@ -6,8 +6,11 @@
 #
 #	STTE : Announceable variant
 #
+"""	Implementation of the Announced variant of the State (STTE) resource type. """
 
 from .AnnouncedResource import AnnouncedResource
 
 class STTEAnnc(AnnouncedResource):
+	"""	Class for the Announced variant of the State (STTE) resource type. """
+
 	pass

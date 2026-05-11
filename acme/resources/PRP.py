@@ -6,6 +6,7 @@
 #
 #	ResourceType: PrimitiveProfile
 #
+"""	Implementation of the PrimitiveProfile (PRP) resource type. """
 
 from __future__ import annotations
 
@@ -30,6 +31,7 @@ notAllowedAttributes = [ 'op', 'to', 'fr', 'rqi', 'rvi', 'rsc', 'fc', 'ot', 'gid
 
 @requires(validator='acme.services.Validator')
 class PRP(AnnounceableResource):
+	"""	Class for the PrimitiveProfile (PRP) resource type. """
 
 	validator: Validator = None
 	""" Injected Validator instance. """

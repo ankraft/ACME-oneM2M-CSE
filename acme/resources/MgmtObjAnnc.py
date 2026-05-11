@@ -6,11 +6,13 @@
 #
 #	MgmtObj : Announceable variant
 #
+"""	Implementation of the Announced variant of the MgmtObj resource type. """
 
 from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class MgmtObjAnnc(AnnouncedResource):
+	"""	Class for the Announced variant of the MgmtObj resource type. """
 	
 	def initialize(self, pi: str) -> None:
 		# The "mgd" attribute is mandatory must be the unaanounced variant!

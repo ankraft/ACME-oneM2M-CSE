@@ -156,8 +156,14 @@ class SemanticManager(object):
 		"""	Initialization of the SemanticManager plugin. 
 		"""
 		self.semanticHandler = RdfLibHandler()
+		"""	The semantic graph store handler to be used for the CSE.
+		"""
+		
 		# TODO determine the format
 		self.defaultFormat = SemanticFormat.FF_RdfXml	# TODO configurable
+		""" Default serialization format for semantic descriptions. 
+		"""
+		
 		L.isInfo and L.log('SemanticManager initialized')
 
 
@@ -493,16 +499,14 @@ class RdfLibHandler(SemanticHandler):
 
 		Note:
 			Only the in-memory storage method is supported.
-
-		Attributes:
-			store: The store that stores the graphs.
-			graph: The root graph for the CSE.
 	"""
 
 	__slots__ = (
 		'store',
 		'graph',
 	)
+	"""	Slots for RdfLibHandler class.
+	"""
 
 	supportedFormats =	{ SemanticFormat.FF_RdfXml		: 'xml',
 						  SemanticFormat.FF_JsonLD		: 'json-ld',
@@ -523,9 +527,14 @@ class RdfLibHandler(SemanticHandler):
 		L.isInfo and L.log('Using RDFLIB handler for semantics')
 
 		self.store = Memory() 								# type:ignore [no-untyped-call]
+		"""	The store that stores the graphs. Only the in-memory storage method is supported.
+		"""
+
 		self._openStore()
 
-		self.graph = rdflib.Dataset(store = self.store)		# type:ignore [no-untyped-call]
+		self.graph = rdflib.Dataset(store=self.store)		# type:ignore [no-untyped-call]
+		"""	The root graph for the CSE. 
+		"""
 	
 
 	#

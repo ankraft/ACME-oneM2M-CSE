@@ -223,6 +223,11 @@ class RequestManager(metaclass=Singleton):
 
 
 	def shutdown(self) -> bool:
+		""" Shutdown the RequestManager.
+
+			Return:
+				Always returns *True*.
+		"""
 		# Stop the PollingChannel Cleanup worker
 		if self._pcWorker:
 			self._pcWorker.stop()
@@ -419,6 +424,17 @@ class RequestManager(metaclass=Singleton):
 	#
 
 	def updateRequest(self, request:CSERequest) -> Result:
+		""" Handle an incoming UPDATE request.
+
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+
+		"""
 		L.isDebug and L.logDebug(f'UPDATE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't update the CSEBase
@@ -447,6 +463,18 @@ class RequestManager(metaclass=Singleton):
 
 
 	def deleteRequest(self, request:CSERequest,) -> Result:
+		""" Handle an incoming DELETE request.
+
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+				OPERATION_NOT_ALLOWED: If the operation is not allowed.
+				BAD_REQUEST: If the request is invalid.
+		"""
 		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't delete the CSEBase
@@ -473,6 +501,17 @@ class RequestManager(metaclass=Singleton):
 	#
 
 	def notifyRequest(self, request:CSERequest) -> Result:
+		""" Handle an incoming NOTIFY request.
+
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+		"""
 		L.isDebug and L.logDebug(f'NOTIFY ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		match request.rt:
@@ -495,6 +534,14 @@ class RequestManager(metaclass=Singleton):
 	#
 
 	def _createRequestResource(self, request:CSERequest) -> Resource:
+		""" Create a <request> resource for the given request.
+		
+			Args:
+				request: The request for which to create the <request> resource.
+				
+			Return:
+				The created <request> resource.
+		"""
 
 		# Get initialized resource
 		resource = REQ.createRequestResource(request)
@@ -983,6 +1030,11 @@ class RequestManager(metaclass=Singleton):
 
 
 	def _cleanupPollingRequests(self) -> bool:
+		""" Remove expired requests from the polling request queue. This method is called periodically by an actor.
+
+			Returns:
+
+		"""
 		with self._requestLock:
 			# Search all entries in the queue and remove those that have expired in the past
 			# Remove those requests also from 

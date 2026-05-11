@@ -30,6 +30,9 @@ class Factory(metaclass=Singleton):
 	""" Factory for creating resources. """
 
 	resourceClassMapping:dict[ResourceTypes, Tuple[Type[Resource], Callable]] = {}
+	""" Mapping of resource types to their corresponding resource classes and factory callables. 
+		The factory callable is used to create an instance of the resource class from a dictionary. 
+	"""
 
 	def getResourceClassForType(self, ty:ResourceTypes) -> Optional[Type[Resource]]:
 		""" Get the resource class for a given resource type. 

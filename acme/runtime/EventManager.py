@@ -6,6 +6,7 @@
 #
 #	Managing event handlers and events
 #
+"""	Implementation of the EventManager, which manages events and event handlers. """
 
 from __future__ import annotations
 
@@ -17,8 +18,12 @@ from ..helpers.EventManager import EventManager as HelpersEventManager, Event, E
 
 
 class EventManager(HelpersEventManager):
+	""" Event manager class. 
+	"""
 
 	def __init__(self) -> None:
+		""" Initialize the event manager and create all events. 
+		"""
 		super().__init__()
 
 		# Create events for all operations and protocols

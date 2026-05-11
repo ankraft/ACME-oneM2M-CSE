@@ -6,6 +6,7 @@
 #
 #	ResourceType: ProcessManagement
 #
+"""	Implementation of the ProcessManagement (PRMR) resource type. """
 
 from __future__ import annotations
 
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 @requires(dispatcher='acme.services.Dispatcher')
 @requires(security='acme.services.SecurityManager')
 class PRMR(AnnounceableResource):
+	"""	Class for the ProcessManagement (PRMR) resource type. """
 
 	actionManager: Optional[ActionManager] = None
 	""" Injected ActionManager instance. """

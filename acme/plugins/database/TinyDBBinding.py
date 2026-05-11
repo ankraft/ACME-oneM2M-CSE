@@ -126,6 +126,8 @@ class TinyDBBinding(DBBinding):
 
 	@init
 	def init(self) -> None:
+		""" Callback method for the initialization phase of the plugin lifecycle. 
+		"""
 		
 		#
 		#	Create transaction locks
@@ -169,6 +171,8 @@ class TinyDBBinding(DBBinding):
 
 	@start
 	def start(self) -> None:
+		""" Callback method for the start phase of the plugin lifecycle. 
+		"""
 
 		self.path = None if Configuration.database_type == 'memory' else Configuration.database_tinydb_path
 		""" Path to the database directory. """
@@ -427,6 +431,11 @@ class TinyDBBinding(DBBinding):
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		""" Callback method for the configuration phase of the plugin lifecycle.
+
+			Args:
+				config: The configuration object containing the configuration settings for the plugin.
+		"""
 		parser = config.configParser
 
 		config.database_tinydb_path = parser.get('database.tinydb', 'path', fallback='./data')
@@ -436,6 +445,11 @@ class TinyDBBinding(DBBinding):
 
 	@validate
 	def validate(self, config: Configuration) -> None:
+		""" Callback method for the validation phase of the plugin lifecycle. 
+		
+			Args:
+				config: The configuration object containing the configuration settings for the plugin.
+		"""
 		# override configuration with command line arguments
 		if config._args_DBDataDirectory is not None:
 			config.database_tinydb_path = config._args_DBDataDirectory

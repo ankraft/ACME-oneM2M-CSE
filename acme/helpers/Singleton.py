@@ -24,8 +24,18 @@ class Singleton(type):
 	"""
 
 	_instances: dict[type, object] = {} 
+	""" Dictionary to hold the single instances of the classes using this metaclass. """
 
 	def __call__(cls, *args: Any, **kwargs: Any) -> object: 
+		""" Override the __call__ method to control the instantiation of classes using this metaclass.
+
+			Args:
+				*args: Positional arguments to pass to the class constructor.
+				**kwargs: Keyword arguments to pass to the class constructor.
+
+			Returns:
+				The single instance of the class.
+		"""
 		if cls not in cls._instances:
 			cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
 		return cls._instances[cls]

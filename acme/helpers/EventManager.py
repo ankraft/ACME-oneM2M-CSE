@@ -43,12 +43,25 @@ class EventData():
 
 
 	def __getitem__(self, key: int) -> Any:
+		"""	Get an item from the payload if it is a tuple.
+			Args:
+				key: The index of the item to get from the payload.
+			Return:
+				The item at the specified index in the payload.
+			Raises:
+				TypeError: If the payload is not a tuple.
+		"""
 		if isinstance(self.payload, tuple):
 			return self.payload[key]
 		raise TypeError(f'EventData payload is not a tuple')
 
 
 	def __len__(self) -> int:
+		"""	Get the length of the payload if it is a tuple.
+			Return:
+				The length of the payload if it is a tuple.
+			Raises:
+				TypeError: If the payload is not a tuple."""
 		if isinstance(self.payload, tuple):
 			return len(self.payload)
 		raise TypeError(f'EventData payload is not a tuple')
@@ -60,10 +73,11 @@ class EventData():
 #	Event class.
 #
 
-# The F TypeVar on the decorator overload (see below) is important — it tells the type
-# checker that whatever callable goes in comes back out unchanged, so the handler's own
-# signature is preserved after decoration.
-F = TypeVar("F", bound=Callable)
+_F = TypeVar("_F", bound=Callable)
+""" The F TypeVar on the decorator overload is important — it tells the type
+	checker that whatever callable goes in comes back out unchanged, so the handler's own
+	signature is preserved after decoration.
+"""
 
 
 class Event(list):	# type:ignore[type-arg]
@@ -107,7 +121,7 @@ class Event(list):	# type:ignore[type-arg]
 
 
 	@overload
-	def __call__(self, func: F) -> F: ...          # decorator path
+	def __call__(self, func: _F) -> _F: ...          # decorator path
 	@overload
 	def __call__(self, *args:Any, **kwargs:Any) -> None: ... # emit path
 
@@ -337,10 +351,10 @@ def EventHandler(cls: type) -> type:
 	return cls
 
 
-def onEvent(event: Event) -> Callable[[F], F]:
+def onEvent(event: Event) -> Callable[[_F], _F]:
 	"""Marks a method for event registration — deferred until instantiation.
 	"""
-	def decorator(func: F) -> F:
+	def decorator(func: _F) -> _F:
 		if not hasattr(func, '_onEvents'):
 			func._onEvents = []		# type: ignore[attr-defined]
 		func._onEvents.append(event)	# type: ignore[attr-defined]
