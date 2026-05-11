@@ -34,6 +34,7 @@ class ACMEConfiguration(configparser.ConfigParser):
 						)
 		# Ensure that option names are case-sensitive
 		self.optionxform = str 	# type:ignore [assignment]
+		"""	Replace the default option name transformation to preserve case sensitivity."""
 
 
 	def set(self, section:str, option:str, value:str|None = None) -> None:

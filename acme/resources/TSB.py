@@ -6,6 +6,7 @@
 #
 #	ResourceType: TimeSyncBeacon
 #
+"""	Implementation of the TimeSyncBeacon (TSB) resource type. """
 
 from __future__ import annotations
 from typing import Optional, Any
@@ -30,8 +31,8 @@ addToInternalAttributes(Constants.attrBCNT)
 
 
 @requires(timeManager='acme.plugins.services.TimeManager', required=False)
-
 class TSB(AnnounceableResource):
+	"""	Class for the TimeSyncBeacon (TSB) resource type. """
 
 # DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure. ->
 #  good would be that, if not present, the CSE provides a value. Add to TS-0004 procedures

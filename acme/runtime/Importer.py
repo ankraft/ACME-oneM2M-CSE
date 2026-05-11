@@ -66,22 +66,35 @@ class Importer(metaclass=Singleton):
 		'isImporting',
 		'rtDir',
 
-		'_oldacp',
+		'_oldEnabbleAcpChecks',
 	)
+	""" Slots for Importer class. """
 
 
-	# List of "priority" resources that must be imported first for correct CSE operation
-	_firstImporters = [ 'csebase.json']
 	_enumValues:dict[str, dict[int, str]] = {}
+	"""	Imported enumeration values. """
 
 	def initialize(self) -> None:
 		"""	Initialization of an *Importer* instance.
 		"""
+
 		self.resourcePath = Configuration.cse_resourcesPath
+		""" Path to the directory from where to import resources, policies, scripts etc. """
+		
 		self.extendedScriptPaths:list[str] = []
+		""" Extended list of script paths, which is used for importing scripts."""
+		
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
+		""" Regular expression to match macros in scripts. """
+
 		self.isImporting = False
+		""" Boolean flag to indicate whether the importer is currently importing resources. """
+
 		self.rtDir = f'{Configuration.baseDirectory}{os.sep}init'
+		""" Path to the directory from where to import additional resources, policies, scripts etc. """
+
+		self._oldEnabbleAcpChecks: Optional[bool] = None
+		""" Used to store the old value of the enableAcpChecks configuration setting during importing."""
 
 		L.isInfo and L.log('Importer initialized')
 
@@ -131,6 +144,8 @@ class Importer(metaclass=Singleton):
 	
 	
 	def removeScripts(self) -> None:
+		""" Internally remove all imported scripts.
+		"""
 		self.scriptManager.removeScripts()
 
 
@@ -141,6 +156,8 @@ class Importer(metaclass=Singleton):
 
 	
 	def importResourcePolicies(self) -> None:
+		"""	Import the resource type policies from the resource paths.
+		"""
 
 		def _importResourcePolicies(path: str) -> None:
 			"""	Import the resource type policies.
@@ -220,6 +237,8 @@ class Importer(metaclass=Singleton):
 	#
 
 	def importScripts(self) -> bool:
+		"""	Import the scripts from the resource path and additional directories specified in the configuration.
+		"""
 	
 		def _importScripts(path: str|list[str]=None) -> bool:
 			"""	Import the ACME script from a directory.
@@ -316,6 +335,11 @@ class Importer(metaclass=Singleton):
 	#
 
 	def importConfigDocs(self) -> bool:
+		""" Import the configuration documentation from the resource path. 
+		
+			Return:
+				True if the documentation was successfully imported, False otherwise.
+		"""
 		# Get import path
 		if (path := self.resourcePath) is None:
 			L.logErr('cse.resourcesPath not set')
@@ -790,7 +814,7 @@ class Importer(metaclass=Singleton):
 		"""	Prepare the importing process.
 		"""
 		# temporarily disable access control
-		self._oldacp = Configuration.cse_security_enableACPChecks
+		self._oldEnabbleAcpChecks = Configuration.cse_security_enableACPChecks
 		Configuration.update('cse.security.enableACPChecks', False)
 		self.isImporting = True
 
@@ -837,11 +861,23 @@ class Importer(metaclass=Singleton):
 
 
 	def _finishImporting(self) -> None:
-		Configuration.update('cse.security.enableACPChecks', self._oldacp)
+		""" Finish the importing process, e.g. re-enable access control.
+		"""
+		Configuration.update('cse.security.enableACPChecks', self._oldEnabbleAcpChecks)
 		self.isImporting = False
 
 
 	def _expandEnumValues(self, evalues:list[int|str], typeShortname:str, fn:str) -> Optional[list[int]]:
+		""" Expand an enum values list by parsing the range definitions and return a list of integer values.
+		
+			Args:
+				evalues: A list of integer values or range definitions (e.g. "1..10") to expand.
+				typeShortname: The type and attribute name (for logging purposes).
+				fn: The filename where the enum values are defined (for logging purposes).
+
+			Return:
+				A list of integer values, or *None* in case of an error.
+		"""
 
 		#	Check and get enum definitions
 		_evalues:list[int] = []

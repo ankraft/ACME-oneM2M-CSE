@@ -6,6 +6,8 @@
 #
 #	Managing resources and AE, CSE registrations
 #
+"""	Implementation of the RegistrationManager, which is responsible for handling registrations and de-registrations of 
+	AE, CSE and other resources. """
 
 from __future__ import annotations
 from typing import Any, Optional, TYPE_CHECKING
@@ -43,6 +45,7 @@ if TYPE_CHECKING:
 @requires(importer='acme.runtime.Importer')
 @requires(validator='acme.services.Validator')
 class RegistrationManager(metaclass=Singleton):
+	"""	RegistrationManager to handle registrations and de-registrations resources. """
 
 	dispatcher: Dispatcher = None	# type: ignore
 	""" Injected Dispatcher instance. """
@@ -65,16 +68,26 @@ class RegistrationManager(metaclass=Singleton):
 	__slots__ = (
 		'expWorker',
 	)
+	""" Slots for the RegistrationManager. """
 
 	def initialize(self) -> None:
-
+		""" Initialize the RegistrationManager.
+		"""
 		# Start expiration Monitor
 		self.expWorker:BackgroundWorker	= None
+		"""	Background worker for checking expired resources. 
+		"""
+		
 		self.startExpirationMonitor()		
 		L.isInfo and L.log('RegistrationManager initialized')
 
 
 	def shutdown(self) -> bool:
+		""" Shutdown the RegistrationManager. 
+
+			Return:
+				Always *True*.
+		"""
 		self.stopExpirationMonitor()
 		L.isInfo and L.log('RegistrationManager shut down')
 		return True
@@ -114,6 +127,19 @@ class RegistrationManager(metaclass=Singleton):
 	def checkResourceCreation(self, resource:Resource, 
 									originator:str, 
 									parentResource:Optional[Resource] = None) -> str:
+		"""	Check the creation of a resource, for example handle registrations for AE, CSR and CSEBase resources.
+		
+			Args:
+				resource: The resource to be created.
+				originator: The originator of the request that triggered the creation of the resource.
+				parentResource: The parent resource of the resource to be created, if available. 
+			Return:
+				The (possibly new) originator to be used for the resource creation. 
+					This is relevant for AE registrations, where a new originator is created for the registered AE.	
+			Raises:
+				OPERATION_NOT_ALLOWED: If the operation is not allowed.
+				BAD_REQUEST: If the request is malformed or invalid.
+		"""
 		# Some Resources are not allowed to be created in a request, return immediately
 
 		match resource.ty:
@@ -163,6 +189,14 @@ class RegistrationManager(metaclass=Singleton):
 
 	def handleCreator(self, resource:Resource, originator:str) -> None:
 		"""	Check for set creator attribute as well as assign it to allowed resources.
+
+			Args:
+				resource: The resource for which to check and set the creator attribute.
+				originator: The originator to set as creator, if allowed.
+
+			Raises:
+				BAD_REQUEST: If the creator attribute is not allowed for the resource type, or if the originator is not allowed to be set as creator.
+
 		"""
 		if resource.hasAttribute('cr'):	# not get, might be empty, which is an indication that it needs to be set
 			# Check whether the creator is allowed to be set for this resource 
@@ -179,6 +213,15 @@ class RegistrationManager(metaclass=Singleton):
 
 
 	def checkResourceUpdated(self, resource:Resource, updateDict:JSON) -> None:
+		"""	Check the update of a resource, for example handle updates for CSR resources.
+		
+			Args:
+				resource: The resource to be updated.
+				updateDict: The update dict with the new values for the resource attributes.
+
+			Raises:
+				BAD_REQUEST: If the update is not allowed for the resource type.
+		"""
 		match resource.ty:
 			case ResourceTypes.CSR:
 				if not self.handleCSRUpdate(resource, updateDict):
@@ -187,6 +230,14 @@ class RegistrationManager(metaclass=Singleton):
 
 
 	def checkResourceDeletion(self, resource:Resource) -> None:
+		"""	Check the deletion of a resource, for example handle de-registrations for AE, CSR and REQ resources.
+
+			Args:
+				resource: The resource to be deleted.
+
+			Raises:
+				BAD_REQUEST: If the deletion is not allowed for the resource type.
+		"""
 		match resource.ty:
 			case ResourceTypes.AE:
 				if not self.handleAEDeRegistration(resource):
@@ -222,7 +273,21 @@ class RegistrationManager(metaclass=Singleton):
 	#
 
 	def handleAERegistration(self, ae:Resource, originator:str, parentResource:Resource) -> str:
-		""" This method creates a new originator for the AE registration, depending on the method choosen."""
+		""" This method creates a new originator for the AE registration, depending on the method choosen.
+		
+			Args:
+				ae: The AE resource to be registered.
+				originator: The originator of the request that triggered the registration of the AE. 
+					This can be empty, in which case a new originator is created for the AE.
+				parentResource: The parent resource of the AE to be registered. This should be the CSEBase resource.
+			
+			Return:
+				The originator to be used for the AE registration. 
+
+			Raises:
+				APP_RULE_VALIDATION_FAILED: If the originator is not allowed.
+				INVALID_CHILD_RESOURCE_TYPE: If the parent resource is not the CSEBase.
+		"""
 
 		L.isDebug and L.logDebug(f'handle AE registration for: {ae.ri} with originator: {originator}')
 
@@ -270,6 +335,14 @@ class RegistrationManager(metaclass=Singleton):
 	#
 
 	def handleAEDeRegistration(self, ae:Resource) -> bool:
+		""" Handle the de-registration of an AE resource. This includes the deletion of the originator and sending events.
+		
+			Args:
+				ae: The <AE> resource to be de-registered.
+			
+			Return:
+				Always *True*.
+		"""
 		# More De-registration functions happen in the AE's deactivate() method
 		L.isDebug and L.logDebug(f'DeRegistering AE. aei: {ae.aei}')
 
@@ -306,6 +379,16 @@ class RegistrationManager(metaclass=Singleton):
 	#
 
 	def handleCSRRegistration(self, csr:Resource, originator:str) -> None:
+		""" Handle the registration of a <CSR> resource. 
+			
+			Args:
+				csr: The <CSR> resource to be registered.
+				originator: The originator of the request that triggered the registration of the <CSR>.
+
+			Raises:
+				OPERATION_NOT_ALLOWED: If the registration is not allowed.
+				NOT_IMPLEMENTED: If the RemoteCSEManager is disabled.
+		"""
 		L.isDebug and L.logDebug(f'Registering CSR. csi: {csr.csi}')
 
 		if not self.remoteCSEManager:
@@ -361,6 +444,15 @@ class RegistrationManager(metaclass=Singleton):
 	#
 
 	def handleCSRUpdate(self, csr:Resource, updateDict:JSON) -> bool:
+		"""	Handle the update of a <CSR> resource.
+		
+			Args:
+				csr: The <CSR> resource to be updated.
+				updateDict: The update dict with the new values for the resource attributes.
+			
+			Return:
+				Always *True*.
+		"""
 		L.isDebug and L.logDebug(f'Updating CSR. csi: {csr.csi}')
 		# send event
 		eventManager.csrUpdated(EventData(payload=(csr, updateDict)))
@@ -374,6 +466,15 @@ class RegistrationManager(metaclass=Singleton):
 	#
 
 	def handleCSEBaseAnncRegistration(self, cbA:Resource, originator:str) -> None:
+		""" Handle the registration of a <CSEBaseAnnc> resource. 
+			
+			Args:
+				cbA: The <CSEBaseAnnc> resource to be registered.
+				originator: The originator of the request that triggered the registration of the <CSEBaseAnnc>.
+
+			Raises:
+				CONFLICT: If a <CSEBaseAnnc> with the same lnk already exists.
+		"""
 		L.isDebug and L.logDebug(f'Registering CSEBaseAnnc. csi: {cbA.csi}')
 
 		# Check whether the same CSEBase has already registered (-> only once)
@@ -393,6 +494,15 @@ class RegistrationManager(metaclass=Singleton):
 	#
 
 	def handleREQRegistration(self, req:Resource, originator:str) -> bool:
+		"""	Handle the registration of a <REQ> resource. 
+		
+			Args:
+				req: The <REQ> resource to be registered.
+				originator: The originator of the request that triggered the registration of the <REQ>.
+				
+			Return:
+				Always *True*.
+		"""
 		L.isDebug and L.logDebug(f'Registering REQ: {req.ri}')
 		# Add originator as creator to allow access
 		req.setOriginator(originator)
@@ -404,6 +514,14 @@ class RegistrationManager(metaclass=Singleton):
 	#
 
 	def handleREQDeRegistration(self, resource:Resource) -> bool:
+		"""	Handle the de-registration of a <REQ> resource.
+		
+			Args:
+				resource: The <REQ> resource to be de-registered.
+			
+			Return:
+				Always *True*.
+		"""
 		L.isDebug and L.logDebug(f'DeRegisterung REQ. ri: {resource.ri}')
 		return True
 
@@ -415,6 +533,15 @@ class RegistrationManager(metaclass=Singleton):
 	#
 
 	def handleCSEBaseRegistration(self, cb:Resource, originator:str) -> None:
+		""" Handle the registration of a <CSEBase> resource. 
+		
+			Args:
+				cb: The <CSEBase> resource to be registered.
+				originator: The originator for the CSEBase registration. This should be the Admin originator.
+
+			Raises:
+				CONFLICT: If a <CSEBase> with the same csi already exists, which means that a CSEBase can only be registered once.
+		"""
 		csi = cb.csi
 		L.isDebug and L.logDebug(f'Registering CSEBase. csi: {cb.csi}')
 		if self.storage.getOriginator(csi):
@@ -430,6 +557,8 @@ class RegistrationManager(metaclass=Singleton):
 	##
 
 	def startExpirationMonitor(self) -> None:
+		""" Start the expiration monitor, which periodically checks for expired resources and deletes them.
+		"""
 		# Start background monitor to handle expired resources
 		if not Configuration.cse_enableResourceExpiration:
 			L.isDebug and L.logDebug('Expiration disabled. NOT starting expiration monitor')
@@ -441,6 +570,8 @@ class RegistrationManager(metaclass=Singleton):
 
 
 	def stopExpirationMonitor(self) -> None:
+		""" Stop the expiration monitor.
+		"""
 		# Stop the expiration monitor
 		L.isDebug and L.logDebug('Stopping expiration monitor')
 		if self.expWorker:
@@ -448,6 +579,8 @@ class RegistrationManager(metaclass=Singleton):
 
 
 	def restartExpirationMonitor(self) -> None:
+		""" Restart the expiration monitor, for example after a CSE restart.
+		"""
 		# Stop the expiration monitor
 		L.isDebug and L.logDebug('Restart expiration monitor')
 		if self.expWorker:
@@ -455,6 +588,11 @@ class RegistrationManager(metaclass=Singleton):
 
 
 	def expirationDBMonitor(self) -> bool:
+		""" Check the database for expired resources and delete them. This is called periodically by the expiration monitor.
+		
+			Return:
+				Always *True*.
+		"""
 		# L.isDebug and L.logDebug('Looking for expired resources')
 		now = getResourceDate()
 		resources = self.storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
@@ -478,7 +616,7 @@ class RegistrationManager(metaclass=Singleton):
 		"""	Register the S-Originator for an AE resource.
 
 			Args:
-				ae: The AE resource.
+				ae: The <AE> resource.
 				originator: The original originator.
 			Return:
 				The assigned S-Originator.
@@ -487,10 +625,10 @@ class RegistrationManager(metaclass=Singleton):
 
 
 	def deregisterSOriginator(self, ae: Resource) -> None:
-		"""	Deregister the S-Originator for an AE resource.
+		"""	Deregister the S-Originator for an <AE> resource.
 
 			Args:
-				ae: The AE resource.
+				ae: The <AE> resource.
 		"""
 		# In case an \<AE> resource hosted on a MN-CSE or ASN-CSE with AE-ID-Stem starting with "S" is
 		# requested to be deleted, the \<AEAnnc> resource that was created on the IN-CSE during the 

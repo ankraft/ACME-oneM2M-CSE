@@ -6,10 +6,11 @@
 #
 #	TSB : Announceable variant
 #
+"""	Implementation of the TimeSyncBeacon (TSB) resource type, announceable variant."""
 
 from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class TSBAnnc(AnnouncedResource):
-
+	"""	Class for the TimeSyncBeacon (TSB) resource type, announceable variant. """
 	pass

@@ -7,6 +7,8 @@
 #	ResourceType: timeSeriesInstance
 #
 
+"""	Implementation of the TimeSeriesInstance (TSI) resource type."""
+
 from __future__ import annotations
 from typing import Optional
 
@@ -17,6 +19,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class TSI(AnnounceableResource):
+	"""	Class for the TimeSeriesInstance (TSI) resource type. """
 
 	def initialize(self, pi: str) -> None:
 		self.setAttribute('cs', getAttributeSize(self['con']))       # Set contentSize

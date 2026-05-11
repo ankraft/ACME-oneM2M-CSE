@@ -6,9 +6,10 @@
 #
 #	TS : Announceable variant
 #
+"""	Implementation of the TimeSeriesInstance (TSI) resource type, announceable variant."""
 
 from ..resources.AnnouncedResource import AnnouncedResource
 
 class TSAnnc(AnnouncedResource):
-
+	"""	Class for the TimeSeriesInstance (TSI) resource type, announceable variant. """
 	pass

@@ -6,6 +6,7 @@
 #
 #	ResourceType: mgmtObj:Node
 #
+"""	Implementation of the Node (NOD) resource type."""
 
 from __future__ import annotations
 
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
 
 @requires(dispatcher='acme.services.Dispatcher')
 class NOD(AnnounceableResource):
+	"""	Class for the Node (NOD) resource type. """
 
 	dispatcher: Dispatcher = None
 	""" Injected Dispatcher instance. """

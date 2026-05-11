@@ -127,16 +127,12 @@ def getThreadName(thread:Optional[threading.Thread] = None) -> str:
 #
 _urlregex = re.compile(
 		r'^(?:http|ftp|mqtt|ws|coap)s?://|^(?:acme)://' 	# http://, https://, ftp://, ftps://, coap://, coaps://, mqtt://, mqtts://
-		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
-		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
-		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
-		r'(?::\d+)?' 								# optional port
-		r'(?:/?|[/?]\S+)$', re.IGNORECASE			# optional path
-
-		# Alternative version of the last line: match everything for the path and also remove the IGNORECASE
-		# r'\S+' # re.IGNORECASE		 			# optional path
-
-		)
+		+ r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
+		+ r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
+		+ r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
+		+ r'(?::\d+)?' 								# optional port
+		+ r'(?:/?|[/?]\S+)$', re.IGNORECASE			# optional path
+)
 """	Regular expression to test for a valid URL. """
 
 def isURL(url:str) -> bool:

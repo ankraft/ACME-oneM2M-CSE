@@ -6,6 +6,7 @@
 #
 #	ResourceType: NotificationTargetPolicy
 #
+"""	Implementation of the NotificationTargetPolicy (NTP) resource type. """
 
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
@@ -24,6 +25,7 @@ _defaultPLBL = 'Default'
 
 @requires(storage='acme.runtime.Storage')
 class NTP(Resource):
+	"""	Class for the NotificationTargetPolicy (NTP) resource type. """
 
 	storage: Storage =None
 	"""	Injected Storage instance. """

@@ -408,7 +408,8 @@ def resetCSE() -> None:
 
 
 def restartCSE() -> None:
-	"""	Restart the CSE. This is a convenience function that calls the shutdown() function.
+	"""	Restart the CSE. This actually shuts down and terminates the CSE but with a special exit code 
+		to indicate that the CSE should be restarted. 
 	"""
 	if RC.cseStatus != CSEStatus.RUNNING:
 		L.logErr('CSE is not running, cannot restart')

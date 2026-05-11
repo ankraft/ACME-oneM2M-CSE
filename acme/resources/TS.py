@@ -6,6 +6,8 @@
 #
 #	ResourceType: TimeSeries
 #
+"""	Implementation of the TimeSeries (TS) resource type.
+"""
 
 from __future__ import annotations
 from typing import Optional, Any, TYPE_CHECKING
@@ -37,6 +39,7 @@ if TYPE_CHECKING:
 @requires(requestManager='acme.services.RequestManager')
 @requires(dispatcher='acme.services.Dispatcher')
 class TS(ContainerResource):
+	"""	Class for the TimeSeries (TS) resource type. """
 
 	timeSeriesManager: Optional[TimeSeriesManager] = None
 	""" Injected TimeSeriesManager plugin instance. """
@@ -65,6 +68,9 @@ class TS(ContainerResource):
 			self.setAttribute('mdn', Configuration.resource_ts_mdn, overwrite=False)
 
 		self.__validating = False	# semaphore for validating
+		""" Semaphore for validating. This is used to prevent unfortunate recursion by the Dispatcher when validating 
+		    the children of this resource. 
+		"""
 		
 		super().initialize(pi)
 

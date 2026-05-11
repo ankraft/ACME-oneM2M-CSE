@@ -6,10 +6,11 @@
 #
 #	NODAnnc : Announceable variant
 #
+"""	Implementation of the Node (NOD) resource type, announceable variant."""
 
 from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class NODAnnc(AnnouncedResource):
-
+	"""	Class for the Node (NOD) resource type, announceable variant. """
 	pass
