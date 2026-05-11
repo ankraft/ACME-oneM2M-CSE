@@ -418,8 +418,8 @@
 			"type": "list",
 			"ltype": "ID",
 			"car": "01L",
-			"oc": "NP",
-			"ou": "NP",
+			"oc": "O",	// Only used for internal handling of ALPC, not set by clients
+			"ou": "O",
 			"od": "NP",
 			"annc": "NA"
 		}
@@ -1308,8 +1308,8 @@
 			"ns": "m2m",
 			"type": "ID",
 			"car": "1",
-			"oc": "O",
-			"ou": "NP",
+			"oc": "M",	// ALPC is created internally by CSE
+			"ou": "O",
 			"od": "NP",
 			"annc": "NA"
 		}

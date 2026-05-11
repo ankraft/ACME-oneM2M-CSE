@@ -276,6 +276,7 @@
 		"fullName": "AEContactListPerCSE",
 		"type": 44,
 		"isRequestCreatable": false,
+		"isRequestUpdatable": false,	// TODO This is propaply not correct, because there are some attributes (like lbl) that can be updated.
 		"isRequestDeletable": false,
 
 		"attributes": [
@@ -303,6 +304,7 @@
 		"fullName": "AEContactList",
 		"type": 43,
 		"isRequestCreatable": false,
+		"isRequestUpdatable": false,	// TODO This is propaply not correct, because there are some attributes (like lbl) that can be updated.
 		"isRequestDeletable": false,
 
 		"attributes": [
@@ -324,6 +326,7 @@
 		],
 
 		"childResourceTypes": [
+			"ALPC",
 			"SUB"
 		]
 	},
@@ -617,7 +620,8 @@
 			"SUB", 
 			"TS", 
 			"TSB", 
-			"CSEBaseAnnc"
+			"CSEBaseAnnc",
+			"AEAnnc"	// EXPERIMENTAL, not in the standard, but we need it for "S" registration tracking
 		]
 	},
 

@@ -20,13 +20,13 @@ from ..etc.Constants import RuntimeConstants as RC
 class ALPC(Resource):
 	""" AEContactListPerCSE (ALPC) resource type. """
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
+	# def activate(self, parentResource: Resource, originator: str) -> None:
 
-		# Check if we are running on an INCSE
-		if RC.cseType != CSEType.IN:
-			raise OPERATION_NOT_ALLOWED('ALPC resource type is only allowed on an IN-CSE')
+	# 	# Check if we are running on an INCSE
+	# 	if RC.cseType != CSEType.IN:
+	# 		raise OPERATION_NOT_ALLOWED('ALPC resource type is only allowed on an IN-CSE')
 		
-		return super().activate(parentResource, originator)
+	# 	return super().activate(parentResource, originator)
 	pass
 
 

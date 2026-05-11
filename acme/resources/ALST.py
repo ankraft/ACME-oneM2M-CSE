@@ -19,15 +19,16 @@ from ..etc.Constants import RuntimeConstants as RC
 
 class ALST(Resource):
 	""" AEContactList (ALST) resource type. """
-
-	def activate(self, parentResource: Resource, originator: str) -> None:
-
-		# Check if we are running on an INCSE
-		if RC.cseType != CSEType.IN:
-			raise OPERATION_NOT_ALLOWED('ALST resource type is only allowed on an IN-CSE')
-		
-		# Add RO attribute to the resource
-		self.setAttribute('nic', 0, overwrite=False)
-
-		return super().activate(parentResource, originator)
 	pass
+
+	# def activate(self, parentResource: Resource, originator: str) -> None:
+
+	# 	# Check if we are running on an INCSE
+	# 	if RC.cseType != CSEType.IN:
+	# 		raise OPERATION_NOT_ALLOWED('ALST resource type is only allowed on an IN-CSE')
+		
+	# 	# Add RO attribute to the resource
+	# 	self.setAttribute('nic', 0, overwrite=False)
+
+	# 	return super().activate(parentResource, originator)
+	# pass

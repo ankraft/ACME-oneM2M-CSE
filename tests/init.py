@@ -257,8 +257,10 @@ console = Console()
 ###############################################################################
 
 actrRN	= 'testACTR'
-aeRN	= 'testAE'
 acpRN	= 'testACP'
+aeRN	= 'testAE'
+alpcRN	= 'testALPC'	# This is the fixed name for ACME
+alstRN	= 'AEContactList'	# This is the fixed name for ACST
 batRN	= 'testBAT'
 cinRN	= 'testCIN'
 cntRN	= 'testCNT'
@@ -290,8 +292,10 @@ wificRN	= 'testWIFIC'
 
 cseURL 	= f'{CSEURL}{CSERN}'
 csiURL 	= f'{CSEURL}{CSEID}'
-aeURL 	= f'{cseURL}/{aeRN}'
 acpURL 	= f'{cseURL}/{acpRN}'
+aeURL 	= f'{cseURL}/{aeRN}'
+alpcURL	= f'{cseURL}/{alpcRN}'
+alstURL	= f'{cseURL}/{alstRN}'
 cntURL 	= f'{aeURL}/{cntRN}'
 cinURL 	= f'{cntURL}/{cinRN}'	# under the <cnt>
 crsURL	= f'{aeURL}/{crsRN}'

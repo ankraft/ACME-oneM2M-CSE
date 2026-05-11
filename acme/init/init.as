@@ -37,12 +37,13 @@
 			"csi":  "${get-config \"cse.cseID\"}",
 			"spi":  "${get-config \"cse.serviceProviderID\"}",
 			"csz":  [ "application/json", "application/cbor" ],
-			"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources" ]
+			"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources"
+				    ]
 		}}
 		"m2m:cb/poa" 
 		(get-config "cse.poa")))
 
-
+;;,				  "${get-config \"cse.cseID\"}/acpRetrieveCSEBase" s
 
 ;;
 ;;	Allow all originators to create (only) <ACP> and <NTP> under the CSEBase
@@ -70,6 +71,30 @@
 			]
 		}
 	}})
+
+
+(import-raw 
+	cse-originator
+	{ "m2m:acp": {
+		"rn": "acpRetrieveCSEBase",
+		"ri": "acpRetrieveCSEBase",
+		"pi": "${get-config \"cse.resourceID\"}",
+		"pv": {
+			"acr": [ 
+				{	"acor": [ "all"	],
+					"acop": 2
+				}
+			]
+		},
+		"pvs": {
+			"acr": [ 
+				{	"acor": [ "${cse-originator}" ],
+					"acop": 63
+				}
+			]
+		}
+	}})
+
 
 ;;
 ;;	Default admin AE

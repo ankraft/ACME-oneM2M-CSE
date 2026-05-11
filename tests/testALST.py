@@ -74,7 +74,7 @@ def run(testFailFast:bool) -> TestResult:
 		# basic tests
 		'test_createALSTFail',
 		'test_deleteALSTFail',
-	
+		# TODO no test for update, because the procedurs in TS-0004 are wrong
 	])
 
 	# Run tests

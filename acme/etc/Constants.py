@@ -167,6 +167,12 @@ class Constants(object):
 	""" Constant: Name of the `Resource` internal *__subCtr__* attribute. This attribute holds the subscription counter for a resource. """
 
 
+	#
+	#	Contants for fixed resource names
+	#
+	
+	AEContactList = 'AEContactList'
+	""" Constant: The fixed resource name for the AEContactList (ALST) resource. """
 
 
 	#
