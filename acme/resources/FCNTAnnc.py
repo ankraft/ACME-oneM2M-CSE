@@ -19,4 +19,6 @@ class FCNTAnnc(AnnouncedResource):
 
 	def __init__(self, dct: Optional[JSON]=None, typeShortname: Optional[str]=None, create: Optional[bool]=False) -> None:
 		self.typeShortname = typeShortname
+		"""	Shortname of the flexContainer type. """
+
 		super().__init__(dct, create=create)

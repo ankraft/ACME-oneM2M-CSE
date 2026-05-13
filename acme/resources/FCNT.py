@@ -43,6 +43,8 @@ class FCNT(ContainerResource):
 
 	def __init__(self, dct:Optional[JSON]=None, typeShortname:Optional[str]=None, create:Optional[bool]=False) -> None:
 		self.typeShortname = typeShortname
+		"""	Shortname of the flexContainer type. """
+
 
 		# TODO The following could be optimized? copy to internal attributes?
 		self.nonCustomAttributes = internalAttributes + list(self._attributes.keys())

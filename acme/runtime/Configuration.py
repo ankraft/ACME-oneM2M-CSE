@@ -6,8 +6,9 @@
 #
 #	Managing CSE configurations
 #
-""" This module implements the configuration of the CSE. It reads the configuration file, performs checks,
-	and provides access to the configuration values. """
+"""	This module implements the configuration of the CSE. It reads the configuration file, performs checks, 
+	and provides access to the configuration values. 
+"""
 
 
 from __future__ import annotations
@@ -1163,7 +1164,8 @@ class Configuration(object):
 		
 
 class ConfigurationError(Exception):
-    pass
+	"""	Exception class for configuration errors. """
+	pass
 
 
 #############################################################################
@@ -1198,7 +1200,10 @@ from ..runtime.configurations.TSResourceConfiguration import TSResourceConfigura
 
 # Instantiate all configuration modules here, in a specfic order.
 
-_moduleConfigs:list[ModuleConfiguration] = [
+_moduleConfigs:list[ModuleConfiguration]
+""" The list of configuration modules. """
+
+_moduleConfigs = [
 
 	# Runtime configurations
 	CSEConfiguration(),

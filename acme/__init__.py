@@ -8,3 +8,4 @@
 
 			python -m acme
 """
+__all__ = ['acme', 'plugins']

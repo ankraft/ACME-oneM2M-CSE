@@ -19,7 +19,7 @@ from acme.helpers.BackgroundWorker import BackgroundWorkerPool
 from acme.runtime.Configuration import Configuration, ConfigurationError
 from acme.runtime.Logging import Logging as L
 from acme.runtime.PluginSupport import plugin, init, start, stop, restart, configure, validate, requires
-from acme.runtime.EventManager import EventManager, EventData, eventManager
+from acme.runtime.EventManager import eventManager
 if TYPE_CHECKING:
 	from acme.runtime.Storage import Storage
 
@@ -135,10 +135,6 @@ StatsT = Dict[str, Union[str, int, float]]
 @requires(storage='acme.runtime.Storage')
 class Statistics(object):
 	"""	Statistics class. Handles all internal statistics.
-
-		Attributes:
-			statLock:				Internal lock for statistic handling.
-			stats:					Statistics records
 	"""
 
 	storage: Storage = None
@@ -152,17 +148,24 @@ class Statistics(object):
 
 	@init
 	def initStatistics(self) -> None:
+		"""	Initialize the statistics plugin.
+		"""
 		L.isDebug and L.logDebug('Initializing Statistics plugin')
 
 		# create lock
 		self.statLock = Lock()
+		""" Lock for statistic handling. """
 
 
 	@start
 	def start(self) -> None:
+		"""	Start the statistics plugin.
+			This includes subscribing to events and starting the background worker for writing statistics to the database.
+		"""
 
 		# retrieve or create statistics record, even when statistics are disabled
 		self.stats = self.setupStats()
+		""" Statistics records. """
 
 		if Configuration.cse_statistics_enable:
 			# subscripe vto various events

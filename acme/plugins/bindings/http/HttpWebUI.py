@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 @requires(httpServer='acme.plugins.bindings.HttpServer')
 class HttpWebUI:
 	"""	Plugin class to add the Web UI functionality to the HTTP server.
+
+		The web UI is registered at the root of the HTTP server or at the path specified in the configuration under the endpoint "webui".
 	"""
 
 	# "httpServer" is injected by the PluginManager, only if the HttpServer plugin is loaded and the dependency can be resolved.
@@ -38,6 +40,8 @@ class HttpWebUI:
 
 	@start
 	def startWebUI(self) -> None:
+		""" Start the web UI plugin. 
+		"""
 		L.isDebug and L.logDebug('Starting Web UI plugin')
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
@@ -54,6 +58,11 @@ class HttpWebUI:
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		""" Configure the plugin based on the configuration settings.
+			
+			Args:
+				config: The configuration object.
+		"""
 		parser = config.configParser
 		config.webui_root = parser.get('webui', 'root', fallback='/webui')
 		config.webui_enable = parser.getboolean('webui', 'enable', fallback=True)
@@ -61,4 +70,9 @@ class HttpWebUI:
 
 	@validate
 	def validate(self, config: Configuration) -> None:
+		""" Validate the plugin configuration.
+			
+			Args:
+				config: The configuration object.
+		"""
 		self.webuiDirectory = f'{Configuration.moduleDirectory}/webui'

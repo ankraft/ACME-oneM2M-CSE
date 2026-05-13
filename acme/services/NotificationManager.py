@@ -60,9 +60,6 @@ SenderFunction = Callable[[str], bool]	# type:ignore[misc] # bc cyclic definitio
 @requires(request='acme.services.RequestManager')
 class NotificationManager(object):
 	"""	This class defines functionalities to handle subscriptions and notifications.
-
-		Attributes:
-			lockBatchNotification: Internal lock instance for locking certain batch notification methods.
 	"""
 
 	dispatcher:Dispatcher = None
@@ -89,10 +86,13 @@ class NotificationManager(object):
 		"""
 
 		self.lockBatchNotification = Lock()					# Lock for batchNotifications
-		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
+		"""	An internal lock instance for locking certain batch notification methods. """
 
-		# Optimize event handling
+		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
+		"""	An internal lock instance for locking the notification event stats. """
+
 		self._eventNotification = eventManager.notification	# type: ignore
+		""" Cached reference to the notification event for optimized access. """
 
 		L.isInfo and L.log('NotificationManager initialized')
 
@@ -229,10 +229,19 @@ class NotificationManager(object):
 		return result
 
 
-	def checkOperationSubscription(self, resource:Resource,
-								op:Operation,
-								originator:str) -> None:
-		# TODO doc
+	def checkOperationSubscription(self, resource: Resource,
+										 op: Operation,
+										 originator: str) -> None:
+		"""	Check for and perform a notification for an operation subscription.
+		
+			Args:
+				resource: The resource that received the event resp. request.
+				op: The operation to check.
+				originator: The originator of the request that caused the event.
+
+			Raises:
+				`INTERNAL_SERVER_ERROR`: If there are issues retrieving the necessary resources or if multiple default NTP resources are found.
+		"""
 		L.isDebug and L.logDebug(f'Checking operation subscriptions ({op.name}) originator: {originator}')
 
 		self.checkSubscriptions(resource, reason = NotificationEventType.notSet, originator = originator, operation = op)
@@ -722,7 +731,7 @@ class NotificationManager(object):
 
 	# Time Window Monitor : Periodic
 
-	def _getPeriodicWorkerName(self, ri:str) -> str:
+	def _getPeriodicWorkerName(self, ri: str) -> str:
 		"""	Return the name of a periodic window worker.
 		
 			Args:
@@ -734,10 +743,18 @@ class NotificationManager(object):
 		return f'crsPeriodic_{ri}'
 
 
-	def startCRSPeriodicWindow(self, crsRi:str, 
-			    					 tws:str, 
-									 expectedCount:int,
-									 eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> None:
+	def startCRSPeriodicWindow(self, crsRi: str, 
+			    					 tws: str, 
+									 expectedCount: int,
+									 eem: EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> None:
+		"""	Start a periodic window for a <crs> resource.
+		
+			Args:
+				crsRi: Resource ID of the <crs> resource for which to start the periodic window.
+				tws: Time window size as a duration string.
+				expectedCount: The expected number of notifications.
+				eem: Event evaluation mode.
+		"""
 
 		crsTws = fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. TimeWindowInterpretation: {eem}')
@@ -745,12 +762,12 @@ class NotificationManager(object):
 		# Start a background worker. "data", which will contain the RI's later is empty
 		BackgroundWorkerPool.newWorker(crsTws, 
 									   self._crsPeriodicWindowMonitor, 
-									   name = self._getPeriodicWorkerName(crsRi), 
-									   startWithDelay = True,
-									   data = []).start(crsRi = crsRi, expectedCount = expectedCount, eem = eem)
+									   name=self._getPeriodicWorkerName(crsRi), 
+									   startWithDelay=True,
+									   data=[]).start(crsRi=crsRi, expectedCount=expectedCount, eem=eem)
 
 
-	def stopCRSPeriodicWindow(self, crsRi:str) -> None:
+	def stopCRSPeriodicWindow(self, crsRi: str) -> None:
 		""" Stop a periodic window for a <crs> resource.
 
 			Args:
@@ -785,7 +802,7 @@ class NotificationManager(object):
 
 	# Time Window Monitor : Sliding
 
-	def _getSlidingWorkerName(self, ri:str) -> str:
+	def _getSlidingWorkerName(self, ri: str) -> str:
 		"""	Return the name of a sliding window worker.
 		
 			Args:
@@ -797,31 +814,60 @@ class NotificationManager(object):
 		return f'crsSliding_{ri}'
 
 
-	def startCRSSlidingWindow(self, crsRi:str,
-			   						tws:str, 
-									sur:str, 
-									subCount:int,
-									eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> BackgroundWorker:
+	def startCRSSlidingWindow(self, crsRi: str,
+			   						tws: str, 
+									sur: str, 
+									subCount: int,
+									eem: EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> BackgroundWorker:
+		""" Start a sliding window for a <crs> resource.
+		
+			Args:
+				crsRi: Resource ID of the <crs> resource for which to start the sliding window.
+				tws: Time window size as a duration string.
+				sur: The notification source.
+				subCount: The expected number of notifications.
+				eem: Event evaluation mode.
+			
+			Return:
+				The background worker handling the sliding window.
+		"""
 		crsTws = fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting SlidingWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. SubScount: {subCount}')
 
 		# Start an actor for the sliding window. "data" already contains the first notification source in an array
 		return BackgroundWorkerPool.newActor(self._crsSlidingWindowMonitor, 
 											 crsTws,
-											 name = self._getSlidingWorkerName(crsRi), 
-											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount, eem = eem)
+											 name=self._getSlidingWorkerName(crsRi), 
+											 data=[ sur ]).start(crsRi=crsRi, subCount=subCount, eem=eem)
 
 
-	def stopCRSSlidingWindow(self, crsRi:str) -> None:
+	def stopCRSSlidingWindow(self, crsRi: str) -> None:
+		""" Stop a sliding window for a <crs> resource.
+
+			Args:
+				crsRi: Resource ID of the <crs> resource for which to stop the sliding window.
+		"""
 		L.isDebug and L.logDebug(f'Stopping SlidingWindow for crs: {crsRi}')
 		BackgroundWorkerPool.stopWorkers(self._getSlidingWorkerName(crsRi))
 
 
-	def _crsSlidingWindowMonitor(self, _data:Any,
-							  		   _worker:BackgroundWorker,
-			      					   crsRi:str, 
-									   subCount:int, 
-									   eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool:
+	def _crsSlidingWindowMonitor(self, _data: Any,
+							  		   _worker: BackgroundWorker,
+			      					   crsRi: str, 
+									   subCount: int, 
+									   eem: EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool:
+		""" Actor function to monitor a sliding window for a <crs> resource.
+		
+			Args:
+				_data: List of notification sources.
+				_worker: The background worker handling this sliding window.
+				crsRi: Resource ID of the <crs>.
+				subCount: The expected number of notifications.
+				eem: Event evaluation mode.
+			
+			Return:
+				Always returns *True*.
+		"""
 		L.isDebug and L.logDebug(f'Checking sliding window for <crs>: {crsRi}')
 		self._crsCheckForNotification(_data, crsRi, subCount, eem)
 		_worker.data = []
@@ -831,7 +877,13 @@ class NotificationManager(object):
 
 	# Received Notification handling
 
-	def receivedCrossResourceSubscriptionNotification(self, sur:str, crs:Resource) -> None:
+	def receivedCrossResourceSubscriptionNotification(self, sur: str, crs: Resource) -> None:
+		""" Handle a received notification for a <crs> resource.
+		
+			Args:
+				sur: The notification source received in the notification.
+				crs: The <crs> resource for which the notification was received.
+		"""
 		crsRi = crs.ri
 		crsTwt = crs.twt
 		crsTws = crs.tws
@@ -1473,8 +1525,19 @@ class NotificationManager(object):
 			return True
 
 
-	def _startNewBatchNotificationWorker(self, ri:str, nu:str, ln:bool, sub:JSON, dur:float) -> bool:
-		# TODO doc
+	def _startNewBatchNotificationWorker(self, ri: str, nu: str, ln: bool, sub: JSON, dur: float) -> bool:
+		"""	Start a new batch notification worker.
+
+			Args:
+				ri: Resource ID of the subscription.
+				nu: Notification URI of the notification target.
+				ln: *latestNotify*, if *True* then only send the latest notification.
+				sub: The internal *sub* structure.
+				dur: Duration for the batch notification.
+
+			Return:
+				Indication of the success of the operation.
+		"""
 		if dur is None or dur < 1:	
 			L.logErr('BatchNotification duration is < 1')
 			return False
@@ -1483,17 +1546,22 @@ class NotificationManager(object):
 			return True
 		L.isDebug and L.logDebug(f'Starting new batchNotificationsWorker. Duration : {dur:f} seconds')
 		BackgroundWorkerPool.newActor(self._sendSubscriptionAggregatedBatchNotification, 
-									  delay = dur,
-									  name = self._workerID(ri, nu)).start(ri = ri, nu = nu, ln = ln, sub = sub)
+									  delay=dur,
+									  name=self._workerID(ri, nu)).start(ri=ri, nu=nu, ln=ln, sub=sub)
 		return True
 
 
-	def _stopNotificationBatchWorker(self, ri:str, nu:str) -> None:
+	def _stopNotificationBatchWorker(self, ri: str, nu: str) -> None:
+		""" Stop a batch notification worker for a given ri and nu.
+		
+			Args:
+				ri: Resource ID of the subscription.
+				nu: Notification URI of the notification target."""
 		# TODO doc
 		BackgroundWorkerPool.stopWorkers(self._workerID(ri, nu))
 
 
-	def _workerID(self, ri:str, nu:str) -> str:
+	def _workerID(self, ri: str, nu: str) -> str:
 		"""	Return an ID for a batch notification background worker.
 		
 			Args:
@@ -1512,9 +1580,24 @@ class NotificationManager(object):
 	#	Target removal processing
 	#
 
-	def removeNotificationTarget(self, ntsr:NTSR, originator:str) -> None:
+	def removeNotificationTarget(self, ntsr: NTSR, originator: str) -> None:
+		""" Remove a notification target from a subscription and perform the necessary actions based on the associated policies.
+		
+			Args:
+				ntsr: The notification target subscription resource.
+				originator: The originator to be removed.
 
-		def removeOriginatorFromParentNUs(parentSubscription:Resource) -> None:
+			Raises:
+				`ORIGINATOR_HAS_NO_PRIVILEGE`: If the policies evaluated to false for the given originator and the notification target subscription resource.
+				`INTERNAL_SERVER_ERROR`: If there are issues retrieving the necessary resources or if multiple default NTP resources are found.
+		"""
+
+		def removeOriginatorFromParentNUs(parentSubscription: Resource) -> None:
+			""" Remove the given originator from the notification targets of the parent subscription or cross resource subscription.
+			
+				Args:
+					parentSubscription: The parent subscription or cross resource subscription from which to remove the originator.
+			"""
 			# Get the parent subscription or cross resource subscription
 			if (nu := parentSubscription.nu):
 				# Remove the Originator from the list of notification targets

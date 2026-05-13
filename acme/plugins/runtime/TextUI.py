@@ -34,18 +34,28 @@ _textUI:TextUI = None
 @EventHandler
 @plugin(property='textUI', tags=['acme', 'ui'])
 class TextUI(object):
+	"""	TextUI plugin class. This class provides a textual user interface for the ACME CSE.
+	"""
 
 	__slots__ = (
-		'tuiApp'
+		'tuiApp',
+		'_textUI'
 	)
 	""" Slots for TextUI class. """
 	
 	def __init__(self) -> None:
+		"""	Initialize the TextUI plugin.
+		"""
 		self.tuiApp:ACMETuiApp = None
+		"""	Instance of the ACMETuiApp class. """
+
 
 
 	@start
 	def start(self) -> None:
+		""" Start the TextUI service.
+		"""
+
 		global _textUI
 		_textUI = self
 		L.isInfo and L.log('TextUI initialized')
@@ -53,6 +63,11 @@ class TextUI(object):
 		
 	@stop
 	def shutdown(self) -> bool:
+		""" Stop the TextUI service. 
+		
+			Returns:
+				Always returns *True*.
+		"""
 		global _textUI
 		if _textUI.tuiApp:
 			_textUI.tuiApp.exit()
@@ -79,6 +94,13 @@ class TextUI(object):
 	@onEvent(eventManager.registeredToRemoteCSE)
 	@onEvent(eventManager.csrUpdated)
 	def registrationUpdate(self, eventData: EventData) -> None:		# type: ignore[no-untyped-def]
+		"""	Callback for registration-related events. 
+		
+			This will trigger an update of the container registrations in the TextUI.
+
+			Args:
+				eventData: The event data, containing information about the registration event.
+		"""
 		if self.tuiApp and self.tuiApp.containerRegistrations:
 			self.tuiApp.containerRegistrations.registrationsUpdate()
 
@@ -104,6 +126,11 @@ class TextUI(object):
 	
 
 	def runUI(self) -> bool:
+		"""	Run the TextUI. This will block until the TextUI is exited.
+
+			Returns:
+				True if the TextUI was exited with a restart request, False if it was exited with a quit request.
+		"""
 
 		# Disable console logging
 		previousScreenLogging = L.enableScreenLogging
@@ -252,6 +279,11 @@ class TextUI(object):
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		"""	Configure the TextUI plugin with the given configuration.
+
+			Args:
+				config: The configuration to use for the TextUI plugin.
+		"""
 		parser = config.configParser
 
 		#	Text UI
@@ -266,6 +298,14 @@ class TextUI(object):
 
 	@validate
 	def validate(self, config: Configuration) -> None:
+		""" Validate the configuration for the TextUI plugin.
+
+			Args:
+				config: The configuration to validate.
+		
+			Raises:
+				ConfigurationError: If the configuration is invalid.
+		"""
 
 		# override configuration with command line arguments
 		if Configuration._args_lightScheme is not None:

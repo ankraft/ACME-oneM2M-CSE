@@ -89,6 +89,11 @@ class AnnouncementManager(object):
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		""" Configure the announcement manager.
+		
+			Args:
+				config: The configuration to apply.
+		"""
 		parser = config.configParser
 		config.cse_announcements_allowAnnouncementsToHostingCSE = parser.getboolean('cse.announcements', 'allowAnnouncementsToHostingCSE', fallback=True)
 		config.cse_announcements_delayAfterRegistration = parser.getfloat('cse.announcements', 'delayAfterRegistration', fallback=3.0)
@@ -96,6 +101,11 @@ class AnnouncementManager(object):
 
 	@validate
 	def validate(self, config: Configuration) -> None:
+		""" Validate the announcement manager configuration.
+
+			Args:
+				config: The configuration to validate.
+		"""
 		if config.cse_announcements_delayAfterRegistration < 0.0:
 			raise ConfigurationError(fr'\[cse.announcements]:delayAfterRegistration must be 0 or greater')
 

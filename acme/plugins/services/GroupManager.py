@@ -10,7 +10,7 @@
 """	This module implements the group service manager functionality. """
 
 from __future__ import annotations
-from typing import cast, List, Optional, Any, TYPE_CHECKING
+from typing import cast, List, TYPE_CHECKING
 
 from acme.etc.Types import ResourceTypes, Result, ConsistencyStrategy, Permission, Operation
 from acme.etc.Types import CSERequest, JSON, ResponseType
@@ -90,15 +90,22 @@ class GroupManager():
 
 	@configure
 	def configure(self, config: Configuration) -> None:
-		#	Defaults for Group Resources
+		"""	Configure the GroupManager with the provided configuration.
+		
+			Args:
+				config: The configuration to apply.
+		"""
 		parser = config.configParser
-
 		config.resource_grp_resultExpirationTime = parser.getint('resource.grp', 'resultExpirationTime', fallback=0)
 
 
 	@validate
 	def validate(self, config: Configuration) -> None:
-		# Check group resource defaults
+		"""	Validate the GroupManager configuration.
+
+			Args:
+				config: The configuration to validate.
+		"""
 		if config.resource_grp_resultExpirationTime < 0:
 			raise ConfigurationError(fr'[i]\[resource.grp]:resultExpirationTime[/i] must be >= 0')
 

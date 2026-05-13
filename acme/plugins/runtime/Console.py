@@ -67,19 +67,8 @@ if TYPE_CHECKING:
 @requires(cseSetConsole='acme.runtime.CSE.setConsole')
 @requires(cseShutdown='acme.runtime.CSE.shutdown')
 class Console(ConsoleBase):
-	"""	Console Manager class.
-	
-		Attributes:
-			interruptContinous: Indication whether any continuous display function should terminate.
-			previousTreeRi: Resource ID of the previous sub-tree display.
-			previousInspectRi: Resource ID of the previous resource inspection.
-			previosInspectChildrenRi: Resource ID of the previous resource + child resource inspection.
-			previousScript: Name of the previous script run.
-			previousArgument: Previous script arguments.
-			previousGraphRi: Resource ID of the previous graph display.
-			previousRequestRi: Resource ID of the previous request display.
-			previousExportRi: Resource ID of the previous export.
-			previousInstanceExportRi: Resource ID of the previous instance export.
+	"""	Console Manager class. This class provides the main console functionality for the CSE. 
+		It is either this plugin or the minimal console plugin that is used to run the main loop of the CSE.
 	"""
 
 	dispatcher: Dispatcher = None
@@ -127,15 +116,37 @@ class Console(ConsoleBase):
 		self._assignConfig()
 
 		self.interruptContinous = False
+		""" Indication whether any continuous display function """
+
 		self.previousTreeRi = ''
+		""" Resource ID of the previous sub-tree display. This is used as the default value for the next sub-tree display. """
+		
 		self.previousInspectRi = ''
+		""" Resource ID of the previous resource inspection. This is used as the default value for the next resource inspection. """#
+
 		self.previousRequestRi = ''
+		""" Resource ID of the previous request display. This is used as the default value for the next request display. """
+
 		self.previosInspectChildrenRi = ''
+		""" Resource ID of the previous resource + child resource inspection. This is used as the default value for the next resource + child resource inspection. """
+		
 		self.previousScript = ''
+		""" Name of the previous script run. This is used as the default value for the next script to run. """
+
 		self.previousArgument = ''
+		""" Previous script arguments. This is used as the default value for the next script to run. """
+
 		self.previousGraphRi = ''
+		""" Resource ID of the previous graph display. This is used as the default value for the next graph display. """
+
 		self.previousExportRi = ''
+		""" Resource ID of the previous export. This is used as the default value for the next export. """
+
 		self.previousInstanceExportRi = ''
+		""" Resource ID of the previous instance export. This is used as the default value for the next instance export. """
+
+		self.treeMode:TreeMode = None
+		""" Current tree mode for the resource tree display. This is used to determine how the resource tree is displayed. """
 
 		L.isDebug and L.logDebug('Rich Console initialized')
 
@@ -151,7 +162,7 @@ class Console(ConsoleBase):
 	def _assignConfig(self) -> None:
 		"""	Assign configuration settings.
 		"""
-		self.treeMode:TreeMode = cast(TreeMode, Configuration.console_treeMode)	# Assigned because it is changed during runtime
+		self.treeMode = cast(TreeMode, Configuration.console_treeMode)	# Assigned because it is changed during runtime
 
 
 	@onEvent(eventManager.configUpdate)
@@ -925,6 +936,14 @@ Available under the BSD 3-Clause License
 
 	def getConfigurationRich(self,
 							 style:Optional[Style]=Style()) -> Table:
+		"""	Generate a rich table for the configuration settings.
+		
+			Args:
+				style: Optional style for the table.
+			
+			Returns:
+				A rich Table object representing the configuration settings.
+		"""
 	
 		keys:list[Tuple[str, ...]] = []
 

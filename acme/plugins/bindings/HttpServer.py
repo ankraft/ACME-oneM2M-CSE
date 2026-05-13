@@ -855,10 +855,13 @@ class HttpServer(object):
 		return (ct := request.content_type) is not None and any(re.match(self._hdrArgument, s) is not None for s in ct.split(';'))
 
 
-
 	@configure
 	def configure(self, config: Configuration) -> None:
-
+		"""	Configure the HTTP server with the given configuration.
+		
+			Args:
+				config: The configuration to use for the HTTP server.
+		"""
 		parser = config.configParser
 
 		#	HTTP Server
@@ -894,6 +897,11 @@ class HttpServer(object):
 
 	@validate
 	def validate(self, config: Configuration) -> None:
+		""" Validate the configuration for the HTTP server. 
+		
+			Args:
+				config: The configuration to validate.
+		"""
 		# override configuration with command line arguments
 		if Configuration._args_httpAddress is not None:
 			Configuration.http_address = Configuration._args_httpAddress

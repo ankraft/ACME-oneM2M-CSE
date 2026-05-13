@@ -48,12 +48,6 @@ if TYPE_CHECKING:
 @requires(security='acme.services.SecurityManager')
 class RemoteCSEManager(object):
 	"""	This class defines functionalities to handle remote CSE/CSR registrations.
-
-		Attributes:
-			connectionMonitor: A `BackgroundWorker` that periodically checks the registrations.
-			descendantCSR: A dictionary of descendant CSEs mappings: csi -> (CSR, registeredATcsi)
-			registrarConfig: The local registrar configuration entry.
-			spRegistrarConfigs: A dictionary of all SP registrar configurations except the own one.
 	"""
 
 	registration: RegistrationManager = None
@@ -87,12 +81,23 @@ class RemoteCSEManager(object):
 
 		# Some manager attributes
 		self.connectionMonitor:BackgroundWorker = None				# BackgroundWorker
+		"""	The background worker that periodically checks the connections to the registrar and registree CSEs. It is started when the CSE starts and stopped when the CSE stops.
+		"""
+
 		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's - "csi : (CSR, registeredATcsi)". CSR is None for CSEs further down 
+		"""	A dictionary of descendant CSEs mappings: csi -> (CSR, registeredATcsi). """
+		
 		self.registrarConfig:CSERegistrar = None 					# Locally store the own registrar's config entry for simplicity
+		"""	The local registrar configuration entry. This is stored internally for simplicity."""	
+
+		self.spRegistrarConfigs: Dict[str, CSERegistrar] = {}					# all SP registrar configs except the own one
+		"""	A dictionary of all SP registrar configurations except the own one. """
 
 
 	@start
 	def start(self) -> None:
+		""" Start the RemoteCSEManager. """
+
 		# Get the configuration settings
 		self._assignConfig()
 		L.isInfo and L.log('RemoteCSEManager initialized')
@@ -634,7 +639,17 @@ class RemoteCSEManager(object):
 		return registreeCsrList
 
 
-	def _createLocalCSR(self, registrarConfig:CSERegistrar) -> Resource:
+	def _createLocalCSR(self, registrarConfig: CSERegistrar) -> Resource:
+		""" Create a local <CSR> resource for the given registrar configuration. 
+			
+			The CSR is created based on the local CSEBase and the remote CSEBase of the registrar.
+			
+			Args:
+				registrarConfig: The registrar configuration to use for the creation.
+			
+			Return:
+				Local <CSR> resource
+		"""
 		remoteCSE = registrarConfig._registrarCSEBaseResource
 		L.isDebug and L.logDebug(f'Creating local CSR for CSE: {remoteCSE.ri}')
 
@@ -675,7 +690,7 @@ class RemoteCSEManager(object):
 	#	Remote Registrar CSR request methods
 	#
 
-	def _retrieveOwnCSRfromRegistrarCSE(self, registrarConfig:CSERegistrar) -> Resource:
+	def _retrieveOwnCSRfromRegistrarCSE(self, registrarConfig :CSERegistrar) -> Resource:
 		"""	Retrieve the own <CSR> resource from the registrar CSE.
 		
 			Return:
@@ -699,7 +714,15 @@ class RemoteCSEManager(object):
 		return self.factory.resourceFromDict(cast(JSON, res.data), pi='')
 
 
-	def _createCSRonRegistrarCSE(self, registrarConfig:CSERegistrar) -> Resource:
+	def _createCSRonRegistrarCSE(self, registrarConfig: CSERegistrar) -> Resource:
+		"""	Create the own <CSR> resource on the registrar CSE.
+		
+			Args:
+				registrarConfig: The registrar configuration to use for the creation.
+			
+			Return:
+				Remote <CSR> resource
+		"""
 		L.isDebug and L.logDebug(f'creating CSR at registrar CSE: {registrarConfig.cseID} uri: {registrarConfig.registrarCSESRN}')	
 		
 		# get local CSEBase and copy relevant attributes
@@ -1027,6 +1050,15 @@ class RemoteCSEManager(object):
 
 
 	def updateRemoteDescendantCSR(self, data: JSON, target: Optional[list[str] | str]=None) -> None:
+		""" Update all the remote CSR of the descendant CSEs.
+
+			This happens in the background.
+
+			Args:
+				data: The content to update the descendant CSR with. This should be a dictionary with the attributes to update and their new values.
+				target: Optional list of CSR IDs to update. If *None* then all descendant CSRs are updated. 
+
+		"""
 
 		def _updateDescendant(csrID: str) -> None:
 			"""	Handler function to update a descendant CSR in the background.
@@ -1143,6 +1175,11 @@ class RemoteCSEManager(object):
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		"""	Read the configuration for the registrar and populate the configuration object.
+
+			Args:
+				config: The configuration object to populate.
+		"""
 
 		parser = config.configParser
 
@@ -1210,6 +1247,11 @@ class RemoteCSEManager(object):
 
 	@validate
 	def validate(self, config: Configuration) -> None:
+		""" Validate the configuration for the registrar and perform some additional initialization.
+			
+			Args:
+				config: The configuration object to validate and initialize.
+		"""
 
 		# Validate CSE Type and remove default registrar if not IN
 		for spName, registrar in config.cse_registrars.copy().items():

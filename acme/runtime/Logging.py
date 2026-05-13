@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Any, Union, Optional, cast
+from typing import List, Any, Union, Optional, cast, Callable
 
 import traceback
 import logging, logging.handlers, os, inspect, datetime, time, threading
@@ -49,13 +49,14 @@ levelName = {
 	logging.DEBUG :   '🐞 D',
 	logging.ERROR :   '🔥 E',
 	logging.WARNING : '⚠️  W'
-	# logging.INFO :    'INFO   ',
-	# logging.DEBUG :   'DEBUG  ',
-	# logging.ERROR :   'ERROR  ',
-	# logging.WARNING : 'WARNING'
 }
 """ Mapping of log levels to their corresponding names and emojis for console output. 
 """
+# logging.INFO :    'INFO   ',
+# logging.DEBUG :   'DEBUG  ',
+# logging.ERROR :   'ERROR  ',
+# logging.WARNING : 'WARNING'
+
 
 # Color Schemes for the terminal
 terminalColorDark		= '#2DFE54' 

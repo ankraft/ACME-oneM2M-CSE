@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import Dict, Any, cast, TYPE_CHECKING
+from typing import Dict, Any, cast
 
 import atexit, argparse, sys, platform, os, signal, platform
 from threading import Lock
@@ -35,7 +35,7 @@ from ..runtime.Management import ManagementSupport
 from ..runtime.PluginSupport import PluginManager, DependencyError, provide
 from ..runtime.ScriptManager import ScriptManager
 from ..runtime.Storage import Storage
-from ..runtime.EventManager import EventManager, eventManager
+from ..runtime.EventManager import eventManager
 
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
@@ -50,7 +50,7 @@ from ..services.Validator import Validator
 # components that are used throughout the CSE implementation.
 
 console:ConsoleBase = None
-""" Runtime instance of the `Console.Console` or `MinimalConsole.MinimalConsole`. """
+""" Runtime instance of the `acme.plugins.runtime.Console.Console` or `acme.plugins.runtime.MinimalConsole.MinimalConsole`. """
 
 dispatcher:Dispatcher = Dispatcher()
 """	Runtime instance of the `Dispatcher`. """

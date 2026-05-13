@@ -321,6 +321,14 @@ class EventManager(metaclass=Singleton):
 
 
 	def __getattr__(self, name: str) -> Event:
+		"""	Dynamically create and return an `Event` instance when accessing an attribute that does not exist.
+			Args:
+				name: The name of the attribute to access, which will be used as the name of the `Event` instance.
+			Return:
+				The created `Event` instance.
+			Raises:
+				AttributeError: If the attribute name starts with an underscore (to prevent access to private attributes).
+		"""
 		if name.startswith('_'):
 			raise AttributeError(name)
 		# Add event dynamically if it does not exist yet

@@ -81,6 +81,9 @@ class PostgreSQLBinding(DBBinding):
 
 	@start
 	def start(self) -> None:
+		""" Start the PostgreSQLBinding.
+		"""
+
 		# Store the connection parameters
 		self.dbHost = Configuration.database_postgresql_host
 		"""	The hostname of the database server. """
@@ -147,6 +150,11 @@ class PostgreSQLBinding(DBBinding):
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		"""	Configure the PostgreSQLBinding with the provided configuration.
+
+			Args:
+				config: The configuration object containing the settings for the PostgreSQLBinding.	
+		"""
 		parser = config.configParser
 
 		#	Database PostgreSQL
@@ -161,8 +169,14 @@ class PostgreSQLBinding(DBBinding):
 
 	@validate
 	def validate(self, config: Configuration) -> None:
-		# PostgreSQL
-
+		"""	Validate the configuration for the PostgreSQLBinding.
+		
+			Args:
+				config: The configuration object containing the settings for the PostgreSQLBinding.
+			
+			Raises:
+				ConfigurationError: If the configuration is invalid.
+		"""
 		if not isValidPort(config.database_postgresql_port):
 			raise ConfigurationError(fr'Invalid port number for [i]\[database.postgresql]:port[/i]: {config.database_postgresql_port}')
 

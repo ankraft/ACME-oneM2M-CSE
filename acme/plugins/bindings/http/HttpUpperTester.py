@@ -31,6 +31,8 @@ class HttpUpperTester:
 	"""	Plugin class to add the Upper Tester functionality to the HTTP server.
 
 		See TS-0019 for details about the Upper Tester specification.
+
+		The upper tester endpoint is registered at "__ut__".
 	"""
 
 	requestManager: RequestManager = None	# type: ignore
@@ -45,6 +47,8 @@ class HttpUpperTester:
 
 	@start
 	def startUpperTester(self) -> None:
+		""" Start the upper tester plugin.
+		"""
 		L.isDebug and L.logDebug('Starting Upper Tester plugin')
 		# Enable the upper tester endpoint
 		if Configuration.http_enableUpperTesterEndpoint:
@@ -54,6 +58,11 @@ class HttpUpperTester:
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		""" Configure the plugin based on the configuration settings.
+			
+			Args:
+				config: The configuration object.
+		"""
 		parser = config.configParser
 		config.http_enableUpperTesterEndpoint = parser.getboolean('http', 'enableUpperTesterEndpoint', fallback=False)
 

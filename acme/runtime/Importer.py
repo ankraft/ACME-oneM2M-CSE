@@ -26,7 +26,7 @@ from ..runtime.Configuration import Configuration
 from ..helpers.Singleton import Singleton
 from ..helpers.TextTools import removeCommentsFromJSON
 from ..resources.CSEBase import getCSE
-from ..runtime.PluginSupport import requires, ServicePlugin, endpoint
+from ..runtime.PluginSupport import requires
 
 if TYPE_CHECKING:
 	from ..runtime.Factory import Factory

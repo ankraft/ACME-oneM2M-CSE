@@ -60,6 +60,7 @@ class PluginConfigurationError(PluginError):
 
 class PluginState(IntEnum):
 	"""	Plugin states. """
+
 	LOADED		= auto()
 	""" The plugin is loaded but not yet initialized. """
 	INITIALIZED	= auto()
@@ -78,6 +79,7 @@ class PluginState(IntEnum):
 	""" The plugin is finalized. """
 	ERROR		= auto()
 	""" The plugin is in an error state. """
+
 
 @dataclass
 class Dependency:
@@ -139,7 +141,7 @@ class PluginInfo:
 	noRestartWhilePaused: bool = False
 	""" Flag to indicate whether the plugin should not restart requests while paused. """
 
-	state: PluginState = PluginState.LOADED
+	state: PluginState = None
 	""" Internal state of the plugin. """
 
 	fileName: str = ''
@@ -368,6 +370,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 
 					newPlugins[pluginName] = PluginInfo(name=pluginName, 
 										 				module=module, 
+														state=PluginState.LOADED,
 														doc=module.__doc__.strip() if module.__doc__ else '',
 														fileName=fileName)
 
@@ -944,20 +947,29 @@ class PluginManager(metaclass=Singleton.Singleton):
 	
 
 
-	def getPluginsByTag(self, tag: str, byPriority: bool = False) -> list[tuple[str, Any]]:
+	def getPluginsByTag(self, tags: str | list[str], byPriority: bool = False) -> list[tuple[str, Any]]:
 		""" Get the names of the plugins that have the given tag.
 
 			Args:
-				tag: The tag to search for.
+				tags: The tag or tags to search for.
 				byPriority: Whether to sort the plugins by their priority. If True, the plugins are returned sorted by their priority, with the highest priority first (0 = highest priority).
 			Returns:
 				A list of plugin names that have the given tag.
 		"""
-		plugins = self._tagsPluginMap.get(tag, [])
+		plugins = []
+		if isinstance(tags, str):
+			plugins = self._tagsPluginMap.get(tags, [])
+		elif isinstance(tags, list):
+			plugins = []
+			for t in tags:
+				plugins.extend(self._tagsPluginMap.get(t, []))
+
+		if not plugins:
+			plugins = [ (name, plugin.instance) for name, plugin in self.plugins.items() ]
 		if byPriority:
 			# Sort plugins by priority, with the highest priority first
 			plugins.sort(key=lambda p: self.plugins[p[0]].priority)
-		return plugins
+		return copy.copy(plugins)
 
 	
 	def isProvidedFunction(self, name: str) -> bool:
@@ -971,12 +983,12 @@ class PluginManager(metaclass=Singleton.Singleton):
 		return name in providedFunctions
 	
 
-	def callService(self, tag: str, endpoint: str, *args: Any, **kwargs: Any) -> Any:
+	def callService(self, endpoint: str, tag: str, *args: Any, **kwargs: Any) -> Any:
 		"""	Call a service plugin endpoint. 
 
 			Args:
-				tag: The tag of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, the one with the highest priority is called.
 				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `endpoint` decorator.
+				tag: The tag of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, the one with the highest priority is called.
 				*args: Positional arguments to pass to the endpoint method.
 				**kwargs: Keyword arguments to pass to the endpoint method.
 
@@ -1213,19 +1225,19 @@ def requires(*args:Any, **kwargs:Any) -> Callable:
 
 #############################################################################
 #
-#	Service Plugin Support
+#	Services Support
 #
 
 
 
-class ServicePlugin:
-	"""	Base class for service plugins. """
+class Service:
+	"""	Base class for service classes. """
 
 	_pm_endpointMap: dict[str, str]
 	""" Mapping of endpoint names to method names """
 
 	def __init_subclass__(cls, **kwargs: Any) -> None:
-		"""	Initialize the plugin class, creating the service endpoint map by checking
+		"""	Initialize the service sub class, creating the service endpoint map by checking
 			the methods marked by the @endpoint decorator. 
 		"""
 		super().__init_subclass__(**kwargs)
@@ -1258,7 +1270,7 @@ class ServicePlugin:
 #
 
 def endpoint(name: str) -> Callable:
-	"""	Decorator to mark a method as an endpoint for a Serviceplugin. 
+	"""	Decorator to mark a method as an endpoint for a Service. 
 		The service name of the endpoint is given as an argument.
 	"""
 

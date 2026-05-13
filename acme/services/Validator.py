@@ -64,13 +64,12 @@ attributesComplexTypes:dict[str, list[str]] = {}
 
 
 # TODO make this more generic!
+
 _valueNameMappings = {
 	'acop': lambda v: '+'.join([ p.name for p in Permission.fromBitfield(int(v))]),
 	'bts': lambda v: BatteryStatus(int(v)).name,
 	'chty': lambda v: ResourceTypes.fullname(int(v)),
 	'cst': lambda v: CSEType(int(v)).name,
-	#'nct': lambda v: NotificationContentType(int(v)).name,
-	#'net': lambda v: NotificationEventType(int(v)).name,
 	'gmty': lambda v: GeometryType(int(v)).name,
 	'gsf': lambda v: GeoSpatialFunctionType(int(v)).name,
 	'op': lambda v: Operation(int(v)).name,
@@ -80,6 +79,9 @@ _valueNameMappings = {
 	'ty': lambda v: ResourceTypes.fullname(int(v)),
 }
 """	Mapping of attribute names to value mappings. """
+
+#'nct': lambda v: NotificationContentType(int(v)).name,
+#'net': lambda v: NotificationEventType(int(v)).name,
 
 
 @requires(importer='acme.runtime.Importer')
@@ -1131,6 +1133,19 @@ class Validator(metaclass=Singleton):
 
 
 	def convertIDsToScope(self, k : str, v: JSON, typ: ResourceTypes, scope: IdentifierScope) -> Any:
+		""" Convert identifier attributes to the specified scope. 
+		
+			This method is called recursively for each attribute of a complex attribute (e.g. a list or a complex attribute).
+			
+			Args:
+				k: Attribute name.
+				v: Attribute value.
+				typ: Resource type of the attribute.
+				scope: Scope to convert to.
+			
+			Return:
+				The converted value.
+		"""
 		if (policy := self.getAttributePolicy(typ, k)):
 			return self.convertIdentifierAttributeToScope(v, policy.type, policy, scope)
 

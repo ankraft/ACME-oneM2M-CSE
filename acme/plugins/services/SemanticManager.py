@@ -131,10 +131,6 @@ class SemanticManager(object):
 			The semantic graphs are not persisted and only hold in memory at the moment.
 			When the CSE is started the *SemanticManager* rebuilds the whole semantic graph
 			from the existing <`SMD`> resources in the resource tree.
-
-		Attributes:
-			semanticHandler: The semantic graph store handler to be used for the CSE.
-			defaultFormat: Serialization format to use as a default
 	"""
 
 	security: SecurityManager = None

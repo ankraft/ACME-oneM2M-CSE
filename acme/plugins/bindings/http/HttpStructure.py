@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 @requires(managementSupport='acme.runtime.Management')
 class HttpStructure:
 	"""	Plugin class to add the Structure functionality to the HTTP server.
+
+		The structure endpoint is registered at "__structure__".
 	"""
 
 	managementSupport: ManagementSupport = None
@@ -34,6 +36,8 @@ class HttpStructure:
 
 	@start
 	def startStructure(self) -> None:
+		""" Start the structure plugin.
+		"""
 		L.isDebug and L.logDebug('Starting Structure plugin')
 		# Enable the config endpoint
 		if Configuration.http_enableStructureEndpoint:
@@ -44,6 +48,11 @@ class HttpStructure:
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		""" Configure the plugin based on the configuration settings.
+			
+			Args:
+				config: The configuration object.
+		"""
 		parser = config.configParser
 		config.http_enableStructureEndpoint = parser.getboolean('http', 'enableStructureEndpoint', fallback=False)
 

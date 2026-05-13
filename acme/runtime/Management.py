@@ -85,6 +85,11 @@ class ManagementSupport(metaclass=Singleton):
 	#	
 
 	def getLogGenerator(self) -> Generator[str, None, None]:
+		""" Get a generator that yields log entries as strings.
+		
+			Returns:
+				A generator that yields log entries as strings.
+		"""
 
 		def generate() -> Generator[str, None, None]:
 			_rb = L.ringBufferHandler

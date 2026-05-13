@@ -10,7 +10,7 @@
 
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any, Tuple, TYPE_CHECKING
+from typing import cast, Optional, Any, Tuple, TYPE_CHECKING
 
 import ssl
 from dataclasses import dataclass
@@ -44,8 +44,13 @@ class ACPResult():
 	"""	An ACP result structure.
 	"""
 	allowed:bool
-	attributes:List[str]
+	""" Whether the permission is granted. """
+
+	attributes:list[str]
+	""" The attributes that are allowed. """
+
 	authenticated:bool = False
+	""" Whether the originator is authenticated. """
 
 
 @EventHandler
@@ -83,6 +88,24 @@ class SecurityManager(object):
 
 
 	def initialize(self) -> None:
+		""" Initialize the SecurityManager. 
+		"""
+
+		self.allowedCSIOriginators: list[str] = []
+		""" List of allowed CSE originators that are allowed to access the CSEBase resource. """
+
+		self.httpBasicAuthData: dict[str, str] = {}
+		""" Dictionary to store the HTTP Basic Authentication data, mapping originators to their hashed passwords. """
+
+		self.httpTokenAuthData: list[str] = []
+		""" List to store the HTTP Token Authentication data. """
+
+		self.wsBasicAuthData: dict[str, str] = {}
+		""" Dictionary to store the WebSocket Basic Authentication data, mapping originators to their hashed passwords. """
+
+		self.wsTokenAuthData: list[str] = []
+		""" List to store the WebSocket Token Authentication data. """
+
 
 		# Get the configuration settings
 		self._initAuthInformation()
@@ -95,6 +118,11 @@ class SecurityManager(object):
 
 
 	def shutdown(self) -> bool:
+		""" Shutdown the SecurityManager.
+		
+			Return:
+				Always *True*.
+		"""
 		L.isInfo and L.log('SecurityManager shut down')
 		return True
 	
@@ -784,7 +812,7 @@ class SecurityManager(object):
 		return False
 
 
-	def isAllowedOriginator(self, originator:str, allowedOriginators:List[str]) -> bool:
+	def isAllowedOriginator(self, originator:str, allowedOriginators:list[str]) -> bool:
 		""" Check whether an Originator is in the provided list of allowed originators. This list may contain regex.
 			
 			The hosting CSE has always access.
@@ -979,6 +1007,8 @@ class SecurityManager(object):
 
 
 	def _initAuthInformation(self) -> None:
+		""" Initialize the authentication information by reading the configured authentication files for HTTP and WebSocket.
+		"""
 		self._readHttpBasicAuthFile()
 		self._readHttpTokenAuthFile()
 		# if CSE.pluginManager.websocketServer:

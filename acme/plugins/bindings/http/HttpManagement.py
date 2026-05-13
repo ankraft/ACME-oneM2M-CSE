@@ -1,4 +1,4 @@
-#
+	#
 #	HttpManagement.py
 #
 #	(c) 2025 by Andreas Kraft
@@ -25,21 +25,23 @@ if TYPE_CHECKING:
 class HttpManagement:
 	"""	Plugin class to add the Management functionality to the HTTP server.
 
-		The management endpoint is registered at `__mgmt__`.
+		The management endpoint is registered at "__mgmt__".
 
-		The plugin depends on the `HttpServer` plugin, which is injected into this plugin by the `PluginManager`. 
-		The management endpoint will only be registered if the `HttpServer` plugin is loaded and the dependency can be resolved. 
+		The plugin depends on the `HttpServer.HttpServer` plugin, which is injected into this plugin by the `acme.runtime.PluginManager.PluginManager`. 
+		The management endpoint will only be registered if the `HttpServer.HttpServer` plugin is loaded and the dependency can be resolved. 
 	"""
 
 	# "httpServer" is injected by the PluginManager, only if the HttpServer plugin is loaded and the dependency can be resolved.
 	httpServer: HttpServer = None	# type: ignore
-	"""	The injected HttpServer plugin instance is injected by the PluginManager based on the declared dependency. The plugin will only be loaded if the HttpServer plugin is loaded. """
+	"""	The injected `HttpServer.HttpServer` plugin instance is injected by the `acme.runtime.PluginManager.PluginManager` based on the declared dependency. The plugin will only be loaded if the `HttpServer.HttpServer` plugin is loaded. """
 
 	managementSupport: ManagementSupport = None
-	""" Injected ManagementSupport instance. """
+	""" Injected `ManagementSupport` instance. """
 
 	@start
 	def startManagement(self) -> None:
+		""" Start the management plugin. 
+		"""
 		L.isDebug and L.logDebug('Starting Management plugin')
 
 		# Enable the management endpoint
@@ -52,16 +54,23 @@ class HttpManagement:
 
 	@configure
 	def configure(self, config: Configuration) -> None:
+		""" Configure the plugin based on the configuration settings.
+			
+			Args:
+				config: The configuration object.
+		"""
 		parser = config.configParser
 		config.http_enableManagementEndpoint = parser.getboolean('http', 'enableManagementEndpoint', fallback=False)
 
 
-	def handleManagement(self, command:Optional[str]=None, param:Optional[str]=None) -> Response: # type: ignore
+	def handleManagement(self, command: Optional[str]=None, param: Optional[str] = None) -> Response: # type: ignore
 		"""	Handle a management request. This is used to control the CSE.
 
 			Args:
 				command: The management command to execute. If None, the request is rejected.
+				param: An optional parameter for the management command.
 			
+
 			Return:
 				A response object.
 		"""

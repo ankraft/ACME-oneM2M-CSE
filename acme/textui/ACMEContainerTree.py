@@ -297,16 +297,11 @@ class ACMEContainerTree(Container):
 
 	# TODO add other IDs here as well
 
-	BINDINGS = 	[ Binding('r', 'refresh_resources', 'Refresh'),
-				#   Binding('o', 'overlay', 'Overlay'),
-		  
-				
-				# TODO copy resource
-				# TODO delete
-
-				# delete requests
-				]
+	BINDINGS = [ Binding('r', 'refresh_resources', 'Refresh')]
 	"""	Key bindings for the *Resources* view. """
+				
+	# TODO copy resource
+	# TODO delete
 
 
 	def __init__(self, id:str) -> None:

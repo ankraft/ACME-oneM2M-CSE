@@ -17,16 +17,19 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class FCI(AnnounceableResource):
 	""" FlexContainerInstance (FCI) resource type. """
 
-	def __init__(self, dct:	Optional[JSON]=None, 
-			  		   typeShortname: Optional[str]=None, 
-					   create: Optional[bool]=False) -> None:
+	def __init__(self, dct:	Optional[JSON] = None, 
+			  		   typeShortname: Optional[str] = None, 
+					   create: Optional[bool] = False) -> None:
+		
 		self.typeShortname = typeShortname
-		super().__init__(dct, create = create)
+		"""	Shortname of the flexContainer type. """
+
+		super().__init__(dct, create=create)
 
 
 	# Forbidd updating
-	def update(self, dct: Optional[JSON]=None, 
-					 originator: Optional[str]=None,
-					 doValidateAttributes: Optional[bool]=True) -> None:
+	def update(self, dct: Optional[JSON] = None, 
+					 originator: Optional[str] = None,
+					 doValidateAttributes: Optional[bool] = True) -> None:
 		raise OPERATION_NOT_ALLOWED('updating FCI is forbidden')
 

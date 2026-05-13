@@ -4,8 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-"""	RequestManager module.
-	
+"""	RequestManager module. 
 	Main request dispatcher. All external requests are routed through here.
 """
 
@@ -67,10 +66,10 @@ TargetDetails = List[ 						#type: ignore[misc]
 						  ResourceTypes,	# Target's resource type
 						  bool				# True if the target is a direct URL
 				] ]	
+""" Type definition for target details used in request handling. """
 
-
-# This factor determines how often the monitor looks for expired request resources
 expirationCheckFactor = 2.0
+""" This factor determines how often the monitor looks for expired request resources. """
 
 @EventHandler
 @requires(httpServer='acme.plugins.bindings.HttpServer', required=False)
@@ -138,6 +137,24 @@ class RequestManager(metaclass=Singleton):
 
 
 	def initialize(self) -> None:
+		""" Initialize the RequestManager.
+		"""
+
+		self.flexBlockingBlocking:bool = None
+		""" Whether flexBlocking requests are handled as blocking or non-blocking. """
+
+		self.requestExpirationDelta:float = -1.0
+		""" The request expiration delta value. """
+
+		self.maxExpirationDelta:float = -1.0
+		""" The maximum request expiration delta value. """
+
+		self.sendToFromInResponses:bool = None
+		""" Whether to include the 'to' and 'from' fields in responses. """
+
+		self.enableRequestRecording:bool = None
+		""" Whether request recording is enabled. """
+
 
 		# Configuration values
 		self._assignConfig()	
@@ -164,57 +181,52 @@ class RequestManager(metaclass=Singleton):
 		""" Lock to access the received responses dictionary."""
 
 		
-		# Map request handlers and events for operations in the RequestManager and the dispatcher
-		self.requestHandlers:RequestHandler = { 		
-			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, 
+		self.requestHandlers: RequestHandler = { 
+			Operation.RETRIEVE	: RequestCallback(self.handleRetrieveRequest, 
 												  self.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
 												  eventManager.coapSendRetrieve,
 												  eventManager.httpSendRetrieve,
 												  eventManager.mqttSendRetrieve,
 												  eventManager.wsSendRetrieve),
-												#   self.sendRetrieveRequest),
-			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
+			Operation.DISCOVERY	: RequestCallback(self.handleRetrieveRequest, 
 												  self.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
 												  eventManager.coapSendRetrieve,
 												  eventManager.httpSendRetrieve,
 												  eventManager.mqttSendRetrieve,
 												  eventManager.wsSendRetrieve),
-												#   self.sendRetrieveRequest),
-			Operation.CREATE	: RequestCallback(self.createRequest,
+			Operation.CREATE	: RequestCallback(self.handleCreateRequest,
 												  self.dispatcher.processCreateRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendCreate,
 												  eventManager.httpSendCreate,
 												  eventManager.mqttSendCreate,
 												  eventManager.wsSendCreate),
-												#   self.sendCreateRequest),
-			Operation.UPDATE	: RequestCallback(self.updateRequest,
+			Operation.UPDATE	: RequestCallback(self.handleUpdateRequest,
 												  self.dispatcher.processUpdateRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendUpdate,
 												  eventManager.httpSendUpdate,
 												  eventManager.mqttSendUpdate,
 												  eventManager.wsSendUpdate),
-												#   self.sendUpdateRequest),
-			Operation.DELETE	: RequestCallback(self.deleteRequest,
+			Operation.DELETE	: RequestCallback(self.handleDeleteRequest,
 												  self.dispatcher.processDeleteRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendDelete,
 												  eventManager.httpSendDelete,
 												  eventManager.mqttSendDelete,
 												  eventManager.wsSendDelete),
-												#   self.sendDeleteRequest),
-			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
+			Operation.NOTIFY	: RequestCallback(self.handleNotifyRequest,
 												  self.dispatcher.processNotifyRequest,
 												  self._sendRequest,
 												  eventManager.coAPSendNotify,
 												  eventManager.httpSendNotify,
 												  eventManager.mqttSendNotify,
 												  eventManager.wsSendNotify),
-												#   self.sendNotifyRequest),
 		}
+		""" Dictionary to map operations to their corresponding request handling functions, 
+		dispatcher processing functions, send functions, and events for different protocols. """
 
 		self.requestRingBuffer:RequestRingBuffer = RequestRingBuffer(Configuration.cse_operation_requests_size)
 		""" RingBuffer to store requests for later retrieval. """
@@ -375,7 +387,18 @@ class RequestManager(metaclass=Singleton):
 	#	RETRIEVE Request
 	#
 
-	def retrieveRequest(self, request:CSERequest) ->  Result:
+	def handleRetrieveRequest(self, request:CSERequest) ->  Result:
+		""" Handle an incoming RETRIEVE request.
+		
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+		"""
 		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 		
 		match request.rt:
@@ -397,7 +420,18 @@ class RequestManager(metaclass=Singleton):
 	#	CREATE resources
 	#
 
-	def createRequest(self, request:CSERequest) -> Result:
+	def handleCreateRequest(self, request:CSERequest) -> Result:
+		""" Handle an incoming CREATE request.
+
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+		"""
 		L.isDebug and L.logDebug(f'CREATE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Check contentType and resourceType
@@ -423,7 +457,7 @@ class RequestManager(metaclass=Singleton):
 	#	UPDATE resources
 	#
 
-	def updateRequest(self, request:CSERequest) -> Result:
+	def handleUpdateRequest(self, request:CSERequest) -> Result:
 		""" Handle an incoming UPDATE request.
 
 			Args:
@@ -462,7 +496,7 @@ class RequestManager(metaclass=Singleton):
 	#
 
 
-	def deleteRequest(self, request:CSERequest,) -> Result:
+	def handleDeleteRequest(self, request:CSERequest,) -> Result:
 		""" Handle an incoming DELETE request.
 
 			Args:
@@ -500,7 +534,7 @@ class RequestManager(metaclass=Singleton):
 	#	Notify resources
 	#
 
-	def notifyRequest(self, request:CSERequest) -> Result:
+	def handleNotifyRequest(self, request:CSERequest) -> Result:
 		""" Handle an incoming NOTIFY request.
 
 			Args:
@@ -1103,6 +1137,14 @@ class RequestManager(metaclass=Singleton):
 	#
 
 	def handleSendRequest(self, request: CSERequest) -> RequestResponseList:
+		""" Handle a send request. This method is used to send a request to a remote CSE or to a local resource.
+		
+			Args:
+				request: The request to send.
+
+			Return:
+				A list of RequestResponse objects containing the request and the result of the send operation.
+		"""
 
 		if request.op is None:
 			raise BAD_REQUEST(L.logErr('request is missing operation attribute'))
@@ -2002,6 +2044,12 @@ class RequestManager(metaclass=Singleton):
 #
 
 	def recordRequest(self, request:Optional[CSERequest], result:Result) -> None:
+		""" Record a request and its response in the database.
+		
+			Args:
+				request: The request to record. If None, then no recording is done.
+				result: The result of the request, containing the response to record.
+		  """
 
 		# Recoding enabled or disabled?
 		if not self.enableRequestRecording or not request:

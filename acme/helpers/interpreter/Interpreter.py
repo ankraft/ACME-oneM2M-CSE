@@ -3069,7 +3069,13 @@ def _doZip(pcontext:PContext, symbol:SSymbol) -> PContext:
 	return pcontext.setResult(SListSymbol(_result, symbol))	# type:ignore[arg-type]
 
 
-builtinFunctions:PSymbolDict = {
+builtinFunctions: PSymbolDict
+""" Dictionary to map the interpreter functions to Python functions. 
+"""
+# We need to have this separated because due to an issue in "pydoctor" comments in initializations
+# cause problems (ie not recognized)
+
+builtinFunctions = {
 	'<':				lambda p, a : _doOperation(p, a, operator.lt, SType.tBool),
 	'<=':				lambda p, a : _doOperation(p, a, operator.le, SType.tBool),
 	'>':				lambda p, a : _doOperation(p, a, operator.gt, SType.tBool),
@@ -3169,5 +3175,3 @@ builtinFunctions:PSymbolDict = {
 	
 	# argc
 }
-""" Dictionary to map the interpreter functions to Python functions. 
-"""

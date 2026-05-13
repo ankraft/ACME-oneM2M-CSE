@@ -57,9 +57,6 @@ class LocationInformation:
 @requires(dispatcher='acme.services.Dispatcher')
 class LocationManager(object):
 	"""	The LocationManager class implements the location service and helper functions.
-	
-		Attributes:
-			locationPolicyWorkers: A dictionary of location policy workers
 	"""
 
 	dispatcher: Dispatcher = None
@@ -77,9 +74,11 @@ class LocationManager(object):
 		"""	Initialization of the LocationManager module.
 		"""
 
-		self.locationPolicyInfos:dict[str, LocationInformation] = {}
+		self.locationPolicyInfos: dict[str, LocationInformation] = {}
+		""" A dictionary of location policy information, keyed by the location policy resource ID. """
 		
-		self.deviceDefaultPosition:GeofencePositionType = GeofenceEventCriteria.Inside	# Default event criteria
+		self.deviceDefaultPosition: GeofencePositionType = GeofenceEventCriteria.Inside	# Default event criteria
+		""" The default position type for device-based location sources. This is used when the location information type is not set. """
 		L.isInfo and L.log('LocationManager initialized')
 
 
@@ -126,10 +125,10 @@ class LocationManager(object):
 			return	# Not supported
 
 		# Add an empty entry first.
-		self.locationPolicyInfos[lcpRi] = LocationInformation(targetArea = gta, 
-						     								  geofencePosition = self.deviceDefaultPosition, 
-															  eventCriteria = lcp.gec,
-															  locationContainerID = loi)
+		self.locationPolicyInfos[lcpRi] = LocationInformation(targetArea=gta, 
+						     								  geofencePosition=self.deviceDefaultPosition, 
+															  eventCriteria=lcp.gec,
+															  locationContainerID=loi)
 
 		# Check if the location information type / position is fixed
 		if (lit := lcp.lit) is None or lit == LocationInformationType.Position_fix:
