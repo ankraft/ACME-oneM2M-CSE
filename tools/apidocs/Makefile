@@ -1,4 +1,5 @@
 #
+
 #	Makefile
 #
 #	To build the API documentation
@@ -16,6 +17,7 @@
 ROOTDIR= ../..
 DOCDIR = ${ROOTDIR}/docs
 APIDOCS = ${DOCDIR}/apidocs
+MKDOCSDIR = ${ROOTDIR}/../ACME-oneM2M-CSE-mkdocs
 TITLE = ACME oneM2M CSE
 DASHDOCSET = ${DOCDIR}
 
@@ -36,6 +38,20 @@ dash:					## Generate a docset for Dash documentation
 
 dash-install:				## Install and open the generated docset in Dash
 	open "${DASHDOCSET}/${TITLE}.docset"
+
+
+publish: 				## Publish the API docs to the documentation website
+	-cd ${MKDOCSDIR} && \
+	git checkout gh-pages && \
+	git pull && \
+	mkdir api
+	cp -r ${APIDOCS}/* ${MKDOCSDIR}/api
+	-cd ${MKDOCSDIR} && \
+	git add api && \
+	git commit -uno -m "adding api docs" && \
+	git push 
+
+
 
 clean:					## Remove generated files
 	-rm -r ${APIDOCS}
