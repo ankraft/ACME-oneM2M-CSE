@@ -50,6 +50,8 @@ publish: 				## Publish the API docs to the documentation website
 	git add api && \
 	git commit -uno -m "adding api docs" && \
 	git push 
+	-cd ${MKDOCSDIR} && \
+	git checkout main
 
 
 
