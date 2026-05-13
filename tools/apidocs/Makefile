@@ -38,8 +38,8 @@ dash-install:				## Install and open the generated docset in Dash
 	open "${DASHDOCSET}/${TITLE}.docset"
 
 clean:					## Remove generated files
-	rm -r ${APIDOCS}
-	rm -r "${DASHDOCSET}.docset"
+	-rm -r ${APIDOCS}
+	-rm -r "${DASHDOCSET}.docset"
 
 
 help:					## Display this help
