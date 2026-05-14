@@ -76,7 +76,7 @@ pyparsing==3.2.3
     # via rdflib
 pyperclip==1.9.0
     # via acmecse-dev (setup.py)
-python-dotenv==1.2.1
+python-dotenv==1.2.2
     # via acmecse-dev (setup.py)
 rdflib==7.1.4
     # via acmecse-dev (setup.py)
@@ -100,7 +100,7 @@ typing-extensions==4.14.1
     # via textual
 uc-micro-py==1.0.3
     # via linkify-it-py
-urllib3==2.6.3
+urllib3==2.7.0
     # via requests
 waitress==3.0.2
     # via acmecse-dev (setup.py)
