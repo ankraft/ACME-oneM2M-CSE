@@ -17,6 +17,7 @@ from datetime import datetime
 from InquirerPy import inquirer
 from InquirerPy.utils import InquirerPySessionResult
 from InquirerPy.base import Choice
+from InquirerPy.separator import Separator
 
 from rich.console import Console
 from rich.rule import Rule
@@ -85,11 +86,13 @@ _iniValues = {
 console = Console()
 """ The console to use for printing messages. """
 
-totalSteps = 17
+totalSteps = 20
 currentStep = -1
 progressBar = ProgressBar(total=totalSteps, completed=currentStep, complete_style=Style(color=Constants.logoColor))
 
 configParser = ACMEConfiguration.ACMEConfiguration()
+cseEnvironment = 'None selected'
+
 
 
 def _print(msg:str|Rule|Syntax='\n', clearScreen:Optional[bool]=True) -> None:
@@ -103,18 +106,25 @@ def _print(msg:str|Rule|Syntax='\n', clearScreen:Optional[bool]=True) -> None:
 		console.print(msg, highlight=True)	# Print error message to console
 
 
+def _incrementStep(count: int = 1) -> None:
+	""" Increment the current step and update the progress bar. """
+	global currentStep
+	currentStep += count
+	progressBar.update(currentStep)
+
+
 def _printRule(title:str, extras:Optional[str]=None) -> None:
 	
 	# Update the progress bar each time a step is printed
-	global currentStep
-	currentStep += 1
-	progressBar.update(currentStep)
+	_incrementStep()
 
 	if not RC.isHeadless:
 		console.clear()
 		_table = Table.grid(expand=True)
 		_table.add_row('')
 		_table.add_row('The following steps will create a new configuration for the ACME CSE.')
+		_table.add_row('')
+		_table.add_row(f'Selected environment: [{Constants.secondaryLogoColor}]{cseEnvironment}[/]')
 		_table.add_row('')
 		_table.add_row('Press CTRL-C to abort at any time.')
 		_table.add_row('')
@@ -143,7 +153,12 @@ def _printHeader(title:str) -> None:
 		console.print(f'\n[{Constants.tertiaryLogoColor}]{title}[/]\n', highlight=False)
 
 
-def _setOption(config:ACMEConfiguration.ACMEConfiguration, section:str, option:str, value:str, toLower:Optional[bool]=False) -> str:
+def _setOption(config:ACMEConfiguration.ACMEConfiguration, 
+			   section:str, 
+			   option:str, 
+			   value:str, 
+			   toLower:Optional[bool]=False,
+			   force:Optional[bool]=False) -> str:
 
 	if value is None:
 		return None
@@ -153,8 +168,8 @@ def _setOption(config:ACMEConfiguration.ACMEConfiguration, section:str, option:s
 	_configValue = str(_configValue).lower() if toLower else str(_configValue)
 	value = str(value).lower() if toLower else str(value)
 
-	if value != _configValue:
-		# Only set the option if it does not exist yet
+	if value != _configValue or force:
+		# Only set the option if it does not exist yet or if force is True
 		if not config.has_option(section, option):
 			config.set(section, option, value)
 	
@@ -193,12 +208,13 @@ def buildUserConfigFile(configFile:Optional[str],
 				- The configuration file name if created, None otherwise.
 				- The error message if the configuration file could not be created, None otherwise.
 	"""
+	global cseEnvironment
 	cseType = 'IN'
 	cseID:str = None
 	cseSecret:str = None
 	spID:str = None
-	cseEnvironment = 'Development'
 	runtimeDirectory = os.path.dirname(configFile) if configFile else None
+	enDisFeatures:dict = {}
 	_configFile = os.path.basename(configFile) if configFile else None
 	_zookeeperInstance:Optional[Zookeeper.Zookeeper] = None
 
@@ -266,31 +282,38 @@ def buildUserConfigFile(configFile:Optional[str],
 
 
 	def basicConfig() -> None:
-		nonlocal cseType, cseEnvironment, cseSecret
+		nonlocal cseType, cseSecret
+		global cseEnvironment
+
 		_printRule('Basic Configuration',
 			 	   'The following questions determine the basic CSE features and settings.')
 
 		cseEnvironment = inquirer.select(
 							message = 'Select the target features:',
-							choices = [	Choice(name = 'Development  - Enable development, testing, and debugging support', 
-								   			  value = 'Development'),
-										Choice(name = 'Introduction - Install extra demo resources, documentation, and scripts',
-											   value = 'Introduction'),
-										Choice(name = 'Regular      - Disable development features',
-											   value = 'Regular'),
-										Choice(name = 'Headless     - Like "regular", plus disable most screen output, and the console and text UIs',
-											   value = 'Headless'),
-										Choice(name = 'WSGI         - Like "regular", but enable a WSGI server instead of the built-in HTTP server',
-											   value = 'WSGI'),
-										Choice(name = 'ETSI MEC     - Like "regular", but enable ETSI MEC support',
-											   value = 'ETSI MEC'),
+							choices = [	Choice(name='Development  - Enable development, testing, and debugging support', 
+								   			  value='Development'),
+										Choice(name='Introduction - Install extra demo resources, documentation, and scripts',
+											   value='Introduction'),
+										Choice(name='Regular      - Disable development features',
+											   value='Regular'),
+										Choice(name='Minimal      - Disable most optional runtime features for a minimal setup',
+				 							   value='Minimal'),
+										Choice(name='Headless     - Like "regular", plus disable most screen output, and the console and text UIs',
+											   value='Headless'),
+										Choice(name='ETSI MEC     - Like "regular", but enable ETSI MEC support',
+											   value='ETSI MEC'),
 									],
-							default = 'Development',
-							transformer = lambda result: result.split()[0],
+							default='Development',
+							transformer=lambda result: result.split()[0],
 							instruction="(select with cursor keys, confirm with <enter>)", 
-							long_instruction = 'Run the CSE for development, for learning, regular operation, or in headless mode.',
-							amark = '✓', 
+							long_instruction='Run the CSE for development, for learning, regular operation, or in headless mode.',
+							amark='✓', 
 						).execute()
+
+		# Print header again because the environment selection has changed
+		_printRule('Basic Configuration',
+			 	   'The following questions determine the basic CSE features and settings.')
+
 		cseType = inquirer.select(
 							message = 'What type of CSE do you want to run:',
 							choices = [	Choice(name = 'IN  - Infrastructure Node      - Backend or stand-alone installation', 
@@ -368,16 +391,6 @@ def buildUserConfigFile(configFile:Optional[str],
 							amark = '✓', 
 							invalid_message = 'Invalid IPv4 or IPv6 address or hostname.',
 						).execute(),
-			'httpPort': inquirer.number(
-							message = 'CSE host http port:',
-							default = _iniValues[cseType]['httpPort'],
-							long_instruction = 'TCP port at which the CSE is reachable for requests.',
-							validate = lambda result: NetworkTools.isValidPort(result) or _containsVariable(result),
-							min_allowed = 1,
-        					max_allowed = 65535,
-							amark = '✓',
-							invalid_message = 'Invalid port number. Must be a number between 1 and 65535.',
-						).execute(),
 			}
 
 
@@ -449,20 +462,72 @@ def buildUserConfigFile(configFile:Optional[str],
 							instruction="(select with cursor keys, confirm with <enter>)", 
 							long_instruction = 'Set the logging verbosity',
 							amark = '✓',
-						).execute(),
-			'consoleTheme': inquirer.select(
-								message = 'Console and Text UI Theme:',
-								choices = [ Choice(name = 'Dark', 
-												value = 'dark'),
-											Choice(name = 'Light', 
-												value = 'light'),
-										],
-								default = 'dark',
-								instruction="(select with cursor keys, confirm with <enter>)", 
-								long_instruction = 'Set the console and Text UI theme',
+						).execute()
+			}
+
+
+	def cseUIs() -> InquirerPySessionResult:
+		""" Prompts for CSE UI settings. 
+
+			Return:
+				A dictionary with the selected UI settings.
+		"""
+		_printRule('CSE UI Settings',
+			 	   'The following configuration settings determine miscellaneous CSE UI settings.')
+
+		result:InquirerPySessionResult = {}
+		if cseEnvironment not in ('Headless'):
+			result.update({
+
+				'consoleType': inquirer.select(
+									message = 'Console Type:',
+									choices = [ Choice(name = 'Rich   - Full featured console all commands and features', 
+													value = 'rich'),
+												Choice(name = 'Simple - Minimal console for basic output.', 
+													value = 'simple'),
+											],
+									default = 'simple' if cseEnvironment in ('Minimal') else 'rich',
+									instruction="(select with cursor keys, confirm with <enter>)", 
+									long_instruction = 'Set the console type.',
+									amark = '✓',
+								).execute(),
+				'consoleTheme': inquirer.select(
+									message = 'Console and Text UI Theme:',
+									choices = [ Choice(name = 'Dark', 
+													value = 'dark'),
+												Choice(name = 'Light', 
+													value = 'light'),
+											],
+									default = 'dark',
+									instruction="(select with cursor keys, confirm with <enter>)", 
+									long_instruction = 'Set the console and Text UI theme',
+									amark = '✓',
+								).execute(),
+				'enableTextUI': inquirer.confirm(
+									message = 'Enable the Text UI:',
+									default = False if cseEnvironment in ('Minimal', 'Headless') else True,
+									long_instruction = 'Enable or disable the rich Text UI.',
+									amark = '✓',
+								).execute()
+				})
+		else:
+			# In headless mode, set the UI settings to the default values for headless mode
+			result.update({
+				'consoleType': 'simple',
+				'consoleTheme': 'dark',
+				'enableTextUI': 'false',
+			})
+			
+		if bindings['http']['enable']:
+			result.update({
+				'enableWebUI': inquirer.confirm(
+								message = 'Enable the Web UI:',
+								default = False if cseEnvironment in ('Minimal', 'Headless') else True,
+								long_instruction = 'Enable or disable the Web UI.',
 								amark = '✓',
 							).execute(),
-			}
+			})
+		return result
 
 
 	def cseDatabase() -> InquirerPySessionResult:
@@ -549,15 +614,48 @@ def buildUserConfigFile(configFile:Optional[str],
 				   'The following allows to enable additional protocol bindings.')
 
 		bindings = inquirer.checkbox(
-			message='Select additional bindings to enable:',
-        	choices=['MQTT', 'MQTT over WebSocket', 'CoAP', 'WebSocket'],
-	        instruction="(select with cursor keys and <space>, confirm with <enter>)", 
-			long_instruction='Enable additional protocol bindings in addition to HTTP.',
+			message='Select bindings to enable:',
+        	choices=[
+				Choice('HTTP', enabled=True),
+				Choice('MQTT'),
+				Choice('MQTT over WebSocket'),
+				Choice('CoAP'),
+				Choice('WebSocket'),
+			],
+	        instruction='(select at least one with cursor keys and <space>, confirm with <enter>)' , 
+			long_instruction='Enable additional protocol bindings in addition to HTTP',
 			amark='✓',
-			transformer=lambda result: ', '.join(result)
+			transformer=lambda result: ', '.join(result),
+			validate=lambda result: len(result) > 0,
+			invalid_message='At least one binding must be selected.'
     	).execute()
 
 		result = {}
+
+		if 'HTTP' in bindings:
+			_print('\n[b][u]HTTP configuration[/]\n')
+			_print('Please provide the connection parameters for the HTTP server.\n')
+
+			result['http'] = {
+				'enable': 'true',
+			}
+			onboardingConfig['basic.config']['httpPort'] = inquirer.number(
+							message = 'HTTP server port:',
+							default = _iniValues[cseType]['httpPort'],
+							long_instruction = 'The listening port number of the CSE\'s HTTP server.',
+							validate = lambda result: NetworkTools.isValidPort(result) or _containsVariable(result),
+							min_allowed = 1,
+        					max_allowed = 65535,
+							amark = '✓',
+							invalid_message = 'Invalid port number. Must be a number between 1 and 65535.',
+						).execute()
+
+		else:
+			result['http'] = {
+				'enable': 'true',
+			}
+			onboardingConfig['basic.config']['httpPort'] = str(_iniValues[cseType]['httpPort'])
+
 		if 'MQTT' in bindings or 'MQTT over WebSocket' in bindings:
 			_print('\n[b][u]MQTT configuration[/]\n')
 			_print('Please provide the connection parameters for the MQTT broker.\n')
@@ -594,7 +692,7 @@ def buildUserConfigFile(configFile:Optional[str],
 			_print('\n[b][u]MQTT over WebSocket configuration[/]\n')
 			_print('Please provide the connection parameters for the MQTT over WebSocket connection.\n')
 			result['mqtt.websocket'] = {
-				'enable': True,
+				'enable': 'true',
 				'path': inquirer.text(
 					message='WebSocket URL path:',
 					default='',
@@ -611,7 +709,6 @@ def buildUserConfigFile(configFile:Optional[str],
 							max_allowed = 65535,
 						).execute(),
 			}
-
 		
 		if 'CoAP' in bindings:
 			_print('\n[b][u]CoAP configuration[/]\n')
@@ -644,6 +741,91 @@ def buildUserConfigFile(configFile:Optional[str],
 			}
 
 		return result
+
+
+	def enableDisableFeatures() -> dict:
+		""" Prompts for enable/disable features.
+
+			Return:
+				A dictionary with the selected features.
+		"""
+		_printRule('Enable/Disable Features',
+				   f'The following configuration settings concern enabled and disabled features of the CSE.\n\nThis allows to disable certain features for a more minimal setup, or to enable extra features for development and testing purposes.')
+
+		endis = {
+			'action': cseEnvironment != 'Minimal',
+			'group': cseEnvironment != 'Minimal',
+			'location': cseEnvironment != 'Minimal',
+			'semantic': cseEnvironment != 'Minimal',
+			'statistics': cseEnvironment != 'Minimal',
+			'time': cseEnvironment != 'Minimal',
+			'timeseries': cseEnvironment != 'Minimal',
+			'remotecse': cseEnvironment != 'Minimal',
+			'announcement': cseEnvironment != 'Minimal',
+			'httpmanagement': cseEnvironment in ('Development', 'Introduction', 'Regular', 'ETSI MEC'),
+			'httpstructure': cseEnvironment in ('Development', 'Introduction', 'Regular', 'ETSI MEC'),
+			'httpuppertester': cseEnvironment in ('Development', 'Introduction'),
+		}
+		if not inquirer.confirm(
+				message='Do you want to enable or disable features?',
+				default=False,
+				long_instruction='Configure enabled/disabled features for the CSE.'
+			).execute():
+			onboardingConfig['http']['enableManagementEndpoint'] = str(endis.get('httpmanagement', configParser.getboolean('http', 'enableManagementEndpoint'))).lower()
+			onboardingConfig['http']['enableStructureEndpoint'] = str(endis.get('httpstructure', configParser.getboolean('http', 'enableStructureEndpoint'))).lower()
+			onboardingConfig['http']['enableUpperTesterEndpoint'] = str(endis.get('httpuppertester', configParser.getboolean('http', 'enableUpperTesterEndpoint'))).lower()
+			return endis
+	
+		generalFeatures = inquirer.checkbox(
+			message='Select GENERAL service features to enable:',
+        	choices=[
+				Choice('action', 'Action Handling', enabled=endis['action']),
+				Choice('group', 'Group Management', enabled=endis['group']),
+				Choice('location', 'Location Services', enabled=endis['location']),
+				Choice('semantic', 'Semantic Support', enabled=endis['semantic']),
+				Choice('statistics', 'Statistics', enabled=endis['statistics']),
+				Choice('time', 'Time Services', enabled=endis['time']),
+				Choice('timeseries', 'Time Series Support', enabled=endis['timeseries']),
+			],
+	        instruction='(select with cursor keys and <space>, confirm with <enter>)' , 
+			long_instruction='Enable or disable certain CSE features',
+			amark='✓',
+			transformer=lambda result: ', '.join(result)
+    	).execute()
+
+		remoteFeatures = inquirer.checkbox(
+			message='Select REMOTE service features to enable:',
+        	choices=[
+				Choice('remotecse', 'RemoteCSE', enabled=endis['remotecse']),
+				Choice('announcement', 'Announcement', enabled=endis['announcement']),
+			],
+	        instruction='(select with cursor keys and <space>, confirm with <enter>)' , 
+			long_instruction='Enable or disable remote CSE features',
+			amark='✓',
+			transformer=lambda result: ', '.join(result),
+			validate=lambda result: False if ('announcement' in result and 'remotecse' not in result) else True,
+			invalid_message='The "Announcement" feature requires the "RemoteCSE" feature to be enabled.',
+    	).execute()
+
+		# HTTP features are added to the onboardingConfig because they are needed later
+		if onboardingConfig['http']['enable'].lower() == 'true':
+			httpFeatures = inquirer.checkbox(
+				message='Select HTTP API features to enable:',
+				choices=[
+					Choice('httpmanagement', 'HTTP Management API', enabled=endis['httpmanagement']),
+					Choice('httpstructure', 'HTTP Structure API', enabled=endis['httpstructure']),
+					Choice('httpuppertester', 'HTTP Upper Tester API', enabled=endis['httpuppertester']),
+				],
+				instruction='(select with cursor keys and <space>, confirm with <enter>)' , 
+				long_instruction='Enable or disable certain CSE features',
+				amark='✓',
+				transformer=lambda result: ', '.join(result)
+			).execute()
+			onboardingConfig['http']['enableManagementEndpoint'] = 'true' if 'httpmanagement' in httpFeatures else 'false'
+			onboardingConfig['http']['enableStructureEndpoint'] = 'true' if 'httpstructure' in httpFeatures else 'false'
+			onboardingConfig['http']['enableUpperTesterEndpoint'] = 'true' if 'httpuppertester' in httpFeatures else 'false'
+
+		return { k: True if k in generalFeatures + remoteFeatures else False for k in endis.keys() }
 
 
 	def advancedSettings() -> dict:
@@ -724,6 +906,10 @@ def buildUserConfigFile(configFile:Optional[str],
 
 		def spRegistrations() -> dict:
 			nonlocal spID
+
+			# Disable automatically if remoteCSE feature is not enabled before
+			if not enDisFeatures.get('remotecse', False):
+				return {}
 
 			_printRule('Advanced - Service Provider Registration',
 					   'The following settings concern the service provider registration.\n\nThis is only relevant for Infrastructure Nodes (IN) in a multi-provider environment.')
@@ -889,6 +1075,10 @@ def buildUserConfigFile(configFile:Optional[str],
 					A dictionary with the HTTP settings.
 			"""
 
+			if onboardingConfig['http']['enable'].lower() == 'false':	# If HTTP binding is not enabled, skip HTTP settings
+				_incrementStep()
+				return {}
+
 			_printRule('Advanced - HTTP Configuration',
 					   'The following configuration settings concern advanced HTTP features.')
 
@@ -941,7 +1131,7 @@ def buildUserConfigFile(configFile:Optional[str],
 					).execute(),
 					'enableWSGI': inquirer.confirm(
 						message='Enable WSGI support for HTTP requests?',
-						default=configParser.getboolean('http.wsgi', 'enable'),
+						default=True if cseEnvironment in ('Regular') else configParser.getboolean('http.wsgi', 'enable'),
 						long_instruction='Whether to enable WSGI support for HTTP requests.',
 						amark='✓'
 					).execute()
@@ -960,6 +1150,10 @@ def buildUserConfigFile(configFile:Optional[str],
 			_printRule('Advanced - Statistics Configuration',
 					   'The following configuration settings concern advanced statistics features of the CSE.')
 
+			# Disable automatically if statistics feature is not enabled before
+			if not enDisFeatures.get('statistics', False):
+				return {'enable': 'false'}
+			
 			if inquirer.confirm(
 					message='Do you want to configure statistics settings?',
 					default=False,
@@ -969,12 +1163,12 @@ def buildUserConfigFile(configFile:Optional[str],
 
 				if inquirer.confirm(
 						message='Do you want to enable statistics?',
-						default=configParser.getboolean('cse.statistics', 'enable'),
+						default=configParser.getboolean('cse.statistics', 'enable') if cseEnvironment not in ('Minimal') else False,
 						long_instruction='Enable statistics collection and reporting.',
 						amark='✓',
 					).execute():
 					return {
-						'enable': True,
+						'enable': 'true',
 						'writeInterval': inquirer.number(
 							message='Statistics database write interval (in seconds):',
 							default=configParser.getint('cse.statistics', 'writeInterval'),
@@ -985,7 +1179,7 @@ def buildUserConfigFile(configFile:Optional[str],
 							filter=lambda result: int(result),
 						).execute(),
 					}
-				return {'enable': False }
+				return {'enable': 'false' }
 			return {}
 		
 
@@ -995,6 +1189,12 @@ def buildUserConfigFile(configFile:Optional[str],
 				Return:
 					A dictionary with the selected console settings.
 			"""
+
+			if cseEnvironment in ('Headless'):
+				return {
+					'headless': True,
+					'startWithTextUI': False,
+				}
 
 			_printRule('Advanced - Console Configuration',
 					   'The following configuration settings concern advanced console features of the CSE.')
@@ -1013,7 +1213,8 @@ def buildUserConfigFile(configFile:Optional[str],
 						amark='✓',
 					).execute()
 				startWithTextUI = False
-				if not headless:
+				
+				if onboardingConfig['textui']['enable'].lower() == 'true' and not headless and enDisFeatures.get('enableTextUI', True):
 					startWithTextUI = inquirer.confirm(
 						message='Do you want to start directly with the Text UI?',
 						default=False,
@@ -1094,7 +1295,7 @@ def buildUserConfigFile(configFile:Optional[str],
 					amark='✓',
 				).execute():
 				return {
-					'enable': True,
+					'enable': 'true',
 					'size': inquirer.number(
 						message='Limit request recording size (count):',
 						default=200,
@@ -1105,10 +1306,14 @@ def buildUserConfigFile(configFile:Optional[str],
 						filter=lambda result: int(result),
 					).execute(),
 				}
-			return { 'enable': False }
+			return { 'enable': 'false' }
 
 
 		def advancedManagement() -> dict:
+
+			if onboardingConfig['http']['enable'].lower() == 'false':	# Return if http is disabled as management features require http
+				_incrementStep()
+				return {}
 
 			_printRule('Advanced - Management Configuration',
 					   'The following configuration settings concern remote management of the CSE.')
@@ -1122,19 +1327,19 @@ def buildUserConfigFile(configFile:Optional[str],
 				return {
 					'enableStructureEndpoint': inquirer.confirm(
 						message='Enable Structure Endpoint?',
-						default=configParser.getboolean('http', 'enableStructureEndpoint'),
+						default=onboardingConfig.getboolean('http', 'enableStructureEndpoint'),
 						long_instruction='This endpoint provides information about the structure of the CSE.',
 						amark='✓'
 					).execute(),
 					'enableUpperTesterEndpoint': inquirer.confirm(
 						message='Enable Upper Tester Endpoint?',
-						default=configParser.getboolean('http', 'enableUpperTesterEndpoint'),
+						default=onboardingConfig.getboolean('http', 'enableUpperTesterEndpoint'),
 						long_instruction='This endpoint is used for upper tester functionality, allowing remote testing of the CSE.',
 						amark='✓'
 					).execute(),
 					'enableManagementEndpoint': inquirer.confirm(
 						message='Enable Management API?',
-						default=configParser.getboolean('http', 'enableManagementEndpoint'),
+						default=onboardingConfig.getboolean('http', 'enableManagementEndpoint'),
 						long_instruction='This API provides management functionality for the CSE.',
 						amark='✓'
 					).execute(),
@@ -1433,8 +1638,7 @@ def buildUserConfigFile(configFile:Optional[str],
 				default=False,
 				long_instruction='Configure advanced settings for the CSE.'
 			).execute():
-			global currentStep
-			currentStep += 10
+			_incrementStep(10)
 			return {}
 
 		if cseType == 'IN':	
@@ -1508,8 +1712,13 @@ def buildUserConfigFile(configFile:Optional[str],
 
 
 		# Prompt for additional protocol bindings
-		# Add MQTT, CoAP, WebSocket configuration
+		# Add HTTP, MQTT, CoAP, WebSocket configuration
 		bindings = cseBindings()
+		if 'http' in bindings:
+			onboardingConfig['http'] = {
+				'enable': bindings['http'].get('enable')
+			}
+			
 		if 'mqtt' in bindings or 'mqtt.websocket' in bindings:
 			onboardingConfig['mqtt'] = {
 				'enable': 'true',
@@ -1551,6 +1760,14 @@ def buildUserConfigFile(configFile:Optional[str],
 			_setOption(onboardingConfig, 'websocket', 'port', webSocket.get('port'))
 
 
+		# Prompt for console and UI settings
+		if (uiConfigs := cseUIs()):
+			onboardingConfig['basic.config']['consoleTheme'] = uiConfigs['consoleTheme']	# type:ignore[index, assignment]
+			onboardingConfig['basic.config']['consoleType'] = uiConfigs['consoleType']		# type:ignore[index, assignment]
+			_setOption(onboardingConfig, 'textui', 'enable', str(uiConfigs['enableTextUI']).lower())
+			if 'enableWebUI' in uiConfigs:
+				_setOption(onboardingConfig, 'webui', 'enable', str(uiConfigs['enableWebUI']).lower())
+
 		# Prompt for  CSE policies
 		# Don't optimize default values. This section should always be fully present
 		for each in (policyConfig := csePolicies()):
@@ -1585,6 +1802,10 @@ def buildUserConfigFile(configFile:Optional[str],
 				# Add the registrar configuration for the MN or ASN
 				onboardingConfig.set('cse.registrar', 'INCSEcseID', f"/{regCnf['INCSEcseID']}")
 
+
+		# prompt for enabled/disabled features
+
+		enDisFeatures = enableDisableFeatures()
 
 		# prompt for advanced settings
 		advSettings = advancedSettings()
@@ -1738,14 +1959,16 @@ def buildUserConfigFile(configFile:Optional[str],
 		#
 		match cseEnvironment:
 			case 'Regular':
-				pass
+				# Add WSGI configuration
+				_setOption(onboardingConfig, 'http.wsgi', 'enable', 'true')
 
 			case 'Development':
 				_setOption(onboardingConfig, 'textui', 'startWithTUI', 'false')
 				_setOption(onboardingConfig, 'cse.operation.requests', 'enable', 'true')
-				_setOption(onboardingConfig, 'http', 'enableUpperTesterEndpoint', 'true')
-				_setOption(onboardingConfig, 'http', 'enableStructureEndpoint', 'true')
-				_setOption(onboardingConfig, 'http', 'enableManagementEndpoint', 'true')
+				_v = onboardingConfig['http'].get('enable').lower()
+				_setOption(onboardingConfig, 'http', 'enableUpperTesterEndpoint', _v, force=True)
+				_setOption(onboardingConfig, 'http', 'enableStructureEndpoint', _v, force=True)
+				_setOption(onboardingConfig, 'http', 'enableManagementEndpoint', _v, force=True)
 
 			case 'Introduction':
 				# Add introduction configuration
@@ -1758,10 +1981,11 @@ def buildUserConfigFile(configFile:Optional[str],
 				_setOption(onboardingConfig, 'textui', 'startWithTUI', 'false')
 				_setOption(onboardingConfig, 'console', 'headless', 'true')
 
-			case 'WSGI':
-				# Add WSGI configuration
-				_setOption(onboardingConfig, 'http.wsgi', 'enable', 'true')
-			
+			case 'Minimal':
+				# Add minimal configuration
+				_setOption(onboardingConfig, 'cse.statistics', 'enable', 'false')
+				_setOption(onboardingConfig, 'cse.operation.requests', 'enable', 'false', force=True)
+
 			case 'ETSI MEC':
 				# like development, but with MQTT enabled
 				_setOption(onboardingConfig, 'textui', 'startWithTUI', 'false')
