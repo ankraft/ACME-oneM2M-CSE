@@ -267,7 +267,7 @@ def shutdown() -> None:
 		console.stop()				# This will end the main run loop.
 	
 	if runsInIPython():
-		L.console('CSE shut down', nlb = True)
+		L.console('CSE shut down complete', nlb=True)
 
 
 @atexit.register
@@ -313,8 +313,8 @@ def _shutdown() -> None:
 	# This shutdowns all plugins, stopping the ones that are still running
 	pluginManager and pluginManager.shutdown()	
 
-	L.isInfo and L.log('CSE shut down')
-	L.console('CSE shut down', nlb = True)
+	L.isInfo and L.log('CSE shut down complete')
+	L.console('CSE shut down complete', nlb=True)
 
 	L.finit()
 	RC.cseStatus = CSEStatus.STOPPED
