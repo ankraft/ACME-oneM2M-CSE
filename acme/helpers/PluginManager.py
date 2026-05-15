@@ -954,7 +954,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 				tags: The tag or tags to search for.
 				byPriority: Whether to sort the plugins by their priority. If True, the plugins are returned sorted by their priority, with the highest priority first (0 = highest priority).
 			Returns:
-				A list of plugin names that have the given tag.
+				A list of plugin names that have the given tag, sorted by priority if requested.
 		"""
 		plugins = []
 		if isinstance(tags, str):
@@ -983,34 +983,37 @@ class PluginManager(metaclass=Singleton.Singleton):
 		return name in providedFunctions
 	
 
-	def callService(self, endpoint: str, tag: str, *args: Any, **kwargs: Any) -> Any:
+	def callService(self, endpoint: str, tag: str|list[str], *args: Any, **kwargs: Any) -> list[tuple[Any, str]]:
 		"""	Call a service plugin endpoint. 
 
 			Args:
 				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `endpoint` decorator.
-				tag: The tag of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, the one with the highest priority is called.
+				tag: The tag of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, all of them are called in order of their priority.
 				*args: Positional arguments to pass to the endpoint method.
 				**kwargs: Keyword arguments to pass to the endpoint method.
 
 			Return:
-				The result of the endpoint method call.
+				The result of the endpoint method call. This is returned as a list of tuples of the form (result, pluginName) where result is the return value of the endpoint method and pluginName is the name of the plugin that was called.
 
 			Raises:
-				ValueError: If no plugin with the given tag and endpoint is found, or if multiple plugins with the same tag and endpoint are found.
+				ValueError: If no plugin with the given tag and endpoint is found.
 		"""
 
 		# Get the plugin instance for the given tag and endpoint
-		plugins = self.getPluginsByTag(tag)
+		plugins = self.getPluginsByTag(tag, byPriority=True)
 		plugins = [ (p, i) for p, i in plugins if hasattr(i, _tagEndpointMap) and endpoint in i._pm_endpointMap ]
 		if not plugins:
 			raise ValueError(f'No plugin found with tag: {tag}')
-		if len(plugins) > 1:
-			raise ValueError(f'Multiple plugins found with tag: {tag}: {[p[0] for p in plugins]}')
 		
-		# Call the endpoint method on the plugin instance
-		# The actual endpoint method name is looked up in the plugin's endpoint map internally
-		# (see the @endpoint decorator and the ServicePlugin class) 
-		return getattr(plugins[0][1], endpoint)(*args, **kwargs)
+		result: list[tuple[Any, str]] = []
+		for pluginName, pluginInstance in plugins:
+			# Call the endpoint method on the plugin instance
+			# The actual endpoint method name is looked up in the plugin's endpoint map internally
+			# (see the @endpoint decorator and the ServicePlugin class) 
+			result.append((getattr(pluginInstance, endpoint)(*args, **kwargs), pluginName))
+
+			#return getattr(pluginInstance, endpoint)(*args, **kwargs)
+		return result
 
 
 #############################################################################

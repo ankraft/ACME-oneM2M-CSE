@@ -24,7 +24,7 @@ from acme.etc.Constants import RuntimeConstants as RC
 from acme.runtime.Logging import Logging as L											# type: ignore
 from acme.runtime.ConsoleBase import ConsoleBase
 from acme.runtime.PluginSupport import plugin, start, requires
-from acme.runtime.EventManager import EventManager, EventData, eventManager
+from acme.runtime.EventManager import EventData, eventManager
 
 @plugin(tags=['acme', 'ui'])
 @requires(cseSetConsole='acme.runtime.CSE.setConsole')

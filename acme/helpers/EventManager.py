@@ -39,7 +39,9 @@ class EventData():
 	"""	The event name. """
 
 	payload: Any | tuple = None
-	"""	The event payload. """
+	"""	The event payload. This may be any data that should be passed to the event handlers. 
+		It can be a single value or a tuple of values. 
+	"""
 
 
 	def __getitem__(self, key: int) -> Any:
@@ -81,22 +83,22 @@ _F = TypeVar("_F", bound=Callable)
 
 
 class Event(list):	# type:ignore[type-arg]
-	"""Event subscription.
+	"""	This class represents an event. It is actially a list of callable functions, 
+		which are the event handlers for this event. Calling an instance of this class will
+		call all the registered event handlers for this event. 
 
-	A list of callable methods. Calling an instance of Event will cause a
-	call to each function in the list in ascending order by index. 
-	It supports all methods from its base class (list), so use append() and remove()
-	to add and remove functions.
+		The calls supports all methods from its base class (list), so use append() and remove()
+		to add and remove functions.
 
-	An event is raised by calling the event: anEvent(anArgument). It may have an
-	arbitrary number of arguments which are passed to the functions.
+		An event is raised by calling the event: "anEvent(anArgument)". It may have an
+		arbitrary number of arguments which are passed to the functions.
 
-	The function will be called in a separate thread in order to prevent waiting
-	for the returns. This might lead to some race conditions, so the synchronizations
-	must be done inside the functions.
+		The functions may be called in a separate thread in order to prevent waiting
+		for the returns. This might lead to some race conditions, so the synchronizations
+		must be done inside the functions.
 
-	Attention: 
-		Since the parent class is a *list* calling *isInstance(obj, list)* will return True.
+		Attention: 
+			Since the parent class is a *list* calling *isInstance(obj, list)* will return True.
 	"""
 
 	__slots__ = (
@@ -186,7 +188,9 @@ class Event(list):	# type:ignore[type-arg]
 					raise RuntimeError(f'EventData name {args[0].name} does not match event name {self.name}')
 			else:
 				# If the first argument is not an EventData, we create an EventData with the event name and the data
-				args = (EventData(name=self.name, payload=tuple(args)),)	# type: ignore[attr-defined]
+				# If the len is 1, we pass the single argument as payload, otherwise we pass all arguments as
+				# a tuple as payload
+				args = (EventData(name=self.name, payload=tuple(args) if len(args) > 1 else args[0]),)	# type: ignore[attr-defined]
 		else:
 			# If no arguments are passed, we create an EventData with the event name and no payload
 			args = (EventData(name=self.name),)
@@ -227,7 +231,11 @@ class Event(list):	# type:ignore[type-arg]
 
 
 class EventManager(metaclass=Singleton):
-	"""	Event topics are added as new methods to an *EventManager* instance. 
+	"""	Base class for an event manager. This class manages events and event handlers. 
+		It is implememted as a `Singleton`, so there is only one instance of the event
+		manager in the whole application.
+	
+		Event topics are added as new methods to an *EventManager* instance. 
 		Events can be raised by calling those new methods.
 
 		Example:
