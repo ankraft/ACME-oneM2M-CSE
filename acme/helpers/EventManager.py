@@ -249,7 +249,7 @@ class EventManager(metaclass=Singleton):
 				Raise the *anEvent* `Event` with an *anArg* argument.
 	"""
 
-	def addEvent(self, name: str, runInBackground: Optional[bool] = True) -> Event:
+	def addEvent(self, name: str, runInBackground: Optional[bool]=True) -> Event:
 		"""	Create and add a new `Event`.
 
 			Args:

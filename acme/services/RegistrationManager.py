@@ -353,9 +353,6 @@ class RegistrationManager(metaclass=Singleton):
 		# delete the originator from the database
 		self.storage.removeOriginator(ae.aei)	
 
-		# Send event
-		eventManager.aeHasDeregistered(EventData(payload=ae))	# type: ignore [attr-defined]
-
 		return True
 
 
