@@ -87,15 +87,23 @@ console = Console()
 """ The console to use for printing messages. """
 
 totalSteps = 21
+""" The total number of steps in the onboarding process. This is used to calculate the progress bar. """
+
 currentStep = -1
+""" The current step in the onboarding process. This is used to update the progress bar. """
+
 progressBar = ProgressBar(total=totalSteps, completed=currentStep, complete_style=Style(color=Constants.logoColor))
+""" The progress bar to use for showing the progress of the onboarding process. """
 
 configParser = ACMEConfiguration.ACMEConfiguration()
+""" The configuration parser to use for creating the configuration file."""
+
 cseEnvironment = 'None selected'
+""" The selected CSE environment. This is used to determine which features to enable and which default values to use for the configuration file. """
 
 
 
-def _print(msg:str|Rule|Syntax='\n', clearScreen:Optional[bool]=True) -> None:
+def _print(msg: str|Rule|Syntax = '\n', clearScreen: Optional[bool] = True) -> None:
 	""" Print a message to the console.
 	
 		Args:
@@ -113,7 +121,13 @@ def _incrementStep(count: int = 1) -> None:
 	progressBar.update(currentStep)
 
 
-def _printRule(title:str, extras:Optional[str]=None) -> None:
+def _printRule(title: str, extras: Optional[str] = None) -> None:
+	""" Print a header with the given title and extras, and update the progress bar.
+	
+		Args:
+			title: The title to print.
+			extras: Additional information to print.
+	"""
 	
 	# Update the progress bar each time a step is printed
 	_incrementStep()
@@ -143,7 +157,7 @@ def _printRule(title:str, extras:Optional[str]=None) -> None:
 		console.print('\n')
 
 
-def _printHeader(title:str) -> None:
+def _printHeader(title: str) -> None:
 	""" Print a header with the given title.
 	
 		Args:
@@ -153,11 +167,21 @@ def _printHeader(title:str) -> None:
 		console.print(f'\n[{Constants.tertiaryLogoColor}]{title}[/]\n', highlight=False)
 
 
-def _setOption(config:ACMEConfiguration.ACMEConfiguration, 
-			   section:str, 
-			   option:str, 
-			   value:str, 
-			   toLower:Optional[bool]=False) -> str:
+def _setOption(config: ACMEConfiguration.ACMEConfiguration, 
+			   section: str, 
+			   option: str, 
+			   value: str, 
+			   toLower: Optional[bool] = False) -> str:
+	""" Set an option in the configuration if it is not already set, 
+		and return the value to use for the option. If the value is None, return None.
+	
+		Args:
+			config: The configuration to set the option in.
+			section: The section of the option.
+			option: The name of the option.
+			value: The value to set for the option.
+			toLower: If True, convert the value to lower case before setting it.
+	"""
 
 	if value is None:
 		return None
