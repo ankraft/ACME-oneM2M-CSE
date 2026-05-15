@@ -86,7 +86,7 @@ _iniValues = {
 console = Console()
 """ The console to use for printing messages. """
 
-totalSteps = 20
+totalSteps = 21
 currentStep = -1
 progressBar = ProgressBar(total=totalSteps, completed=currentStep, complete_style=Style(color=Constants.logoColor))
 
@@ -157,23 +157,28 @@ def _setOption(config:ACMEConfiguration.ACMEConfiguration,
 			   section:str, 
 			   option:str, 
 			   value:str, 
-			   toLower:Optional[bool]=False,
-			   force:Optional[bool]=False) -> str:
+			   toLower:Optional[bool]=False) -> str:
 
 	if value is None:
 		return None
 	
-	# Only set the option if it is not the default
-	_configValue = configParser.get(section, option)
-	_configValue = str(_configValue).lower() if toLower else str(_configValue)
 	value = str(value).lower() if toLower else str(value)
-
-	if value != _configValue or force:
-		# Only set the option if it does not exist yet or if force is True
-		if not config.has_option(section, option):
-			config.set(section, option, value)
-	
+	if not config.has_option(section, option):
+		config.set(section, option, value)
 	return value
+
+def _optimizeConfig(config:ACMEConfiguration.ACMEConfiguration) -> None:
+	""" Remove default values from the configuration to optimize it. 
+		This is done to reduce the size of the configuration file and to make it easier to read. """
+	# Remove default values that are not needed to optimize the configuration
+
+	for section in config.sections():
+		for key in config[section]:
+			if configParser.has_option(section, key) and configParser.get(section, key).lower() == config[section][key].lower():
+				config.remove_option(section, key)
+				if not config.options(section):
+					config.remove_section(section)
+
 
 
 _interpolationVariable = re.compile(r'\$\{([a-zA-Z0-9_]+)\}')
@@ -294,13 +299,13 @@ def buildUserConfigFile(configFile:Optional[str],
 								   			  value='Development'),
 										Choice(name='Introduction - Install extra demo resources, documentation, and scripts',
 											   value='Introduction'),
-										Choice(name='Regular      - Disable development features',
+										Choice(name='Regular      - Disable various development features',
 											   value='Regular'),
 										Choice(name='Minimal      - Disable most optional runtime features for a minimal setup',
 				 							   value='Minimal'),
-										Choice(name='Headless     - Like "regular", plus disable most screen output, and the console and text UIs',
+										Choice(name='Headless     - Like "Regular", plus disable most screen output, and the console and text UIs',
 											   value='Headless'),
-										Choice(name='ETSI MEC     - Like "regular", but enable ETSI MEC support',
+										Choice(name='ETSI MEC     - Like "Regular", but enable ETSI MEC support',
 											   value='ETSI MEC'),
 									],
 							default='Development',
@@ -763,7 +768,7 @@ def buildUserConfigFile(configFile:Optional[str],
 			'remotecse': cseEnvironment != 'Minimal',
 			'announcement': cseEnvironment != 'Minimal',
 			'httpmanagement': cseEnvironment in ('Development', 'Introduction', 'Regular', 'ETSI MEC'),
-			'httpstructure': cseEnvironment in ('Development', 'Introduction', 'Regular', 'ETSI MEC'),
+			'httpstructure': cseEnvironment in ('Development', 'Introduction', 'ETSI MEC'),
 			'httpuppertester': cseEnvironment in ('Development', 'Introduction'),
 		}
 		if not inquirer.confirm(
@@ -900,6 +905,60 @@ def buildUserConfigFile(configFile:Optional[str],
 						amark='✓'
 					).execute()
 				}
+			else:
+				return {}
+
+
+		def advancedRegistration() -> dict:
+			""" Prompts for advanced Registration settings.
+
+				Return:
+					A dictionary with the Registration settings.
+			"""
+			if not enDisFeatures.get('remotecse', False):
+				return {}
+
+			_printRule('Advanced - Registration Configuration',
+					   'The following configuration settings concern advanced features of the Registration.')
+
+			if inquirer.confirm(
+					message='Do you want to configure advanced Registration settings?',
+					default=False,
+					long_instruction='Set advanced Registration settings, such as intervalls and other policies.',
+					amark='✓',
+				).execute():
+
+				result = {
+					'checkLiveliness': inquirer.confirm(
+						message="Check the liveliness of registrations?",
+						default=configParser.getboolean('cse.registration', 'checkLiveliness'),
+						long_instruction='Whether the CSE will check the liveliness of registrations to the registrar CSE and from the registree CSEs.',
+						amark='✓'
+					).execute(),
+				}
+				if result['checkLiveliness']:
+					result.update({
+						'checkInterval': inquirer.number(
+							message='Registration check interval (in seconds):',
+							default=configParser.getint('cse.registration', 'checkInterval'),
+							long_instruction='The time interval that the CSE checks for other CSE registration status. 0 means no checking.',
+							min_allowed=0,
+							amark='✓',
+							validate=lambda result: len(result.strip()) > 0,
+							filter=lambda result: int(result),
+						).execute(),
+					})
+				else:
+					result['checkInterval'] = 0
+				result.update({
+					'unregisterWhenStopping': inquirer.confirm(
+						message="Unregister from the registrar when stopping the CSE?",
+						default=configParser.getboolean('cse.registration', 'unregisterWhenStopping'),
+						long_instruction='Whether the CSE will unregister from the registrar when stopping. This includes deleting the CSR resource at the registrar CSE.',
+						amark='✓'
+					).execute(),
+				})
+				return result
 			else:
 				return {}
 
@@ -1131,7 +1190,7 @@ def buildUserConfigFile(configFile:Optional[str],
 					).execute(),
 					'enableWSGI': inquirer.confirm(
 						message='Enable WSGI support for HTTP requests?',
-						default=True if cseEnvironment in ('Regular') else configParser.getboolean('http.wsgi', 'enable'),
+						default=True if cseEnvironment in ('Regular', 'Headless') else configParser.getboolean('http.wsgi', 'enable'),
 						long_instruction='Whether to enable WSGI support for HTTP requests.',
 						amark='✓'
 					).execute()
@@ -1250,15 +1309,6 @@ def buildUserConfigFile(configFile:Optional[str],
 						message='Resource expiration check interval (in seconds):',
 						default=60,
 						long_instruction='The time interval that the CSE checks for resource expiration. 0 means no checking.',
-						min_allowed=0,
-						amark='✓',
-						validate=lambda result: len(result.strip()) > 0,
-						filter=lambda result: int(result),
-					).execute(),
-					'registrationCheck': inquirer.number(
-						message='Registration check interval (in seconds):',
-						default=60,
-						long_instruction='The time interval that the CSE checks for other CSE registration status. 0 means no checking.',
 						min_allowed=0,
 						amark='✓',
 						validate=lambda result: len(result.strip()) > 0,
@@ -1638,15 +1688,12 @@ def buildUserConfigFile(configFile:Optional[str],
 				default=False,
 				long_instruction='Configure advanced settings for the CSE.'
 			).execute():
-			_incrementStep(10)
+			_incrementStep(11)
 			return {}
 
-		if cseType == 'IN':	
-			# Prompt for Service Provider registration
-			spRegistration = spRegistrations()
-
 		return {	'cse': advancedCSE(),
-					'spRegistration': spRegistration,
+		  			'registration': advancedRegistration(),
+					'spRegistration': spRegistrations() if cseType == 'IN' else None,
 		  			'logging': advancedLogging(),
 					'console': advancedConsole(),
 					'http': advancedHTTP(),
@@ -1764,9 +1811,9 @@ def buildUserConfigFile(configFile:Optional[str],
 		if (uiConfigs := cseUIs()):
 			onboardingConfig['basic.config']['consoleTheme'] = uiConfigs['consoleTheme']	# type:ignore[index, assignment]
 			onboardingConfig['basic.config']['consoleType'] = uiConfigs['consoleType']		# type:ignore[index, assignment]
-			_setOption(onboardingConfig, 'textui', 'enable', str(uiConfigs['enableTextUI']).lower())
+			_setOption(onboardingConfig, 'textui', 'enable', str(uiConfigs['enableTextUI']), toLower=True)
 			if 'enableWebUI' in uiConfigs:
-				_setOption(onboardingConfig, 'webui', 'enable', str(uiConfigs['enableWebUI']).lower())
+				_setOption(onboardingConfig, 'webui', 'enable', str(uiConfigs['enableWebUI']), toLower=True)
 
 		# Prompt for  CSE policies
 		# Don't optimize default values. This section should always be fully present
@@ -1806,6 +1853,16 @@ def buildUserConfigFile(configFile:Optional[str],
 		# prompt for enabled/disabled features
 
 		enDisFeatures = enableDisableFeatures()
+		_setOption(onboardingConfig, 'cse.statistics', 'enable', str(enDisFeatures.get('statistics', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.action', 'enable', str(enDisFeatures.get('action', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.group', 'enable', str(enDisFeatures.get('group', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.location', 'enable', str(enDisFeatures.get('location', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.semantic', 'enable', str(enDisFeatures.get('semantic', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.time', 'enable', str(enDisFeatures.get('time', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.timeSeries', 'enable', str(enDisFeatures.get('timeseries', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.remoteCSE', 'enable', str(enDisFeatures.get('remotecse', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.announcement', 'enable', str(enDisFeatures.get('announcement', True)), toLower=True)
+
 
 		# prompt for advanced settings
 		advSettings = advancedSettings()
@@ -1818,7 +1875,7 @@ def buildUserConfigFile(configFile:Optional[str],
 			_setOption(onboardingConfig, 'cse', 'releaseVersion', advancedCSE.get('releaseVersion'))
 			_setOption(onboardingConfig, 'cse', 'supportedReleaseVersions', ','.join(advancedCSE.get('supportedReleaseVersions')))
 			_setOption(onboardingConfig, 'cse', 'defaultSerialization', advancedCSE.get('defaultSerialization'))
-			_setOption(onboardingConfig, 'cse', 'enableSubscriptionVerificationRequests', advancedCSE.get('enableSubscriptionVerificationRequests'), True)
+			_setOption(onboardingConfig, 'cse', 'enableSubscriptionVerificationRequests', advancedCSE.get('enableSubscriptionVerificationRequests'), toLower=True)
 			_setOption(onboardingConfig, 'cse', 'idLength', advancedCSE.get('idLength'))
 
 		#
@@ -1846,11 +1903,11 @@ def buildUserConfigFile(configFile:Optional[str],
 		#	Advanced: Logging
 		#
 		if loggingSettings := advSettings.get('logging'):
-			_setOption(onboardingConfig, 'logging', 'enableUTCTimezone', loggingSettings.get('enableUTCTimezone'), True)
-			if _setOption(onboardingConfig, 'logging', 'enableFileLogging', loggingSettings.get('enableFileLogging'), True) == 'true':
+			_setOption(onboardingConfig, 'logging', 'enableUTCTimezone', loggingSettings.get('enableUTCTimezone'), toLower=True)
+			if _setOption(onboardingConfig, 'logging', 'enableFileLogging', loggingSettings.get('enableFileLogging'), toLower=True) == 'true':
 				_setOption(onboardingConfig, 'logging', 'count', loggingSettings.get('count'))
 				_setOption(onboardingConfig, 'logging', 'size', loggingSettings.get('size'))
-			_setOption(onboardingConfig, 'logging', 'enableScreenLogging', loggingSettings.get('enableScreenLogging'), True)
+			_setOption(onboardingConfig, 'logging', 'enableScreenLogging', loggingSettings.get('enableScreenLogging'), toLower=True)
 
 		#
 		#	Advanced: CSE Policies
@@ -1858,25 +1915,27 @@ def buildUserConfigFile(configFile:Optional[str],
 		if _setOption(onboardingConfig, 'cse', 'checkExpirationsInterval', advSettings.get('intervalls', {}).get('resourceExpiration')) == '0':
 			onboardingConfig.set('cse', 'enableResourceExpiration', 'false')
 
+
 		#
 		#	Advanced: CSE Registration
 		#
-		if intervalls := advSettings.get('intervalls', {}):
+		if registration := advSettings.get('registration', {}):
 			# Add the CSE registration check intervall
-			if _setOption(onboardingConfig, 'cse.registration', 'checkInterval', intervalls.get('registrationCheck')) == '0':
-				onboardingConfig.set('cse.registration', 'enableCheckLiveliness', 'false')
-
+			if _setOption(onboardingConfig, 'cse.registration', 'checkLiveliness', registration.get('checkLiveliness'), toLower=True) == 'true':
+				_setOption(onboardingConfig, 'cse.registration', 'checkInterval', registration.get('checkInterval'))
+			_setOption(onboardingConfig, 'cse.registration', 'unregisterWhenStopping', registration.get('unregisterWhenStopping'), toLower=True)
+			
 		#
 		#	Advanced: HTTP
 		#
 		if httpSettings := advSettings.get('http'):
 			_setOption(onboardingConfig, 'http', 'timeout', httpSettings.get('timeout'))
-			_setOption(onboardingConfig, 'http', 'allowPatchForDelete', httpSettings.get('allowPatchForDelete'), True)
-			_setOption(onboardingConfig, 'http.security', 'useTLS', httpSettings.get('useTLS'), True)
-			_setOption(onboardingConfig, 'http.security', 'enableBasicAuth', httpSettings.get('enableBasicAuth'), True)
-			_setOption(onboardingConfig, 'http.security', 'enableTokenAuth', httpSettings.get('enableTokenAuth'), True)
-			_setOption(onboardingConfig, 'http.cors', 'enable', httpSettings.get('enableCORS'), True)
-			_setOption(onboardingConfig, 'http.wsgi', 'enable', httpSettings.get('enableWSGI'), True)
+			_setOption(onboardingConfig, 'http', 'allowPatchForDelete', httpSettings.get('allowPatchForDelete'), toLower=True)
+			_setOption(onboardingConfig, 'http.security', 'useTLS', httpSettings.get('useTLS'), toLower=True)
+			_setOption(onboardingConfig, 'http.security', 'enableBasicAuth', httpSettings.get('enableBasicAuth'), toLower=True)
+			_setOption(onboardingConfig, 'http.security', 'enableTokenAuth', httpSettings.get('enableTokenAuth'), toLower=True)
+			_setOption(onboardingConfig, 'http.cors', 'enable', httpSettings.get('enableCORS'), toLower=True)
+			_setOption(onboardingConfig, 'http.wsgi', 'enable', httpSettings.get('enableWSGI'), toLower=True)
 
 		#
 		#	Advanced: Scripts
@@ -1888,30 +1947,30 @@ def buildUserConfigFile(configFile:Optional[str],
 		#	Advanced: Request Recording
 		#
 		if requestRecording := advSettings.get('requestRecording'):
-			_setOption(onboardingConfig, 'cse.operation.requests', 'enable', requestRecording.get('enable'), True)
+			_setOption(onboardingConfig, 'cse.operation.requests', 'enable', requestRecording.get('enable'), toLower=True)
 			_setOption(onboardingConfig, 'cse.operation.requests', 'size', requestRecording.get('size'))
 
 		#
 		#	Advanced: Statistics
 		#
 		if statistics := advSettings.get('statistics'):
-			if _setOption(onboardingConfig, 'cse.statistics', 'enable', statistics.get('enable'), True) == 'true':
+			if _setOption(onboardingConfig, 'cse.statistics', 'enable', statistics.get('enable'), toLower=True) == 'true':
 				_setOption(onboardingConfig, 'cse.statistics', 'writeInterval', statistics.get('writeInterval'))
 
 		#
 		#	Advanced: Console
 		#
 		if consoleSettings := advSettings.get('console'):
-			_setOption(onboardingConfig, 'console', 'headless', consoleSettings.get('headless'), True)
-			_setOption(onboardingConfig, 'textui', 'startWithTUI', consoleSettings.get('startWithTextUI'), True)
+			_setOption(onboardingConfig, 'console', 'headless', consoleSettings.get('headless'), toLower=True)
+			_setOption(onboardingConfig, 'textui', 'startWithTUI', consoleSettings.get('startWithTextUI'), toLower=True)
 
 		#
 		#	Advanced: Management
 		#
 		if managementSettings := advSettings.get('management'):
-			_setOption(onboardingConfig, 'http', 'enableStructureEndpoint', managementSettings.get('enableStructureEndpoint'), True)
-			_setOption(onboardingConfig, 'http', 'enableUpperTesterEndpoint', managementSettings.get('enableUpperTesterEndpoint'), True)
-			_setOption(onboardingConfig, 'http', 'enableManagementEndpoint', managementSettings.get('enableManagementEndpoint'), True)
+			_setOption(onboardingConfig, 'http', 'enableStructureEndpoint', managementSettings.get('enableStructureEndpoint'), toLower=True)
+			_setOption(onboardingConfig, 'http', 'enableUpperTesterEndpoint', managementSettings.get('enableUpperTesterEndpoint'), toLower=True)
+			_setOption(onboardingConfig, 'http', 'enableManagementEndpoint', managementSettings.get('enableManagementEndpoint'), toLower=True)
 
 
 		#
@@ -1919,19 +1978,19 @@ def buildUserConfigFile(configFile:Optional[str],
 		#
 		if resourceSettings := advSettings.get('resources'):
 			if cnt := resourceSettings.get('cnt'):
-				if _setOption(onboardingConfig, 'resource.cnt', 'enableLimits', cnt.get('enableLimits'), True) == 'true':
+				if _setOption(onboardingConfig, 'resource.cnt', 'enableLimits', cnt.get('enableLimits'), toLower=True) == 'true':
 					_setOption(onboardingConfig, 'resource.cnt', 'mni', cnt.get('mni'))
 					_setOption(onboardingConfig, 'resource.cnt', 'mbs', cnt.get('mbs'))
 					_setOption(onboardingConfig, 'resource.cnt', 'mia', cnt.get('mia'))
 
 			if fcnt := resourceSettings.get('fcnt'):
-				if _setOption(onboardingConfig, 'resource.fcnt', 'enableLimits', fcnt.get('enableLimits'), True) == 'true':
+				if _setOption(onboardingConfig, 'resource.fcnt', 'enableLimits', fcnt.get('enableLimits'), toLower=True) == 'true':
 					_setOption(onboardingConfig, 'resource.fcnt', 'mni', fcnt.get('mni'))
 					_setOption(onboardingConfig, 'resource.fcnt', 'mbs', fcnt.get('mbs'))
 					_setOption(onboardingConfig, 'resource.fcnt', 'mia', fcnt.get('mia'))
 
 			if ts := resourceSettings.get('ts'):
-				if _setOption(onboardingConfig, 'resource.ts', 'enableLimits', ts.get('enableLimits'), True) == 'true':
+				if _setOption(onboardingConfig, 'resource.ts', 'enableLimits', ts.get('enableLimits'), toLower=True) == 'true':
 					_setOption(onboardingConfig, 'resource.ts', 'mni', ts.get('mni'))
 					_setOption(onboardingConfig, 'resource.ts', 'mbs', ts.get('mbs'))
 					_setOption(onboardingConfig, 'resource.ts', 'mia', ts.get('mia'))
@@ -1965,10 +2024,10 @@ def buildUserConfigFile(configFile:Optional[str],
 			case 'Development':
 				_setOption(onboardingConfig, 'textui', 'startWithTUI', 'false')
 				_setOption(onboardingConfig, 'cse.operation.requests', 'enable', 'true')
-				_v = onboardingConfig['http'].get('enable').lower()
-				_setOption(onboardingConfig, 'http', 'enableUpperTesterEndpoint', _v, force=True)
-				_setOption(onboardingConfig, 'http', 'enableStructureEndpoint', _v, force=True)
-				_setOption(onboardingConfig, 'http', 'enableManagementEndpoint', _v, force=True)
+				_v = onboardingConfig['http'].get('enable')
+				_setOption(onboardingConfig, 'http', 'enableUpperTesterEndpoint', _v, toLower=True)
+				_setOption(onboardingConfig, 'http', 'enableStructureEndpoint', _v, toLower=True)
+				_setOption(onboardingConfig, 'http', 'enableManagementEndpoint', _v, toLower=True)
 
 			case 'Introduction':
 				# Add introduction configuration
@@ -1978,13 +2037,14 @@ def buildUserConfigFile(configFile:Optional[str],
 
 			case 'Headless':
 				# Add headless configuration
+				_setOption(onboardingConfig, 'http.wsgi', 'enable', 'true')
 				_setOption(onboardingConfig, 'textui', 'startWithTUI', 'false')
 				_setOption(onboardingConfig, 'console', 'headless', 'true')
 
 			case 'Minimal':
 				# Add minimal configuration
 				_setOption(onboardingConfig, 'cse.statistics', 'enable', 'false')
-				_setOption(onboardingConfig, 'cse.operation.requests', 'enable', 'false', force=True)
+				_setOption(onboardingConfig, 'cse.operation.requests', 'enable', 'false')
 
 			case 'ETSI MEC':
 				# like development, but with MQTT enabled
@@ -2005,6 +2065,7 @@ def buildUserConfigFile(configFile:Optional[str],
 		#
 		# Convert the final configuration to a string
 		#
+		_optimizeConfig(onboardingConfig)
 		with io.StringIO() as ss:
 			onboardingConfig.write(ss)
 			ss.seek(0) # rewind
