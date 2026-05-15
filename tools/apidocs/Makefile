@@ -17,7 +17,7 @@
 ROOTDIR= ../..
 DOCDIR = ${ROOTDIR}/docs
 APIDOCS = ${DOCDIR}/apidocs
-MKDOCSDIR = ${ROOTDIR}/../ACME-oneM2M-CSE-mkdocs
+APIGITDIR = ${ROOTDIR}/../ACME-oneM2M-CSE-apidocs
 TITLE = ACME oneM2M CSE
 DASHDOCSET = ${DOCDIR}
 
@@ -41,17 +41,14 @@ dash-install:				## Install and open the generated docset in Dash
 
 
 publish: 				## Publish the API docs to the documentation website
-	-cd ${MKDOCSDIR} && \
+	-cd ${APIGITDIR} && \
 	git checkout gh-pages && \
-	git pull && \
-	mkdir api
-	cp -r ${APIDOCS}/* ${MKDOCSDIR}/api
-	-cd ${MKDOCSDIR} && \
-	git add api && \
+	git pull 
+	cp -r ${APIDOCS}/* ${APIGITDIR}
+	-cd ${APIGITDIR} && \
+	git add * && \
 	git commit -uno -m "adding api docs" && \
 	git push 
-	-cd ${MKDOCSDIR} && \
-	git checkout main
 
 
 
