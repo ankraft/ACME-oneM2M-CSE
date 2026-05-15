@@ -443,7 +443,7 @@ class Logging:
 				Return the log *msg* again. 
 		"""
 		# raise logError event
-		Logging._eventLogError()
+		Logging._eventLogError(msg)
 
 		if exc:
 			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
@@ -466,7 +466,7 @@ class Logging:
 				Return the log *msg* again. 
 		"""
 		# raise logWarning event
-		Logging._eventLogWarning()
+		Logging._eventLogWarning(msg)
 		return Logging._log(logging.WARNING, msg, stackOffset=stackOffset)
 
 
