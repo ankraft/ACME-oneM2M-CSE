@@ -167,3 +167,7 @@ class PluginManager(PM):
 		self.unloadPlugins()	# This implicitly stops the plugins as well
 		L.isInfo and L.log('Plugins stopped and unloaded')
 		return True
+
+pluginManager:PluginManager = PluginManager()	# type: ignore
+""" The global plugin manager instance. This is a singleton instance. """
+

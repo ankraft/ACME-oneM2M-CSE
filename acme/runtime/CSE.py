@@ -32,7 +32,7 @@ from ..runtime.Factory import Factory
 from ..runtime.Importer import Importer
 from ..runtime.Logging import Logging as L
 from ..runtime.Management import ManagementSupport
-from ..runtime.PluginSupport import PluginManager, DependencyError, provide
+from ..runtime.PluginSupport import pluginManager, DependencyError, provide
 from ..runtime.ScriptManager import ScriptManager
 from ..runtime.Storage import Storage
 from ..runtime.EventManager import eventManager
@@ -66,9 +66,6 @@ managementSupport:ManagementSupport = ManagementSupport()
 
 notification:NotificationManager = NotificationManager()
 """	Runtime instance of the `NotificationManager`. """
-
-pluginManager:PluginManager = PluginManager()
-"""	Runtime instance of the `PluginManager`. """
 
 registration:RegistrationManager = RegistrationManager()
 """	Runtime instance of the `RegistrationManager`. """
