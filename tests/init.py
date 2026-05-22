@@ -1040,7 +1040,7 @@ def checkUpperTester() -> None:
 					#print(f'Response from Upper Tester Interface: {response.headers.get(UTRSP)}')
 					pass
 				case 401:
-					console.print('[red]CSE requires authorization')
+					console.print('[red]CSE requires authorization header')
 					console.print('Add authorization settings to the test suite configuration file')
 					quit(-1)
 				case _:
@@ -1720,14 +1720,14 @@ match PROTOCOL:
 # It checks whether there actually is a CSE running.
 _r, status = connectionPossible(cseURL)
 if status == 401:	# Access denied
-	console.print('[red]CSE requires authorization')
+	console.print('[red]CSE requires authorization header')
 	console.print('Add authorization settings to the test suite configuration file')
 	quit(-1)
 noCSE = not _r
 
 _r,status = connectionPossible(REMOTEcseURL)
 if status == 401:	# Access denied
-	console.print('[red]Remote CSE requires authorization')
+	console.print('[red]Remote CSE requires authorization header')
 	console.print('Add authorization settings to the test suite configuration file')
 	quit(-1)
 noRemote = not _r
