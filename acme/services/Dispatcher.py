@@ -417,8 +417,6 @@ class Dispatcher(metaclass=Singleton):
 		else:
 			resource = self.retrieveLocalResource(ri=id, originator=originator, request=request)
 		if postRetrieveHook:
-			print(f'Calling willBeRetrieved hook for resource: {resource} {resource.ri} and originator: {originator}')
-			print(request)
 			resource.willBeRetrieved(originator, request, subCheck=False)
 		return resource
 
