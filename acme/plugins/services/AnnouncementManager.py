@@ -18,7 +18,7 @@ import time
 from acme.etc.IDUtils import isSPRelative
 from acme.helpers.TextTools import findXPath
 from acme.etc.Types import DesiredIdentifierResultType, ResourceTypes, JSON, ResultContentType, CSERequest, FilterCriteria 
-from acme.etc.Types import Operation
+from acme.etc.Types import Operation, Result
 from acme.etc.ResponseStatusCodes import ResponseStatusCode, ResponseException
 from acme.etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
 from acme.etc.Constants import Constants, RuntimeConstants as RC
@@ -328,12 +328,20 @@ class AnnouncementManager(object):
 
 		L.isDebug and L.logDebug(f'creating announced resource at: {to}')
 		try:
-			res = self.requestManager.handleSendRequest(CSERequest(op=Operation.CREATE,
-						  								   to=to, 
-														   originator=RC.cseCsi, 
-														   ty=tyAnnc, 
-														   pc=dct)
-											   )[0].result	# there should be at least one result
+			if not to.startswith(RC.cseCsiSlash):
+				# The target is not the hosting CSE -> send request to remote CSE
+				res = self.requestManager.handleSendRequest(CSERequest(op=Operation.CREATE,
+															to=to, 
+															originator=RC.cseCsi, 
+															ty=tyAnnc, 
+															pc=dct)
+												)[0].result	# there should be at least one result
+			else:
+				# The target is the hosting CSE -> create resource locally under the announced parent resource
+				parentResource = self.dispatcher.retrieveResource(to)
+				_r = self.dispatcher.createResourceFromDict(dct, parent=parentResource, ty=tyAnnc, originator=RC.cseCsi)
+				res = Result(rsc=ResponseStatusCode.CREATED, data={ 'unknown' : {'ri': _r[1] }})	# fake a result object for the created resource
+
 			if res.rsc == ResponseStatusCode.CREATED:
 				resource.addAnnouncementToResource(announceTo, findXPath(cast(JSON, res.data), '{*}/ri'))
 				L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
@@ -399,19 +407,34 @@ class AnnouncementManager(object):
 				remoteRI: The resource ID of the remote announced resource.
 		"""
 
-		# Delete the announed resource from the remote CSE
-		csrID = f'{csi}/{remoteRI}'
-		L.isDebug and L.logDebug(f'Delete announced resource: {csrID}')	
-		res = self.requestManager.handleSendRequest(CSERequest(op=Operation.DELETE,
-													   		   to=csrID, 
-															   originator=RC.cseCsi))[0].result	# there should be at least one result
-		if res.rsc not in [ ResponseStatusCode.DELETED, ResponseStatusCode.OK ]:
-			L.isWarn and L.logWarn(f'Error deleting remote announced resource: {res.rsc}')
-			# ignore the fact that we cannot delete the announced resource.
-			# fall-through for some house-keeping
-		self._removeAnnouncementFromResource(resource, csi)
-		L.isDebug and L.logDebug('Announced resource deleted')
-		resource.dbUpdate()
+		if csi != RC.cseCsi:
+
+			# Delete the announed resource from the remote CSE
+			csrID = f'{csi}/{remoteRI}'
+			L.isDebug and L.logDebug(f'Delete announced resource: {csrID}')	
+			res = self.requestManager.handleSendRequest(CSERequest(op=Operation.DELETE,
+																to=csrID, 
+																originator=RC.cseCsi))[0].result	# there should be at least one result
+			if res.rsc not in [ ResponseStatusCode.DELETED, ResponseStatusCode.OK ]:
+				L.isWarn and L.logWarn(f'Error deleting remote announced resource: {res.rsc}')
+				# ignore the fact that we cannot delete the announced resource.
+				# fall-through for some house-keeping
+			self._removeAnnouncementFromResource(resource, csi)
+			L.isDebug and L.logDebug('Announced resource deleted')
+			resource.dbUpdate()
+		
+		else:
+			
+			# Delete the local announced resource
+			try:
+				localResource = self.dispatcher.retrieveLocalResource(ri=remoteRI)
+				self.dispatcher.deleteLocalResource(localResource, originator=RC.cseCsi)
+				self._removeAnnouncementFromResource(resource, csi)
+				L.isDebug and L.logDebug('Local announced resource deleted')
+			except ResponseException as e:
+				L.isWarn and L.logWarn(f'Error deleting local announced resource: {int(e.rsc)}')
+				# ignore the fact that we cannot delete the local announced resource.
+				# fall-through for some house-keeping
 
 
 	#
@@ -461,17 +484,31 @@ class AnnouncementManager(object):
 				remoteRI: The resource ID of the remote announced resource.
 		"""
 		dct = resource.createAnnouncedResourceDict(isCreate=False)
-		# Create the announed resource on the remote CSE
-		csrID = f'{csi}/{remoteRI}'
-		L.isDebug and L.logDebug(f'Updating announced resource at: {csrID}')	
-		res = self.requestManager.handleSendRequest(CSERequest(op=Operation.UPDATE, 
-															   to=csrID, 
-															   originator=RC.cseCsi, 
-															   pc=dct))[0].result		# there should be at least one result
-		if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
-			L.isDebug and L.logDebug(f'Error updating remote announced resource: {int(res.rsc)}')
-			# Ignore and fallthrough
-		L.isDebug and L.logDebug('Announced resource updated')
+		
+		if csi != RC.cseCsi:
+
+			# Update the announed resource on the remote CSE
+			csrID = f'{csi}/{remoteRI}'
+			L.isDebug and L.logDebug(f'Updating announced resource at: {csrID}')	
+			res = self.requestManager.handleSendRequest(CSERequest(op=Operation.UPDATE, 
+																to=csrID, 
+																originator=RC.cseCsi, 
+																pc=dct))[0].result		# there should be at least one result
+			if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
+				L.isDebug and L.logDebug(f'Error updating remote announced resource: {int(res.rsc)}')
+				# Ignore and fallthrough
+			L.isDebug and L.logDebug('Announced resource updated')
+		
+		else:
+
+			# Update the local announced resource
+			try:
+				localResource = self.dispatcher.retrieveResource(remoteRI)
+				self.dispatcher.updateLocalResource(localResource, dct, originator=RC.cseCsi)
+				L.isDebug and L.logDebug('Local announced resource updated')
+			except ResponseException as e:
+				L.isWarn and L.logWarn(f'Error updating local announced resource: {int(e.rsc)}')
+				# Ignore and fallthrough
 
 
 	def _removeAnnouncementFromResource(self, resource: Resource, csi: str) -> None:

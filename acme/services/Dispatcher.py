@@ -350,37 +350,37 @@ class Dispatcher(metaclass=Singleton):
 		match rcn:
 			case ResultContentType.attributesAndChildResources:
 				self.resourceTreeDict(allowedResources, resource.dict)	# the function call add attributes to the target resource
-				return Result(rsc = ResponseStatusCode.OK, resource = resource)
+				return Result(rsc=ResponseStatusCode.OK, resource=resource)
 		
 			case ResultContentType.attributesAndChildResourceReferences:
 				self._resourceTreeReferences(allowedResources, resource, request.drt, 'ch')	# the function call add attributes to the target resource
-				return Result(rsc = ResponseStatusCode.OK, resource = resource)
+				return Result(rsc=ResponseStatusCode.OK, resource=resource)
 		
 			case ResultContentType.childResourceReferences:
 				childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.drt, 'm2m:rrl')
-				return Result(rsc = ResponseStatusCode.OK, resource = childResourcesRef)
+				return Result(rsc=ResponseStatusCode.OK, resource=childResourcesRef)
 
 			case ResultContentType.childResources:
-				childResources:JSON = { resource.typeShortname : {} } #  Root resource as a dict with no attribute
+				childResources:JSON={ resource.typeShortname : {} } #  Root resource as a dict with no attribute
 				self.resourceTreeDict(allowedResources, childResources[resource.typeShortname]) # Adding just child resources
-				return Result(rsc = ResponseStatusCode.OK, resource = childResources)
+				return Result(rsc=ResponseStatusCode.OK, resource=childResources)
 
 			case ResultContentType.discoveryResultReferences:
-				return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
+				return Result(rsc=ResponseStatusCode.OK, resource=self._resourcesToURIList(allowedResources, request.drt))
 		
 			case ResultContentType.permissions:
 				# TODO
 				self.resourceTreeDict(allowedResources, resource.dict)	# the function call add attributes to the target resource
-				return Result(rsc = ResponseStatusCode.OK, resource = resource)
+				return Result(rsc=ResponseStatusCode.OK, resource=resource)
 		
 			case _:
 				raise BAD_REQUEST(f'unsuppored rcn: {rcn} for RETRIEVE')
 
 
-	def retrieveResource(self, id:str, 
-							   originator:Optional[str]=None, 
-							   request:Optional[CSERequest]=None, 
-							   postRetrieveHook:Optional[bool]=False) -> Resource:
+	def retrieveResource(self, id: str, 
+							   originator: Optional[str] = None, 
+							   request: Optional[CSERequest] = None, 
+							   postRetrieveHook: Optional[bool] = False) -> Resource:
 		"""	Retrieve a resource locally or from remote CSE.
 
 			Args:
@@ -421,10 +421,10 @@ class Dispatcher(metaclass=Singleton):
 		return resource
 
 
-	def retrieveLocalResource(self, ri:Optional[str]=None, 
-									srn:Optional[str]=None, 
-									originator:Optional[str]=None, 
-									request:Optional[CSERequest]=None) -> Resource:
+	def retrieveLocalResource(self, ri: Optional[str] = None, 
+									srn: Optional[str] = None, 
+									originator: Optional[str] = None, 
+									request: Optional[CSERequest] = None) -> Resource:
 		"""	Retrieve a resource locally.
 
 			Args:
@@ -442,9 +442,9 @@ class Dispatcher(metaclass=Singleton):
 		L.isDebug and L.logDebug(f'Retrieving local resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
-			resource = self.storage.retrieveResource(ri = ri)		# retrieve via normal ID
+			resource = self.storage.retrieveResource(ri=ri)		# retrieve via normal ID
 		elif srn:
-			resource = self.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+			resource = self.storage.retrieveResource(srn=srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
 			raise NOT_FOUND(f'resource: {ri}|{srn} not found')
 
@@ -1145,10 +1145,10 @@ class Dispatcher(metaclass=Singleton):
 		# TODO C.rcnDiscoveryResultReferences 
 
 
-	def updateLocalResource(self, resource:Resource, 
-								  dct:Optional[JSON] = None, 
-								  doUpdateCheck:Optional[bool] = True, 
-								  originator:Optional[str] = None) -> Resource:
+	def updateLocalResource(self, resource: Resource, 
+								  dct: Optional[JSON] = None, 
+								  doUpdateCheck: Optional[bool] = True, 
+								  originator: Optional[str] = None) -> Resource:
 		"""	Update a resource in the CSE. Call update() and updated() callbacks on the resource.
 		
 			Args:

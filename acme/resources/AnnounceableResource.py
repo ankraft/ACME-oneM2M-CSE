@@ -215,7 +215,6 @@ class AnnounceableResource(Resource):
 				# if aa was modified check also those attributes even when they are not modified
 				if 'aa' in modifiedAttributes and modifiedAttributes['aa']:
 					for attr in modifiedAttributes['aa']:
-						L.logWarn(attr)
 						if attr not in body:
 							body[attr] = self[attr]
 
