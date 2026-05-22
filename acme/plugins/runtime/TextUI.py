@@ -31,7 +31,7 @@ from acme.textui.ACMETuiApp import ACMETuiApp, ACMETuiQuitReason
 _textUI:TextUI = None
 """	Active textUI instance """
 
-@EventHandler
+@eventHandler
 @plugin(property='textUI', tags=['acme', 'ui'])
 class TextUI(object):
 	"""	TextUI plugin class. This class provides a textual user interface for the ACME CSE.

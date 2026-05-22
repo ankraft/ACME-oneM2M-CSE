@@ -317,7 +317,7 @@ class MQTTClientHandler(MQTTHandler):
 ##############################################################################
 
 
-@EventHandler
+@eventHandler
 @plugin(property='mqttClient', tags=['binding', 'acme'], noRestartWhilePaused=True)
 @requires(requestManager='acme.services.RequestManager')
 class MQTTClient(object):

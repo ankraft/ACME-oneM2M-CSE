@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 # - update: update resource here
 
 
-@EventHandler
+@eventHandler
 @plugin(property='announcementManager', tags=['acme', 'remote'], priority=50)
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager')
 @requires(dispatcher='acme.services.Dispatcher')

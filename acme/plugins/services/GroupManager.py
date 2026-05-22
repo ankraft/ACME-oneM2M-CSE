@@ -26,7 +26,7 @@ from acme.resources.MgmtObj import MgmtObj
 from acme.resources.Resource import Resource
 from acme.runtime.Logging import Logging as L
 from acme.runtime.Configuration import Configuration, ConfigurationError
-from acme.runtime.EventManager import EventManager, EventHandler, onEvent, EventData, eventManager
+from acme.runtime.EventManager import EventManager, eventHandler, onEvent, EventData, eventManager
 
 if TYPE_CHECKING:
 	from acme.resources.GRP_FOPT import GRP_FOPT
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 	from acme.services.SecurityManager import SecurityManager
 
 
-@EventHandler
+@eventHandler
 @plugin(property='groupManager', tags=['acme', 'core'])
 @requires(dispatcher='acme.services.Dispatcher')
 @requires(storage='acme.runtime.Storage')

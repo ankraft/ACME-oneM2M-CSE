@@ -10,10 +10,10 @@ from ..runtime.PluginManager import PluginManager, pluginManager
 from ..helpers.PluginManager import plugin, init, finish, start, stop, restart, pause, unpause, onResolved, onUnresolved
 from ..helpers.PluginManager import configure, validate, plugin, requires, provide
 from ..helpers.PluginManager import Service as SVC, endpoint, serviceClasses, DependencyError, Dependency
-from ..runtime.EventManager import EventHandler, eventManager
+from ..runtime.EventManager import eventHandler, eventManager
 
 
-@EventHandler
+@eventHandler
 class Service(SVC):
 	"""	Service support class. This class provides the base for service classes. 
 		It is also an event handler to handle CSE-related events. 

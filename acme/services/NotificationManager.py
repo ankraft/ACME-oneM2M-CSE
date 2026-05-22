@@ -54,7 +54,7 @@ if TYPE_CHECKING:
 SenderFunction = Callable[[str], bool]	# type:ignore[misc] # bc cyclic definition 
 """ Type definition for sender callback function. """
 
-@EventHandler
+@eventHandler
 @requires(dispatcher='acme.services.Dispatcher')
 @requires(storage='acme.runtime.Storage')
 @requires(request='acme.services.RequestManager')

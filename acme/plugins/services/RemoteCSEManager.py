@@ -27,7 +27,7 @@ from acme.resources.CSR import CSR
 from acme.resources.CSEBase import CSEBase, getCSE
 from acme.resources.Resource import Resource
 from acme.runtime.Configuration import Configuration, ConfigurationError
-from acme.runtime.EventManager import EventManager, EventHandler, onEvent, EventData, eventManager
+from acme.runtime.EventManager import EventManager, eventHandler, onEvent, EventData, eventManager
 from acme.runtime.Logging import Logging as L
 from acme.runtime.PluginSupport import plugin, start, stop, restart, configure, validate, requires
 
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 	from acme.services.SecurityManager import SecurityManager
 
 
-@EventHandler
+@eventHandler
 @plugin(property='remoteCSEManager', tags=['acme', 'remote'], priority=20)
 @requires(registration='acme.services.RegistrationManager')
 @requires(dispatcher='acme.services.Dispatcher')

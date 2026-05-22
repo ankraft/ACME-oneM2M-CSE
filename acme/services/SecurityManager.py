@@ -53,7 +53,7 @@ class ACPResult():
 	""" Whether the originator is authenticated. """
 
 
-@EventHandler
+@eventHandler
 @requires(httpServer='acme.plugins.bindings.HttpServer', 
 		  websocketServer='acme.plugins.bindings.WebSocketServer',
 		  required=False)

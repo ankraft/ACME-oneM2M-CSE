@@ -20,7 +20,7 @@ from acme.etc.DateUtils import utcTime
 from acme.runtime.Configuration import Configuration
 from acme.runtime.Logging import Logging as L
 from acme.runtime.PluginSupport import plugin, start, stop, restart, requires
-from acme.runtime.EventManager import eventManager, onEvent, EventData, EventHandler
+from acme.runtime.EventManager import eventManager, onEvent, EventData, eventHandler
 from acme.resources.Resource import Resource
 from acme.resources.ACTR import ACTR
 from acme.helpers.ResourceSemaphore import CriticalSection
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 # TODO implement support for input attribute when the procedure is clear
 
-@EventHandler
+@eventHandler
 @plugin(property='actionManager', tags=['acme', 'core'])
 @requires(dispatcher='acme.services.Dispatcher')
 @requires(storage='acme.runtime.Storage')

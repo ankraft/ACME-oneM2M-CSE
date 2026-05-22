@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 ##############################################################################
 
 
-@EventHandler
+@eventHandler
 @plugin(tags=['acme', 'ui'])
 @requires(dispatcher='acme.services.Dispatcher')
 @requires(scriptManager='acme.runtime.ScriptManager')

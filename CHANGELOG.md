@@ -11,8 +11,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [2026.DEV] - unreleased 
 
 ### Added
-- [CSE] Added support for &lt;dynamicAuthorizationConsultation> resource type.
-- [CSE] Added support for Python code plugins to extend the CSE's functionality. This is an ESTIMED project contribution.
+- [CSE] Added support for &lt;dynamicAuthorizationConsultation> resource type. However, the actual dynamic authorization consultation functionality is not implemented yet.
 - [CSE] Added new Uper Tester command "getConfig" to retrieve configuration settings from the CSE via the Upper Tester interface.
 - [CSE] Added support for new *SP-ID* attribute in &lt;CSEBase> and &lt;remoteCSE> resources.
 - [CSE] Added functionality to disable or enable removing registrations when stopping the CSE. This can be configured via the new configuration setting *cse.registration.unregisterWhenStopping*. By default, registrations are removed when stopping the CSE (the old behavior).
@@ -22,27 +21,28 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added a minimal console with only a few basic commands. This can be used when the CSE is running in headless mode or where access to the console is not possible.
 - [CSE] Added support for new *spi* and *ici* attributes in &lt;CSEBsae> and &lt;remoteCSE> resources. Both attributes are updated automatically in registree CSEs throughout a oneM2M deployment tree. This is an ESTIMED project contribution.
 - [CSE] Added support for decorating event handlers.
-- [CSE] Makjor internal code restructuring to move most of the CSE's functionality to plugins. This allows for better modularity and extensibility of the CSE's functionality. 
+- [CSE] Added support for Python code plugins to extend the CSE's functionality. This is an ESTIMED project contribution.
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
 - [TUI] Added support for displaying the originator of a resource in the text UI. The originator is now shown in the resource subtitle in the resource view. Clicking on it copies the originator to the clipboard.
+- [MISC] Published the API documentation to the project website at [https://api.acmecse.net](https://api.acmecse.net). The API documentation is generated from the source code using *pydoctor*.
 
 
 ### Experimental
 
 ### Changed
-- [CSE] Moved various HTTP server extensions to plugins: Upper Tester, Web UI, management & structure interfaces. These plugins are now loaded via the new plugin manager.
-- [CSE] Moved all bindings to plugins. The HTTP binding can now be enabled or disabled via configuration settings. 
-- [CSE] Moved statistics to plugins.
-- [CSE] For location handling the *content* attributes of &lt;contentInstance> resources support now now integer or JSON objects, not strings anymore. The work-around using a string representation was necessary because the *content* attribute was only supporting string values before.
+- [CSE] Major internal code restructuring to move most of the CSE's functionality, bindings, database connectors, Uis, HTTP server extensions etc to plugins. This allows for better modularity and extensibility of the CSE's functionality. 
 - [CSE] Internal restructuring how resource types are configured. The resource types are now defined by an external JSON file that is loaded during CSE initialization.
 - [CSE] Changed the internal handling of resource instantiation and optimized the resource factory.
+- [CSE] For location handling the *content* attributes of &lt;contentInstance> resources support now now integer or JSON objects, not strings anymore. The work-around using a string representation was necessary because the *content* attribute was only supporting string values before.
 - [CSE] Certain ID-related attributes are now converted to SP-relative or Absolute format when responding via Mcc and Mcc'. 
-- [CSE] Improved detection of illegal trailing slashes in "to" identifiers. Thanks to Aaron Wiwior for reporting this issue.
-- [CSE] Fixed crash when forwarding a http DISCOVERY request to another CSE. Thanks to Aaron Wiwior for reporting this issue. 
+- [HTTP] The HTTP binding can now be enabled or disabled as well via configuration settings. 
+
 
 ### Fixed
 - [CSE] Fixed missing validation of mandatory list attributes (1L) when updating resources.
 - [CSE] Fixed a format issue with http and websocket authentication headers (basic and bearer). Thanks to Aaron Wiwior for reporting this issue.
+- [CSE] Improved detection of illegal trailing slashes in "to" identifiers. Thanks to Aaron Wiwior for reporting this issue.
+- [CSE] Fixed crash when forwarding a http DISCOVERY request to another CSE. Thanks to Aaron Wiwior for reporting this issue. 
 
 ### Removed
 

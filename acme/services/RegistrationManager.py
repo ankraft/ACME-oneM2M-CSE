@@ -19,7 +19,7 @@ from ..etc.IDUtils import uniqueAEI, getIdFromOriginator, originatorToID
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager, EventHandler, onEvent, EventData
+from ..runtime.EventManager import EventManager, eventHandler, onEvent, EventData
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.Singleton import Singleton
 from ..runtime.Logging import Logging as L
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 	from acme.plugins.services.RemoteCSEManager import RemoteCSEManager
 
 
-@EventHandler
+@eventHandler
 @requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
 @requires(dispatcher='acme.services.Dispatcher')
 @requires(storage='acme.runtime.Storage')

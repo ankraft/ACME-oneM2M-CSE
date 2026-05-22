@@ -345,7 +345,7 @@ class EventManager(metaclass=Singleton):
 		return event
 
 
-def EventHandler(cls: type) -> type:
+def eventHandler(cls: type) -> type:
 	"""	Class decorator to automatically register event handlers. 
 		Any method of the decorated class that is decorated with an `Event` 
 		decorator will be automatically registered as an event handler for that event.

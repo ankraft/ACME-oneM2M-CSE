@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 	from acme.services.SecurityManager import SecurityManager
 
 
-@EventHandler
+@eventHandler
 @plugin(property='webSocketServer', tags=['binding', 'acme'], noRestartWhilePaused=True)
 @requires(requestManager='acme.services.RequestManager')
 @requires(securityManager='acme.services.SecurityManager')

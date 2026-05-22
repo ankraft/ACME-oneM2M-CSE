@@ -1763,7 +1763,7 @@ class ACMEPContext(PContext):
 #	Script Manager
 #
 
-@EventHandler
+@eventHandler
 @requires(textUI='acme.plugins.runtime.TextUI', required=False)
 @requires(importer='acme.runtime.Importer')
 @requires(validator='acme.services.Validator')

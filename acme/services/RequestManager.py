@@ -71,7 +71,7 @@ TargetDetails = List[ 						#type: ignore[misc]
 expirationCheckFactor = 2.0
 """ This factor determines how often the monitor looks for expired request resources. """
 
-@EventHandler
+@eventHandler
 @requires(httpServer='acme.plugins.bindings.HttpServer', required=False)
 @requires(coapServer='acme.plugins.bindings.CoAPServer', required=False)
 @requires(mqttClient='acme.plugins.bindings.MQTTClient', required=False)
