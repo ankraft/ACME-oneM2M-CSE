@@ -665,10 +665,10 @@ class WebSocketServer(object):
 			authResult = AuthorizationResult.NOTSET
 			if request.credentials:	# Add the credentials if available
 				if request.credentials.wsUsername and request.credentials.wsPassword:
-					additionalHeaders['Authorization'] = request.credentials.getWsBasic()
+					additionalHeaders['Authorization'] = f'Basic {request.credentials.getWsBasic()}'
 					authResult = AuthorizationResult.AUTHORIZED	# Assume success. Otherwise, the connection would not be established anyway
 				elif request.credentials.wsToken:
-					additionalHeaders['Authorization'] = request.credentials.getWsBearerToken()
+					additionalHeaders['Authorization'] = f'Bearer {request.credentials.getWsBearerToken()}'
 					authResult = AuthorizationResult.AUTHORIZED # Assume success. Otherwise, the connection would not be established anyway
 				else:
 					L.isDebug and L.logDebug('No credentials for WS request found')

@@ -42,6 +42,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Fixed missing validation of mandatory list attributes (1L) when updating resources.
+- [CSE] Fixed a format issue with http and websocket authentication headers (basic and bearer). Thanks to Aaron Wiwior for reporting this issue.
 
 ### Removed
 

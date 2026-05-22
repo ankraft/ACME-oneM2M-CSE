@@ -2391,29 +2391,27 @@ class RequestCredentials:
 		"""	Return the HTTP basic authentication string.
 			
 			Return:
-				The HTTP basic authentication string as base64 encoded string.
+				The HTTP basic authentication string as base64 encoded string. It is the base64 encoding of "username:password".
 		"""
-		creds = f'{self.httpUsername}:{self.httpPassword}'
-		return base64.b64encode(creds.encode("utf-8")).decode("utf-8")
+		return base64.b64encode(f'{self.httpUsername}:{self.httpPassword}'.encode('utf-8')).decode('utf-8')
 	
 
 	def getHttpBearerToken(self) -> str:
 		"""	Return the HTTP bearer token string.
 			
 			Return:
-				The HTTP bearer token string.
+				The HTTP bearer token. 
 		"""
-		return f'Bearer {self.httpToken}'
+		return self.httpToken
 	
 	
 	def getWsBasic(self) -> str:
 		"""	Return the WebSockets basic authentication string.
 			
 			Return:
-				The WebSockets basic authentication string as base64 encoded string.
+				The WebSockets basic authentication string as base64 encoded string. It is the base64 encoding of "username:password".
 		"""
-		creds = f'{self.wsUsername}:{self.wsPassword}'
-		return f'Basic {base64.b64encode(creds.encode("utf-8")).decode("utf-8")}'
+		return base64.b64encode(f'{self.wsUsername}:{self.wsPassword}'.encode('utf-8')).decode('utf-8')
 	
 
 	def getWsBearerToken(self) -> str:
@@ -2422,7 +2420,7 @@ class RequestCredentials:
 			Return:
 				The WebSockets bearer token string.
 		"""
-		return f'Bearer {self.wsToken}'
+		return self.wsToken
 	
 
 	def __repr__(self) -> str:
