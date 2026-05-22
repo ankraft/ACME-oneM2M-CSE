@@ -289,7 +289,8 @@ class CRS(Resource):
 		except ResponseException as e:
 			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot create subscription for {rrat}: {e.dbg}'))
 		
-		subRi, subCsi, pID = tup # type: ignore [misc] # unpack
+		print(tup)
+		_subRes, subRi, subCsi, pID = tup # type: ignore [misc] # unpack
 		# Add the created <sub>'s full RI to the correct position in the rrats list
 		_rrats = self.rrats
 		# _rrats[rratIndex] = f'{csiFromSPRelative(pri)}/{findXPath(res.request.pc, "m2m:sub/ri")}'
