@@ -51,6 +51,8 @@ class MinimalConsole(ConsoleBase):
 		commands:Commands = {
 			'Q': 				self.shutdownCSE,
 			FunctionKey.CTRL_C: self.shutdownCSE,
+			FunctionKey.CR:		lambda c: L.console(),	# 1 empty line
+			FunctionKey.LF:		lambda c: L.console(),	# 1 empty line
 			'#': 				lambda ch: self.runTUI() if not RC.isHeadless else None
 		}
 
