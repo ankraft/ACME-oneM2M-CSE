@@ -187,8 +187,8 @@ class TestACP(unittest.TestCase):
 				}}
 		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
-		self.assertEqual(rsc, RC.CREATED)
-		self.assertIsNotNone(findXPath(TestACP.ae, 'm2m:ae/acpi'))
+		self.assertEqual(rsc, RC.CREATED, TestACP.ae)
+		self.assertIsNotNone(findXPath(TestACP.ae, 'm2m:ae/acpi'),  TestACP.ae)
 		self.assertIsInstance(findXPath(TestACP.ae, 'm2m:ae/acpi'), list)
 		self.assertGreater(len(findXPath(TestACP.ae, 'm2m:ae/acpi')), 0)
 		self.assertIn(findXPath(TestACP.acp, 'm2m:acp/ri'), findXPath(TestACP.ae, 'm2m:ae/acpi'))
