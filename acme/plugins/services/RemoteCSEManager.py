@@ -1194,7 +1194,7 @@ class RemoteCSEManager(object):
 						# Add basic auth to the URL (same for http and ws)
 						p = buildAuthUrl(p, username, password)
 				else:
-					L.isWarn and L.logWarn(f'No credentials found for POA authentiction for CSE: {targetCsi} - using plain URL')
+					L.isDebug and L.logDebug(f'No credentials found for POA authentiction for CSE: {targetCsi} - using plain URL')
 							
 			target['poa'].append(p)
 		
