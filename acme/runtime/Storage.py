@@ -21,30 +21,23 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, List, Optional, Sequence
-
-import os
-from configparser import ConfigParser
-
-from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode
+from typing import Callable, cast, List, Optional, Sequence, Tuple, Any, TYPE_CHECKING
+from ..etc.Types import ResourceTypes, JSON, Operation, ResponseStatusCode, OriginatorType
 from ..etc.ResponseStatusCodes import NOT_FOUND, INTERNAL_SERVER_ERROR, CONFLICT
 from ..etc.DateUtils import utcTime, fromDuration
-from ..etc.Constants import RuntimeConstants as RC
-from .Configuration import Configuration, ConfigurationError
-from ..resources.Resource import Resource
-from ..resources.ACTR import ACTR
-from ..resources.SCH import SCH
-from ..resources.Factory import resourceFromDict
+from ..helpers.Singleton import Singleton
+from .Configuration import Configuration
 from .Logging import Logging as L
+from ..runtime.PluginSupport import requires
+from .DBBinding import DBBinding
 
-from ..databases.DBBinding import DBBinding
-from ..databases.TinyDBBinding import TinyDBBinding
-
-if 'ACME_NO_PGSQL' not in os.environ:
-	from ..databases.PostgreSQLBinding import PostgreSQLBinding
-	_disablePostgreSQL = False
-else:
-	_disablePostgreSQL = True
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..resources.ACTR import ACTR
+	from ..resources.SCH import SCH
+	from ..runtime.Factory import Factory
+	from ..plugins.database.TinyDBBinding import TinyDBBinding
+	from ..plugins.database.PostgreSQLBinding import PostgreSQLBinding
 
 
 # Constants for database and table names
@@ -68,16 +61,30 @@ _schedules = 'schedules'
 """ Name of the schedules table. """
 
 
-class Storage(object):
+@requires(tinyDBBinding='acme.plugins.database.TinyDBBinding', required=False)
+@requires(postgreSQLBinding='acme.plugins.database.PostgreSQLBinding', required=False)
+@requires(factory='acme.runtime.Factory')
+class Storage(metaclass=Singleton):
 	"""	This class implements the entry points to the CSE's underlying database functions.
 	"""
 
+	tinyDBBinding: TinyDBBinding = None
+	""" Injected TinyDBBinding instance. """
+
+	postgreSQLBinding: PostgreSQLBinding = None
+	""" Injected PostgreSQLBinding instance. """
+
+	factory: Factory = None
+	""" Injected Factory instance. """
+
 	__slots__ = (
 		'db',
+		'_resourceFromDict',
 	)
 	""" Define slots for instance variables. """
 
-	def __init__(self) -> None:
+
+	def initialize(self) -> None:
 		"""	Initialization of the storage manager.
 
 			Raises:
@@ -87,37 +94,21 @@ class Storage(object):
 		self.db:DBBinding = None
 		""" The database object. """
 	
-		if _disablePostgreSQL:
-			L.isDebug and L.logDebug('PostgreSQL is disabled by environment variable')
-
 		# Create the database object and connect to the database
 		try:
 			match Configuration.database_type:
 				case 'tinydb':
 					# create tinyDB object and open DB for file handling
-					self.db = TinyDBBinding(Configuration.database_tinydb_path, 		
-											f'{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}', # add SP-ID + CSE CSI as postfix
-											Configuration.database_tinydb_cacheSize,
-											Configuration.database_tinydb_writeDelay
-										) 
+					self.db = self.tinyDBBinding
+
 				case 'memory':
 					# create tinyDB object and open DB for in-memory handling
-					self.db = TinyDBBinding(None,
-											f'{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}', # add SP-ID + CSE CSI as postfix
-											Configuration.database_tinydb_cacheSize,
-											Configuration.database_tinydb_writeDelay
-										)
+					self.db = self.tinyDBBinding
+
 				case 'postgresql':
 					# create PostgreSQL object and connect to the DB
-					if _disablePostgreSQL:
-						raise RuntimeError('Configuration conflict: Use of PostgreSQL is disabled in the environment, but enabled in the configuration.')
-					self.db = PostgreSQLBinding(Configuration.database_postgresql_host,	
-												Configuration.database_postgresql_port,	
-												Configuration.database_postgresql_role,	
-												Configuration.database_postgresql_password,
-												Configuration.database_postgresql_database,
-												Configuration.database_postgresql_schema
-											)
+					self.db = self.postgreSQLBinding
+
 				case _:
 					L.logErr('Unknown database type')
 					quit()
@@ -321,7 +312,7 @@ class Storage(object):
 
 		match len(resources):
 			case 1:
-				return resourceFromDict(resources[0])
+				return self.factory.resourceFromDict(resources[0])
 			case 0:
 				raise NOT_FOUND('resource not found')
 
@@ -406,9 +397,9 @@ class Storage(object):
 
 	# TODO split this into two methods (one for resources, one for raw resources)
 		
-	def directChildResources(self, pi:str, 
-								   ty:Optional[ResourceTypes|list[ResourceTypes]] = None, 
-								   raw:Optional[bool] = False) -> list[JSON]|list[Resource]:
+	def directChildResources(self, pi: str, 
+								   ty: Optional[ResourceTypes|list[ResourceTypes]]=None, 
+								   raw: Optional[bool]=False) -> list[JSON]|list[Resource]:
 		"""	Return a list of direct child resources, or an empty list
 
 			Args:
@@ -420,8 +411,11 @@ class Storage(object):
 				Return a list of resources, or a list of raw resource dictionaries.
 		"""
 		if (_ris := self.db.searchChildResourceIDsByParentRIAndType(pi, ty)):
-			docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris]
-			return docs if raw else cast(List[Resource], list(map(lambda x: resourceFromDict(x), docs)))
+			# docs = [self.db.searchResources(ri = _ri)[0] for _ri in _ris ]
+			docs = [_r[0] 
+		   			for _ri in _ris 
+					if (_r := self.db.searchResources(ri=_ri))]	# get the resource documents for the child resource IDs, only when they exist
+			return docs if raw else cast(List, list(map(lambda x: self.factory.resourceFromDict(x), docs)))
 		return []	# type:ignore[return-value]
 	
 
@@ -496,7 +490,7 @@ class Storage(object):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.searchByFragment(dct) 
-						if (not filter or filter(each)) and (res := resourceFromDict(each)) # either there is no filter or the filter is called to test the resource
+						if (not filter or filter(each)) and (res := self.factory.resourceFromDict(each)) # either there is no filter or the filter is called to test the resource
 				] 
 
 
@@ -510,7 +504,7 @@ class Storage(object):
 				List of `Resource` objects.
 		"""
 		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
-						if (res := resourceFromDict(each))
+						if (res := self.factory.resourceFromDict(each))
 				]
 
 
@@ -920,3 +914,49 @@ class Storage(object):
 		"""
 		return self.db.removeSchedule(schedule.ri)
 
+
+
+	#########################################################################
+	##
+	##	Originators
+	##
+
+	def getOriginator(self, originator: str) -> Optional[Tuple[str, OriginatorType]]:
+		"""	Get an originator and its information from the database.
+
+			Args:
+				originator: The originator to search for.
+
+			Return:
+				Tuple of the originator and its type.
+				
+		"""
+		return self.db.getOriginator(originator)
+	
+
+	def addOriginator(self, originator: str, type: OriginatorType) -> bool:
+		"""	Add an originator to the database.
+
+			Args:
+				originator: The originator to add.
+				type: The type of the originator.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
+		return self.db.addOriginator({
+			'originator': originator,
+			'type': type.value
+		}, originator)
+	
+
+	def removeOriginator(self, originator: str) -> bool:
+		"""	Remove an originator from the database.
+
+			Args:
+				originator: The originator to remove.
+
+			Return:
+				Boolean value to indicate success or failure.
+		"""
+		return self.db.removeOriginator(originator)

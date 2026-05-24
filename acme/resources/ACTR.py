@@ -10,72 +10,38 @@
 """ Action (ACTR) resource type. """
 
 from __future__ import annotations
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TYPE_CHECKING
 
-from configparser import ConfigParser
-
-from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes, JSON, Permission, EvalCriteriaOperator, Operation
-from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST
+from ..etc.Types import  EvalMode, JSON, Permission, Operation
+from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
-from ..runtime import CSE
+from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
-from ..runtime.Configuration import Configuration, ConfigurationError
-from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
+	from ..plugins.services.ActionManager import ActionManager
 
+@requires(actionManager='acme.plugins.services.ActionManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(validator='acme.services.Validator')
 class ACTR(AnnounceableResource):
 	""" Action (ACTR) resource type. """
 
-	resourceType = ResourceTypes.ACTR
-	""" The resource type """
+	actionManager: Optional[ActionManager] = None
+	"""	Injected ActionManager instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
+	dispatcher: Dispatcher = None
+	"""	Injected Dispatcher instance. """
 
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.DEPR,
-													   ResourceTypes.SUB
-													 ]
-	""" The allowed child-resource types. """
+	validator: Validator = None
+	"""	Injected Validator instance. """
 
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'lbl': None,
-		'acpi':None,
-		'et': None,
-		'daci': None,
-		'cstn': None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'cr': None,
-
-		# Resource attributes
-		'apy': None,
-		'sri': None,
-		'evc': None,
-		'evm': None,
-		'ecp': None,
-		'dep': None,
-		'orc': None,
-		'apv': None,
-		'ipu': None,
-		'air': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
 		# Check referenced resources
@@ -101,12 +67,16 @@ class ACTR(AnnounceableResource):
 
 		# Check that the evalCriteria is correct
 		try:
-			CSE.action.checkEvalCriteria(self.evc, checkResource, originator)
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+			self.actionManager.checkEvalCriteria(self.evc, checkResource, originator)
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 
 		# Schedule and process the <action> resource
-		CSE.action.scheduleAction(self)
+		if not self.actionManager:
+			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot schedule action'))
+		self.actionManager.scheduleAction(self)
 
 
 	def update(self, dct:JSON = None, 
@@ -114,7 +84,7 @@ class ACTR(AnnounceableResource):
 					 doValidateAttributes:Optional[bool] = True) -> None:
 		
 		# Preliminary update check before working with the update dictionary
-		CSE.validator.validateResourceUpdate(self, dct, doValidateAttributes)
+		self.validator.validateResourceUpdate(self, dct, doValidateAttributes)
 
 		# Check referenced resources
 		sri = riFromID(findXPath(dct, 'm2m:actr/sri'))
@@ -133,7 +103,7 @@ class ACTR(AnnounceableResource):
 		if dep is not None:
 			for d in dep:
 				_d = riFromID(d)
-				if not CSE.dispatcher.hasDirectChildResource(self.ri, _d):
+				if not self.dispatcher.hasDirectChildResource(self.ri, _d):
 					raise BAD_REQUEST(L.logDebug(f'dep - must be a direct child resources of the <action> resource: {d}'))
 
 		#	Check that the from parameter of the actionPrimitive is the originator
@@ -156,24 +126,26 @@ class ACTR(AnnounceableResource):
 
 		# Check that a new sbjt attribute exists in the (potentially new) subject target
 		# Also check when only the subject target changes
-		sriResource:Resource = None
+		sriResource: Resource = None
 		if dctEvc or dctSri:	# only if there is a new evalCriteria or a new subject resource
 			try:
-				sriResource = CSE.dispatcher.retrieveResource(newSri, originator = self.getOriginator())
+				sriResource = self.dispatcher.retrieveResource(newSri, originator = self.getOriginator())
 			except ResponseException as e:
 				raise BAD_REQUEST(L.logDebug(f'sri - subject resource not found: {newSri}'))
 			# Actual check of the sbjt attribute is done in the checkEvalCriteria method below
 		
 		# Else use the current subject resource
 		elif self.sri:
-			sriResource = CSE.dispatcher.retrieveResource(self.sri)
+			sriResource = self.dispatcher.retrieveResource(self.sri, originator = self.getOriginator())
 
 		#	Check evalCriteria threshold attribute's value type and operation validity
 		if dctEvc or dctSri:	# If we have a evalCriteria at all or a subject resource
 
 			# Check that the evalCriteria is correct
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 			try:
-				CSE.action.checkEvalCriteria(newEvc, sriResource, originator)
+				self.actionManager.checkEvalCriteria(newEvc, sriResource, originator)
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)
 
@@ -187,28 +159,39 @@ class ACTR(AnnounceableResource):
 		# Restart the monitoring (unschedule and restart later) when new evm is given
 		doScheduleAction = False
 		if dctEvm is not None:
-			CSE.action.unscheduleAction(self)
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
+			self.actionManager.unscheduleAction(self)
+			
 			# don't restart when new evm == off
 			if dctEvm in [ EvalMode.once, EvalMode.periodic, EvalMode.continous ]:
 				doScheduleAction = True
 		
 		# Restart periodic and continious when new ecp (only) was set
 		if newEcp is not None and dctEvm is None and origEvm in [ EvalMode.periodic, EvalMode.continous ]:
-			CSE.action.unscheduleAction(self)
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
+			self.actionManager.unscheduleAction(self)
 			doScheduleAction = True
 
 		# Restart monitoring if necessary
 		if doScheduleAction:
-			CSE.action.scheduleAction(self)
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot schedule action'))
+			self.actionManager.scheduleAction(self)
 		
 		# Update other attributes if necessary
 		if dep:
-			CSE.action.updateAction(self)
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot update action dependencies'))
+			self.actionManager.updateAction(self)
 
 
-	def deactivate(self, originator:str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		# Unschedule the action
-		CSE.action.unscheduleAction(self)
+		if not self.actionManager:
+			raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot unschedule action'))
+		self.actionManager.unscheduleAction(self)
 		return super().deactivate(originator, parentResource)
 
 
@@ -217,7 +200,7 @@ class ACTR(AnnounceableResource):
 	#	Internals
 	#
 
-	def _checkReferencedResources(self, originator:str, sri:str, orc:str, apvOperation:Operation|int) -> Tuple[Resource, Resource]:
+	def _checkReferencedResources(self, originator :str, sri: str, orc: str, apvOperation: Operation|int) -> Tuple[Resource, Resource]:
 		"""	Check whether all the referenced resources exists and we have access: subjectResourceID, objectResourceID
 		"""
 		# TODO doc
@@ -226,7 +209,7 @@ class ACTR(AnnounceableResource):
 		resOrc = None
 		if sri is not None: # sri is optional
 			try:
-				resSri = CSE.dispatcher.retrieveResourceWithPermission(sri, originator, Permission.RETRIEVE)
+				resSri = self.dispatcher.retrieveResourceWithPermission(sri, originator, Permission.RETRIEVE)
 				L.isDebug and L.logDebug(f'Found subject resource sri: {resSri.ri}')
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)
@@ -234,7 +217,7 @@ class ACTR(AnnounceableResource):
 		if orc is not None:
 			try:
 				apvOperation = Operation(apvOperation) if isinstance(apvOperation, int) else apvOperation
-				resOrc = CSE.dispatcher.retrieveResourceWithPermission(orc, originator, apvOperation.permission())
+				resOrc = self.dispatcher.retrieveResourceWithPermission(orc, originator, apvOperation.permission())
 				L.isDebug and L.logDebug(f'Found object resource orc: {resOrc.ri}')
 			except ResponseException as e:
 				raise BAD_REQUEST(e.dbg)

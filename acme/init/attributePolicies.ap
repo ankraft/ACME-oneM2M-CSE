@@ -21,7 +21,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceID",
 			"ns": "m2m",
-			"type": "ID",
+			"type": "IDCSR",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -34,7 +34,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceName",
 			"ns": "m2m",
-			"type": "string",
+			"type": "IDCSR",
 			"car": "1",
 			"oc": "O",
 			"ou": "NP",
@@ -48,7 +48,7 @@
 						"SWRAnnc" ],
 			"lname": "resourceName",
 			"ns": "m2m",
-			"type": "string",
+			"type": "IDCSR",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -61,7 +61,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "parentID",
 			"ns": "m2m",
-			"type": "ID",
+			"type": "IDCSR",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -389,7 +389,7 @@
 			"rtypes": [ "AE", "AEAnnc" ],
 			"lname": "AE-ID",
 			"ns": "m2m",
-			"type": "ID",
+			"type": "AEID",
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -408,6 +408,20 @@
 			"ou": "NP",
 			"od": "NP",
 			"annc": "OA"
+		}
+	],
+	"ail": [
+		{
+			"rtypes": [ "ALPC" ],
+			"lname": "AE-IDList",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "ID",
+			"car": "01L",
+			"oc": "O",	// Only used for internal handling of ALPC, not set by clients
+			"ou": "O",
+			"od": "NP",
+			"annc": "NA"
 		}
 	],
 	"air": [
@@ -918,6 +932,15 @@
 			"annc": "OA"
 		}
 	],
+	"ch": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "childResource",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "any"
+		}
+	],
 	"chanl": [
 		{
 			"rtypes": [ "WIFIC", "WIFICAnnc" ],
@@ -1278,6 +1301,17 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		},
+		{
+			"rtypes": [ "ALPC" ],
+			"lname": "CSE-ID",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "1",
+			"oc": "M",	// ALPC is created internally by CSE
+			"ou": "O",
+			"od": "NP",
+			"annc": "NA"
 		}
 	],
 	"cst": [
@@ -1388,6 +1422,46 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"dae": [
+		{
+			"rtypes": [ "DAC", "REQRESP" ],
+			"lname": "dynamicAuthorizationEnabled",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
+	"dal": [
+		{
+			"rtypes": [ "DAC", "REQRESP" ],
+			"lname": "dynamicAuthorizationLifetime",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"dap": [
+		{
+			"rtypes": [ "DAC", "REQRESP" ],
+			"lname": "dynamicAuthorizationPoA",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "1LN",
+			"oc": "M",
+			"ou": "O",
+			"od": "NP",
+			"annc": "NA"
 		}
 	],
 	"dc": [
@@ -2139,6 +2213,30 @@
 			"lname": "hwVersion",
 			"ns": "m2m",
 			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"ici": [
+		{
+			"rtypes": [ "CSEBase", "REQRESP" ],
+			"lname": "IN-CSE-ID",
+			"ns": "m2m",
+			"type": "CSEID",
+			"car": "01",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		},
+		{
+			"rtypes": [ "CSR" ],
+			"lname": "IN-CSE-ID",
+			"ns": "m2m",
+			"type": "CSEID",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -3341,14 +3439,6 @@
 			"annc": "NA"
 		}
 	],
-	"nev": [
-		{
-			"rtypes": [ "UNKNOWN" ],
-			"lname": "notificationEvent",
-			"ns": "m2m",
-			"type": "any"
-		}
-	],
 	"nfu": [
 		{
 			"rtypes": [ "SUB", "REQRESP" ],
@@ -3384,6 +3474,18 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"nic": [
+		{
+			"rtypes": [ "ALST", "REQRESP" ],
+			"lname": "numberImpactedCSEs",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP"
 		}
 	],
 	"nid": [
@@ -3898,7 +4000,7 @@
 	],
 	"regs": [
 		{
-			"rtypes": [ "AE", "AEAnnc" ],
+			"rtypes": [ "AE", "AEAnnc", "REQRESP" ],
 			"lname": "registrationStatus",
 			"ns": "m2m",
 			"type": "string",
@@ -3921,14 +4023,6 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
-		}
-	],
-	"rep": [
-		{
-			"rtypes": [ "UNKNOWN" ],
-			"lname": "representation",
-			"ns": "m2m",
-			"type": "any"
 		}
 	],
 	"rid": [
@@ -4334,14 +4428,6 @@
 			"annc": "OA"
 		}
 	],
-	"m2m:sgn": [
-		{
-			"rtypes": [ "UNKNOWN" ],
-			"lname": "notification",
-			"ns": "m2m",
-			"type": "any"
-		}
-	],
 	"sist": [
 		{
 			"rtypes": [ "SIM", "SIMAnnc", "REQRESP" ],
@@ -4483,6 +4569,30 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"spi": [
+		{
+			"rtypes": [ "CSEBase", "REQRESP" ],
+			"lname": "SP-ID",
+			"ns": "m2m",
+			"type": "SPID",
+			"car": "1",
+			"oc": "M",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "OA"
+		},
+		{
+			"rtypes": [ "CSR" ],
+			"lname": "SP-ID",
+			"ns": "m2m",
+			"type": "SPID",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
+			"od": "NP",
+			"annc": "OA"
 		}
 	],
 	"spn": [
@@ -4707,15 +4817,6 @@
 			"annc": "NA"
 		}
 	],
-	// "sur": [
-	// 	{
-	// 		"rtypes": [ "UNKNOWN" ],
-	// 		"lname": "subscriptionReference",
-	// 		"ns": "m2m",
-	// 		"type": "any"
-	// 	}
-	// ],
-
 	"subi": [
 		// EXPERIMENTAL
 		{
@@ -4843,6 +4944,20 @@
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"tpe": [
+		{
+			"rtypes": [ "TGR" ],
+			"lname": "triggerPurpose",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:triggerPurpose",
+			"car": "1",
+			"oc": "O",
+			"ou": "O",
 			"od": "O",
 			"annc": "NA"
 		}
@@ -5111,14 +5226,6 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
-		}
-	],
-	"vrq": [
-		{
-			"rtypes": [ "UNKNOWN" ],
-			"lname": "verificationRequest",
-			"ns": "m2m",
-			"type": "boolean"
 		}
 	],
 	"wcrds": [
@@ -5503,7 +5610,71 @@
 			"od": "O",
 			"annc": "NA"
 		}
+	],
+
+	//
+	//	PrimitiveContent
+	//
+
+	"m2m:rsp": [
+			{
+				"rtypes": [ "RESPONSE" ],
+				"lname": "responsePrimitive",
+				"ns": "m2m",
+				"type": "m2m:responsePrimitive"
+			}
+	],
+	"m2m:sgn": [
+		{
+			"rtypes": [ "NOTIFICATION" ],
+			"lname": "notification",
+			"ns": "m2m",
+			"type": "m2m:notification"
+		}
+	],
+	"m2m:dbg": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "debugInfo",
+			"ns": "m2m",
+			"type": "string"
+		}
+	],
+	"m2m:rce": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "resoure",
+			"ns": "m2m",
+			"type": "any"
+		}
+	],
+	"m2m:rrl": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "resourceRefList",
+			"ns": "m2m",
+			"type": "m2m:listOfChildResourceRef"
+		}
+	],
+	"m2m:uri": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "ID"
+		}
+	],
+	"m2m:uril": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "URIList",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "ID"
+		}
 	]
+
+
 }
 
 

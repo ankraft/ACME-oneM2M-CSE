@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ...etc.Types import AttributePolicyDict, ResourceTypes, JSON, Status
+from ...etc.Types import JSON, Status
 from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ..MgmtObj import MgmtObj
 from ..Resource import Resource
@@ -18,61 +18,9 @@ from ..Resource import Resource
 
 class WIFIC(MgmtObj):
 
-	resourceType = ResourceTypes.MGMTOBJ
-	""" The resource type """
-
-	mgmtType = ResourceTypes.WIFIC
-	""" The management object type """
-
-	typeShortname = mgmtType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'daci': None,
-		
-		# MgmtObj attributes
-		'mgd': None,
-		'obis': None,
-		'obps': None,
-		'dc': None,
-		'mgs': None,
-		'cmlk': None,
-
-		# Resource attributes
-		'ssid': None,
-		'wcrds': None,
-		'maca': None,
-		'chanl': None,
-		'cons': None,
-		'scan': None,
-		'scanr': None,
-		'ud': None,
-		'uds': None,
-		'trdst': None,
-		'rdst': None
-	}
-
-
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
-		self.setAttribute('ssi', '', overwrite = False)
-		self.setAttribute('scan', False)
+		self.setAttribute('ssi', '', overwrite=False)
 		self.setAttribute('scan', False)
 		self.setAttribute('scanr', [])
 		self.setAttribute('ud', False)
@@ -81,9 +29,9 @@ class WIFIC(MgmtObj):
 		self.setAttribute('uds', { 'acn' : '', 'sus' : Status.UNINITIALIZED }, False)
 
 
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator: Optional[str] = None, 
+					   dct: Optional[JSON] = None, 
+					   parentResource: Optional[Resource] = None) -> None:
 		super().validate(originator, dct, parentResource)
 		if self.wcrds:
 			enct = self.attribute('wcrds/enct')

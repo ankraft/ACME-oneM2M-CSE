@@ -10,39 +10,71 @@
 
 
 from __future__ import annotations
-from typing import List, cast, Optional, Any, Tuple
+from typing import cast, Optional, Any, Tuple, TYPE_CHECKING
 
 import ssl
 from dataclasses import dataclass
 
 from ..etc.Types import ResourceTypes, Permission, CSERequest, RequestCredentials, BindingType, CSERegistrar
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
-from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator, isAbsolute
+from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator, isAbsolute, isValidAEI
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
 from ..helpers.TextTools import findXPath, simpleMatch
-from ..runtime import CSE
+from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
 from ..runtime.Configuration import Configuration
+from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource, isInternalAttribute
 from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
-from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	from ..services.Dispatcher import Dispatcher
+	from acme.plugins.bindings.HttpServer import HttpServer
+	from acme.plugins.bindings.WebSocketServer import WebSocketServer
+
 
 @dataclass
 class ACPResult():
 	"""	An ACP result structure.
 	"""
 	allowed:bool
-	attributes:List[str]
+	""" Whether the permission is granted. """
+
+	attributes:list[str]
+	""" The attributes that are allowed. """
+
 	authenticated:bool = False
+	""" Whether the originator is authenticated. """
 
 
+@eventHandler
+@requires(httpServer='acme.plugins.bindings.HttpServer', 
+		  websocketServer='acme.plugins.bindings.WebSocketServer',
+		  required=False)
+@requires(storage='acme.runtime.Storage')
+@requires(dispatcher='acme.services.Dispatcher')
 class SecurityManager(object):
 	"""	This manager entity handles access to resources and requests.
 	"""
+
+	storage:Storage = None
+	""" Injected Storage instance. """
+
+	dispatcher:Dispatcher = None
+	""" Injected Dispatcher instance. """
+
+	httpServer: HttpServer = None	# type: ignore
+	"""	The injected HttpServer plugin instance."""
+
+	websocketServer: WebSocketServer = None	# type: ignore
+	"""	The injected WebSocketServer plugin instance."""
+
 
 	__slots__ = (
 		'httpBasicAuthData',
@@ -52,18 +84,31 @@ class SecurityManager(object):
 		'requestCredentials',
 		'allowedCSIOriginators',
 	)
+	""" Slots for SecurityManager class. """
 
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
+		""" Initialize the SecurityManager. 
+		"""
+
+		self.allowedCSIOriginators: list[str] = []
+		""" List of allowed CSE originators that are allowed to access the CSEBase resource. """
+
+		self.httpBasicAuthData: dict[str, str] = {}
+		""" Dictionary to store the HTTP Basic Authentication data, mapping originators to their hashed passwords. """
+
+		self.httpTokenAuthData: list[str] = []
+		""" List to store the HTTP Token Authentication data. """
+
+		self.wsBasicAuthData: dict[str, str] = {}
+		""" Dictionary to store the WebSocket Basic Authentication data, mapping originators to their hashed passwords. """
+
+		self.wsTokenAuthData: list[str] = []
+		""" List to store the WebSocket Token Authentication data. """
+
 
 		# Get the configuration settings
 		self._initAuthInformation()
-
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
-
-		# Add handler for configuration updates
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)				# type: ignore
 
 		L.isInfo and L.log('SecurityManager initialized')
 		if Configuration.cse_security_enableACPChecks:
@@ -73,26 +118,29 @@ class SecurityManager(object):
 
 
 	def shutdown(self) -> bool:
+		""" Shutdown the SecurityManager.
+		
+			Return:
+				Always *True*.
+		"""
 		L.isInfo and L.log('SecurityManager shut down')
 		return True
 	
 
-	def restart(self, name:str) -> None:
+	@onEvent(eventManager.cseReset)
+	def restart(self, eventData: EventData) -> None:
 		"""	Restart the Security manager service.
 		"""
 		self._initAuthInformation()
 		L.logDebug('SecurityManager restarted')
 
 
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None,
-						   value:Any = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Handle configuration updates.
 
 			Args:
-				name: The name of the configuration section.
-				key: The key of the configuration value.
-				value: The new value of the configuration value.
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
 		# if key not in (	'http.security.caCertificateFile',
 		# 				'http.security.caPrivateKeyFile',
@@ -103,6 +151,8 @@ class SecurityManager(object):
 		# 			  ):
 		# 	return
 		# TODO further optimization: only reload the changed files
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
 		self._initAuthInformation()
 
 
@@ -112,10 +162,10 @@ class SecurityManager(object):
 	def hasAccess(self, originator:str, 
 						resource:Resource, 
 						requestedPermission:Permission, 
-						ty:Optional[ResourceTypes] = None, 
-						parentResource:Optional[Resource] = None,
-						request:Optional[CSERequest] = None,
-						resultResource:Optional[Resource] = None) -> bool:
+						ty:Optional[ResourceTypes]=None, 
+						parentResource:Optional[Resource]=None,
+						request:Optional[CSERequest]=None,
+						resultResource:Optional[Resource]=None) -> bool:
 		""" Test whether an originator has access to a resource for the requested permission.
 		
 			Args:
@@ -143,7 +193,7 @@ class SecurityManager(object):
 
 			"""
 			try:
-				if not (acp := CSE.dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
+				if not (acp := self.dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
 					L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}')
 					return ACPResult(False, [])
 				
@@ -167,7 +217,7 @@ class SecurityManager(object):
 		#
 		# grant full access to the CSE originator
 		#
-		if	originator is None or (originator in RC.cseOriginators and Configuration.cse_security_fullAccessAdmin):
+		if originator is None or (originator in RC.cseOriginators and Configuration.cse_security_fullAccessAdmin):
 			# originator == RC.cseOriginator or \
 			# originator.endswith(RC.slashCseOriginator) and Configuration.cse_security_fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Admin. OK.')
@@ -274,7 +324,7 @@ class SecurityManager(object):
 					# TODO perhaps have a DB with all originators and their kind?
 
 					# TODO add a "raw" attribute that returns the JSON, but doesn't intantiate the object
-					if CSE.storage.retrieveResource(aei = originator):
+					if self.storage.retrieveResource(aei = originator):
 						L.isDebug and L.logDebug(f'Grant registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
 						return True
 				except NOT_FOUND:
@@ -337,10 +387,66 @@ class SecurityManager(object):
 		#
 		# Further permission checks
 		#
-		
-		# When no acpi is configured for the resource
+
+		# If we have no acpi we need to check for dynamic authorization
 		if not (acpi := resource.acpi):
-			L.isDebug and L.logDebug('Handle with missing acpi in resource')
+
+
+
+
+
+
+
+			# Get the available daci for the resource. This is done by checking the resource itself, of any of its parents
+
+			# TODO make this configurable. If DAC is disabled we don't need to do all this
+
+			daci:list[str] = []
+
+			# Traverse up to find a daci
+			_r = resource
+			while True:
+				if _r.daci:
+					daci = _r.daci
+					break
+				if _r.ty == ResourceTypes.CSEBase: # don't go beyond CSEBase
+					break
+				_r = _r.retrieveParentResource()
+
+			if daci:
+				L.isDebug and L.logDebug(f'Found daci in resource hierarchy: {_r.ri} : {daci}')
+
+				for daciRi in daci:
+					try:
+						if not (daciResource := self.dispatcher.retrieveResource(daciRi)):
+							L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DACI> resource not found: {daciRi}')
+							continue
+					except ResponseException as e:
+						L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DACI> resource not found: {daciRi}: {e.dbg}')
+						continue
+
+					# Dynamic auth for the resource enabled?
+					if not daciResource.dae:
+						L.isDebug and L.logDebug(f'Dynamic Authorization Check: <DACI> resource dae is False: {daciRi}')
+						continue
+					if dap := daciResource.dap:
+						for poa in dap:
+							L.isDebug and L.logDebug(f'Dynamic Authorization Check: invoking DAS at: {poa} for originator: {originator} on resource: {resource.ri}')
+							# TODO call the DAS
+							# if ok: > return true
+							# else: continue
+
+					
+					# TODO do something with the lifetime
+
+
+
+
+
+
+
+			# Not authorized by DACI, now check for missing acpi handling, which is the default behavior
+			L.isDebug and L.logDebug('Handle with missing acpi and daci in resource')
 
 			# if the resource *may* have an acpi but doesn't have one set
 			if resource._attributes and 'acpi' in resource._attributes:
@@ -369,7 +475,7 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Checking parent\'s permission')
 					try:
 						if not parentResource:
-							parentResource = CSE.dispatcher.retrieveResource(resource.pi)
+							parentResource = self.dispatcher.retrieveResource(resource.pi)
 						return self.hasAccess(originator, parentResource, requestedPermission, ty)
 					except ResponseException as e:
 						L.isWarn and L.logWarn(f'Parent resource not found: {resource.pi}: {e.dbg}')
@@ -496,7 +602,7 @@ class SecurityManager(object):
 				# test the current acpi whether the originator is allowed to update the acpi
 				for acpRi in targetResource.acpi:
 					try:
-						if not (acp := CSE.dispatcher.retrieveResource(acpRi)):
+						if not (acp := self.dispatcher.retrieveResource(acpRi)):
 							L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {acpRi}')
 							continue
 						if self.checkACPSelfPermission(cast(ACP, acp), _originator, Permission.UPDATE):
@@ -691,11 +797,11 @@ class SecurityManager(object):
 			# Check for group. If the originator is a member of a group, then the originator has access
 			if acp.getTypeForRI(a) == ResourceTypes.GRP:
 				try:
-					if originator in CSE.dispatcher.retrieveResource(a).mid:
+					if originator in self.dispatcher.retrieveResource(a).mid:
 						L.isDebug and L.logDebug(f'Originator found in group member')
 						return True
 				except ResponseException as e:
-					L.logErr(f'GRP resource not found for ACP check: {a}', exc = e)
+					L.logErr(f'GRP resource not found for ACP check: {a}', exc=e)
 					continue # Not much that we can do here
 
 			# Otherwise Check for wildcard match
@@ -706,7 +812,7 @@ class SecurityManager(object):
 		return False
 
 
-	def isAllowedOriginator(self, originator:str, allowedOriginators:List[str]) -> bool:
+	def isAllowedOriginator(self, originator:str, allowedOriginators:list[str]) -> bool:
 		""" Check whether an Originator is in the provided list of allowed originators. This list may contain regex.
 			
 			The hosting CSE has always access.
@@ -721,8 +827,14 @@ class SecurityManager(object):
 		if not originator or not allowedOriginators:
 			return False
 
+		# Special handling for SP-Relative originators that end with /S, which is the case for AE S-Registration. 
+		if isSPRelative(originator) and originator.endswith('/S'):
+			L.isDebug and L.logDebug(f'Originator: {originator} is SP-Relative and ends with /S (AE S-Registration). Removing /S for the check.')
+			originator = originator[:-2]
+
 		# _originator = getIdFromOriginator(originator) if not isAbsolute(originator) else originator
 		L.isDebug and L.logDebug(f'Originator: {originator} - allowed originators: {allowedOriginators}')
+
 		
 		# Always allow for the hosting CSE
 		if originator in [RC.cseCsi, RC.cseSPRelative] :
@@ -748,6 +860,17 @@ class SecurityManager(object):
 		"""
 		return originator == resource.getOriginator()
 
+
+	def isAEOriginator(self, originator:str) -> bool:
+		"""	Check whether the provided originator could be an AE-ID.
+
+			Args:
+				originator: The request originator.
+
+			Return:
+				Boolean indicating the result.
+		"""
+		return isValidAEI(originator)
 
 
 	##########################################################################
@@ -884,10 +1007,14 @@ class SecurityManager(object):
 
 
 	def _initAuthInformation(self) -> None:
+		""" Initialize the authentication information by reading the configured authentication files for HTTP and WebSocket.
+		"""
 		self._readHttpBasicAuthFile()
 		self._readHttpTokenAuthFile()
-		self._readWSBasicAuthFile()
-		self._readWSTokenAuthFile()
+		# if CSE.pluginManager.websocketServer:
+		if self.websocketServer:
+			self._readWSBasicAuthFile()
+			self._readWSTokenAuthFile()
 		self.allowedCSIOriginators = [ r.cseID for r in Configuration.cse_registrars.values() ]
 
 
@@ -899,18 +1026,20 @@ class SecurityManager(object):
 		"""
 		self.httpBasicAuthData = {}
 		# We need to access the configuration directly, since the http server is not yet initialized
-		if Configuration.http_security_enableBasicAuth and Configuration.http_security_basicAuthFile:
-			try:
-				with open(Configuration.http_security_basicAuthFile, 'r') as f:
-					for line in f:
-						if line.startswith('#'):
-							continue
-						if len(line.strip()) == 0:
-							continue
-						(username, password) = line.strip().split(':')
-						self.httpBasicAuthData[username] = password.strip()
-			except Exception as e:
-				L.logErr(f'Error reading basic authentication file: {e}')
+		# if CSE.pluginManager.httpServer:
+		if self.httpServer:
+			if Configuration.http_security_enableBasicAuth and Configuration.http_security_basicAuthFile:
+				try:
+					with open(Configuration.http_security_basicAuthFile, 'r') as f:
+						for line in f:
+							if line.startswith('#'):
+								continue
+							if len(line.strip()) == 0:
+								continue
+							(username, password) = line.strip().split(':')
+							self.httpBasicAuthData[username] = password.strip()
+				except Exception as e:
+					L.logErr(f'Error reading basic authentication file: {e}')
 
 
 	def _readHttpTokenAuthFile(self) -> None:
@@ -921,17 +1050,19 @@ class SecurityManager(object):
 		"""
 		self.httpTokenAuthData = []
 		# We need to access the configuration directly, since the http server is not yet initialized
-		if Configuration.http_security_enableTokenAuth and Configuration.http_security_tokenAuthFile:
-			try:
-				with open(Configuration.http_security_tokenAuthFile, 'r') as f:
-					for line in f:
-						if line.startswith('#'):
-							continue
-						if len(line.strip()) == 0:
-							continue
-						self.httpTokenAuthData.append(line.strip())
-			except Exception as e:
-				L.logErr(f'Error reading token authentication file: {e}')
+		# if CSE.pluginManager.httpServer:
+		if self.httpServer:
+			if Configuration.http_security_enableTokenAuth and Configuration.http_security_tokenAuthFile:
+				try:
+					with open(Configuration.http_security_tokenAuthFile, 'r') as f:
+						for line in f:
+							if line.startswith('#'):
+								continue
+							if len(line.strip()) == 0:
+								continue
+							self.httpTokenAuthData.append(line.strip())
+				except Exception as e:
+					L.logErr(f'Error reading token authentication file: {e}')
 
 
 	def _readWSBasicAuthFile(self) -> None:

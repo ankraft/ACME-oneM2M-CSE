@@ -125,10 +125,10 @@ class TinyDBBufferedStorage(JSONStorage):
 		"""
 		# Wait for last change
 		self._shutting_down = True
+		self._writeEvent.set()			# send event
 		while self._changed:
 			...
 		self._running = False			# terminate _fileWriter loop
-		self._writeEvent.set()			# send event
 		self._shutdownLock.acquire()	# Wait for the _fileWriter loop to finish
 		if self._handle != None:
 			self._handle.flush()

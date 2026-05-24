@@ -10,79 +10,40 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes,  JSON, CSERequest
+from ..etc.Types import  JSON, CSERequest
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 from ..resources.Resource import Resource
-from ..runtime import CSE
 from ..etc.ACMEUtils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
 
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(validator='acme.services.Validator')
 class CIN(AnnounceableResource):
 	""" ContentInstance resource type.
 	"""
 
-	resourceType = ResourceTypes.CIN
-	""" The resource type """
+	dispatcher: Dispatcher = None
+	"""	Injected Dispatcher instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
+	validator: Validator = None
+	"""	Injected Validator instance. """
 
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SMD ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'ast': None,
-		'daci': None,
-		'st': None,
-		'cr': None,
-		'loc': None,
-
-
-		# Resource attributes
-		'cnf': None,
-		'cs': None,
-		'conr': None,
-		'con': None,
-		'or': None,
-		'conr': None,
-		'dcnt': None,
-		'dgt': None
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def initialize(self, pi:str, originator:str) -> None:
-		# Initializations must happen just after the resource is created
-		# because the parent resource checks some of the attributes
-		self.setAttribute('con', '', overwrite = False)
+	def initialize(self, pi: str) -> None:
+	# 	# Initializations must happen just after the resource is created
+	# 	# because the parent resource checks some of the attributes
 		self.setAttribute('cs', getAttributeSize(self.con))
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
 		# increment parent container's state tag
@@ -95,8 +56,13 @@ class CIN(AnnounceableResource):
 		self.setAttribute('st', st)
 
 
-	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
-		super().willBeDeactivated(originator, parentResource)
+	def willBeDeactivated(self, originator: str, parentResource: Resource, parentDelete: bool=False) -> None:
+		super().willBeDeactivated(originator, parentResource, parentDelete)
+		
+		# If the parent resource is deleted, we do not have to check the disableRetrieval attribute
+		# of the parent container, because the whole parent container will be deleted.
+		if parentDelete:
+			return
 		
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
 		if parentResource.disr:
@@ -107,16 +73,16 @@ class CIN(AnnounceableResource):
 
 
 	# Forbid updating
-	def update(self, dct:Optional[JSON] = None, 
-					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+	def update(self, dct: Optional[JSON]=None, 
+					 originator: Optional[str]=None, 
+					 doValidateAttributes: Optional[bool]=True) -> None:
 		raise OPERATION_NOT_ALLOWED('updating CIN is forbidden')
 
 
-	def willBeRetrieved(self, originator:str, 
-							  request:Optional[CSERequest] = None, 
-							  subCheck:Optional[bool] = True) -> None:
-		super().willBeRetrieved(originator, request, subCheck = subCheck)
+	def willBeRetrieved(self, originator: str, 
+							  request: Optional[CSERequest]=None, 
+							  subCheck: Optional[bool]=True) -> None:
+		super().willBeRetrieved(originator, request, subCheck=subCheck)
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
 		# "cnt" is a raw resource!
@@ -136,15 +102,15 @@ class CIN(AnnounceableResource):
 				self.setAttribute('dcnt', dcnt+1)
 			else:
 				L.isDebug and L.logDebug(f'Deleting <cin>, ri: {self.ri} because dcnt reached 0')
-				CSE.dispatcher.deleteLocalResource(self, originator = originator)
+				self.dispatcher.deleteLocalResource(self, originator=originator)
 
 
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator: Optional[str]=None, 
+					   dct: Optional[JSON]=None, 
+					   parentResource: Optional[Resource]=None) -> None:
 		super().validate(originator, dct, parentResource)
 
 		# Check the format of the CNF attribute
 		if cnf := self.cnf:
-			CSE.validator.validateCNF(cnf)
+			self.validator.validateCNF(cnf)
 		

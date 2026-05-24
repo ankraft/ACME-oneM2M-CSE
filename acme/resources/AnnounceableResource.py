@@ -8,25 +8,38 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, TYPE_CHECKING
 
 from copy import deepcopy
-from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict, AttributePolicy, BasicType
-from ..etc.Types import Announced
-from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
+from ..etc.Types import Announced, IdentifierScope
+from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.IDUtils import isAbsolute, toAbsolute, toSPRelative
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 from .Resource import Resource, addToInternalAttributes
+
+if TYPE_CHECKING:
+	from ..plugins.services.AnnouncementManager import AnnouncementManager
+	from ..services.Validator import Validator
+
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrAnnouncedTo) # add announcedTo to internal attributes
 
 
+@requires(announcementManager='acme.plugins.services.AnnouncementManager', required=False)
+@requires(validator='acme.services.Validator')
 class AnnounceableResource(Resource):
 	"""	Base class for all announceable resources.
 	"""
+
+	announcementManager: Optional[AnnouncementManager] = None
+	""" Injected AnnouncementManager instance. """
+
+	validator: Validator = None
+	""" Injected Validator instance. """
 
 	def __init__(self, dct:Optional[JSON]=None, create:Optional[bool]=False) -> None:
 		super().__init__(dct, create=create)
@@ -41,14 +54,18 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at:
-			CSE.announce.announceResource(self)
+			if not self.announcementManager:
+				raise NOT_IMPLEMENTED(L.logWarn('AnnouncementManager is disabled, cannot announce resource'))
+			self.announcementManager.announceResource(self)
 
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# L.isDebug and L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
 		# perform deannouncements
 		if self.at:
-			CSE.announce.deAnnounceResource(self)
+			if not self.announcementManager:
+				raise NOT_IMPLEMENTED(L.logWarn('AnnouncementManager is disabled, cannot de-announce resource'))
+			self.announcementManager.deAnnounceResource(self)
 		super().deactivate(originator, parentResource)
 
 
@@ -72,10 +89,14 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at:
-			CSE.announce.announceUpdatedResource(self, originator)
+			if not self.announcementManager:
+				raise NOT_IMPLEMENTED(L.logWarn('AnnouncementManager is disabled, cannot announce updated resource'))
+			self.announcementManager.announceUpdatedResource(self, originator)
 		else:
 			if self._origAT:	# at is removed in update, so remove self
-				CSE.announce.deAnnounceResource(self)
+				if not self.announcementManager:
+					raise NOT_IMPLEMENTED(L.logWarn('AnnouncementManager is disabled, cannot de-announce updated resource'))
+				self.announcementManager.deAnnounceResource(self)
 
 
 	def validate(self, originator:Optional[str] = None, 
@@ -114,7 +135,7 @@ class AnnounceableResource(Resource):
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
-		if (additionalAttributes := CSE.validator.getFlexContainerAttributesFor(self.typeShortname)):
+		if (additionalAttributes := self.validator.getFlexContainerAttributesFor(self.typeShortname)):
 			attributes:AttributePolicyDict = deepcopy(self._attributes)
 			attributes.update(additionalAttributes)
 			return self._createAnnouncedDict(attributes, isCreate=isCreate, isRemoteSP=isAbsolute(announceTo))
@@ -130,50 +151,9 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:bool, isRemoteSP:bool) -> JSON:
+	def _createAnnouncedDict(self, attributes: AttributePolicyDict, isCreate: bool, isRemoteSP: bool) -> JSON:
 		"""	Actually create the resource dict.
 		"""
-
-		def _convertIdentifierAttributeToSPRelative(value:Any, typ:BasicType, policy:AttributePolicy) -> Any:
-			"""	Convert an attribute to the SP-relative form if it is an identifier.
-				This is a recursive function that is called for each attribute of a complex attribute
-				(e.g. a list or a complex attribute).
-
-				Args:
-					value: The value to convert.
-					typ: The type of the value.
-					policy: The attribute policy of the value.
-
-				Return:
-					The converted value.
-				
-				TODO:
-					This function could be moved to the utils module.
-			"""
-
-			# Return None if the value is None (e.g. in updates)
-			if value is None:
-				return None
-			
-			# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
-			match typ:
-				case BasicType.ID:
-					# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
-					return toAbsolute(value, spId=RC.cseSPid) if isRemoteSP else toSPRelative(value)
-				case BasicType.list | BasicType.listNE:
-					# L.inspect([ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value])
-					return [ _convertIdentifierAttributeToSPRelative(v, policy.ltype, policy) for v in value]
-				case BasicType.complex:
-					_r = {}
-					typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
-					for k, v in value.items():
-						if not (_policy := CSE.validator.getAttributePolicy(typeName, k)):
-							raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
-						_r[k] = _convertIdentifierAttributeToSPRelative(v, _policy.type, _policy)
-					return _r
-				case _:
-					return value
-
 
 		# Stub
 		if self.ty in (ResourceTypes.FCNT, ResourceTypes.FCI):
@@ -202,7 +182,10 @@ class AnnounceableResource(Resource):
 				ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
 				for attr in announcedAttributes:
 					policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
-					body[attr] = _convertIdentifierAttributeToSPRelative(self[attr], policy.type, policy)
+					body[attr] = self.validator.convertIdentifierAttributeToScope(self[attr], 
+																				  policy.type, 
+																				  policy, 
+																				  scope=IdentifierScope.Absolute if isRemoteSP else IdentifierScope.SPRelative)	# convert to Absolute for remote SP, SP-relative for local CSE
 					# body[attr] = self[attr]
 
 				if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
@@ -232,7 +215,6 @@ class AnnounceableResource(Resource):
 				# if aa was modified check also those attributes even when they are not modified
 				if 'aa' in modifiedAttributes and modifiedAttributes['aa']:
 					for attr in modifiedAttributes['aa']:
-						L.logWarn(attr)
 						if attr not in body:
 							body[attr] = self[attr]
 

@@ -30,5 +30,5 @@ class REQResourceConfiguration(ModuleConfiguration):
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 
 		if config.resource_req_et <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.req]:expirationTime[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.req]:expirationTime[/i] must be > 0')
 		

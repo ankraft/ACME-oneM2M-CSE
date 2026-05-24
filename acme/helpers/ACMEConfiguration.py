@@ -34,6 +34,7 @@ class ACMEConfiguration(configparser.ConfigParser):
 						)
 		# Ensure that option names are case-sensitive
 		self.optionxform = str 	# type:ignore [assignment]
+		"""	Replace the default option name transformation to preserve case sensitivity."""
 
 
 	def set(self, section:str, option:str, value:str|None = None) -> None:
@@ -51,4 +52,18 @@ class ACMEConfiguration(configparser.ConfigParser):
 			self[section] = {}
 		super().set(section, option, value)
 
+
+	def __str__(self) -> str:
+		""" Return a string representation of the configuration. 
+
+			Returns:
+				A string representation of the configuration, with sections and options formatted for readability.
+		"""
+		output = []
+		for section in self.sections():
+			output.append(f'[{section}]')
+			for option, value in self.items(section, raw=True):
+				output.append(f'{option} = {value}')
+			output.append('')  # Add an empty line between sections
+		return '\n'.join(output)
 

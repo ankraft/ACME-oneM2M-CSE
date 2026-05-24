@@ -11,41 +11,25 @@
 """
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, CSERequest
+from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 from ..resources.VirtualResource import VirtualResource
 from ..resources.TSI import TSI
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
+@requires(dispatcher='acme.services.Dispatcher')
 class TS_OL(VirtualResource):
 	"""	This class implements the virtual <oldest> resource for <timeSeries> resources.
 	"""
 
-	resourceType = ResourceTypes.TS_OL
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	resourceName = 'ol'
-	""" Possibility for virtual sub-classes to provide a fixed resource name. """
-
-
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
-	"""	A list of allowed child-resource types for this resource type. """
-
-	_attributes:AttributePolicyDict = {		
-		# None for virtual resources
-	}
-	""" A dictionary of the attributes and attribute policies for this resource type. 
-		The attribute policies are assigned during startup by the `Importer`.
-	"""
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
 
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
 		""" Handle a RETRIEVE request.
@@ -104,10 +88,10 @@ class TS_OL(VirtualResource):
 				Result object indicating success or failure.
 		"""
 		L.isDebug and L.logDebug('Deleting oldest TSI from TS')
-		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.TSI, oldest = True)):
+		if not (resource := self.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.TSI, oldest = True)):
 			raise NOT_FOUND('no instance for <oldest>')
-		CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
+		self.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
 		return Result(rsc = ResponseStatusCode.DELETED, resource = resource)
 
 	def hasAttributeDefined(self, name: str) -> bool:
-		return name in TSI._attributes
+		return name in TSI._attributes	# type: ignore[attr-defined]

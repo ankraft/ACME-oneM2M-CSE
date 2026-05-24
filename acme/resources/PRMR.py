@@ -6,68 +6,43 @@
 #
 #	ResourceType: ProcessManagement
 #
+"""	Implementation of the ProcessManagement (PRMR) resource type. """
 
 from __future__ import annotations
 
-from ..resources.Resource import Resource
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState, ProcessControl, Permission
-from ..resources.AnnounceableResource import AnnounceableResource
+from ..etc.Types import ResourceTypes, JSON, ProcessState, ProcessControl, Permission
+from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION, NOT_IMPLEMENTED	
 from ..helpers.TextTools import findXPath
-from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION
-from ..runtime import CSE
+from ..helpers.PluginManager import requires
+from ..resources.AnnounceableResource import AnnounceableResource
 from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..services.SecurityManager import SecurityManager
+	from ..plugins.services.ActionManager import ActionManager
+	from ..resources.Resource import Resource
 
 # TODO annc version
 # TODO add to UML diagram
 # TODO add to statistics, also in console
 
-
+@requires(actionManager='acme.plugins.services.ActionManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(security='acme.services.SecurityManager')
 class PRMR(AnnounceableResource):
+	"""	Class for the ProcessManagement (PRMR) resource type. """
 
-	resourceType = ResourceTypes.PRMR
-	""" The resource type """
+	actionManager: Optional[ActionManager] = None
+	""" Injected ActionManager instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
 
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.STTE,
-							   	   ResourceTypes.SUB
-								 ]
-	""" The allowed child-resource types. """
-
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'acpi': None,
-		'lbl': None,
-		'cr': None,
-		'cstn': None,
-		'daci': None,
-
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'prst': None,
-		'prct': None,
-		'cust': None,
-		'atcos': None,
-		'encos': None,
-		'inst': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
+	security: SecurityManager = None
+	""" Injected SecurityManager instance. """
 
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
@@ -103,31 +78,34 @@ class PRMR(AnnounceableResource):
 		_originator = self.getCurrentOriginator()
 
 		if newAtcos:
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 			for atco in newAtcos:
-				# Check validity of the activateCondition attribute
+			# Check validity of the activateCondition attribute
 				try:
-					CSE.action.checkEvalCriteria(atco['evc'], atco['sri'], _originator)
+					self.actionManager.checkEvalCriteria(atco['evc'], atco['sri'], _originator)
 				except ResponseException as e:
 					raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in activateCondition: {e}'))
 
 		if newEncos:
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
 			for enco in newEncos:
-				# Check validity of the endCondition attribute
+			# Check validity of the endCondition attribute
 				try:
-					CSE.action.checkEvalCriteria(enco['evc'], enco['sri'], _originator)
+					self.actionManager.checkEvalCriteria(enco['evc'], enco['sri'], _originator)
 				except ResponseException as e:
 					raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in endCondition: {e}'))
-				
 	
 		# Step 4) Check existence and access to the <state> resource referenced by the (new) initialState attribute
 		if newInst:
 			# Try to retrieve the new state resource
 			try:
-				newInstResource = CSE.dispatcher.retrieveResource(newInst, originator)
+				newInstResource = self.dispatcher.retrieveResource(newInst, originator)
 			except NOT_FOUND:
 				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The referenced state resource does not exist'))
 			# Check if the originator has access to the new state resource
-			if not CSE.security.hasAccess(originator, newInstResource, Permission.RETRIEVE):	# Check if the originator has RETRIEVE access to the state resource
+			if not self.security.hasAccess(originator, newInstResource, Permission.RETRIEVE):	# Check if the originator has RETRIEVE access to the state resource
 				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The originator does not have the necessary privileges to access the referenced state resource'))
 			# Check if the new state resource is a child resource of this process resource
 			if newInstResource.pi != self.ri:
@@ -159,7 +137,9 @@ class PRMR(AnnounceableResource):
 			# Step 10)
 			case ProcessControl.Pause if prst == ProcessState.Activated:
 				self.setAttribute('prst', ProcessState.Paused.value)
-				CSE.action.enterPauseState(self)
+				if not self.actionManager:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter pause state'))
+				self.actionManager.enterPauseState(self)
 				# TODO test for this
 
 
@@ -189,7 +169,9 @@ class PRMR(AnnounceableResource):
 			# Step 11)
 			case ProcessControl.Reactivate if prst == ProcessState.Paused:
 				self.setAttribute('prst', ProcessState.Activated.value)
-				CSE.action.enterActiveState(self)
+				if not self.actionManager:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter active state'))
+				self.actionManager.enterActiveState(self)
 				# TODO continues processing the process
 			
 			# Step 12)
@@ -197,7 +179,7 @@ class PRMR(AnnounceableResource):
 				self.setAttribute('prst', ProcessState.Disabled.value)
 				# Set the stateActive attribute of the activate <state> resource to false
 				try:
-					_state = CSE.dispatcher.retrieveResource(self.cust)
+					_state = self.dispatcher.retrieveResource(self.cust)
 					_state.setAttribute('sact', False)
 					_state.dbUpdate()
 				except:
@@ -206,7 +188,9 @@ class PRMR(AnnounceableResource):
 				# Remove the current state (cust) attribute
 				self.delAttribute('cust')	# EXPERIMENTAL In the spec this sets the cust attribute to Null
 				# disable the process
-				CSE.action.enterDisabledState(self)
+				if not self.actionManager:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter disabled state'))
+				self.actionManager.enterDisabledState(self)
 
 
 

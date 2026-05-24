@@ -6,17 +6,21 @@
 #
 #	ResourceType: PrimitiveProfile
 #
+"""	Implementation of the PrimitiveProfile (PRP) resource type. """
 
 from __future__ import annotations
 
-from ..resources.Resource import Resource
-
-from ..etc.Types import AttributePolicyDict, AttributePolicyDictList, ResourceTypes, Cardinality, BasicType
+from typing import TYPE_CHECKING
+from ..etc.Types import AttributePolicyDict, AttributePolicyDictList, ResourceTypes, BasicType
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..runtime.PluginSupport import requires
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
 
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Validator import Validator
+	
 # TODO annc version
 # TODO add to UML diagram
 # TODO add to statistics, also in console
@@ -25,53 +29,12 @@ from ..runtime import CSE
 notAllowedAttributes = [ 'op', 'to', 'fr', 'rqi', 'rvi', 'rsc', 'fc', 'ot', 'gid', 'tkns', 'ati' ]
 """ Attributes that are not allowed in the PRP resource (adds and dels attribute). """
 
+@requires(validator='acme.services.Validator')
 class PRP(AnnounceableResource):
+	"""	Class for the PrimitiveProfile (PRP) resource type. """
 
-	resourceType = ResourceTypes.PRP
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	ResourceTypes.SUB
-								 ]
-	""" The allowed child-resource types. """
-
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'acpi': None,
-		'daci': None,
-		'cstn': None,
-		'cr': None,
-
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'idl': None,
-		'rtys': None,
-		'ops': None,
-		'rsds': None,
-		'rvs': None,
-		'adds': None,
-		'dels': None,
-		'appl': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
+	validator: Validator = None
+	""" Injected Validator instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -112,11 +75,11 @@ class PRP(AnnounceableResource):
 
 				nonResourceAttributes:AttributePolicyDict = {}
 				resourceAttributes:AttributePolicyDictList = {}
-				if (policyList := CSE.validator.getAttributePoliciesByName(nm)):
+				if (policyList := self.validator.getAttributePoliciesByName(nm)):
 					resourceAttributes[nm] = policyList
-				elif (policy := CSE.validator.getAttributePolicy(ResourceTypes.REQUEST, nm, True)):
+				elif (policy := self.validator.getAttributePolicy(ResourceTypes.REQUEST, nm, True)):
 					nonResourceAttributes[nm] = policy
-				elif (policy := CSE.validator.getAttributePolicy(ResourceTypes.RESPONSE, nm, True)):
+				elif (policy := self.validator.getAttributePolicy(ResourceTypes.RESPONSE, nm, True)):
 					nonResourceAttributes[nm] = policy
 				else:
 					raise BAD_REQUEST(L.logDebug(f'Attribute: {nm} not found or not supported'))
@@ -131,7 +94,7 @@ class PRP(AnnounceableResource):
 
 				# Check the value and type
 				try:
-					CSE.validator.validateAttribute(nm, val, policy.type)
+					self.validator.validateAttribute(nm, val, policy.type)
 				except BAD_REQUEST as e:
 					raise BAD_REQUEST(L.logDebug(f'Attribute: {nm} failed validation: {e.dbg}'))
 
@@ -147,7 +110,7 @@ class PRP(AnnounceableResource):
 
 					# Check the value and type
 					try:
-						CSE.validator.validateAttribute(nm, val, policy.type)
+						self.validator.validateAttribute(nm, val, policy.type)
 					except BAD_REQUEST as e:
 						raise BAD_REQUEST(L.logDebug(f'Attribute: {nm} failed validation: {e.dbg}'))
 							

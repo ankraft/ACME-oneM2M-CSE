@@ -7,7 +7,6 @@
 #	Unit tests for all kind of MgmtObj specialisations
 #
 
-from audioop import getsample
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
@@ -825,7 +824,7 @@ class TestMgmtObj(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createNYCFCwrongSUID(self) -> None:
 		"""	CREATE [myCertFileCred] with wrong SUID -> Fail"""
-		dct =  { 'm2m:nycfc' : {
+		dct =  { 'dcfg:nycfc' : {
 					'mgd' : T.NYCFC,
 					'rn' : self.nycfcRN,
 					'dc' : 'aNycfc',
@@ -840,7 +839,7 @@ class TestMgmtObj(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createNYCFC(self) -> None:
 		"""	CREATE [myCertFileCred] """
-		dct =  { 'm2m:nycfc' : {
+		dct =  { 'dcfg:nycfc' : {
 					'mgd' : T.NYCFC,
 					'rn' : self.nycfcRN,
 					'dc' : 'aNycfc',
@@ -850,7 +849,7 @@ class TestMgmtObj(unittest.TestCase):
 				}}
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/ri'), r)
+		self.assertIsNotNone(findXPath(r, 'dcfg:nycfc/ri'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -858,7 +857,7 @@ class TestMgmtObj(unittest.TestCase):
 		""" RETRIEVE [myCertFileCred] """
 		r, rsc = RETRIEVE(self.nycfcURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'm2m:nycfc/mgd'), T.NYCFC)
+		self.assertEqual(findXPath(r, 'dcfg:nycfc/mgd'), T.NYCFC)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -866,20 +865,20 @@ class TestMgmtObj(unittest.TestCase):
 		""" Test [myCertFileCred] attributes """
 		r, rsc = RETRIEVE(self.nycfcURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'm2m:nycfc/ty'), T.MGMTOBJ)
-		self.assertEqual(findXPath(r, 'm2m:nycfc/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
-		self.assertEqual(findXPath(r, 'm2m:nycfc/rn'), self.nycfcRN)
-		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/ct'))
-		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/lt'))
-		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/et'))
-		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/dc'))
-		self.assertEqual(findXPath(r, 'm2m:nycfc/dc'), 'aNycfc')
-		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/suids'))
-		self.assertEqual(findXPath(r, 'm2m:nycfc/suids/{0}'), 42)
-		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/mcff'))
-		self.assertEqual(findXPath(r, 'm2m:nycfc/mcff'), 'application/pkcs7mime')
-		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/mcfc'))
-		self.assertEqual(findXPath(r, 'm2m:nycfc/mcfc'), 'secretKey')
+		self.assertEqual(findXPath(r, 'dcfg:nycfc/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'dcfg:nycfc/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'dcfg:nycfc/rn'), self.nycfcRN)
+		self.assertIsNotNone(findXPath(r, 'dcfg:nycfc/ct'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:nycfc/lt'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:nycfc/et'))
+		self.assertIsNotNone(findXPath(r, 'dcfg:nycfc/dc'))
+		self.assertEqual(findXPath(r, 'dcfg:nycfc/dc'), 'aNycfc')
+		self.assertIsNotNone(findXPath(r, 'dcfg:nycfc/suids'))
+		self.assertEqual(findXPath(r, 'dcfg:nycfc/suids/{0}'), 42)
+		self.assertIsNotNone(findXPath(r, 'dcfg:nycfc/mcff'))
+		self.assertEqual(findXPath(r, 'dcfg:nycfc/mcff'), 'application/pkcs7mime')
+		self.assertIsNotNone(findXPath(r, 'dcfg:nycfc/mcfc'))
+		self.assertEqual(findXPath(r, 'dcfg:nycfc/mcfc'), 'secretKey')
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

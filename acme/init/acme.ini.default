@@ -10,7 +10,7 @@
 ; THE CSE STARTS A DIALOG WHEN RUN FOR THE FIRST TIME OR WITH A NON-EXISTING ;
 ; CONFIGURATION FILE.                                                        ;
 ; OTHERWISE COPY THIS FILE TO A NEW FILE NAMED "acme.ini", WHICH IS THE      ;
-; DEFAULT CONFIGURATION FILE.  
+; DEFAULT CONFIGURATION FILE.                                                ;
 ;                                                                            ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -139,10 +139,140 @@ size=200
 
 
 ;
+;	Settings for plugin management
+;
+
+[cse.operation.plugins]
+; Comma-separated list of disabled plugins.
+; The names can contain wildcards (* and ?).
+; Default: None
+disabledPlugins=
+; Replace existing plugins with the same name.
+; Default: False
+replace=false
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                                                                                                  ;
+; The following options in this section are used by the PluginManager to determine which sub-system is enabled and ;
+; thus which plugins to load. They are not intended to be set by the user, but are derived from other settings.    ;
+; They are prefixed with _ to avoid conflicts with actual configuration options. The _ are stripped when checking  ;
+; the configuration in the PluginManager.                                                                          ;
+;                                                                                                                  ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+_coap_enable_=${coap:enable}
+_http_enable_=${http:enable}
+_mqtt_enable_=${mqtt:enable}
+_websocket_enable_=${websocket:enable}
+_http_enableManagementEndpoint_=${http:enableManagementEndpoint}
+_http_enableStructureEndpoint_=${http:enableStructureEndpoint}
+_http_enableUpperTesterEndpoint_=${http:enableUpperTesterEndpoint}
+_statistics_enable_=${cse.statistics:enable}
+_textui_enable_=${textui:enable}
+_webui_enable_=${webui:enable}
+_actionManager_enable_=${cse.service.action:enable}
+_announcementManager_enable_=${cse.service.announcement:enable}
+_groupManager_enable_=${cse.service.group:enable}
+_locationManager_enable_=${cse.service.location:enable}
+_remoteCSEManager_enable_=${cse.service.remoteCSE:enable}
+_semanticManager_enable_=${cse.service.semantic:enable}
+_timeManager_enable_=${cse.service.time:enable}
+_timeSeriesManager_enable_=${cse.service.timeSeries:enable}
+
+
+;
+;	Settings for the Action Processing Service
+;
+
+[cse.service.action]
+; Enable the Action Processing Service. This includes the ActionManager plugin and 
+; the related features in the CSE.
+; Default: true
+enable=true
+
+
+;
+;	Settings for the Acnnouncement Manager Service
+;
+
+[cse.service.announcement]
+; Enable the Announcement Manager Service. Th
+; Default: true
+enable=true
+
+
+;
+;	Settings for the Action Processing Service
+;
+
+[cse.service.group]
+; Enable the Group Management Service. This includes the GroupManager plugin and 
+; the related features in the CSE.
+; Default: true
+enable=true
+
+
+;
+;	Settings for the Location Service
+;
+
+[cse.service.location]
+; Enable the Location Service. This includes the LocationManager plugin and 
+; the related features in the CSE.
+; Default: true
+enable=true
+
+;
+;	Settings for the RemoteCSE Service
+;
+
+[cse.service.remoteCSE]
+; Enable the RemoteCSE Service.
+; Default: true
+enable=true
+
+
+;
+;	Settings for the Semantic Service
+;
+
+[cse.service.semantic]
+; Enable the Semantic Service. This includes the SemanticManager plugin and 
+; the related features in the CSE.
+; Default: true
+enable=true
+
+
+;
+;	Settings for the Time Manager Service
+;
+
+[cse.service.time]
+; Enable the Time Manager Service. 
+; Default: true
+enable=true
+
+
+;
+;	Settings for the TimeSeries Service
+;
+
+[cse.service.timeSeries]
+; Enable the TimeSeries Service. This includes the TimeSeriesManager plugin and 
+; the related features in the CSE.
+; Default: true
+enable=true
+
+
+
+;
 ;	HTTP Server settings
 ;
 
 [http]
+; Enable the HTTP binding. 
+; Default: true
+enable=true
 ; Port to listen to. Default: 8080
 port=${basic.config:httpPort}
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
@@ -153,6 +283,11 @@ listenIF=${basic.config:networkInterface}
 address=http://${basic.config:cseHost}:${basic.config:httpPort}${http:root}
 ; CSE Server root. Always provide a trailing /. Default: /
 root=/
+; External root. This is used when the CSE is accessed from external addresses,
+; e.g. in a Kubernetes cluster. It should only be set when the external root path
+; is different from the local root.
+; Default: same as http:root
+externalRoot=${http:root}
 ; Enable an endpoint for get and set certain configuration values via a 
 ; REST interface.
 ; ATTENTION: Enabling this feature exposes configuration values, IDs and
@@ -492,6 +627,9 @@ checkLiveliness=True
 ; Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
 ; Default: 60
 checkInterval=60
+; Unregister from the registrar when stopping the CSE. This includes deleting the CSR resource at the registrar CSE.
+; Default: True
+unregisterWhenStopping=True
 
 
 ;
@@ -756,8 +894,10 @@ bcnt=10.0
 ;
 
 [webui]
+; Enable the web UI. Default: True
+enable=true
 ; Root path of the web UI. Default: /webui
-root=/webui
+root=${http:root}webui
 
 
 ;
@@ -765,6 +905,9 @@ root=/webui
 ;
 
 [console]
+; Specify the console type. Allowed values: "rich", "simple".
+; Default: rich
+type=${basic.config:consoleType}
 ; Interval for continuously refreshing information displays. Must be > 0.0. 
 ; Default: 2.0 seconds.
 refreshInterval=2.0
@@ -795,6 +938,8 @@ headless=False
 ;   Text UI settings
 ;
 [textui]
+; Enable the text UI. Default: True
+enable=true
 ; Start directly with the TUI
 startWithTUI=True
 ; Set the color theme for the text UI. Allowed values are "dark" and "light".

@@ -1,4 +1,5 @@
 #
+
 #	Makefile
 #
 #	To build the API documentation
@@ -13,14 +14,17 @@
 #		- clean - clean up generated files
 #
 
-DOCDIR = ../../docs
+ROOTDIR= ../..
+DOCDIR = ${ROOTDIR}/docs
 APIDOCS = ${DOCDIR}/apidocs
+APIGITDIR = ${ROOTDIR}/../ACME-oneM2M-CSE-apidocs
 TITLE = ACME oneM2M CSE
 DASHDOCSET = ${DOCDIR}
 
 build: pydoctor
 
 pydoctor:				## Build API documentation (default)
+	find ${ROOTDIR} -type d -name __pycache__ -exec rm -rf {}  + 2>/dev/null || true
 	pydoctor
 
 open:					## Open API documentation in the default web browser
@@ -35,9 +39,22 @@ dash:					## Generate a docset for Dash documentation
 dash-install:				## Install and open the generated docset in Dash
 	open "${DASHDOCSET}/${TITLE}.docset"
 
+
+publish: 				## Publish the API docs to the documentation website
+	-cd ${APIGITDIR} && \
+	git checkout gh-pages && \
+	git pull 
+	cp -r ${APIDOCS}/* ${APIGITDIR}
+	-cd ${APIGITDIR} && \
+	git add * && \
+	git commit -uno -m "adding api docs" && \
+	git push 
+
+
+
 clean:					## Remove generated files
-	rm -r ${APIDOCS}
-	rm -r "${DASHDOCSET}.docset"
+	-rm -r ${APIDOCS}
+	-rm -r "${DASHDOCSET}.docset"
 
 
 help:					## Display this help

@@ -16,7 +16,7 @@
             // DataPoint: threeDDisplayType
             { "sname" : "tDDTe", "lname" : "threeDDisplayType", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: threeDDisplayViewAngle
-            { "sname" : "tDDVA", "lname" : "threeDDisplayViewAngle", "type" : "integer", "car" : "01" }, 
+            { "sname" : "tDDVe", "lname" : "threeDDisplayViewAngle", "type" : "integer", "car" : "01" }, 
             // DataPoint: threeDDisplayResolutionX
             { "sname" : "tDDRX", "lname" : "threeDDisplayResolutionX", "type" : "integer", "car" : "01" }, 
             // DataPoint: threeDDisplayResolutionY
@@ -41,7 +41,7 @@
             // DataPoint: threeDDisplayType
             { "sname" : "tDDTe", "lname" : "threeDDisplayType", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: threeDDisplayViewAngle
-            { "sname" : "tDDVA", "lname" : "threeDDisplayViewAngle", "type" : "integer", "car" : "01" }, 
+            { "sname" : "tDDVe", "lname" : "threeDDisplayViewAngle", "type" : "integer", "car" : "01" }, 
             // DataPoint: threeDDisplayResolutionX
             { "sname" : "tDDRX", "lname" : "threeDDisplayResolutionX", "type" : "integer", "car" : "01" }, 
             // DataPoint: threeDDisplayResolutionY
@@ -63,7 +63,7 @@
             // DataPoint: threeDDisplayType
             { "sname" : "tDDTe", "lname" : "threeDDisplayType", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: threeDDisplayViewAngle
-            { "sname" : "tDDVA", "lname" : "threeDDisplayViewAngle", "type" : "integer", "car" : "01" }, 
+            { "sname" : "tDDVe", "lname" : "threeDDisplayViewAngle", "type" : "integer", "car" : "01" }, 
             // DataPoint: threeDDisplayResolutionX
             { "sname" : "tDDRX", "lname" : "threeDDisplayResolutionX", "type" : "integer", "car" : "01" }, 
             // DataPoint: threeDDisplayResolutionY
@@ -74,9 +74,9 @@
     }, 
 
 
-    // ModuleClass: threeDPrinter (thDP0)
+    // ModuleClass: threeDPrinter (thDPr)
     {
-        "type"      : "cod:thDP0",
+        "type"      : "cod:thDPr",
         "lname"     : "threeDPrinter",
         "cnd"       : "org.onem2m.common.moduleclass.threeDPrinter",
         "sdttype"   : "moduleclass",
@@ -99,7 +99,7 @@
 		"children"  : [
             "cod:staDt",
             "cod:stoDt",
-            "cod:thDP0Inst"
+            "cod:thDPrInst"
         ]
     },
 
@@ -133,9 +133,9 @@
         ]
     },
 
-    // ModuleClass Announced: threeDPrinterAnnc (thDP0Annc)
+    // ModuleClass Announced: threeDPrinterAnnc (thDPrAnnc)
     {
-        "type"      : "cod:thDP0Annc",
+        "type"      : "cod:thDPrAnnc",
         "lname"     : "threeDPrinterAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.threeDPrinterAnnc",
         "sdttype"   : "moduleclass",
@@ -187,9 +187,9 @@
     }
 , 
 
-    // ModuleClass Instance: threeDPrinterInst (thDP0Inst)
+    // ModuleClass Instance: threeDPrinterInst (thDPrInst)
     {
-        "type"      : "cod:thDP0Inst",
+        "type"      : "cod:thDPrInst",
         "lname"     : "threeDPrinterInst",
         "cnd"       : "org.onem2m.common.moduleclass.threeDPrinterInst",
         "sdttype"   : "moduleclass",
@@ -783,8 +783,8 @@
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
-            // DataPoint: windspeed
-            { "sname" : "windd", "lname" : "windspeed", "type" : "float", "car" : "1" }
+            // DataPoint: windSpeed
+            { "sname" : "winSd", "lname" : "windSpeed", "type" : "float", "car" : "1" }
         ],
 		"children"  : [
             "cod:anemrInst"
@@ -800,8 +800,8 @@
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
-            // DataPoint: windspeed
-            { "sname" : "windd", "lname" : "windspeed", "type" : "float", "car" : "1" }
+            // DataPoint: windSpeed
+            { "sname" : "winSd", "lname" : "windSpeed", "type" : "float", "car" : "1" }
         ]
     }, 
 
@@ -814,8 +814,8 @@
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
-            // DataPoint: windspeed
-            { "sname" : "windd", "lname" : "windspeed", "type" : "float", "car" : "1" }
+            // DataPoint: windSpeed
+            { "sname" : "winSd", "lname" : "windSpeed", "type" : "float", "car" : "1" }
         ]
     }, 
 
@@ -6994,7 +6994,7 @@
             // DataPoint: detectedTime
             { "sname" : "detTe", "lname" : "detectedTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: smokeThreshold
-            { "sname" : "smoT0", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
+            { "sname" : "smoTd", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
             // DataPoint: currentValue
             { "sname" : "crv", "lname" : "currentValue", "type" : "integer", "car" : "01" }, 
             // DataPoint: sensorFault
@@ -7057,7 +7057,7 @@
             // DataPoint: detectedTime
             { "sname" : "detTe", "lname" : "detectedTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: smokeThreshold
-            { "sname" : "smoT0", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
+            { "sname" : "smoTd", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
             // DataPoint: currentValue
             { "sname" : "crv", "lname" : "currentValue", "type" : "integer", "car" : "01" }, 
             // DataPoint: sensorFault
@@ -7115,7 +7115,7 @@
             // DataPoint: detectedTime
             { "sname" : "detTe", "lname" : "detectedTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: smokeThreshold
-            { "sname" : "smoT0", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
+            { "sname" : "smoTd", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
             // DataPoint: currentValue
             { "sname" : "crv", "lname" : "currentValue", "type" : "integer", "car" : "01" }, 
             // DataPoint: sensorFault
@@ -8212,7 +8212,7 @@
             // DataPoint: highTemperatureInnerAlarmThreshold
             { "sname" : "hTIAT", "lname" : "highTemperatureInnerAlarmThreshold", "type" : "float", "car" : "01" }, 
             // DataPoint: innerHighInternalTemperatureAlarm
-            { "sname" : "iHITA", "lname" : "innerHighInternalTemperatureAlarm", "type" : "boolean", "car" : "01" }, 
+            { "sname" : "iHITm", "lname" : "innerHighInternalTemperatureAlarm", "type" : "boolean", "car" : "01" }, 
             // DataPoint: innerErrorAlarm
             { "sname" : "inEAm", "lname" : "innerErrorAlarm", "type" : "boolean", "car" : "01" }, 
             // DataPoint: innerTemperatureSensorFault
@@ -8291,7 +8291,7 @@
             // DataPoint: highTemperatureInnerAlarmThreshold
             { "sname" : "hTIAT", "lname" : "highTemperatureInnerAlarmThreshold", "type" : "float", "car" : "01" }, 
             // DataPoint: innerHighInternalTemperatureAlarm
-            { "sname" : "iHITA", "lname" : "innerHighInternalTemperatureAlarm", "type" : "boolean", "car" : "01" }, 
+            { "sname" : "iHITm", "lname" : "innerHighInternalTemperatureAlarm", "type" : "boolean", "car" : "01" }, 
             // DataPoint: innerErrorAlarm
             { "sname" : "inEAm", "lname" : "innerErrorAlarm", "type" : "boolean", "car" : "01" }, 
             // DataPoint: innerTemperatureSensorFault
@@ -8367,7 +8367,7 @@
             // DataPoint: highTemperatureInnerAlarmThreshold
             { "sname" : "hTIAT", "lname" : "highTemperatureInnerAlarmThreshold", "type" : "float", "car" : "01" }, 
             // DataPoint: innerHighInternalTemperatureAlarm
-            { "sname" : "iHITA", "lname" : "innerHighInternalTemperatureAlarm", "type" : "boolean", "car" : "01" }, 
+            { "sname" : "iHITm", "lname" : "innerHighInternalTemperatureAlarm", "type" : "boolean", "car" : "01" }, 
             // DataPoint: innerErrorAlarm
             { "sname" : "inEAm", "lname" : "innerErrorAlarm", "type" : "boolean", "car" : "01" }, 
             // DataPoint: innerTemperatureSensorFault
@@ -8428,11 +8428,11 @@
             // DataPoint: peakReverseFlowRate
             { "sname" : "pRFRe", "lname" : "peakReverseFlowRate", "type" : "float", "car" : "01" }, 
             // DataPoint: peakReverseFlowRateTime
-            { "sname" : "pRFRT", "lname" : "peakReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
+            { "sname" : "pRFR0", "lname" : "peakReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: lowestReverseFlowRate
             { "sname" : "lRFRe", "lname" : "lowestReverseFlowRate", "type" : "float", "car" : "01" }, 
             // DataPoint: lowestReverseFlowRateTime
-            { "sname" : "lRFRT", "lname" : "lowestReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
+            { "sname" : "lRFR0", "lname" : "lowestReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: intervalFlow
             { "sname" : "intFw", "lname" : "intervalFlow", "type" : "list", "car" : "01" }, 
             // DataPoint: reverseIntervalFlow
@@ -8477,11 +8477,11 @@
             // DataPoint: peakReverseFlowRate
             { "sname" : "pRFRe", "lname" : "peakReverseFlowRate", "type" : "float", "car" : "01" }, 
             // DataPoint: peakReverseFlowRateTime
-            { "sname" : "pRFRT", "lname" : "peakReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
+            { "sname" : "pRFR0", "lname" : "peakReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: lowestReverseFlowRate
             { "sname" : "lRFRe", "lname" : "lowestReverseFlowRate", "type" : "float", "car" : "01" }, 
             // DataPoint: lowestReverseFlowRateTime
-            { "sname" : "lRFRT", "lname" : "lowestReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
+            { "sname" : "lRFR0", "lname" : "lowestReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: intervalFlow
             { "sname" : "intFw", "lname" : "intervalFlow", "type" : "list", "car" : "01" }, 
             // DataPoint: reverseIntervalFlow
@@ -8523,11 +8523,11 @@
             // DataPoint: peakReverseFlowRate
             { "sname" : "pRFRe", "lname" : "peakReverseFlowRate", "type" : "float", "car" : "01" }, 
             // DataPoint: peakReverseFlowRateTime
-            { "sname" : "pRFRT", "lname" : "peakReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
+            { "sname" : "pRFR0", "lname" : "peakReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: lowestReverseFlowRate
             { "sname" : "lRFRe", "lname" : "lowestReverseFlowRate", "type" : "float", "car" : "01" }, 
             // DataPoint: lowestReverseFlowRateTime
-            { "sname" : "lRFRT", "lname" : "lowestReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
+            { "sname" : "lRFR0", "lname" : "lowestReverseFlowRateTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: intervalFlow
             { "sname" : "intFw", "lname" : "intervalFlow", "type" : "list", "car" : "01" }, 
             // DataPoint: reverseIntervalFlow

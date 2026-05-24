@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, cast, Sequence, Optional
+from typing import List, Tuple, cast, Sequence, Optional, Callable, TYPE_CHECKING
 
 import operator
 import sys
@@ -28,59 +28,101 @@ from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exc
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BAD_REQUEST
 from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
-from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE
-from ..etc.ACMEUtils import  resourceModifiedAttributes, riFromID, srnFromHybrid,  riFromStructuredPath, structuredPathFromRI, isUniqueRI
+from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, NOT_IMPLEMENTED
+from ..etc.ACMEUtils import riFromID, srnFromHybrid, riFromStructuredPath, structuredPathFromRI
+from ..etc.JSONUtils import resourceModifiedAttributes
 from ..etc.IDUtils import localResourceID, isSPRelative, isAbsolute, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
+from ..helpers.Singleton import Singleton
 from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
 from ..etc.DateUtils import cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
-from ..runtime import CSE
 from ..runtime.Configuration import Configuration
-from ..resources.Factory import resourceFromDict
+from ..runtime.EventManager import EventManager, EventData, eventManager
+from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 from ..resources.Resource import Resource
 from ..resources.PCH_PCU import PCH_PCU
 from ..resources.NTSR import NTSR
 from ..resources.SMD import SMD
-from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..plugins.services.LocationManager import LocationManager
+	from ..plugins.services.RemoteCSEManager import RemoteCSEManager
+	from ..plugins.services.SemanticManager import SemanticManager
+	from ..plugins.services.TimeManager import TimeManager
+	from ..runtime.Factory import Factory
+	from ..runtime.ScriptManager import ScriptManager
+	from ..runtime.Storage import Storage
+	from ..services.RegistrationManager import RegistrationManager
+	from ..services.SecurityManager import SecurityManager
+	from ..services.RequestManager import RequestManager
+	from ..services.Validator import Validator
+
 
 
 # TODO NOTIFY optimize local resource notifications
 # TODO handle config update
-class Dispatcher(object):
+@requires(locationManager='acme.plugins.services.LocationManager', required=False)
+@requires(semanticManager='acme.plugins.services.SemanticManager', required=False)
+@requires(timeManager='acme.plugins.services.TimeManager', required=False)
+@requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
+@requires(registrationManager='acme.services.RegistrationManager')
+@requires(storage='acme.runtime.Storage')
+@requires(factory='acme.runtime.Factory')
+@requires(security='acme.services.SecurityManager')
+@requires(requestManager='acme.services.RequestManager')
+@requires(validator='acme.services.Validator')
+@requires(scriptManager='acme.runtime.ScriptManager')
+class Dispatcher(metaclass=Singleton):
 	""" Dispatcher class. Handles all requests and dispatches them to the
 		appropriate handlers. This includes requests for resources, requests
 		for resource creation, and requests for resource deletion.
 	"""
 
-	__slots__ = (
-		'K',
-		'sortDiscoveryResources',
+	registrationManager: RegistrationManager = None
+	""" Injected RegistrationManager instance. """
 
-		'_eventRetrieveResource',
-		'_eventCreateResource',
-		'_eventCreateChildResource',
-		'_eventUpdateResource',
-		'_eventDeleteResource',
+	storage:Storage = None
+	""" Injected Storage instance. """
+
+	factory:Factory = None
+	""" Injected Factory instance. """
+
+	security:SecurityManager = None
+	""" Injected SecurityManager instance. """
+
+	requestManager:RequestManager = None
+	""" Injected RequestManager instance. """
+
+	validator:Validator = None
+	""" Injected Validator instance. """
+
+	scriptManager:ScriptManager = None
+	""" Injected ScriptManager instance. """
+
+	locationManager: Optional[LocationManager] = None	# type: ignore
+	""" Injected LocationManager instance. """
+
+	semanticManager: Optional[SemanticManager] = None	# type: ignore
+	""" Injected SemanticManager instance. """
+	
+	timeManager: Optional[TimeManager] = None		# type: ignore
+	""" Injected TimeManager instance. """
+	
+	remoteCSEManager: Optional[RemoteCSEManager] = None	# type: ignore
+	""" Injected RemoteCSEManager instance. """
+
+	__slots__ = (
+		'sortDiscoveryResources',
 	)
 	""" Slots of class attributes. """
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 		""" Initialize the Dispatcher. """
 
 		self.sortDiscoveryResources = Configuration.cse_sortDiscoveredResources 
 		""" Sort the discovered resources. """
-
-		self._eventCreateResource = CSE.event.createResource			# type: ignore [attr-defined]
-		""" Event handler for resource creation events. """
-		self._eventCreateChildResource = CSE.event.createChildResource	# type: ignore [attr-defined]
-		""" Event handler for child resource creation events. """
-		self._eventUpdateResource = CSE.event.updateResource			# type: ignore [attr-defined]
-		""" Event handler for resource update events. """
-		self._eventDeleteResource = CSE.event.deleteResource			# type: ignore [attr-defined]
-		""" Event handler for resource deletion events. """
-		self._eventRetrieveResource = CSE.event.retrieveResource		# type: ignore [attr-defined]
-		""" Event handler for resource retrieval events. """
 
 		L.isInfo and L.log('Dispatcher initialized')
 
@@ -129,7 +171,7 @@ class Dispatcher(object):
 
 		# handle transit requests first
 		if localResourceID(request.id) is None and localResourceID(request.srn) is None:  # type: ignore[reportArgumentType]
-			return CSE.request.handleTransitRetrieveRequest(request)
+			return self.requestManager.handleTransitRetrieveRequest(request)
 
 		srn, id = self._checkHybridID(request, id) 	# type: ignore[reportArgumentType] # overwrite id if another is given
 
@@ -140,7 +182,7 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Found Content for RETRIEVE: {request.pc}')
 			if (attributeList := request.pc.get('m2m:atrl')) is None:
 				raise BAD_REQUEST(L.logWarn(f'Only "m2m:atrl" is allowed in Content for RETRIEVE.'))
-			CSE.validator.validateAttribute('atrl', attributeList)
+			self.validator.validateAttribute('atrl', attributeList)
 			request._attributeList = attributeList
 		
 		# Handle operation execution time , and check CSE schedule and request expiration
@@ -160,7 +202,7 @@ class Dispatcher(object):
 
 		# Handle PollingChannelURI RETRIEVE
 		if (pollingChannelURIResource := self._getPollingChannelURIResource(srn)):		# We need to check the srn here
-			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIResource):
+			if not self.security.hasAccessToPollingChannel(originator, pollingChannelURIResource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has not RETRIEVE privileges to <pollingChannelURI>: {id}'))
 			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.getSrn()}')
 			return pollingChannelURIResource.handleRetrieveRequest(request, id, originator)
@@ -182,7 +224,7 @@ class Dispatcher(object):
 
 
 				res = laOlResource.handleRetrieveRequest(request=request, originator=originator)
-				if not CSE.security.hasAccess(originator, cast(Resource, res.resource), Permission.RETRIEVE, request=request, resultResource=cast(Resource, res.resource)):
+				if not self.security.hasAccess(originator, cast(Resource, res.resource), Permission.RETRIEVE, request=request, resultResource=cast(Resource, res.resource)):
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator has no permission for {Permission.RETRIEVE}')
 				return res
 
@@ -204,16 +246,19 @@ class Dispatcher(object):
 		rcn = request.rcn
 		# Check semantic discovery (sqi present and False)
 		if request.sqi is not None and not request.sqi:
+			if self.semanticManager is None:
+				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot execute semantic discovery'))
+			
 			# Get all accessible semanticDescriptors
-			_resources = self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))
+			_resources = self.discoverResources(id, originator, filterCriteria=FilterCriteria(ty=[ResourceTypes.SMD]))
 			L.isDebug and L.logDebug(f'Direct discovered SMD: {_resources}')
 
 			# Execute semantic resource discovery
-			_resources = CSE.semantic.executeSemanticDiscoverySPARQLQuery(originator, 
+			_resources = self.semanticManager.executeSemanticDiscoverySPARQLQuery(originator, 
 																 		  request.fc.smf,
 																		  cast(Sequence[SMD], _resources),
 																		  request.ct)
-			return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(_resources, request.drt))
+			return Result(rsc=ResponseStatusCode.OK, resource=self._resourcesToURIList(_resources, request.drt))
 
 		else:
 
@@ -228,7 +273,7 @@ class Dispatcher(object):
 
 					resource = self.retrieveResource(id, originator, request)
 
-					if not CSE.security.hasAccess(originator, resource, permission, request = request, resultResource = resource):
+					if not self.security.hasAccess(originator, resource, permission, request=request, resultResource=resource):
 						raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no {permission} privileges for resource: {resource.ri}'))
 
 					match rcn:
@@ -266,18 +311,22 @@ class Dispatcher(object):
 					#	Semantic query request
 					#	This is indicated by rcn = semantic content
 					L.isDebug and L.logDebug('Performing semantic discovery / query')
+
+					if not self.semanticManager:
+						raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot execute semantic discovery'))
+					
 					# Validate SPARQL in semanticFilter
-					CSE.semantic.validateSPARQL(request.fc.smf)
+					self.semanticManager.validateSPARQL(request.fc.smf)
 
 					# Get all accessible semanticDescriptors
-					resources = self.discoverResources(id, originator, filterCriteria = FilterCriteria(ty = [ResourceTypes.SMD]))
+					resources = self.discoverResources(id, originator, filterCriteria=FilterCriteria(ty=[ResourceTypes.SMD]))
 					
 					# Execute semantic query
-					res = CSE.semantic.executeSPARQLQuery(request.fc.smf, 
+					res = self.semanticManager.executeSPARQLQuery(request.fc.smf, 
 										   				  cast(Sequence[SMD], resources),
 														  request.ct)
 					L.isDebug and L.logDebug(f'SPARQL query result: {res.data}')
-					return Result(rsc = ResponseStatusCode.OK, data = { 'm2m:qres' : res.data })
+					return Result(rsc=ResponseStatusCode.OK, data={ 'm2m:qres' : res.data })
 
 		#
 		#	Discovery request
@@ -287,7 +336,7 @@ class Dispatcher(object):
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
 		for r in resources:
-			if CSE.security.hasAccess(originator, r, permission, request = request, resultResource = r):
+			if self.security.hasAccess(originator, r, permission, request = request, resultResource = r):
 				try:
 					r.willBeRetrieved(originator, request)	# resource instance may be changed in this call
 					allowedResources.append(r)
@@ -301,37 +350,37 @@ class Dispatcher(object):
 		match rcn:
 			case ResultContentType.attributesAndChildResources:
 				self.resourceTreeDict(allowedResources, resource.dict)	# the function call add attributes to the target resource
-				return Result(rsc = ResponseStatusCode.OK, resource = resource)
+				return Result(rsc=ResponseStatusCode.OK, resource=resource)
 		
 			case ResultContentType.attributesAndChildResourceReferences:
 				self._resourceTreeReferences(allowedResources, resource, request.drt, 'ch')	# the function call add attributes to the target resource
-				return Result(rsc = ResponseStatusCode.OK, resource = resource)
+				return Result(rsc=ResponseStatusCode.OK, resource=resource)
 		
 			case ResultContentType.childResourceReferences:
 				childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.drt, 'm2m:rrl')
-				return Result(rsc = ResponseStatusCode.OK, resource = childResourcesRef)
+				return Result(rsc=ResponseStatusCode.OK, resource=childResourcesRef)
 
 			case ResultContentType.childResources:
-				childResources:JSON = { resource.typeShortname : {} } #  Root resource as a dict with no attribute
+				childResources:JSON={ resource.typeShortname : {} } #  Root resource as a dict with no attribute
 				self.resourceTreeDict(allowedResources, childResources[resource.typeShortname]) # Adding just child resources
-				return Result(rsc = ResponseStatusCode.OK, resource = childResources)
+				return Result(rsc=ResponseStatusCode.OK, resource=childResources)
 
 			case ResultContentType.discoveryResultReferences:
-				return Result(rsc = ResponseStatusCode.OK, resource = self._resourcesToURIList(allowedResources, request.drt))
+				return Result(rsc=ResponseStatusCode.OK, resource=self._resourcesToURIList(allowedResources, request.drt))
 		
 			case ResultContentType.permissions:
 				# TODO
 				self.resourceTreeDict(allowedResources, resource.dict)	# the function call add attributes to the target resource
-				return Result(rsc = ResponseStatusCode.OK, resource = resource)
+				return Result(rsc=ResponseStatusCode.OK, resource=resource)
 		
 			case _:
 				raise BAD_REQUEST(f'unsuppored rcn: {rcn} for RETRIEVE')
 
 
-	def retrieveResource(self, id:str, 
-							   originator:Optional[str]=None, 
-							   request:Optional[CSERequest]=None, 
-							   postRetrieveHook:Optional[bool]=False) -> Resource:
+	def retrieveResource(self, id: str, 
+							   originator: Optional[str] = None, 
+							   request: Optional[CSERequest] = None, 
+							   postRetrieveHook: Optional[bool] = False) -> Resource:
 		"""	Retrieve a resource locally or from remote CSE.
 
 			Args:
@@ -353,7 +402,9 @@ class Dispatcher(object):
 			else:
 				# Retrieve from remote
 				if isSPRelative(id) or isAbsolute(id):
-					return CSE.remote.retrieveRemoteResource(id, originator)
+					if self.remoteCSEManager is None:
+						raise NOT_IMPLEMENTED(L.logWarn('RemoteCSEManager is disabled, cannot retrieve resource from remote CSE'))
+					return self.remoteCSEManager.retrieveRemoteResource(id, originator)
 		if not id:
 			raise NOT_FOUND(L.logDebug(f'No resource with this ID: {request.to if request else "unknown"}'))
 
@@ -370,10 +421,10 @@ class Dispatcher(object):
 		return resource
 
 
-	def retrieveLocalResource(self, ri:Optional[str]=None, 
-									srn:Optional[str]=None, 
-									originator:Optional[str]=None, 
-									request:Optional[CSERequest]=None) -> Resource:
+	def retrieveLocalResource(self, ri: Optional[str] = None, 
+									srn: Optional[str] = None, 
+									originator: Optional[str] = None, 
+									request: Optional[CSERequest] = None) -> Resource:
 		"""	Retrieve a resource locally.
 
 			Args:
@@ -388,17 +439,17 @@ class Dispatcher(object):
 			Raises:
 				NOT_FOUND: If the resource cannot be found.
 		"""
-		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator}')
+		L.isDebug and L.logDebug(f'Retrieving local resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
-			resource = CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID
+			resource = self.storage.retrieveResource(ri=ri)		# retrieve via normal ID
 		elif srn:
-			resource = CSE.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+			resource = self.storage.retrieveResource(srn=srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
 			raise NOT_FOUND(f'resource: {ri}|{srn} not found')
 
 		# send a retrieve event
-		self._eventRetrieveResource(resource)
+		eventManager.retrieveResource(EventData(payload=resource))
 
 		return resource
 
@@ -485,7 +536,7 @@ class Dispatcher(object):
 				# Check existence and permissions for the .../{arp} resource
 				srn = f'{resource.getSrn()}/{filterCriteria.arp}'
 				_res = self.retrieveResource(srn)
-				if CSE.security.hasAccess(originator, _res, permission, resultResource = _res):
+				if self.security.hasAccess(originator, _res, permission, resultResource = _res):
 					_resources.append(_res)
 			discoveredResources = _resources	# re-assign the new resources to discoveredResources
 
@@ -537,7 +588,7 @@ class Dispatcher(object):
 			if self._matchResource(resource, 
 								   fo, 
 								   allLen, 
-								   filterCriteria) and CSE.security.hasAccess(originator, resource, permission, resultResource = resource):
+								   filterCriteria) and self.security.hasAccess(originator, resource, permission, resultResource = resource):
 				discoveredResources.append(resource)
 
 			# Iterate recursively over all (not only the filtered!) direct child resources
@@ -631,13 +682,15 @@ class Dispatcher(object):
 
 		# Advanced query
 		if filterCriteria.aq:
-			found += 1 if CSE.script.runComparisonQuery(filterCriteria.aq, r) else 0
+			found += 1 if self.scriptManager.runComparisonQuery(filterCriteria.aq, r) else 0
 
 		# Geo query
 		if filterCriteria.geom:	# Just check one of the tree required attributes. If one is there, all are there
+			if not self.locationManager:
+				raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. No geo queries can be processed.'))
 			allLen += 1	# Add one more criteria to check to the required count
 			if r.loc:	# Only check if the resource has a location
-				found += 1 if CSE.location.checkGeoLocation(r, filterCriteria.gmty, filterCriteria._geom, filterCriteria.gsf) else 0
+				found += 1 if self.locationManager.checkGeoLocation(r, filterCriteria.gmty, filterCriteria._geom, filterCriteria.gsf) else 0
 
 		# L.isDebug and L.logDebug(f'fo: {fo}, found: {found}, allLen: {allLen}')
 		# Test whether the OR or AND criteria is fullfilled
@@ -679,7 +732,7 @@ class Dispatcher(object):
 
 		# handle transit requests first
 		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
-			return CSE.request.handleTransitCreateRequest(request)
+			return self.requestManager.handleTransitCreateRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 		if not id and not srn:
@@ -702,8 +755,6 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointRsrc.getSrn()}')
 			return fanoutPointRsrc.handleCreateRequest(request, srn, request.originator)
 		
-		# la, ol, pcu, ntsr cannot receive CREATE request
-
 		# Some Resources are not allowed to be created in a request, return immediately
 		if not ResourceTypes.isRequestCreatable(request.ty):
 			raise OPERATION_NOT_ALLOWED(f'CREATE not allowed for type: {request.ty}')
@@ -712,7 +763,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		parentResource = self.retrieveResource(id, request=request)
 
-		if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = request.ty, parentResource = parentResource, request=request):
+		if not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=request.ty, parentResource = parentResource, request=request):
 			if request.ty == ResourceTypes.AE:
 				raise SECURITY_ASSOCIATION_REQUIRED('security association required')
 			else:
@@ -724,24 +775,24 @@ class Dispatcher(object):
 
 		# Create resource from the dictionary
 		# newResource = resourceFromDict(deepcopy(request.pc), 
-		newResource = resourceFromDict(request.pc, 
-								 	   pi = parentResource.ri, 
-									   ty = request.ty, 
-									   create = True,
-									   originator = originator)
+		newResource = self.factory.resourceFromDict(request.pc, 
+								 	   		   pi=parentResource.ri, 
+									   		   ty=request.ty, 
+									   		   create=True,
+									   		   trusted=False)
 
 		# Check whether the parent allows the adding
 		parentResource.childWillBeAdded(newResource, originator)
 
 		# Check resource creation
-		newOriginator = CSE.registration.checkResourceCreation(newResource, originator, parentResource)
+		newOriginator = self.registrationManager.checkResourceCreation(newResource, originator, parentResource)
 
 		# check whether the resource already exists, either via ri or srn
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
 		# TODO perhaps optimize this?
-		if CSE.storage.hasResource(ri = newResource.ri):
+		if self.storage.hasResource(ri = newResource.ri):
 			raise CONFLICT(L.logWarn(f'Resource with ri: {newResource.ri} already exists'))
-		if CSE.storage.hasResource(srn = newResource.getSrn()):
+		if self.storage.hasResource(srn = newResource.getSrn()):
 			raise CONFLICT(L.logWarn(f'Resource with structured id: {newResource.getSrn()} already exists'))
 
 		# originator might have changed during this check. Result.data contains this new originator
@@ -750,18 +801,18 @@ class Dispatcher(object):
 
 		# Create the resource. If this fails we de-register everything
 		try:
-			_resource = self.createLocalResource(newResource, parentResource, originator, request = request)
+			_resource = self.createLocalResource(newResource, parentResource, originator, rvi=request.rvi)
 		except ResponseException as e:
-			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
+			self.registrationManager.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			raise e
 		except Exception as e:
 			L.logErr(f'Exception during resource creation: {e}', exc = e)
-			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
+			self.registrationManager.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			raise e
 
 
 		# Post-creation
-		CSE.registration.postResourceCreation(_resource)
+		self.registrationManager.postResourceCreation(_resource)
 
 		#
 		# Handle RCN's
@@ -797,62 +848,94 @@ class Dispatcher(object):
 		# TODO C.rcnDiscoveryResultReferences 
 
 
-	def createResourceFromDict(self, dct:JSON, 
-									 parentID:str, 
-									 ty:ResourceTypes, 
-									 originator:str) -> Tuple[str, str, str]:
+	def createResourceFromDict(self, dct: JSON, 
+									 parent: str | Resource,
+									 ty: ResourceTypes, 
+									 originator: str,
+									 checkCreation: bool = True,
+									 trustedSource: bool = False,
+									 preCreateCB: Optional[Callable[[Resource], None]] = None
+									 ) -> Tuple[Optional[Resource], str, str, str]:
 		"""	Create a resource from a JSON dictionary.
 		
 			Args:
 				dct: The dictionary.
-				parentID: The parent ID.
+				parent: The parent ID or parent resource.
 				ty: The resource type.
 				originator: The originator.
+				checkCreation: If True, then perform the resource creation check.
+				trustedSource: If True, then the resource is created from a trusted source and some checks can be skipped. **Note**: Also access control is ignores.
+				preCreateCB: A callback function that is called before the resource is created. The function takes the resource as an argument and can be used to modify the resource before it is created.
 			
 			Return:
-				A tuple of (resource ID, CSE-ID, parent ID).
+				A tuple of (resource or None, resource ID, CSE-ID, parent ID).
 
 			Raises:
 				INTERNAL_SERVER_ERROR: If an unknown/unsupported RSC is returned.
 				ORIGINATOR_HAS_NO_PRIVILEGE: If the originator has no privilege.
 			
 		"""
-		# Create locally
-		if (pID := localResourceID(parentID)) is not None:
-			L.isDebug and L.logDebug(f'Creating local resource with ID: {pID} originator: {originator}')
+		parentResource: Optional[Resource] = None
+	
+		# parent is either an ID or a resource.
+		if isinstance(parent, str):
+			parentID = parent
+			pID = localResourceID(parentID)
+		else:
+			parentID = parent.ri
+			parentResource = parent
+			pID = parent.ri
 
-			# Get the unstructured resource ID if necessary
-			pID = riFromStructuredPath(pID) if isStructured(pID) else pID
+		# If the parent is local, then create the resource locally.
+		# Either the parent resource is provided or the ID is a local one
+		
+		# TODO Add check if parentID is "" and the type is a CSEBase resource. This might be allowed during bootstrap
 
-			# Retrieve the parent resource
-			parentResource = self.retrieveLocalResource(ri = pID, originator = originator)
+		if parentResource or pID is not None:
 
+			# Get the parent if it is not provided
+			if not parentResource:
+				# Get the unstructured resource ID if necessary
+				pID = riFromStructuredPath(pID) if isStructured(pID) else pID
+
+				# Retrieve the parent resource
+				parentResource = self.retrieveLocalResource(ri=pID, originator=originator)
+
+			L.isDebug and L.logDebug(f'Creating local resource under parent RI: {pID} ty: {ty} originator: {originator}')
 			# Build a resource instance
-			resource = resourceFromDict(dct, 
-							   			ty = ty, 
-										pi = pID,
-										create = True,
-										originator = originator)
+			resource = self.factory.resourceFromDict(dct, 
+							   					ty=ty, 
+												pi=parentResource.ri,
+												create=True,
+												trusted=trustedSource)
+		
+			# Call the pre-create callback if provided
+			if preCreateCB:
+				preCreateCB(resource)
+			
+			# Check resource creation if required
+			if checkCreation:
+				self.registrationManager.checkResourceCreation(resource, originator)
 
 			# Check Permission
-			if not CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource, resultResource=resource):
+			if not trustedSource and not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=ty, parentResource=parentResource, resultResource=resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
 
 			# Create it locally
-			createdResource = self.createLocalResource(resource, parentResource, originator = originator)
+			createdResource = self.createLocalResource(resource, parentResource, originator=originator)
 
 			resRi = createdResource.ri
 			resCsi = RC.cseCsi
 		
 		# Create remotely
 		else:
-			L.isDebug and L.logDebug(f'Creating remote resource with ID: {pID} originator: {originator}')
-			res = CSE.request.handleSendRequest(CSERequest(to = (pri := toSPRelative(parentID)),
-														   originator = originator,
-														   ty = ty,
-														   pc = dct,
-														   op = Operation.CREATE)
-											   )[0].result	# there should be at least one result
+			L.isDebug and L.logDebug(f'Creating remote resource with RI: {parentID} originator: {originator}')
+			res = self.requestManager.handleSendRequest(CSERequest(to=(pri := toSPRelative(parentID)),	# TODO check whether this needs to be an unaltered ID in order to send across SP domains
+																   originator=originator,
+																   ty=ty,
+																   pc=dct,
+																   op=Operation.CREATE)
+														)[0].result	# there should be at least one result
 
 			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
 			# We need to set the status and the dbg attributes and return
@@ -864,23 +947,24 @@ class Dispatcher(object):
 
 			resRi = findXPath(res.request.pc, '{*}/ri')
 			resCsi = csiFromSPRelative(pri)
+			createdResource = None
 		
-		# Return success and created resource and its (resouce ID, CSE-ID, parent ID)
-		return (resRi, resCsi, pID)
+		# Return success and created resource and its (rresource, esouce ID, CSE-ID, parent ID)
+		return (createdResource, resRi, resCsi, pID)
 
 
 	def createLocalResource(self,
-							resource:Resource,
-							parentResource:Resource,
-							originator:Optional[str] = None,
-							request:Optional[CSERequest] = None) -> Resource:
+							resource: Resource,
+							parentResource: Resource,
+							originator: Optional[str]=None,
+							rvi: Optional[str]=None) -> Resource:
 		"""	Create a resource locally.
 
 			Args:
 				resource: The resource to create.
 				parentResource: The parent resource.
 				originator: The originator of the request.
-				request: The request.
+				rvi: The release version identifier. This is only be present in a real CREATE request.
 
 			Return:
 				The created resource.
@@ -895,6 +979,8 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
 				if resource.ty == ResourceTypes.SUB:
+					# This is a special case. The spec requires a different error code
+					# for the case the parent resource is not subscribable. 
 					raise TARGET_NOT_SUBSCRIBABLE(L.logWarn('Parent resource is not subscribable'))
 				else:
 					raise INVALID_CHILD_RESOURCE_TYPE(L.logWarn(f'Invalid child resource type: {ResourceTypes(resource.ty).value}'))
@@ -909,9 +995,9 @@ class Dispatcher(object):
 		# add the resource to storage
 		resource.dbCreate(overwrite = False)
 		
-		# Set release version to the resource, of available
-		if request and request.rvi:
-			resource.setRVI(request.rvi)
+		# Set release version to the resource, if available, ie. passed in a CREATE request.
+		if rvi:
+			resource.setRVI(rvi)
 
 		# Activate the resource
 		# This is done *after* writing it to the DB, because in activate the resource might create or access other
@@ -938,10 +1024,10 @@ class Dispatcher(object):
 				raise
 
 			# Send event for parent resource
-			self._eventCreateChildResource(parentResource)
+			eventManager.createChildResource(EventData(payload=parentResource))
 		
 		# send a create event
-		self._eventCreateResource(resource)
+		eventManager.createResource(EventData(payload=resource))
 
 		return resource
 
@@ -974,13 +1060,17 @@ class Dispatcher(object):
 
 		# handle transit requests first
 		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
-			return CSE.request.handleTransitUpdateRequest(request)
+			return self.requestManager.handleTransitUpdateRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Unknown resource ?
 		if not id and not fopsrn:
 			raise NOT_FOUND(L.logDebug('resource not found'))
+		
+		# Check for wrong rcn before doing anything else
+		if request.rcn not in [ None, ResultContentType.attributes, ResultContentType.modifiedAttributes, ResultContentType.nothing ]:
+			raise BAD_REQUEST('wrong rcn for UPDATE')
 
 		# Handle operation execution time , and check CSE schedule and request expiration
 		self.handleOperationExecutionTime(request)
@@ -1003,15 +1093,16 @@ class Dispatcher(object):
 		# Get resource to update
 		resource = self.retrieveResource(id, request=request)
 
+
 		# Some Resources are not allowed to be updated in a request, return immediately
-		if ResourceTypes.isInstanceResource(resource.ty):
+		if not ResourceTypes.isRequestUpdatable(resource.ty):
 			raise OPERATION_NOT_ALLOWED(f'UPDATE not allowed for type: {resource.ty}')
 
 		#
 		#	Permission check
 		#	If this is an 'acpi' update?
-		if not CSE.security.checkAcpiUpdatePermission(request, resource, originator):	#  == False indicates that this is NOT an ACPI update. In this case we need a normal permission check
-			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE, request=request, resultResource=resource):
+		if not self.security.checkAcpiUpdatePermission(request, resource, originator):	#  == False indicates that this is NOT an ACPI update. In this case we need a normal permission check
+			if not self.security.hasAccess(originator, resource, Permission.UPDATE, request=request, resultResource=resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
 
 
@@ -1023,8 +1114,8 @@ class Dispatcher(object):
 		resource = self.updateLocalResource(resource, deepcopy(request.pc), originator = originator)
 
 		# Check resource update with registration
-		# CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))
-		CSE.registration.checkResourceUpdate(resource, request.pc)
+		# 	registration.checkResourceUpdate(resource, deepcopy(request.pc))
+		self.registrationManager.checkResourceUpdated(resource, request.pc)
 
 		#
 		# Handle RCN's
@@ -1048,16 +1139,16 @@ class Dispatcher(object):
 			case ResultContentType.nothing:
 				return Result(rsc = ResponseStatusCode.UPDATED)
 			
-			case _:
+			case _:	# This should never happen because of the check above
 				raise BAD_REQUEST('wrong rcn for UPDATE')
 
 		# TODO C.rcnDiscoveryResultReferences 
 
 
-	def updateLocalResource(self, resource:Resource, 
-								  dct:Optional[JSON] = None, 
-								  doUpdateCheck:Optional[bool] = True, 
-								  originator:Optional[str] = None) -> Resource:
+	def updateLocalResource(self, resource: Resource, 
+								  dct: Optional[JSON] = None, 
+								  doUpdateCheck: Optional[bool] = True, 
+								  originator: Optional[str] = None) -> Resource:
 		"""	Update a resource in the CSE. Call update() and updated() callbacks on the resource.
 		
 			Args:
@@ -1081,7 +1172,7 @@ class Dispatcher(object):
 
 		# Update and send an update event
 		resource.dbUpdate(True)
-		self._eventUpdateResource(resource)
+		eventManager.updateResource(EventData(payload=resource))
 		return resource
 
 
@@ -1114,7 +1205,7 @@ class Dispatcher(object):
 				resource = self.retrieveLocalResource(rID, originator = originator)
 			
 			# Check Permission
-			if not CSE.security.hasAccess(originator, resource, Permission.UPDATE, resultResource = resource):
+			if not self.security.hasAccess(originator, resource, Permission.UPDATE, resultResource = resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
 
 			# Update it locally
@@ -1123,11 +1214,11 @@ class Dispatcher(object):
 		# Update remotely
 		else:
 			L.isDebug and L.logDebug(f'Updating remote resource with ID: {id} originator: {originator}')
-			result = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
-															  to = id, 
-															  originator = originator, 
-															  pc = dct)
-												  )[0].result	# there should be at least one result
+			result = self.requestManager.handleSendRequest(CSERequest(op=Operation.UPDATE,
+																	  to=id, 
+																	  originator=originator, 
+																	  pc=dct)
+																	)[0].result	# there should be at least one result
 		
 			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
 			# We need to set the status and the dbg attributes and return
@@ -1148,9 +1239,9 @@ class Dispatcher(object):
 	#	Delete resources
 	#
 
-	def processDeleteRequest(self, request:CSERequest, 
-								   originator:str, 
-								   id:Optional[str] = None) -> Result:
+	def processDeleteRequest(self, request: CSERequest, 
+								   originator: str, 
+								   id: Optional[str]=None) -> Result:
 		"""	Process a DELETE request. Delete resource(s).
 
 			Args:
@@ -1169,7 +1260,7 @@ class Dispatcher(object):
 
 		# handle transit requests
 		if localResourceID(request.id) is None and localResourceID(request.srn) is None:
-			return CSE.request.handleTransitDeleteRequest(request)
+			return self.requestManager.handleTransitDeleteRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
@@ -1197,7 +1288,11 @@ class Dispatcher(object):
 		# get resource to be removed and check permissions
 		resource = self.retrieveResource(id, request=request)
 
-		if not CSE.security.hasAccess(originator, resource, Permission.DELETE, request = request, resultResource = resource):
+		# Some Resources are not allowed to be deleted in a request, return immediately
+		if not ResourceTypes.isRequestDeletable(resource.ty):
+			raise OPERATION_NOT_ALLOWED(f'DELETE not allowed for type: {resource.ty}')
+
+		if not self.security.hasAccess(originator, resource, Permission.DELETE, request=request, resultResource=resource):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator: {originator} has no DELETE privileges for resource: {resource.ri}')
 
 		# Check for virtual resource
@@ -1250,16 +1345,16 @@ class Dispatcher(object):
 		self.deleteLocalResource(resource, originator, withDeregistration=True)
 
 		# Some post-deletion stuff
-		CSE.registration.postResourceDeletion(resource)
+		self.registrationManager.postResourceDeletion(resource)
 
 		return Result(resource=resultContent, rsc=ResponseStatusCode.DELETED)
 
 
-	def deleteLocalResource(self, resource:Resource, 
-								  originator:Optional[str]=None, 
-								  withDeregistration:Optional[bool]=False, 
-								  parentResource:Optional[Resource]=None, 
-								  doDeleteCheck:Optional[bool]=True) -> None:
+	def deleteLocalResource(self, resource: Resource, 
+								  originator: Optional[str]=None, 
+								  withDeregistration: Optional[bool]=False, 
+								  parentResource: Optional[Resource]=None, 
+								  doDeleteCheck: Optional[bool]=True) -> None:
 		"""	Delete a resource from the CSE. Call deactivate() and deleted() callbacks on the resource.
 
 			Args:
@@ -1285,7 +1380,7 @@ class Dispatcher(object):
 
 		# Check resource deletion
 		if withDeregistration:
-			CSE.registration.checkResourceDeletion(resource)
+			self.registrationManager.checkResourceDeletion(resource)
 
 
 		# delete the resource from the DB. Save the result to return later
@@ -1298,13 +1393,13 @@ class Dispatcher(object):
 			raise
 		finally:
 			# send a delete event
-			self._eventDeleteResource(resource)
+			eventManager.deleteResource(EventData(payload=resource))
 			# Now notify the parent resource
 			if doDeleteCheck and parentResource:
 				parentResource.childRemoved(resource, originator)
 
 
-	def deleteResource(self, id:str,  originator:Optional[str] = None) -> None:
+	def deleteResource(self, id: str,  originator: Optional[str]=None) -> None:
 		""" Delete a resource from the CSE. 
 
 			Args:
@@ -1328,7 +1423,7 @@ class Dispatcher(object):
 				raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
 			# Check Permission
-			if not CSE.security.hasAccess(originator, resource, Permission.DELETE, resultResource=resource):
+			if not self.security.hasAccess(originator, resource, Permission.DELETE, resultResource=resource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no DELETE access to: {resource.ri}'))
 
 			# delete it locally
@@ -1337,9 +1432,9 @@ class Dispatcher(object):
 		# Delete remotely
 		else:
 			L.isDebug and L.logDebug(f'Deleting remote resource with ID: {id} originator: {originator}')
-			res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
-														   to = id, 
-														   originator = originator))[0].result	# there should be at least one result
+			res = self.requestManager.handleSendRequest(CSERequest(op=Operation.DELETE,
+																   to=id, 
+																   originator=originator))[0].result	# there should be at least one result
 		
 			# The request might have gone through normally and returned, but might still have failed on the remote CSE.
 			# We need to set the status and the dbg attributes and return
@@ -1380,7 +1475,7 @@ class Dispatcher(object):
 		
 		# handle transit requests
 		if localResourceID(request.id) is None:
-			return CSE.request.handleTransitNotifyRequest(request)
+			return self.requestManager.handleTransitNotifyRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
@@ -1403,7 +1498,7 @@ class Dispatcher(object):
 
 		match targetResource.ty:
 			case ResourceTypes.PCH_PCU:
-				if not CSE.security.hasAccessToPollingChannel(originator, targetResource): # type:ignore[arg-type]
+				if not self.security.hasAccessToPollingChannel(originator, targetResource): # type:ignore[arg-type]
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
 				targetResource.handleNotifyRequest(request, originator)
 				return Result(rsc = ResponseStatusCode.OK)
@@ -1419,10 +1514,10 @@ class Dispatcher(object):
 			case _ if ResourceTypes.isNotificationEntity(targetResource.ty):
 				if id in [RC.cseRi, RC.cseRn]:
 					raise BAD_REQUEST('Cannot notify own CSEBase resource')
-				if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
+				if not self.security.hasAccess(originator, targetResource, Permission.NOTIFY):
 					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator has no NOTIFY privilege for: {id}'))
 				#  A Notification to one of these resources will always be a Received Notify Request
-				return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
+				return self.requestManager.handleReceivedNotifyRequest(id, request=request, originator=originator)
 		
 
 		# error
@@ -1450,7 +1545,7 @@ class Dispatcher(object):
 		resource = self.retrieveLocalResource(ri, originator = originator)
 		
 		# Check Permission
-		if not CSE.security.hasAccess(originator, resource, Permission.NOTIFY):
+		if not self.security.hasAccess(originator, resource, Permission.NOTIFY):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has no NOTIFY access to: {resource.ri}'))
 		
 		# Send notification
@@ -1488,7 +1583,7 @@ class Dispatcher(object):
 			Return:
 				A list of retrieved `Resource` objects. This list might be empty.
 		"""
-		return cast(List[Resource], CSE.storage.directChildResources(pi, ty))
+		return cast(List[Resource], self.storage.directChildResources(pi, ty))
 
 
 	def directChildResourcesRI(self, pi:str, 
@@ -1503,7 +1598,7 @@ class Dispatcher(object):
 			Return:
 				A list of retrieved resourceIdentifiers. This list might be empty.
 		"""
-		return CSE.storage.directChildResourcesRI(pi, ty)
+		return self.storage.directChildResourcesRI(pi, ty)
 	
 
 	def countDirectChildResources(self, pi:str, ty:Optional[ResourceTypes] = None) -> int:
@@ -1516,7 +1611,7 @@ class Dispatcher(object):
 			Return:
 				Number of child resources.
 		"""
-		return CSE.storage.countDirectChildResources(pi, ty)
+		return self.storage.countDirectChildResources(pi, ty)
 
 
 	def hasDirectChildResource(self, pi:str, 
@@ -1565,11 +1660,11 @@ class Dispatcher(object):
 			return False
 
 		# Search through the resources with the mapping functions
-		CSE.storage.searchByFilter(filter = determineLatest)
+		self.storage.searchByFilter(filter = determineLatest)
 		if not hit:
 			return None
 		# Instantiate and return resource
-		return resourceFromDict(hit[0])
+		return self.factory.resourceFromDict(hit[0])
 
 
 	def discoverChildren(self, id:str, 
@@ -1594,7 +1689,7 @@ class Dispatcher(object):
 		# check and filter by ACP
 		children = []
 		for r in resources:
-			if CSE.security.hasAccess(originator, r, permission, resultResource=r):
+			if self.security.hasAccess(originator, r, permission, resultResource=r):
 				children.append(r)
 		return children
 
@@ -1606,17 +1701,17 @@ class Dispatcher(object):
 
 		# Count all resources
 		if ty is None:	# ty is an int
-			return CSE.storage.countResources()
+			return self.storage.countResources()
 		
 		# Count all resources of the given types
 		if isinstance(ty, tuple):
 			cnt = 0
 			for t in ty:
-				cnt += len(CSE.storage.retrieveResourcesByType(t))
+				cnt += len(self.storage.retrieveResourcesByType(t))
 			return cnt
 
 		# Count all resources of a specific type
-		return len(CSE.storage.retrieveResourcesByType(ty))
+		return len(self.storage.retrieveResourcesByType(ty))
 
 
 	def retrieveResourcesByType(self, ty:ResourceTypes) -> list[Resource]:
@@ -1628,9 +1723,9 @@ class Dispatcher(object):
 				A list of retrieved `Resource` objects. This list might be empty.
 		"""
 		result = []
-		rss = CSE.storage.retrieveResourcesByType(ty)
+		rss = self.storage.retrieveResourcesByType(ty)
 		for rs in (rss or []):
-			result.append(resourceFromDict(rs))
+			result.append(self.factory.resourceFromDict(rs))
 		return result
 
 
@@ -1652,7 +1747,7 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'Retrieving resource with permissions: {ri} for originator: {originator} permission: {permission}')
 		resource = self.retrieveResource(riFromID(ri), originator)
-		if not CSE.security.hasAccess(originator, resource, permission, resultResource = resource):
+		if not self.security.hasAccess(originator, resource, permission, resultResource = resource):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no access to the resource: {ri}'))
 		return resource
 	
@@ -1729,10 +1824,13 @@ class Dispatcher(object):
 			Raises:
 				`TARGET_NOT_REACHABLE`: In case the CSE is not active.
 		"""
-		if CSE.time.cseActiveSchedule:
+		if not self.timeManager:
+			L.isDebug and L.logDebug('TimeManager plugin is disabled, cannot check CSE schedule. Defaulting to active.')
+			return
+		if self.timeManager.cseActiveSchedule:
 			# Only check if the CSE has at least one schedule
 			# Otherwise the CSE is always active
-			for s in CSE.time.cseActiveSchedule:
+			for s in self.timeManager.cseActiveSchedule:
 				if cronMatchesTimestamp(s):
 					return
 			# TODO not sure if this is the right error code

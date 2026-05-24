@@ -638,6 +638,11 @@ class MQTTConnection(object):
 
 	
 	def __str__(self) -> str:
+		"""	Return a string representation of the MQTTConnection instance.
+
+			Returns:
+				A string representation of the MQTTConnection instance.
+		"""
 		return f'MQTTConnection({self.address}:{self.port}, websocket={self.enableWebSocket}, clientID={self.clientID}, connected={self.isConnected}, topics={len(self.subscribedTopics)})'
 
 

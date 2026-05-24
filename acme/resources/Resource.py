@@ -10,21 +10,35 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, cast, Optional, List
+from typing import Any, Callable, cast, Optional, List, Tuple, TYPE_CHECKING
 
 from copy import deepcopy
 
 from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, BasicType, Operation
+from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..etc.RequestUtils import removeNoneValuesFromDict
 from ..etc.IDUtils import isValidID, uniqueRI, uniqueRN
-from ..etc.ACMEUtils import resourceDiff, isUniqueRI
+from ..etc.DateUtils import getResourceDate
+from ..etc.ACMEUtils import isUniqueRI
+from ..etc.JSONUtils import resourceDiff
 from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
-from ..etc.DateUtils import getResourceDate
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
-from ..etc.Constants import Constants
+from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
+
+
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	from ..runtime.Factory import Factory
+	from ..services.Validator import Validator
+	from ..services.Dispatcher import Dispatcher
+	from ..services.NotificationManager import NotificationManager
+	from ..services.RequestManager import RequestManager
+	from ..runtime.Importer import Importer
+
+
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 # TODO cleanup optimizations
@@ -35,7 +49,6 @@ internalAttributes	= [ Constants.attrRtype,
 					  	Constants.attrSrn, 
 						Constants.attrNode, 
 						Constants.attrCreatedInternallyRI, 
-						Constants.attrImported, 
 						Constants.attrIsManuallyInstantiated,
 						Constants.attrLocCoordinate,
 						Constants.attrOriginator, 
@@ -47,20 +60,57 @@ internalAttributes	= [ Constants.attrRtype,
 """	List of internal attributes and which do not belong to the oneM2M resource attributes """
 
 
+@requires(storage='acme.runtime.Storage')
+@requires(factory='acme.runtime.Factory')
+@requires(validator='acme.services.Validator')
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(notificationManager='acme.services.NotificationManager')
+@requires(requestManager='acme.services.RequestManager')
+@requires(importer='acme.runtime.Importer')
 class Resource(object):
 	""" Base class for all oneM2M resource types,
-	
-		Attributes:
 
 	"""
 
-	inheritACP = False
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+	storage:Storage = None
+	"""	Injected Storage instance. """
 
+	factory:Factory = None
+	""" Injected Factory instance. """
+
+	validator:Validator = None
+	""" Injected Validator instance. """
+
+	dispatcher:Dispatcher = None
+	""" Injected Dispatcher instance. """
+
+	notificationManager:NotificationManager = None
+	""" Injected NotificationManager instance. """
+
+	requestManager:RequestManager = None
+	""" Injected RequestManager instance. """
+
+	importer:Importer = None
+	""" Injected Importer instance. """
+
+
+	# inheritACP = False
+	# """	Flag to indicate if the resource type inherits the ACP from the parent resource. """
+
+
+	# Some attriute slots are defined here because they will be injected in sub-classes
+	# during startup by the `Importer` based on the resource type definition. 
+	# However, they are used on this class level, so they need to be defined here.
 
 	__slots__ = (
+		'inheritACP',
 		'typeShortname',
+		'resourceType',
+		'mgmtType',
+		'resourceName',		# Used for virtual resources
 		'dict',
+		'_attributes',
+		'_allowedChildResourceTypes',
 		'_originalDict',
 	)
 	"""	Slots for the class. """
@@ -93,21 +143,21 @@ class Resource(object):
 		# required later
 		if create:
 			self._originalDict = deepcopy(self.dict)	# keep for validation in activate() later
+			"""	Original dictionary as it was created. This is used for validation in activate() later. """
 
 
 
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi: str) -> None:
 		""" This method is called when a new resource is created and before written to the database.
 
 			Args:
 				pi: The parent resource's ID.
-				originator: The request originator.
 		"""
 		# Store the shortname of the resource type
 		self.setAttribute(Constants.attrRtype, self.typeShortname)
 
 		# Set the parent resource ID
-		self.setAttribute('pi', pi if pi is not None else '', overwrite = False) # test for None bc pi might be '' (for cse). pi is used subsequently here
+		self.setAttribute('pi', pi if pi is not None else '', overwrite=False) # test for None bc pi might be '' (for cse). pi is used subsequently here
 
 		# if not already set: determine and add the srn
 		self.setResourceID()
@@ -151,25 +201,22 @@ class Resource(object):
 		self.setAttribute('ct', ts, overwrite = False)
 		self.setAttribute('lt', ts, overwrite = False)
 
-		# Set the internal
+		# Set the internal originator that creates the resource.
+		self.setOriginator(originator, overwrite=True)
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if not self[Constants.attrIsManuallyInstantiated] and not self.isVirtual() :
-			CSE.validator.validateAttributes(self._originalDict, 
-											 self.typeShortname, 
-											 self.ty, 
-											 self._attributes, 
-											 isImported = self[Constants.attrImported],
-											 createdInternally = self.isCreatedInternally(), 
-											 isAnnounced = self.isAnnounced())
-
-		# Set the internal originator that creates the resource.
-		self.setOriginator(originator, overwrite = False)
+			self.validator.validateAttributes(self._originalDict, 
+											  self.typeShortname, 
+											  self.ty, 
+											  self._attributes, 
+											  createdInternally=self.isCreatedInternally(), 
+											  isAnnounced=self.isAnnounced())
 
 		# validate the resource logic
-		self.validate(originator, parentResource = parentResource)
+		self.validate(originator, parentResource=parentResource)
 		self.dbUpdate()
 		
 		# Various ACPI handling
@@ -183,7 +230,7 @@ class Resource(object):
 		self.setAttribute(Constants.attrRtype, self.typeShortname, overwrite = False) 
 
 
-	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
+	def willBeDeactivated(self, originator:str, parentResource:Resource, parentDelete: bool=False) -> None:
 		""" This method is called before a resource will be deactivated.
 			
 			This method is implemented in some sub-classes, which may throw an
@@ -202,13 +249,13 @@ class Resource(object):
 			return
 
 		# Check all child resources
-		for r in CSE.dispatcher.retrieveDirectChildResources(self.ri):
+		for r in self.dispatcher.retrieveDirectChildResources(self.ri):
 			if r.isVirtual():
 				continue
-			r.willBeDeactivated(originator, self)
+			r.willBeDeactivated(originator, self, True)
 
 
-	def deactivate(self, originator:str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		"""	Deactivate an active resource.
 
 			This usually happens when creating the resource via a request.
@@ -223,21 +270,21 @@ class Resource(object):
 		L.isDebug and L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
-		CSE.notification.checkSubscriptions(self, 
-									  		NotificationEventType.resourceDelete, 
-											originator)
-		CSE.notification.checkOperationSubscription(self, Operation.DELETE, originator)
+		self.notificationManager.checkSubscriptions(self, 
+									  				NotificationEventType.resourceDelete, 
+													originator)
+		self.notificationManager.checkOperationSubscription(self, Operation.DELETE, originator)
 		
 		# Remove directChildResources. Don't do checks (e.g. subscriptions) for the sub-resources
-		CSE.dispatcher.deleteChildResources(self, originator, doDeleteCheck = False)
+		self.dispatcher.deleteChildResources(self, originator, doDeleteCheck=False)
 		
 		# Removal of a deleted resource from group(s) is done 
 		# asynchronously in GroupManager, triggered by an event.
 
 
-	def update(self, dct:Optional[JSON] = None, 
-					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+	def update(self, dct: Optional[JSON] = None, 
+					 originator: Optional[str] = None, 
+					 doValidateAttributes: Optional[bool] = True) -> None:
 		"""	Update, add or remove resource attributes.
 
 			A subscription check for update is performed.
@@ -261,14 +308,14 @@ class Resource(object):
 
 		updatedAttributes:dict[str, Any] = None
 		if dct:
-			CSE.validator.validateResourceUpdate(self, dct, doValidateAttributes)
+			self.validator.validateResourceUpdate(self, dct, doValidateAttributes)
 			# if self.typeShortname not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 			# 	L.isWarn and L.logWarn("Update type doesn't match target")
 			# 	raise CONTENTS_UNACCEPTABLE('resource types mismatch')
 
 			# # validate the attributes
 			# if doValidateAttributes:
-			# 	CSE.validator.validateAttributes(dct, 
+			# 	self.validator.validateAttributes(dct, 
 			# 									 self.typeShortname, 
 			# 									 self.ty, 
 			# 									 self._attributes, 
@@ -330,11 +377,11 @@ class Resource(object):
 
 
 		# Check subscriptions
-		CSE.notification.checkSubscriptions(self, 
-									  		NotificationEventType.resourceUpdate, 
-											originator,
-									  		modifiedAttributes = self[Constants.attrModified])
-		CSE.notification.checkOperationSubscription(self, Operation.UPDATE, originator)
+		self.notificationManager.checkSubscriptions(self, 
+									  				NotificationEventType.resourceUpdate, 
+													originator,
+									  				modifiedAttributes=self[Constants.attrModified])
+		self.notificationManager.checkOperationSubscription(self, Operation.UPDATE, originator)
 
 		self.dbUpdate()
 
@@ -345,9 +392,9 @@ class Resource(object):
 		parentResource.childUpdated(self, updatedAttributes, originator)
 
 
-	def willBeUpdated(self, dct:Optional[JSON] = None, 
-							originator:Optional[str] = None, 
-							subCheck:Optional[bool] = True) -> None:
+	def willBeUpdated(self, dct: Optional[JSON] = None, 
+							originator: Optional[str] = None, 
+							subCheck: Optional[bool] = True) -> None:
 		""" This method is called before a resource will be updated and before calling the `update()` method.
 			
 			This method is implemented in some sub-classes.
@@ -358,11 +405,11 @@ class Resource(object):
 				subCheck: Optional indicator that a blocking Update shall be performed, if configured.
 		"""
 		# Perform BlockingUpdate check, and reload resource if necessary
-		CSE.notification.checkPerformBlockingUpdate(self, originator, dct, finished = lambda: self.dbReloadDict())
+		self.notificationManager.checkPerformBlockingUpdate(self, originator, dct, finished=lambda: self.dbReloadDict())
 
 
-	def updated(self, dct:Optional[JSON] = None, 
-					  originator:Optional[str] = None) -> None:
+	def updated(self, dct: Optional[JSON] = None, 
+					  originator: Optional[str] = None) -> None:
 		"""	Signal to a resource that is was successfully updated. 
 		
 			This handler can be used to perform	additional actions after the resource was updated, stored etc.
@@ -376,9 +423,9 @@ class Resource(object):
 		...
 
 
-	def willBeRetrieved(self, originator:str, 
-							  request:Optional[CSERequest] = None, 
-							  subCheck:Optional[bool] = True) -> None:
+	def willBeRetrieved(self, originator: Optional[str], 
+							  request: Optional[CSERequest] = None, 
+							  subCheck: Optional[bool] = True) -> None:
 		""" This method is called before a resource will be send back in a RETRIEVE response.
 			
 			This method is implemented in some sub-classes.
@@ -390,8 +437,9 @@ class Resource(object):
 		"""
 		# Check for blockingRetrieve or blockingRetrieveDirectChild
 		if subCheck and request:
-			CSE.notification.checkPerformBlockingRetrieve(self, request, finished = lambda: self.dbReloadDict())
-		CSE.notification.checkOperationSubscription(self, request.op, originator)	# could also be DISCOVERY
+			self.notificationManager.checkPerformBlockingRetrieve(self, request, finished=lambda: self.dbReloadDict())
+		if request:
+			self.notificationManager.checkOperationSubscription(self, request.op, originator)	# could also be DISCOVERY
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:
@@ -417,15 +465,15 @@ class Resource(object):
 				originator: The request originator.
  		"""
 		# Check Subscriptions
-		CSE.notification.checkSubscriptions(self, 
-									  		NotificationEventType.createDirectChild, 
-											originator,
-											childResource)
-		CSE.notification.checkOperationSubscription(self, Operation.CREATE, originator)
+		self.notificationManager.checkSubscriptions(self, 
+									  				NotificationEventType.createDirectChild, 
+													originator,
+													childResource)
+		self.notificationManager.checkOperationSubscription(self, Operation.CREATE, originator)
 
 
 
-	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
+	def childUpdated(self, childResource: Resource, updatedAttributes: JSON, originator: str) -> None:
 		"""	Called when a child resource was updated.
 					
 			This method is implemented in some sub-classes.
@@ -438,7 +486,7 @@ class Resource(object):
 		...
 
 
-	def childRemoved(self, childResource:Resource, originator:str) -> None:
+	def childRemoved(self, childResource: Resource, originator: str) -> None:
 		""" Called when a child resource of the resource was removed.
 
 			This method is implemented in some sub-classes.
@@ -447,13 +495,13 @@ class Resource(object):
 			childResource: The removed child resource.
 			originator: The request originator.
 		"""
-		CSE.notification.checkSubscriptions(self, 
-									  		NotificationEventType.deleteDirectChild, 
-											originator,
-											childResource)
+		self.notificationManager.checkSubscriptions(self, 
+									  				NotificationEventType.deleteDirectChild, 
+													originator,
+													childResource)
 
 
-	def canHaveChild(self, resource:Resource) -> bool:
+	def canHaveChild(self, resource: Resource) -> bool:
 		""" Check whether *resource* is a valild child resource for this resource. 
 
 		Args:
@@ -461,8 +509,10 @@ class Resource(object):
 		Return:
 			Boolean indicating whether *resource* is a an allowed resorce for this resource.
 		"""
-		from .Unknown import Unknown # Unknown imports this class, therefore import only here
-		return resource.ty in self._allowedChildResourceTypes or isinstance(resource, Unknown)
+		# from .Unknown import Unknown # Unknown imports this class, therefore import only here
+		# return resource.ty in self._allowedChildResourceTypes or isinstance(resource, Unknown)
+		return resource.ty in self._allowedChildResourceTypes
+
 
 
 	def validate(self, originator:Optional[str]=None, 
@@ -503,14 +553,14 @@ class Resource(object):
 				self.setAttribute('et', parentResource.et)
 
 			# Maximum Expiration time
-			if et > (etMax := getResourceDate(CSE.request.maxExpirationDelta)):
+			if et > (etMax := getResourceDate(self.requestManager.maxExpirationDelta)):
 				L.isWarn and L.logWarn(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self.setAttribute('et', etMax)
 
 		else:	# set et to the parents et if not in the resource yet
 			if self.ty != ResourceTypes.CSEBase:	# Only when not CSEBase
 				if not (et := parentResource.et):
-					et = getResourceDate(CSE.request.maxExpirationDelta)
+					et = getResourceDate(self.requestManager.maxExpirationDelta)
 				self.setAttribute('et', et)
 		
 		# check loc validity: geo type and number of coordinates
@@ -519,10 +569,10 @@ class Resource(object):
 			# The following line is a hack that is necessary because the name "location" is used with different meanings
 			# and types in different resources (MgmtObj-DVI and normal resources). This is a quick fix for the moment.
 			# It only check if this is a DVI resource. If yes, then the loc attribute is not checked.
-			if CSE.validator.getAttributePolicy(self.ty if self.mgd is None else self.mgd, 'loc').type != BasicType.string:
+			if self.validator.getAttributePolicy(self.ty if self.mgd is None else self.mgd, 'loc').type != BasicType.string:
 				# crd should have been already check as valid JSON before
 				# Let's optimize and store the coordinates as a JSON object
-				crd = CSE.validator.validateGeoLocation(loc)
+				crd = self.validator.validateGeoLocation(loc)
 				if dct is not None:
 					setXPath(dct, f'{self.typeShortname}/{Constants.attrLocCoordinate}', crd, overwrite = True)
 				else:
@@ -889,9 +939,9 @@ class Resource(object):
 
 		newACPIList:List[str] = []
 		for ri in acpi:
-			if not CSE.importer.isImporting:
+			if not self.importer.isImporting:
 				try:
-					acp = CSE.dispatcher.retrieveResource(ri)
+					acp = self.dispatcher.retrieveResource(ri)
 				except ResponseException as e:
 					raise BAD_REQUEST(L.logDebug(f'Referenced <ACP> resource not found: {ri} : {e.dbg}'))
 
@@ -926,7 +976,7 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		 """
-		CSE.storage.deleteResource(self)
+		self.storage.deleteResource(self)
 
 
 	def dbUpdate(self, finalize:bool = False) -> Resource:
@@ -940,10 +990,10 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		"""
-		CSE.storage.updateResource(self)
+		self.storage.updateResource(self)
 		# L.logWarn(f'{finalize} - {self.ri}')
 		if finalize and not self.isVirtual():
-				CSE.event.changeResource(self)	 # type: ignore [attr-defined]
+				eventManager.changeResource(EventData(payload=(self, self.ri)))	 # type: ignore [attr-defined]
 		return self
 
 
@@ -955,7 +1005,7 @@ class Resource(object):
 			Return:
 				Result object indicating success or failure.
 		"""
-		CSE.storage.createResource(self, overwrite)
+		self.storage.createResource(self, overwrite)
 
 
 	def dbReload(self) -> Resource:
@@ -969,7 +1019,7 @@ class Resource(object):
 			Return:
 				Resource instance.	
 			"""
-		return CSE.storage.retrieveResource(ri = self.ri)
+		return self.storage.retrieveResource(ri = self.ri)
 
 
 	def dbReloadDict(self) -> Resource:
@@ -980,7 +1030,7 @@ class Resource(object):
 			Return:
 				Updated Resource instance.	
 		 """
-		resource = CSE.storage.retrieveResource(ri = self.ri)
+		resource = self.storage.retrieveResource(ri = self.ri)
 		self.dict = resource.dict
 		return self
 
@@ -1032,7 +1082,7 @@ class Resource(object):
 		if not (pi := self.pi):
 			# L.logErr('PI is None')
 			return rn
-		if len(rpi := CSE.storage.identifier(pi)) == 1:
+		if len(rpi := self.storage.identifier(pi)) == 1:
 			return cast(str, f'{rpi[0]["srn"]}/{rn}')
 		# L.logErr(traceback.format_stack())
 		L.logErr(f'Parent {pi} not found in DB')
@@ -1056,7 +1106,7 @@ class Resource(object):
 			Return:
 				The parent Resource of the resource.
 		"""
-		return CSE.dispatcher.retrieveLocalResource(self.pi)	#type:ignore[no-any-return]
+		return self.dispatcher.retrieveLocalResource(self.pi)	#type:ignore[no-any-return]
 
 
 	def retrieveParentResourceRaw(self) -> JSON:
@@ -1065,7 +1115,34 @@ class Resource(object):
 			Return:
 				Document of the parent resource
 		"""
-		return CSE.storage.retrieveResourceRaw(self.pi)
+		return self.storage.retrieveResourceRaw(self.pi)
+	
+
+	def createChildResourceFromDict(self, dct: JSON, 
+								 		  ty: Optional[ResourceTypes]=None, 
+										  originator: Optional[str]=None,
+										  preCreateCB: Optional[Callable[[Resource], None]]=None
+									) -> Tuple[Resource, str]:
+		""" Create a child resource from a JSON dictionary.
+
+			Args:
+				dct: The JSON dictionary with the resource attributes.
+				ty: Optional resource type. If not provided, then the type is determined from the dictionary.
+				originator: Optional request originator.
+				preCreateCB: Optional callback function that is called with the resource instance before it is stored in the database. This can be used to perform some checks and adjustments before the resource is created.
+			Return:
+				Tuple with the created resource and its resource ID.
+		"""
+		# Store the new resource
+		# return self.dispatcher.createLocalResource(resource, self, originator=originator)
+		res = self.dispatcher.createResourceFromDict(dct, 
+													 parent=self, 
+													 ty=ty, 
+													 originator=originator, 
+													 trustedSource=True, 	# This is an internal call, therefore we can trust it
+													 checkCreation=True,
+													 preCreateCB=preCreateCB)
+		return (res[0], res[1]) # return the resource and its resource ID from the tuple
 
 
 	def getOriginator(self) -> str:
@@ -1091,7 +1168,7 @@ class Resource(object):
 		return self.getOriginator()
 
 
-	def setOriginator(self, originator:str, overwrite:Optional[bool] = True) -> None:
+	def setOriginator(self, originator: str, overwrite: Optional[bool]=True) -> None:
 		"""	Set a resource's originator.
 
 			This is the originator that created the resource. It is stored internally within the resource.
@@ -1099,7 +1176,7 @@ class Resource(object):
 			Args:
 				originator: The originator to assign to a resource.
 		"""
-		self.setAttribute(Constants.attrOriginator, originator, overwrite = overwrite)
+		self.setAttribute(Constants.attrOriginator, originator, overwrite=overwrite)
 	
 	
 	def setResourceName(self, rn:str) -> None:
@@ -1231,6 +1308,21 @@ class Resource(object):
 				The current subscription counter value.
 		"""
 		return self.attribute(Constants.attrSubscriptionCounter, 0)
+
+
+	def typeAsString(self) -> str:
+		"""	Return the resource type as a string.
+			If the resource is a flex container, the specialization is added.
+
+			Returns:
+				The resource type as a string.
+		"""
+		if self.ty == ResourceTypes.FCNT:
+			# Put the specialization in the header if it is a flex container
+			return f'{ResourceTypes.fullname(self.ty)} - {self.typeShortname.split(":")[0]}:{self.validator.getFlexContainerSpecialization(self.typeShortname)[1]}'
+		else:
+			return ResourceTypes.fullname(self.ty)
+
 
 
 #########################################################################

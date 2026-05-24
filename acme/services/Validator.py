@@ -7,7 +7,7 @@
 """	Validation service and functions. """
 
 from __future__ import annotations
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Tuple, Optional, TYPE_CHECKING
 
 from copy import deepcopy
 import re, json
@@ -16,17 +16,22 @@ import isodate
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
 from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType, GeoSpatialFunctionType
-from ..etc.Types import CSEType, ResourceTypes, Permission, Operation
+from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatteryStatus, IdentifierScope
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
-from ..etc.ACMEUtils import pureResource
+from ..etc.JSONUtils import pureResource
+from ..etc.IDUtils import toCSERelative, toAbsolute, toSPRelative, isValidAEI, isCSERelative, isSPRelative, isAbsolute
 from ..etc.Utils import strToBool
 from ..helpers.TextTools import findXPath, soundsLike
 from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
-from ..resources.Resource import Resource
-from ..resources.mgmtobjs.BAT import BatteryStatus
 from ..runtime.Logging import Logging as L
+from ..etc.Constants import RuntimeConstants as RC
+from ..helpers.Singleton import Singleton
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:	# only import for type checking to avoid circular imports
+	from ..resources.Resource import Resource
+	from ..runtime.Importer import Importer
 
 # TODO AE Not defined yet: ExternalGroupID?
 # TODO AE CSE Not defined yet: enableTimeCompensation
@@ -59,13 +64,12 @@ attributesComplexTypes:dict[str, list[str]] = {}
 
 
 # TODO make this more generic!
+
 _valueNameMappings = {
 	'acop': lambda v: '+'.join([ p.name for p in Permission.fromBitfield(int(v))]),
 	'bts': lambda v: BatteryStatus(int(v)).name,
 	'chty': lambda v: ResourceTypes.fullname(int(v)),
 	'cst': lambda v: CSEType(int(v)).name,
-	#'nct': lambda v: NotificationContentType(int(v)).name,
-	#'net': lambda v: NotificationEventType(int(v)).name,
 	'gmty': lambda v: GeometryType(int(v)).name,
 	'gsf': lambda v: GeoSpatialFunctionType(int(v)).name,
 	'op': lambda v: Operation(int(v)).name,
@@ -76,15 +80,22 @@ _valueNameMappings = {
 }
 """	Mapping of attribute names to value mappings. """
 
+#'nct': lambda v: NotificationContentType(int(v)).name,
+#'net': lambda v: NotificationEventType(int(v)).name,
 
-class Validator(object):
+
+@requires(importer='acme.runtime.Importer')
+class Validator(metaclass=Singleton):
 	"""	Validator class. """
+
+	importer: Importer = None
+	""" Injected Importer instance. """
 
 	_scheduleRegex = re.compile(r'(^((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?((2[0-3]|1[0-9]|[0-9]|00))((\,|\-|\/)(2[0-3]|1[0-9]|[0-9]|00))*|\*)\s+((\*\/)?([1-9]|[12][0-9]|3[01])((\,|\-|\/)([1-9]|[12][0-9]|3[01]))*|\*)\s+((\*\/)?([1-9]|1[0-2])((\,|\-|\/)([1-9]|1[0-2]))*|\*)\s+((\*\/)?[0-6]((\,|\-|\/)[0-6])*|\*|00)\s+((\*\/)?(([2-9][0-9][0-9][0-9]))((\,|\-|\/)([2-9][0-9][0-9][0-9]))*|\*)\s*$)')
 	"""	Compiled regular expression that matches a valid cron-like schedule: "second minute hour day month weekday year" """
 
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 		"""	Initialize the validator. """
 		L.isInfo and L.log('Validator initialized')
 
@@ -133,7 +144,6 @@ class Validator(object):
 								 ty:Optional[ResourceTypes]=ResourceTypes.UNKNOWN, 
 								 attributes:Optional[AttributePolicyDict]=None, 
 								 create:Optional[bool]=True, 
-								 isImported:Optional[bool]=False, 
 								 createdInternally:Optional[bool]=False, 
 								 isAnnounced:Optional[bool]=False) -> None:
 		""" Validate a resources' attributes for types etc.
@@ -144,7 +154,6 @@ class Validator(object):
 				ty: The resource type
 				attributes: The attribute policy dictionary for the resource type. If this is None then validate automatically
 				create: Boolean indicating whether this a CREATE request
-				isImported: Boolean indicating whether a resource is imported. Then automatically return True.
 				createdInternally: Boolean indicating that a resource is created internally
 				isAnnounced: Boolean indicating that a resource is announced
 			Return:
@@ -152,8 +161,8 @@ class Validator(object):
 		"""
 		L.isDebug and L.logDebug('validating attributes')
 
-		# Just return in case the resource instance is imported
-		if isImported:
+		# Just return in case we are in the importing phase
+		if self.importer.isImporting:
 			return
 
 		# No policies?
@@ -187,7 +196,6 @@ class Validator(object):
 
 		# L.logDebug(attributePolicies.items())
 		# L.logWarn(pureResDict)
-		
 		# Check that all attributes have been defined
 		for attributeName in pureResDict.keys():
 			if attributeName not in attributePolicies.keys():
@@ -212,7 +220,7 @@ class Validator(object):
 
 				# check whether the attribute is mandatory or NP
 				if attributeName in pureResDict:
-					if policy.cardinality in (Cardinality.CAR1, Cardinality.CAR1LN): 	# but ignore CAR.car1N or CAR1LN (which may be Null/None)
+					if policy.cardinality in (Cardinality.CAR1, Cardinality.CAR1LN, Cardinality.CAR1L): 	# but ignore CAR.car1N or CAR1LN (which may be Null/None)
 						raise BAD_REQUEST( L.logWarn(f'cannot delete a mandatory attribute: {attributeName}'))
 					if policyOptional == RequestOptionality.NP: # present with any value or None/null? Then this is an error for NP
 						raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is NP for operation'))
@@ -290,43 +298,8 @@ class Validator(object):
 	#	Validate complex types
 	#
 
-	# TODO move this later to the attributePolicies file in init/ directory. Perhaps something along
-	# 		"name" : [ "attribute1", "attribute", ...]
 
-
-	complexAttributePolicies:Dict[str, AttributePolicyDict] = {
-		# Response
-		'rsp' :	{
-			'rsc' : AttributePolicy(type = BasicType.integer,          cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rsp', lname = 'responseStatusCode', namespace = 'm2m', typeShortname = 'm2m:rsc'),
-			'rqi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR1,  optionalCreate = RequestOptionality.M, optionalUpdate = RequestOptionality.M, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rqi', lname = 'requestIdentifier', namespace = 'm2m', typeShortname = 'm2m:rqi'),
-			'pc' : AttributePolicy(type = BasicType.dict,              cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'pc', lname = 'primitiveContent', namespace = 'm2m', typeShortname = 'm2m:pc'),
-			'to' : AttributePolicy(type = BasicType.string,            cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'to', lname = 'to', namespace = 'm2m', typeShortname = 'm2m:to'),
-			'fr' : AttributePolicy(type = BasicType.ID,			       cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'fr', lname = 'from', namespace = 'm2m', typeShortname = 'm2m:fr'),
-			'ot' : AttributePolicy(type = BasicType.timestamp,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ot', lname = 'originatingTimestamp', namespace = 'm2m', typeShortname = 'm2m:or'),
-			'rset' : AttributePolicy(type = BasicType.absRelTimestamp, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rset', lname = 'resultExpirationTimestamp', namespace = 'm2m', typeShortname = 'm2m:rset'),
-			'ec' : AttributePolicy(type = BasicType.positiveInteger,   cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ec', lname = 'eventCategory', namespace = 'm2m', typeShortname = 'm2m:ec'),
-			'cnst' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnst', lname = 'contentStatus', namespace = 'm2m', typeShortname = 'm2m:cnst'),
-			'cnot' : AttributePolicy(type = BasicType.positiveInteger, cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'cnot', lname = 'contentOffset', namespace = 'm2m', typeShortname = 'm2m:cnot'),
-			'ati' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'ati', lname = 'assignedTokenIdentifiers', namespace = 'm2m', typeShortname = 'm2m:ati'),
-			'tqf' : AttributePolicy(type = BasicType.dict,             cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'tqf', lname = 'tokenRequestInformation', namespace = 'm2m', typeShortname = 'm2m:tqf'),
-			'asri' : AttributePolicy(type = BasicType.boolean,         cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'asri', lname = 'authorSignReqInfo', namespace = 'm2m', typeShortname = 'm2m:asri'),
-			'rvi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'rvi', lname = 'releaseVersionIndicator', namespace = 'm2m', typeShortname = 'm2m:rvi'),
-			'vsi' : AttributePolicy(type = BasicType.string,           cardinality =Cardinality.CAR01, optionalCreate = RequestOptionality.O, optionalUpdate = RequestOptionality.O, optionalDiscovery = RequestOptionality.O, announcement = Announced.NA, sname = 'vsi', lname = 'vendorInformation', namespace = 'm2m', typeShortname = 'm2m:vsi'),
-		},
-		# 'm2m:sgn' : {
-		# 	'fr' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', typeShortname='m2m:fr'),
-		# 	'to' : AttributePolicy(type=BasicType.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', typeShortname='m2m:to'),
-		# }
-
-	}
-	"""	Some complex attribute policies. 
-	
-		Todo:
-			- move this to the attributePolicies file in init/ directory.
-	"""
-
-
-	def validatePrimitiveContent(self, pc:JSON) -> None:
+	def validatePrimitiveContent(self, pc:JSON, elementName: str) -> None:
 		""" Validate the primitive content.
 		
 			Args:
@@ -340,9 +313,17 @@ class Validator(object):
 		if len(pc.keys()) != 1:	# TODO is this correct?
 			raise BAD_REQUEST(f'primitive content shall contain exactly one element')
 		
-		name,obj = list(pc.items())[0]
-		if ap := self.complexAttributePolicies.get(name):
-			self.validateAttributes(obj, typeShortname = name, attributes=ap)
+		# Only support some types for now, but this can be easily extended later
+		ap = self.getAttributePolicy(None, attr=elementName)
+		if ap:
+			match ap.rtypes[0]:	
+				case ResourceTypes.NOTIFICATION | ResourceTypes.RESPONSE:
+					L.isDebug and L.logDebug(f'validating primitive content: {elementName}')
+					self._validateType(ap.type, pc.get(elementName), convert=True, policy=ap)
+				
+				case _:
+					L.logErr(f'Ignoring validation for primitive content element: {elementName} - No policy found for this element')
+					pass
 		
 
 	#
@@ -368,8 +349,7 @@ class Validator(object):
 	# TODO allowed media type chars
 	cnfRegex = re.compile(
 		r'^[^:/]+/[^:/]+:[0-2]$'
-		r'|^[^:/]+/[^:/]+:[0-2]$'	# TODO why twice?
-		r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
+		+ r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
 	)
 	"""	Compiled regular expression that matches a valid contentInfo string. """
 
@@ -657,6 +637,8 @@ class Validator(object):
 			return ap
 		if (ap := attributePolicies.get((ResourceTypes.RESPONSE, attr))):
 			return ap
+		if (ap := attributePolicies.get((ResourceTypes.NOTIFICATION, attr))):
+			return ap
 
 		# If it couldn't be found, look whether it has been defined for ALL
 		if (ap := attributePolicies.get((ResourceTypes.ALL, attr))):
@@ -769,8 +751,7 @@ class Validator(object):
 		try:
 			if attr in _valueNameMappings:
 				return _valueNameMappings[attr](value) # type: ignore [no-untyped-call]
-			from ..runtime import CSE
-			return CSE.validator.getEnumInterpretation(rtype, attr, value)
+			return self.getEnumInterpretation(rtype, attr, value)
 		except Exception as e:
 			return str(e)
 
@@ -831,6 +812,8 @@ class Validator(object):
 					return '"<string>"'
 				case BasicType.ID:
 					return '"<ID>"'
+				case BasicType.IDCSR:
+					return '"<ID in CSE-relative format>"'
 				case BasicType.token:
 					return '"<token>"'
 				case BasicType.anyURI:
@@ -1008,9 +991,9 @@ class Validator(object):
 			case BasicType.string | BasicType.anyURI if isinstance(value, str):
 				return (dataType, value)
 
-			case BasicType.ID if isinstance(value, str):	# TODO check for valid resourceID
+			case BasicType.ID | BasicType.IDCSR if isinstance(value, str):	# TODO check for valid resourceID
 				return (dataType, value)
-		
+	
 			case BasicType.token if isinstance(value, str):
 				if any(_c in value for _c in self._tokenDisallowedChars) or '  ' in value:
 					raise BAD_REQUEST(f'invalid token: "{value}" must not contain double spaces or any of ' + ', '.join([f'0x{ord(c):02x}' for c in self._tokenDisallowedChars]))
@@ -1077,6 +1060,21 @@ class Validator(object):
 					return (dataType, value)
 				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
 			
+			case BasicType.SPID if isinstance(value, str):
+				if len(value) < 3 or not value.startswith('//') or value[2] == '/':
+					raise BAD_REQUEST(f'invalid SPID type: {value} must be in the format "//<SPID>"')
+				return (dataType, value)
+		
+			case BasicType.CSEID if isinstance(value, str):
+				if len(value) < 2 or not value.startswith('/') or value.startswith('//'):
+					raise BAD_REQUEST(f'invalid CSEID type: {value} must be in the format "/<CSEID>"')
+				return (dataType, value)
+			
+			case BasicType.AEID if isinstance(value, str):
+				if not isValidAEI(value):
+					raise BAD_REQUEST(f'invalid AEID type: {value} is not a valid AEID.')
+				return (dataType, value)
+
 			case BasicType.float:
 				if isinstance(value, (float, int)):
 					return (dataType, value)
@@ -1130,6 +1128,100 @@ class Validator(object):
 			case BasicType.any:
 				return (dataType, value)
 
-		raise BAD_REQUEST(f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
+		raise BAD_REQUEST(f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}, Attribute: {policy.sname if policy else "unknown"}')
 
+
+
+	def convertIDsToScope(self, k : str, v: JSON, typ: ResourceTypes, scope: IdentifierScope) -> Any:
+		""" Convert identifier attributes to the specified scope. 
+		
+			This method is called recursively for each attribute of a complex attribute (e.g. a list or a complex attribute).
+			
+			Args:
+				k: Attribute name.
+				v: Attribute value.
+				typ: Resource type of the attribute.
+				scope: Scope to convert to.
+			
+			Return:
+				The converted value.
+		"""
+		if (policy := self.getAttributePolicy(typ, k)):
+			return self.convertIdentifierAttributeToScope(v, policy.type, policy, scope)
+
+		elif (ntyp := ResourceTypes.fromTypeShortname(k)):
+			# L.log(f'Processing attribute {k} of type {ntyp}')
+			if isinstance(v, dict):
+				r: dict[str, Any] = {}
+				for attr, item in v.items():
+					r[attr] = self.convertIDsToScope(attr, item, ntyp, scope)
+				return r
+			return v
+
+		else:
+			L.isWarn and L.logWarn(f'No attribute policy found for {k} in type {typ}, cannot convert identifier attributes to scope')
+		return v
+
+
+	def convertIdentifierAttributeToScope(self, value:Any, typ: BasicType, policy: AttributePolicy, scope: Optional[IdentifierScope]=IdentifierScope.SPRelative) -> Any:
+		"""	Convert an attribute to the Absolute or SP-relative form if it is an identifier.
+			This is a recursive function that is called for each attribute of a complex attribute
+			(e.g. a list or a complex attribute).
+
+			Args:
+				value: The value to convert.
+				typ: The type of the value.
+				policy: The attribute policy of the value.
+				scope: The scope of the conversion
+
+			Return:
+				The converted value.
+		"""
+
+		# Return None if the value is None (e.g. in updates)
+		if value is None:
+			return None
+		
+		# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
+		match typ:
+			case BasicType.ID:
+				# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
+				match scope:
+					case IdentifierScope.CSERelative:
+						return value
+					case IdentifierScope.SPRelative:
+						return toSPRelative(value)
+					case IdentifierScope.Absolute:
+						return toAbsolute(value, spId=RC.cseSPid)
+			case BasicType.list | BasicType.listNE:
+				return [ self.convertIdentifierAttributeToScope(v, policy.ltype, policy, scope) for v in value]
+			case BasicType.complex:
+				_r = {}
+				_gap = self.getAttributePolicy	# slight optimization to avoid multiple lookups
+				typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
+				for k, v in value.items():
+					if not (_policy := _gap(typeName, k)):
+						raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
+					_r[k] = self.convertIdentifierAttributeToScope(v, _policy.type, _policy, scope)
+				return _r
+			case BasicType.AEID:
+				match scope:
+
+					case IdentifierScope.CSERelative if isCSERelative(value):
+						return value
+					case IdentifierScope.CSERelative:
+						return toCSERelative(value)
+
+					case IdentifierScope.SPRelative if isSPRelative(value) or value.startswith('S'):
+						return value
+			
+					case IdentifierScope.SPRelative:
+						return toSPRelative(value)
+					
+					case IdentifierScope.Absolute if isAbsolute(value):
+						return value
+					case IdentifierScope.Absolute:
+						return toAbsolute(value)
+			case _:
+				return value
 

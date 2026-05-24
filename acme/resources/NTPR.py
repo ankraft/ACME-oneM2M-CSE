@@ -6,67 +6,40 @@
 #
 #	ResourceType: notificationTargetMgmtPolicyRef 
 #
+"""	Implementation of the notificationTargetMgmtPolicyRef (NTPR) resource type. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, CSERequest, Result
+from ..etc.Types import ResourceTypes, JSON
 from ..etc.Constants import Constants
+from ..etc.ResponseStatusCodes import CONFLICT
 from ..resources.Resource import Resource
 from ..resources.Resource import addToInternalAttributes
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
-from ..etc.ResponseStatusCodes import CONFLICT
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
 
 # Add to internal attributes to ignore in validation etc
 addToInternalAttributes(Constants.attrPCUAggregate)	
 
 
+@requires(dispatcher='acme.services.Dispatcher')
 class NTPR(Resource):
+	"""	Class for the notificationTargetMgmtPolicyRef (NTPR) resource type. """
 
-	resourceType = ResourceTypes.NTPR
-	""" The resource type """
+	dispatcher: Dispatcher = None
+	"""	Injected Dispatcher instance """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	resourceName = 'ntpr'
-	""" Possibility for virtual sub-classes to provide a specific resource name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'et': None,
-		'acpi':None,
-		'ct': None,
-		'lbl': None,
-		'lt': None,
-		'daci': None,
-		'cstn': None,
-
-		# Resource attributes
-   		'ntu': None,
-		'npi': None,
-	}
-
-
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator: Optional[str]=None, 
+					   dct: Optional[JSON]=None, 
+					   parentResource: Optional[Resource]=None) -> None:
 		
 		# Check if other NTPR resources exist for the same subscription that have the same notificationTargetURI elements
-		ntprResources = CSE.dispatcher.retrieveDirectChildResources(self.pi, ResourceTypes.NTPR)
+		ntprResources = self.dispatcher.retrieveDirectChildResources(self.pi, ResourceTypes.NTPR)
 		if ntprResources:
 			for ntpr in ntprResources:
 				if ntpr != self:

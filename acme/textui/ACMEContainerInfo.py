@@ -8,20 +8,27 @@
 """
 
 from __future__ import annotations
-from typing import cast
+from typing import cast, TYPE_CHECKING
 
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Static
 from textual.timer import Timer
 from rich.style import Style
-from ..runtime import CSE
 from ..runtime.Logging import fontDark, fontLight
 from ..runtime.Configuration import Configuration
+from ..runtime.PluginSupport import requires
 from ..textui import ACMETuiApp
 
+if TYPE_CHECKING:
+	from ..runtime.Management import ManagementSupport
+
+@requires(managementSupport='acme.runtime.Management')
 class ACMEContainerInfo(VerticalScroll):
 	"""	The *Infos* view for the ACME text UI. """
+
+	managementSupport: ManagementSupport = None
+	""" Injected ManagementSupport instance. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -87,6 +94,6 @@ class ACMEContainerInfo(VerticalScroll):
 				force:	Force the update.
 		"""
 		if force or self._app.tabs.active == ACMETuiApp.tabInfo:
-			self.statsView.update(CSE.console.getStatisticsRich(style = Style(color = self.app.get_css_variables()['primary']), 
-																textStyle = Style(color = fontDark if self._app.dark else fontLight)))
+			self.statsView.update(self.managementSupport.getStatusRich(style=Style(color=self.app.get_css_variables()['primary']), 
+																	   textStyle=Style(color=fontDark if self._app.dark else fontLight)))
 

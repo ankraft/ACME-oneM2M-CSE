@@ -8,7 +8,8 @@
 """
 
 from __future__ import annotations
-from typing import cast, Optional, Callable
+from typing import cast, Optional, Callable, TYPE_CHECKING
+
 from copy import deepcopy
 import json, re
 
@@ -23,16 +24,19 @@ from textual.binding import Binding
 from .ACMEFieldOriginator import ACMEFieldOriginator
 from .ACMEContentDialog import ACMEContentDialog
 from .ACMEViewResponse import ACMEViewResponse
-from ..runtime import CSE
 from ..etc.Types import ResourceTypes, JSON, RequestOptionality, Operation, ResponseStatusCode, Result
 from ..etc.IDUtils import uniqueRI
 from ..etc.RequestUtils import curlFromRequest
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import removeCommentsFromJSON, flattenJSON, parseJSONDecodingError
 from ..resources.Resource import Resource
-from ..resources.Factory import resourceFromDict
 from ..runtime.Configuration import Configuration
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..services.Validator import Validator
+	from ..runtime.Factory import Factory
+	from ..services.RequestManager import RequestManager
 
 class ACMETextArea(TextArea):
 	"""	An extended text area.
@@ -67,9 +71,21 @@ class ACMETextArea(TextArea):
 		)
 
 
+@requires(validator='acme.services.Validator')
+@requires(factory='acme.runtime.Factory')
+@requires(requestManager='acme.services.RequestManager')
 class ACMEViewRequest(VerticalScroll):
 	"""	View to display request.
 	"""
+
+	validator: Validator = None
+	"""	Injected Validator instance. """
+
+	factory: Factory = None
+	"""	Injected Factory instance. """
+
+	requestManager: RequestManager = None
+	"""	Injected RequestManager instance. """
 
 	def __init__(self, id:str, 
 			  		   title:str,
@@ -254,9 +270,9 @@ class ACMEViewRequest(VerticalScroll):
 
 
 	def updateResourceView(self, 
-						   resource:Resource, 
-						   resourceType:ResourceTypes,
-						   requestOriginator:Optional[str] = None) -> None:
+						   resource: Resource, 
+						   resourceType: ResourceTypes,
+						   requestOriginator: Optional[str] = None) -> None:
 		"""	Update the selected resource.
 
 			Args:
@@ -275,7 +291,7 @@ class ACMEViewRequest(VerticalScroll):
 				resource = None
 				if resourceType is not None:
 					# Create a template resource
-					resource = resourceFromDict(ty = resourceType, template = True)
+					resource = self.factory.resourceFromDict(ty=resourceType, template=True)
 			
 			case _:
 				# Copy the original an used attributes 
@@ -287,7 +303,7 @@ class ACMEViewRequest(VerticalScroll):
 
 			# Remove attributes that are not allowed to be updated from the resource
 			for attr in list(_possibleResourceAttributes):
-				_policy = CSE.validator.getAttributePolicy(resourceType, attr)
+				_policy = self.validator.getAttributePolicy(resourceType, attr)
 				if _policy is None or \
 					(self.operation == Operation.CREATE and _policy.optionalCreate == RequestOptionality.NP) or \
 					(self.operation == Operation.UPDATE and _policy.optionalUpdate == RequestOptionality.NP):
@@ -313,12 +329,12 @@ class ACMEViewRequest(VerticalScroll):
 			for line in _text.split('\n'):
 				if line.endswith(('null', 'null,')):
 					match = re.search(r'"([^"]*)"', line)
-					line = line.replace('null', f'{CSE.validator.getAttributeValueRepresentation( match.group(1), resourceType, False)}, // mandatory attribute')
+					line = line.replace('null', f'{self.validator.getAttributeValueRepresentation( match.group(1), resourceType, False)}, // mandatory attribute')
 				_newText.append(line)
 			_text = '\n'.join(_newText)	
 		
 			# add the not-yet present but possible resource attributes in the middle of the resource
-			_result = [ f'        // "{attr}": {CSE.validator.getAttributeValueRepresentation(attr, resourceType)}'
+			_result = [ f'        // "{attr}": {self.validator.getAttributeValueRepresentation(attr, resourceType)}'
 						for attr in _possibleResourceAttributes ]
 			
 			if self.operation == Operation.CREATE:
@@ -333,7 +349,7 @@ class ACMEViewRequest(VerticalScroll):
 		self.resourceText = _text
 
 
-	def prepareRequest(self, targetResource:Resource) -> Optional[JSON]:
+	def prepareRequest(self, targetResource: Resource) -> Optional[JSON]:
 		"""	Prepare the request for an operation.
 
 			Args:
@@ -389,7 +405,7 @@ class ACMEViewRequest(VerticalScroll):
 				return None
 
 
-	def runRequest(self, resource:Resource) -> Optional[Result]:
+	def runRequest(self, resource: Resource) -> Optional[Result]:
 		"""	Run the request on a resource.
 		
 			Args:
@@ -404,7 +420,7 @@ class ACMEViewRequest(VerticalScroll):
 			# Prepare request structure
 			if not (_r := self.prepareRequest(resource)):
 				return None
-			result = CSE.request.handleRequest(_r)
+			result = self.requestManager.handleRequest(_r)
 
 			# handle the response
 			match self.operation:
@@ -436,7 +452,7 @@ class ACMEViewRequest(VerticalScroll):
 
 				jsns = commentJson(cast(Resource, result.resource).asDict(sort = True), 
 									explanations = self.app.attributeExplanations,	# type: ignore [attr-defined]
-									getAttributeValueName = lambda a, v: CSE.validator.getAttributeValueName(a, v, cast(Resource, result.resource).ty if result.resource else None))	# type: ignore [attr-defined]
+									getAttributeValueName = lambda a, v: self.validator.getAttributeValueName(a, v, cast(Resource, result.resource).ty if result.resource else None))	# type: ignore [attr-defined]
 				self.responseView.success(Syntax(jsns,
 												'json', 
 												theme = self._app.syntaxTheme),

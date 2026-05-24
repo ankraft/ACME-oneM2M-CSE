@@ -6,8 +6,9 @@
 #
 #	Managing CSE configurations
 #
-""" This module implements the configuration of the CSE. It reads the configuration file, performs checks,
-	and provides access to the configuration values. """
+"""	This module implements the configuration of the CSE. It reads the configuration file, performs checks, 
+	and provides access to the configuration values. 
+"""
 
 
 from __future__ import annotations
@@ -16,9 +17,9 @@ from typing import Any, Dict, Tuple, Optional, cast, Set
 import configparser, argparse, os, os.path, pathlib
 from copy import deepcopy
 from inspect import getmembers
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 
-from rich.console import Console
+from rich.console import Console as RichConsole
 
 
 from ..etc.Constants import Constants as C
@@ -26,9 +27,7 @@ from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode, C
 from ..helpers.NetworkTools import getIPAddress
 from ..helpers.Zookeeper import Zookeeper
 from ..helpers.ACMEConfiguration import ACMEConfiguration
-
-
-
+from ..runtime.EventManager import EventManager, EventData, eventManager
 
 # TODO: proper use of the baseDirectory configuration for other values
 
@@ -54,543 +53,598 @@ class Configuration(object):
 			
 	"""
 
-	coap_enable:bool
+	configParser:ACMEConfiguration = None
+	"""	The ACMEConfiguration instance holding the configuration values. """
+
+	coap_enable:bool = None
 	"""	Enable or disable the CoAP server. """
 
-	coap_listenIF:str
+	coap_listenIF:str = None
 	"""	The network interface to listen on for CoAP. """
 
-	coap_port:int
+	coap_port:int = None
 	"""	The port to listen on for CoAP. """
 
-	coap_address:str
+	coap_address:str = None
 	"""	The address to listen on for CoAP. """
 
-	coap_timeout:float
+	coap_timeout:float = None
 	"""	The timeout for CoAP requests. """
 
-	coap_clientConnectionCacheSize:int
+	coap_clientConnectionCacheSize:int = None
 	"""	The size of the client connection cache. """
 
 
-	coap_security_caCertificateFile:str
+	coap_security_caCertificateFile:str = None
 	"""	The CA certificate file for CoAP. """
 
-	coap_security_caPrivateKeyFile:str
+	coap_security_caPrivateKeyFile:str = None
 	"""	The CA private key file for CoAP. """
 
-	coap_security_dtlsVersion:str
+	coap_security_dtlsVersion:str = None
 	"""	The DTLS version for CoAP. """
 
-	coap_security_useDTLS:bool
+	coap_security_useDTLS:bool = None
 	"""	Enable or disable DTLS for CoAP. """
 
-	coap_security_verifyCertificate:bool
+	coap_security_verifyCertificate:bool = None
 	"""	Enable or disable certificate verification for CoAP. """
 
 
-	console_confirmQuit:bool
+	console_type:str = None
+	"""	The type of the console. Allowed values: "rich", "simple". """
+
+	console_confirmQuit:bool = None
 	"""	Confirm quitting the console. """
 
-	console_headless:bool
+	console_headless:bool = None
 	"""	Run the CSE in headless mode. """
 
-	console_hideResources:list[str]
+	console_hideResources:list[str] = None
 	"""	Resources to hide in the console. """
 
-	console_refreshInterval:float
+	console_refreshInterval:float = None
 	"""	The refresh interval for the console. """
 
-	console_theme:str
+	console_theme:str = None
 	"""	The theme for the console. """
 
-	console_treeIncludeVirtualResource:bool
+	console_treeIncludeVirtualResource:bool = None
 	"""	Include virtual resources in the console tree. """
 
-	console_treeMode:str|TreeMode
+	console_treeMode:str|TreeMode = None
 	"""	The tree mode for the console. """
 
 
-	cse_asyncSubscriptionNotifications:bool
+	cse_asyncSubscriptionNotifications:bool = None
 	"""	Enable or disable asynchronous subscription notifications. """
 
-	cse_checkExpirationsInterval:int
+	cse_checkExpirationsInterval:int = None
 	"""	The interval to check for resource expirations. """
 
-	cse_cseID:str
+	cse_cseID:str = None
 	"""	The CSE-ID of the CSE. """
 
-	cse_defaultSerialization:str|ContentSerializationType
+	cse_defaultSerialization:str|ContentSerializationType = None
 	"""	The default serialization for the CSE. """
 
-	cse_enableRemoteCSE:bool
+	cse_enableRemoteCSE:bool = None
 	"""	Enable or disable remote CSEs. """
 
-	cse_enableResourceExpiration:bool
+	cse_enableResourceExpiration:bool = None
 	"""	Enable or disable resource expiration. """
 
-	cse_enableSubscriptionVerificationRequests:bool
+	cse_enableSubscriptionVerificationRequests:bool = None
 	"""	Enable or disable subscription verification requests. """
 
-	cse_flexBlockingPreference:str
+	cse_flexBlockingPreference:str = None
 	"""	The flex blocking preference for the CSE. """
 
-	cse_maxExpirationDelta:int
+	cse_maxExpirationDelta:int = None
 	"""	The maximum expiration delta for resources. """
 
-	cse_originator:str
+	cse_originator:str = None
 	"""	The originator for the CSE. """
 
-	cse_poa:list[str]
+	cse_poa:list[str] = None
 	"""	The Points of Access for the CSE. """
 
-	cse_releaseVersion:str
+	cse_releaseVersion:str = None
 	"""	The release version of the CSE. """
 
-	cse_requestExpirationDelta:float
+	cse_requestExpirationDelta:float = None
 	"""	The request expiration delta for the CSE. """
 
-	cse_resourcesPath:str
+	cse_resourcesPath:str = None
 	"""	The path to the resources. """
 
-	cse_resourceID:str
+	cse_resourceID:str = None
 	"""	The resource ID of the CSE. """
 
-	cse_resourceName:str
+	cse_resourceName:str = None
 	"""	The resource name of the CSE. """
 
-	cse_sendToFromInResponses:bool
+	cse_sendToFromInResponses:bool = None
 	"""	Send the To and From in responses. """
 
-	cse_sortDiscoveredResources:bool
+	cse_sortDiscoveredResources:bool = None
 	"""	Sort discovered resources. """
 
-	cse_supportedReleaseVersions:list[str]
+	cse_supportedReleaseVersions:list[str] = None
 	"""	The supported release versions of the CSE. """
 
-	cse_serviceProviderID:str
+	cse_serviceProviderID:str = None
 	"""	The service provider ID of the CSE. """
 
-	cse_type:str|CSEType
+	cse_type:str|CSEType = None
 	"""	The type of the CSE. """
 
-	cse_idLength:int
+	cse_idLength:int = None
 	"""	The length of the generated resource IDs. """
 
-	cse_announcements_allowAnnouncementsToHostingCSE:bool
+	cse_announcements_allowAnnouncementsToHostingCSE:bool = None
 	"""	Allow announcements to the hosting CSE. """
 
-	cse_announcements_delayAfterRegistration:float
+	cse_announcements_delayAfterRegistration:float = None
 	"""	The delay after registration for announcements. """
 
 
-	cse_operation_jobs_balanceLatency:int
+	cse_operation_jobs_balanceLatency:int = None
 	"""	The latency for balancing jobs. """
 
-	cse_operation_jobs_balanceReduceFactor:float
+	cse_operation_jobs_balanceReduceFactor:float = None
 	"""	The reduce factor for balancing jobs. """
 
-	cse_operation_jobs_balanceTarget:float
+	cse_operation_jobs_balanceTarget:float = None
 	"""	The target for balancing jobs. """
 
 
-	cse_operation_requests_enable:bool
+	cse_operation_requests_enable:bool = None
 	"""	Enable or disable operation requests. """
 
-	cse_operation_requests_size:int
+	cse_operation_requests_size:int = None
 	"""	The size of the operation requests. """
+
+
+	cse_operation_plugins_disabledPlugins:list[str] = None
+	"""	A list of disabled plugins. """
+
+	cse_operation_plugins_replace:bool = None
+	"""	Replace existing plugins with the same name. """
+
+	_cse_operation_plugins_enabledComponents:dict[str, bool] = None
+	"""	An internal dictionary of enabled plugins. The keys are the component names, the values are booleans indicating whether the corresponding plugin is enabled. """
 
 
 	cse_registrars:dict[str, CSERegistrar] = {}
 	"""	A dictionary of CSE or service provider CSEs registrars. The keys are the CSE IDs, the values are dictionaries with the registrar information. """
 
 
-	cse_registration_allowedAEOriginators:list[str]
+	cse_registration_allowedAEOriginators:list[str] = None
 	"""	Allowed AE originators for registration. """
 
-	cse_registration_allowedCSROriginators:list[str]
+	cse_registration_allowedCSROriginators:list[str] = None
 	"""	Allowed CSR originators for registration. """
 
-	cse_registration_checkLiveliness:bool
+	cse_registration_checkLiveliness:bool = None
 	"""	Check liveliness for registration. """
 
-	cse_registration_checkInterval:int
+	cse_registration_checkInterval:int = None
 	"""	Time interval to check liveliness of registration(s). """
 
+	cse_registration_unregisterWhenStopping:bool = None
+	"""	Unregister the CSR resource when stopping the CSE. """
 
-	cse_security_secret:str
+	cse_security_secret:str = None
 	"""	The main secret key for the CSE. """
 
-	cse_security_enableACPChecks:bool
+	cse_security_enableACPChecks:bool = None
 	"""	Enable or disable ACP checks. """
 
-	cse_security_fullAccessAdmin:bool
+	cse_security_fullAccessAdmin:bool = None
 	"""	Full access for admin. """
 
 
-	database_type:str
+	cse_service_action_enable:bool = False
+	"""	Enable or disable the action processing service. This includes the ActionManager plugin and the related features in the CSE. """
+	
+	cse_service_announcement_enable:bool = False
+	"""	Enable or disable the announcement service. This includes the AnnouncementManager plugin and the related features in the CSE. """
+
+	cse_service_group_enable:bool = False
+	"""	Enable or disable the group service. This includes the GroupManager plugin and the related features in the CSE. """
+
+	cse_service_location_enable:bool = False
+	"""	Enable or disable the location service. This includes the LocationManager plugin and the related features in the CSE. """
+
+	cse_service_remoteCSE_enable:bool = False
+	"""	Enable or disable the remote CSE service. This includes the RemoteCSEManager plugin and the related features in the CSE. """
+	
+	cse_service_semantic_enable:bool = False
+	"""	Enable or disable the semantic service. This includes the SemanticManager plugin and the related features in the CSE. """
+
+	cse_service_time_enable:bool = False
+	"""	Enable or disable the time service. This includes the TimeManager plugin and the related features in the CSE. """
+
+	cse_service_timeSeries_enable:bool = False
+	"""	Enable or disable the time series service. This includes the TimeSeriesManager plugin and the related features in the CSE. """
+
+
+	database_type:str = None
 	"""	The type of the database. """
 
-	database_resetOnStartup:bool
+	database_resetOnStartup:bool = None
 	"""	Reset the database on startup. """
 
-	database_backupPath:str
+	database_backupPath:str = None
 	"""	The path for the database backup. """
 
 
-	database_tinydb_path:str
+	database_tinydb_path:str = None
 	"""	The path to the TinyDB database. """
 
-	database_tinydb_cacheSize:int
+	database_tinydb_cacheSize:int = None
 	"""	The cache size for the TinyDB database. """
 
-	database_tinydb_writeDelay:int
+	database_tinydb_writeDelay:int = None
 	"""	The write delay for the TinyDB database. """
 
 
-	database_postgresql_host:str
+	database_postgresql_host:str = None
 	"""	The host of the PostgreSQL database. """
 
-	database_postgresql_port:int
+	database_postgresql_port:int = None
 	"""	The port of the PostgreSQL database. """
 
-	database_postgresql_role:str
+	database_postgresql_role:str = None
 	"""	The role of the PostgreSQL database. """
 
-	database_postgresql_password:str
+	database_postgresql_password:str = None
 	"""	The password of the PostgreSQL database. """
 
-	database_postgresql_database:str
+	database_postgresql_database:str = None
 	"""	The database of the PostgreSQL database. """
 
-	database_postgresql_schema:str
+	database_postgresql_schema:str = None
 	"""	The schema of the PostgreSQL database. """
 
 
-	http_address:str
+	http_address:str = None
 	"""	The address to listen on for HTTP the http server. """
 
-	http_allowPatchForDelete:bool
+	http_allowPatchForDelete:bool = None
 	"""	Allow PATCH for DELETE operations. """
 
-	http_enableStructureEndpoint:bool
+	http_enable:bool = None
+	"""	Enable or disable the HTTP server. """
+
+	http_enableStructureEndpoint:bool = None
 	"""	Enable the structure endpoint. """
 
-	http_enableUpperTesterEndpoint:bool
+	http_enableUpperTesterEndpoint:bool = None
 	"""	Enable the upper tester endpoint. """
 
-	http_enableManagementEndpoint:bool
+	http_enableManagementEndpoint:bool = None
 	"""	Enable the management endpoint. """
 
-	http_listenIF:str
+	http_listenIF:str = None
 	"""	The network interface to listen on for HTTP. """
 
-	http_port:int
+	http_port:int = None
 	"""	The port to listen on for HTTP. """
 
-	http_root:str
+	http_root:str = None
 	"""	The root of the HTTP path. """
 
-	http_timeout:float
+	http_externalRoot:str = None
+	"""	The non-local root path of the HTTP path. This is used when the CSE is accessed from non-local addresses, e.g. in a Kubernetes cluster. """
+
+	http_timeout:float = None
 	"""	The timeout for HTTP requests. """
 
 
-	http_cors_enable:bool
+	http_cors_enable:bool = None
 	"""	Enable or disable CORS. """
 
-	http_cors_resources:list[str]
+	http_cors_resources:list[str] = None
 	"""	The resources for CORS. """
 
 
-	http_security_caCertificateFile:str
+	http_security_caCertificateFile:str = None
 	"""	The CA certificate file for HTTP. """
 
-	http_security_caPrivateKeyFile:str
+	http_security_caPrivateKeyFile:str = None
 	"""	The CA private key file for HTTP. """
 
-	http_security_tlsVersion:str
+	http_security_tlsVersion:str = None
 	"""	The TLS version for HTTP. """
 
-	http_security_useTLS:bool
+	http_security_useTLS:bool = None
 	"""	Enable or disable TLS for HTTP. """
 
-	http_security_verifyCertificate:bool
+	http_security_verifyCertificate:bool = None
 	"""	Enable or disable certificate verification for HTTP. """
 
-	http_security_enableBasicAuth:bool
+	http_security_enableBasicAuth:bool = None
 	"""	Enable or disable basic authentication for HTTP. """
 
-	http_security_enableTokenAuth:bool
+	http_security_enableTokenAuth:bool = None
 	"""	Enable or disable token authentication for HTTP. """
 
-	http_security_basicAuthFile:str
+	http_security_basicAuthFile:str = None
 	"""	The file for basic authentication for HTTP. """
 
-	http_security_tokenAuthFile:str
+	http_security_tokenAuthFile:str = None
 	"""	The file for token authentication for HTTP. """
 
 
-	http_wsgi_enable:bool
+	http_wsgi_enable:bool = None
 	"""	Enable or disable the WSGI server. """
 
-	http_wsgi_connectionLimit:int
+	http_wsgi_connectionLimit:int = None
 	"""	The connection limit for the WSGI server. """
 
-	http_wsgi_threadPoolSize:int
+	http_wsgi_threadPoolSize:int = None
 	"""	The thread pool size for the WSGI server. """
 
 
-	logging_count:int
+	logging_count:int = None
 	"""	The number of log entries. """
 
-	logging_enableBindingsLogging:bool
+	logging_enableBindingsLogging:bool = None
 	"""	Enable or disable bindings logging. """
 
-	logging_enableFileLogging:bool
+	logging_enableFileLogging:bool = None
 	"""	Enable or disable file logging. """
 
-	logging_enableScreenLogging:bool
+	logging_enableScreenLogging:bool = None
 	"""	Enable or disable screen logging. """
 
-	logging_filter:list
+	logging_filter:list = None
 	"""	The filter for logging. """
 
-	logging_level:str|LogLevel
+	logging_level:str|LogLevel = None
 	"""	The log level. """
 
-	logging_maxLogMessageLength:int
+	logging_maxLogMessageLength:int = None
 	"""	The maximum log message length. """
 
-	logging_path:str
+	logging_path:str = None
 	"""	The path for logging. """
 
-	logging_queueSize:int
+	logging_queueSize:int = None
 	"""	The queue size for logging. """
 
-	logging_size:int
+	logging_size:int = None
 	"""	The size of the log. """
 
-	logging_stackTraceOnError:bool
+	logging_stackTraceOnError:bool = None
 	"""	Enable or disable stack trace on error. """
 
-	logging_enableUTCTimezone:bool
+	logging_enableUTCTimezone:bool = None
 	"""	Enable or disable UTC timezone. """
 
 
-	mqtt_address:str
+	mqtt_address:str = None
 	"""	The address to listen on for the MQTT server. """
 
-	mqtt_enable:bool
+	mqtt_enable:bool = None
 	"""	Enable or disable the MQTT server. """
 
-	mqtt_keepalive:int
+	mqtt_keepalive:int = None
 	"""	The keepalive for MQTT. """
 
-	mqtt_listenIF:str
+	mqtt_listenIF:str = None
 	"""	The network interface to listen on for MQTT. """
 
-	mqtt_port:int
+	mqtt_port:int = None
 	"""	The port to listen on for MQTT. """
 
-	mqtt_timeout:float
+	mqtt_timeout:float = None
 	"""	The timeout for MQTT requests. """
 
-	mqtt_topicPrefix:str
+	mqtt_topicPrefix:str = None
 	"""	The topic prefix for MQTT. """
 
-	mqtt_security_allowedCredentialIDs:list[str]
+	mqtt_security_allowedCredentialIDs:list[str] = None
 	"""	The allowed credential IDs for MQTT. """
 
-	mqtt_security_caCertificateFile:str
+	mqtt_security_caCertificateFile:str = None
 	"""	The CA certificate file for MQTT. """
 
-	mqtt_security_password:str
+	mqtt_security_password:str = None
 	"""	The password for MQTT. """
 
-	mqtt_security_username:str
+	mqtt_security_username:str = None
 	"""	The username for MQTT. """
 
-	mqtt_security_useTLS:bool
+	mqtt_security_useTLS:bool = None
 	"""	Enable or disable TLS for MQTT. """
 
-	mqtt_security_verifyCertificate:bool
+	mqtt_security_verifyCertificate:bool = None
 	"""	Enable or disable certificate verification for MQTT. """
 
-	mqtt_websocket_enable:bool
+	mqtt_websocket_enable:bool = None
 	"""	Enable or disable the MQTT over WebSocket. """
 
-	mqtt_websocket_port:int
+	mqtt_websocket_port:int = None
 	"""	The WebSocket port for MQTT. """
 
-	mqtt_websocket_path:str
+	mqtt_websocket_path:str = None
 	"""	The WebSocket path for MQTT. """
 
-	resource_acp_selfPermission:int
+	resource_acp_selfPermission:int = None
 	"""	The self permission for ACP. """
 
 
-	resource_actr_ecpContinuous:int
+	resource_actr_ecpContinuous:int = None
 	"""	The continuous for ACTR. """
 
-	resource_actr_ecpPeriodic:int
+	resource_actr_ecpPeriodic:int = None
 	"""	The periodic for ACTR. """
 
 
-	resource_cnt_enableLimits:bool
+	resource_cnt_enableLimits:bool = None
 	"""	Enable or disable limits for CNT. """
 
-	resource_cnt_mni:int
+	resource_cnt_mni:int = None
 	"""	The MNI for CNT. """
 
-	resource_cnt_mbs:int
+	resource_cnt_mbs:int = None
 	"""	The MBS for CNT. """
 
-	resource_cnt_mia:int
+	resource_cnt_mia:int = None
 	"""	The MIA for CNT. """
 
 
-	resource_fcnt_enableLimits:bool
+	resource_fcnt_enableLimits:bool = None
 	"""	Enable or disable limits for FCNT. """
 
-	resource_fcnt_mni:int
+	resource_fcnt_mni:int = None
 	"""	The MNI for FCNT. """
 
-	resource_fcnt_mbs:int
+	resource_fcnt_mbs:int = None
 	"""	The MBS for FCNT. """
 
-	resource_fcnt_mia:int
+	resource_fcnt_mia:int = None
 	"""	The MIA for FCNT. """
 
 
-	resource_grp_resultExpirationTime:int
+	resource_grp_resultExpirationTime:int = None
 	"""	The result expiration time for GRP. """
 
-	resource_lcp_mni:int
+	resource_lcp_mni:int = None
 	"""	The MNI for LCP. """
 
-	resource_lcp_mbs:int
+	resource_lcp_mbs:int = None
 	"""	The MBS for LCP. """
 
 
-	resource_req_et:int
+	resource_req_et:int = None
 	"""	The expiration time for REQ. """
 
 
-	resource_sub_batchNotifyDuration:int
+	resource_sub_batchNotifyDuration:int = None
 	"""	The batch notify duration for SUB. """
 
 
-	resource_ts_enableLimits:bool
+	resource_ts_enableLimits:bool = None
 	"""	Enable or disable limits for TS. """
 
-	resource_ts_mbs:int
+	resource_ts_mbs:int = None
 	"""	The MBS for TS. """
 
-	resource_ts_mdn:int
+	resource_ts_mdn:int = None
 	"""	The MDN for TS. """
 
-	resource_ts_mni:int
+	resource_ts_mni:int = None
 	"""	The MNI for TS. """
 
-	resource_ts_mia:int
+	resource_ts_mia:int = None
 	"""	The MIA for TS. """
 
 
-	resource_tsb_bcni:str
+	resource_tsb_bcni:str = None
 	"""	The BCNI for TSB. """
 
-	resource_tsb_bcnt:float
+	resource_tsb_bcnt:float = None
 	"""	The BCNT for TSB. """
 
 
-	scripting_fileMonitoringInterval:float
+	scripting_fileMonitoringInterval:float = None
 	"""	The file monitoring interval for scripting. """
 
-	scripting_maxRuntime:float
+	scripting_maxRuntime:float = None
 	"""	The maximum runtime for scripting. """
 
-	scripting_scriptDirectories:list[str]
+	scripting_scriptDirectories:list[str] = None
 	"""	The script directories for scripting. """
 
-	scripting_verbose:bool
+	scripting_verbose:bool = None
 	"""	Enable or disable verbose mode for scripting. """
 
 
-	cse_statistics_enable:bool
+	cse_statistics_enable:bool = None
 	"""	Enable or disable statistics. """
 
-	cse_statistics_writeInterval:int
+	cse_statistics_writeInterval:int = None
 	"""	The write interval for statistics. """
 
 
-	textui_refreshInterval:float
+	textui_enable:bool = None
+	"""	Enable or disable the text UI. """
+
+	textui_refreshInterval:float = None
 	"""	The refresh interval for the text UI. """
 
-	textui_startWithTUI:bool
+	textui_startWithTUI:bool = None
 	"""	Start with the text UI. """
 
-	textui_theme:str
+	textui_theme:str = None
 	"""	The theme for the text UI. """
 
-	textui_maxRequestSize:int
+	textui_maxRequestSize:int = None
 	"""	The maximum request size for the text UI. """
 
-	textui_notificationTimeout:float
+	textui_notificationTimeout:float = None
 	"""	The notification timeout for the text UI. """
 
-	textui_enableTextEditorSyntaxHighlighting:bool
+	textui_enableTextEditorSyntaxHighlighting:bool = None
 	"""	Enable or disable text editor syntax highlighting for the text UI. """
 
 
-	webui_root:str
+	webui_enable:bool = None
+	"""	Enable or disable the web UI. """
+	
+	webui_root:str = None
 	"""	The root path for the web UI. """
 
 
-	websocket_enable:bool
+	websocket_enable:bool = None
 	"""	Enable or disable the WebSocket server. """
 
 
-	websocket_address:str
+	websocket_address:str = None
 	"""	The address to listen on for the WebSocket server. """
 
-	websocket_listenIF:str
+	websocket_listenIF:str = None
 	"""	The network interface to listen on for WebSocket. """
 
-	websocket_loglevel:int|str
+	websocket_loglevel:int|str = None
 	"""	The log level for WebSocket. """
 
-	websocket_port:int
+	websocket_port:int = None
 	"""	The port to listen on for WebSocket. """
 
-	websocket_timeout:float
+	websocket_timeout:float = None
 	"""	The timeout for WebSocket requests. """
 
 
-	websocket_security_caCertificateFile:str
+	websocket_security_caCertificateFile:str = None
 	"""	The CA certificate file for WebSocket. """
 
-	websocket_security_caPrivateKeyFile:str
+	websocket_security_caPrivateKeyFile:str = None
 	"""	The CA private key file for WebSocket. """
 
-	websocket_security_tlsVersion:str
+	websocket_security_tlsVersion:str = None
 	"""	The TLS version for WebSocket. """
 
-	websocket_security_useTLS:bool
+	websocket_security_useTLS:bool = None
 	"""	Enable or disable TLS for WebSocket. """
 
-	websocket_security_verifyCertificate:bool
+	websocket_security_verifyCertificate:bool = None
 	"""	Enable or disable certificate verification for WebSocket. """
 
-	websocket_security_enableBasicAuth:bool
+	websocket_security_enableBasicAuth:bool = None
 	"""	Enable or disable basic authentication for WebSocket. """
 
-	websocket_security_enableTokenAuth:bool
+	websocket_security_enableTokenAuth:bool = None
 	"""	Enable or disable token authentication for WebSocket. """
 	
-	websocket_security_basicAuthFile:str
+	websocket_security_basicAuthFile:str = None
 	"""	The file for basic authentication for WebSocket. """
 
-	websocket_security_tokenAuthFile:str
+	websocket_security_tokenAuthFile:str = None
 	"""	The file for token authentication for WebSocket. """
 
 
@@ -671,7 +725,28 @@ class Configuration(object):
 				markup: If True, then the message is printed with markup. If False, then the message is printed without markup.
 		"""
 		if not Configuration._args_headless:
-			Console().print(msg, markup=markup)	# Print error message to console
+			RichConsole().print(msg, markup=markup)	# Print error message to console
+
+
+	@staticmethod
+	def _warning(msg:str) -> None:
+		"""	Print a warning message to the console.
+
+			Args:
+				msg: The warning message to print.
+		"""
+		Configuration._print(f'[orange3][b u]Configuration Warning[/b u]\n{msg}[/orange3]\n')
+
+
+	@staticmethod
+	def _error(msg:str) -> None:
+		"""	Print an error message to the console.
+
+			Args:
+				msg: The error message to print.
+		"""
+		Configuration._print(f'[red][b u]Configuration Error[/b u]\n{msg}[/red]\n')
+
 
 
 	@staticmethod
@@ -687,7 +762,7 @@ class Configuration(object):
 		
 		# Test that the config filename is just a filename without a path. If it is then throw an error
 		if Configuration._args_configfile and os.path.dirname(Configuration._args_configfile):
-			Configuration._print(f'[red]Configuration file must be a filename without a path: {Configuration._args_configfile}')
+			Configuration._error(f'Configuration file must be a filename without a path: {Configuration._args_configfile}')
 			return False
 
 		# Find out the path to the init directory
@@ -704,7 +779,7 @@ class Configuration(object):
 		Configuration._defaultConfigFilePath = Configuration.initDirectory / C.defaultConfigFile
 		Configuration._defaultConfigFile = str(Configuration._defaultConfigFilePath)
 		if not os.access(Configuration._defaultConfigFile, os.R_OK):
-			Configuration._print(f'[red]Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
+			Configuration._error(f'Default configuration file missing or not readable: {Configuration._defaultConfigFile}')
 			return False
 
 		return True
@@ -734,7 +809,7 @@ class Configuration(object):
 			"""
 			try:
 				if Configuration._args_headless:
-					Console().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
+					RichConsole().print(f'[red]Configuration file: {Configuration._args_configfile} is missing and cannot be created in headless mode.\n')
 					return False
 				
 				# load onboarding module and create user config file.
@@ -753,7 +828,7 @@ class Configuration(object):
 				if _baseDirectory:
 					Configuration.baseDirectory = pathlib.Path(_baseDirectory)
 			except Exception as e:
-				Console().print(e)
+				RichConsole().print(e)
 				raise e
 			return True
 
@@ -830,13 +905,13 @@ class Configuration(object):
 			except Exception as e:
 				import traceback
 				traceback.print_exc()
-				Configuration._print(f'[red]Error connecting to Zookeeper server: {e}')
+				Configuration._error(f'Error connecting to Zookeeper server: {e}')
 				return False
 			finally:
 				zk.disconnect()
 
 		# Read and parse the configuration file
-		config = ACMEConfiguration()
+		Configuration.configParser = ACMEConfiguration()
 	
 		# Construct the default values that are used for interpolation
 		_defaults = {	'basic.config': {	
@@ -854,6 +929,7 @@ class Configuration(object):
 
 							'logLevel'				: 'debug',										# The main secret key for the CSE. 
 							'consoleTheme'			: 'dark',										# The theme for the console.
+							'consoleType'			: 'rich',										# The type of the console. Allowed values: "rich", "simple".
 							'secret'				: os.getenv('ACME_SECURITY_SECRET', 'acme'),	# The main secret key for the CSE. 
 						}
 					}
@@ -862,6 +938,11 @@ class Configuration(object):
 
 		# Add environment variables to the defaults
 		_defaults.update({ 'DEFAULT': {k: v.replace('$', '$$') for k,v in os.environ.items()} })
+
+		# Check wether none of the environment variables has the same name as any of the default values in "basic.config"
+		for k in _defaults['basic.config'].keys():
+			if k in os.environ:
+				Configuration._warning(fr'The environment variable "{k}" conflicts with an option with the same name in the section \[[i]basic.config[/i]].\nPlease consider renaming the environment variable otherwise it cannot be used for interpolation in that section.')
 
 		# Add (empty) default for supported environment variables to the defaults dictionary for the interpolation during reading the configuration file
 		_envVariables = { e: os.getenv(e, '') if e not in _defaults else _defaults[e]
@@ -884,30 +965,28 @@ class Configuration(object):
 		_defaults['DEFAULT'].update(_envVariables)
 
 		# Set the defaults
-		config.read_dict(_defaults)
+		Configuration.configParser.read_dict(_defaults)
 		
 		try:
 			# Read the configuration files
 			# if len(config.read( [Configuration._defaultConfigFile, Configuration.configfile])) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
-			if len(config.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
-				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._args_configfile}')
+			if len(Configuration.configParser.read(configurationFiles)) == 0 and Configuration._args_configfile != C.defaultUserConfigFile:		# Allow
+				Configuration._error(f'Configuration file missing or not readable: {Configuration._args_configfile}')
 				return False
 			
 			# Read the extra configuration strings (e.g. from Zookeeper)
 			for cs in configurationStrings:
-				config.read_string(cs)
+				Configuration.configParser.read_string(cs)
 
 		except configparser.Error as e:
-			Configuration._print('[red]Error in configuration file')
-			Configuration._print(str(e))
+			Configuration._error(f'Error in configuration file\n{str(e)}')
 			return False
-	
 		
 		#	Look for deprecated and renamed sections and print an error message
 		if _deprecatedSections:
 			for o, n in _deprecatedSections:
-				if config.has_section(o):
-					Configuration._print(fr'[red]Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
+				if Configuration.configParser.has_section(o):
+					Configuration._error(fr'Found old section name in configuration file. Please rename "\[{o}]" to "\[{n}]".')
 					return False
 
 		#	Retrieve configuration values
@@ -918,15 +997,14 @@ class Configuration(object):
 			# and to set the respective attributes in the Configuration class.
 			# Validations are done later below.
 			for m in _moduleConfigs:
-				m.readConfiguration(config, Configuration)	# type:ignore [arg-type]
+				m.readConfiguration(Configuration.configParser, Configuration)	# type:ignore [arg-type]
 		
 		except configparser.InterpolationMissingOptionError as e:
-			Configuration._print(f'[red]Error in configuration file: {Configuration.configfile}\n{str(e)}')
-			Configuration._print('\n[red]Please provide the option in the section [bold](basic.config)[/bold] in the configuration file or set an environment variable with that name.\n')
+			Configuration._error(fr'Error in configuration file: {Configuration.configfile}\n{str(e)}\n\nPlease provide this configuration option in the section \[[i]basic.config[/i]], or set an environment variable with that name.\n')
 			return False
 
 		except Exception as e:	# about when findings errors in configuration
-			Configuration._print(f'[red]Error in configuration file: {Configuration.configfile}\n{str(e)}')
+			Configuration._error(f'Error in configuration file: {Configuration.configfile}\n{str(e)}')
 			return False
 
 		# Validate the configuration for each module
@@ -934,7 +1012,7 @@ class Configuration(object):
 			try:
 				m.validateConfiguration(Configuration, True)	# type:ignore [arg-type]
 			except ConfigurationError as e:
-				Configuration._print(f'[red]{str(e)}')
+				Configuration._error(f'{str(e)}')
 				return False
 
 		return True
@@ -979,6 +1057,12 @@ class Configuration(object):
 						if isinstance(v2, CSERegistrar):
 							# Convert the CSERegistrar to a dict
 							attr[k2] = v2.toDict()
+				case ACMEConfiguration():
+					# Ignore
+					continue
+				case None:
+					# Don't handle None values
+					continue
 
 			# Replace underscores with dots in the key names
 			result[k.replace('_', '.')] = attr
@@ -1059,8 +1143,8 @@ class Configuration(object):
 			# 	Configuration._configuration[key] = original
 			# 	return r[1].replace(r'\[', '[')	# unescape "\[" in error messages
 
-			from . import CSE
-			CSE.event.configUpdate(key, value)		# type:ignore [attr-defined]
+			eventManager.configUpdate(EventData(payload=(key, value)))		# type:ignore [attr-defined]
+
 		else:
 			return f'Invalid value for key: {key}'
 		return None
@@ -1080,7 +1164,8 @@ class Configuration(object):
 		
 
 class ConfigurationError(Exception):
-    pass
+	"""	Exception class for configuration errors. """
+	pass
 
 
 #############################################################################
@@ -1096,63 +1181,42 @@ class ConfigurationError(Exception):
 
 from ..runtime.configurations.ACPResourceConfiguration import ACPResourceConfiguration
 from ..runtime.configurations.ACTRResourceConfiguration import ACTRResourceConfiguration
-from ..runtime.configurations.AnnouncementServiceConfiguration import AnnouncementServiceConfiguration
 from ..runtime.configurations.CNTResourceConfiguration import CNTResourceConfiguration
-from ..runtime.configurations.CoAPServerConfiguration import CoAPServerConfiguration
 from ..runtime.configurations.ConsoleConfiguration import ConsoleConfiguration
 from ..runtime.configurations.CSEConfiguration import CSEConfiguration
 from ..runtime.configurations.FCNTResourceConfiguration import FCNTResourceConfiguration
-from ..runtime.configurations.GroupServiceConfiguration import GroupServiceConfiguration
-from ..runtime.configurations.HTTPServerConfiguration import HTTPServerConfiguration
 from ..runtime.configurations.LCPResourceConfiguration import LCPResourceConfiguration
 from ..runtime.configurations.LoggingConfiguration import LoggingConfiguration
 from ..runtime.configurations.ModuleConfiguration import ModuleConfiguration
-from ..runtime.configurations.MQTTConfiguration import MQTTConfiguration
-from ..runtime.configurations.PostgreSQLBindingConfiguration import PostgreSQLBindingConfiguration
 from ..runtime.configurations.RegistrationServiceConfiguration import RegistrationServiceConfiguration
-from ..runtime.configurations.RemoteCSEServiceConfiguration import RemoteCSEServiceConfiguration
 from ..runtime.configurations.REQResourceConfiguration import REQResourceConfiguration
 from ..runtime.configurations.ScriptingConfiguration import ScriptingConfiguration
 from ..runtime.configurations.SecurityServiceConfiguration import SecurityServiceConfiguration
-from ..runtime.configurations.StatisticsConfiguration import StatisticsConfiguration
 from ..runtime.configurations.StorageConfiguration import StorageConfiguration
 from ..runtime.configurations.SUBResourceConfiguration import SUBResourceConfiguration
-from ..runtime.configurations.TextUIConfiguration import TextUIConfiguration
-from ..runtime.configurations.TinyDBBindingConfiguration import TinyDBBindingConfiguration
 from ..runtime.configurations.TSBResourceConfiguration import TSBResourceConfiguration
 from ..runtime.configurations.TSResourceConfiguration import TSResourceConfiguration
-from ..runtime.configurations.WebSocketConfiguration import WebSocketConfiguration
 
 
 # Instantiate all configuration modules here, in a specfic order.
 
-_moduleConfigs:list[ModuleConfiguration] = [
+_moduleConfigs:list[ModuleConfiguration]
+""" The list of configuration modules. """
+
+_moduleConfigs = [
 
 	# Runtime configurations
 	CSEConfiguration(),
-	TextUIConfiguration(), # must get its config before the Console !
 	ConsoleConfiguration(),
 	LoggingConfiguration(), # must get its config after the Console !
 	ScriptingConfiguration(),
-	StatisticsConfiguration(),
 
 	# Service configurations
-	AnnouncementServiceConfiguration(),
-	GroupServiceConfiguration(),
 	RegistrationServiceConfiguration(),
-	RemoteCSEServiceConfiguration(),
 	SecurityServiceConfiguration(),
 
 	# Storage configurations
 	StorageConfiguration(),
-	PostgreSQLBindingConfiguration(),
-	TinyDBBindingConfiguration(),
-
-	# Binding configurations
-	CoAPServerConfiguration(),
-	HTTPServerConfiguration(),
-	MQTTConfiguration(),
-	WebSocketConfiguration(),
 
 	# Resource configurations
 	ACPResourceConfiguration(),

@@ -255,8 +255,8 @@ def isValidSPID(spid:str) -> bool:
 	return re.fullmatch(_spidRx, spid) is not None
 
 
-_csiRx = re.compile(r'^/[a-zA-Z0-9\-._]+') # Must start with a / and must not contain a further / or white space
 # _csiRx = re.compile(r'^/[^/\s]+') # Must start with a / and must not contain a further / or white space
+_csiRx = re.compile(r'^/[a-zA-Z0-9\-._]+') # Must start with a / and must not contain a further / or white space
 """	Regular expression to test for valid CSE-ID format (unreserved characters in IDs according to RFC 3986). """
 
 def isValidCSI(csi:str) -> bool:
@@ -271,7 +271,7 @@ def isValidCSI(csi:str) -> bool:
 
 
 
-_aeRx = re.compile(r'^[^/\s]+') # Must not start with a / and must not contain a further / or white space
+_aeRx = re.compile(r'^[SC][^/\s]+') # Must not start with a / and must not contain a further / or white space, but must start with "S" or "C"
 """	Regular expression to test for valid AE-ID format. """
 
 def isValidAEI(aei:str) -> bool:
@@ -284,7 +284,7 @@ def isValidAEI(aei:str) -> bool:
 		Return:
 			Boolean
 	"""
-	if isSPRelative(aei):
+	if isSPRelative(aei) or isAbsolute(aei):
 		ids = aei.split('/')
 		aei = ids[-1]
 

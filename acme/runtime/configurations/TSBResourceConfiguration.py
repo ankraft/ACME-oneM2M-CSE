@@ -34,4 +34,4 @@ class TSBResourceConfiguration(ModuleConfiguration):
 		try:
 			isodate.parse_duration(Configuration.resource_tsb_bcni)
 		except Exception as e:
-			raise ConfigurationError(fr'Configuration Error: [i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration')
+			raise ConfigurationError(fr'[i]\[resource.tsb]:bcni[/i]: configuration value must be an ISO8601 duration')

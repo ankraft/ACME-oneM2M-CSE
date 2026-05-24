@@ -4,8 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-"""	RequestManager module.
-	
+"""	RequestManager module. 
 	Main request dispatcher. All external requests are routed through here.
 """
 
@@ -16,8 +15,9 @@ import urllib.parse
 from copy import deepcopy
 from threading import Lock
 
-from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, ResourceTypes
-from ..etc.Types import FilterUsage, Operation, RequestCallback, RequestType
+
+from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, ResourceTypes, TYPE_CHECKING
+from ..etc.Types import FilterUsage, Operation, RequestCallback, RequestType, IdentifierScope
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
 from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result, EventCategory
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
@@ -25,8 +25,8 @@ from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
-from ..etc.RequestUtils import requestFromResult, determineSerialization, deserializeContent
-from ..etc.IDUtils import isCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
+from ..etc.RequestUtils import determineSerialization, deserializeContent, filterAttributes, serializeData
+from ..etc.IDUtils import isCSERelative, toCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
 from ..etc.IDUtils import localResourceID, getIdFromOriginator, getSPFromID, toAbsolute
 from ..etc.ACMEUtils import compareIDs, getIDFromPath
 from ..etc.ACMEUtils import isStructured, structuredPathFromRI
@@ -35,14 +35,25 @@ from ..etc.Utils import isURL
 from ..etc.Constants import RuntimeConstants as RC
 from ..helpers.TextTools import setXPath
 from ..helpers.RingBuffer import RingBuffer
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..runtime.Configuration import Configuration
-from ..runtime import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
+from ..helpers.Singleton import Singleton
 from ..resources.Resource import Resource
 from ..resources.CSEBase import getCSE
 from ..resources.REQ import REQ
 from ..resources.PCH import PCH
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	from ..services.Dispatcher import Dispatcher
+	from ..services.RegistrationManager import RegistrationManager
+	from ..services.NotificationManager import NotificationManager
+	from ..services.Validator import Validator
+	from ..services.SecurityManager import SecurityManager
+
 
 # Type definition
 TargetDetails = List[ 						#type: ignore[misc]
@@ -55,14 +66,45 @@ TargetDetails = List[ 						#type: ignore[misc]
 						  ResourceTypes,	# Target's resource type
 						  bool				# True if the target is a direct URL
 				] ]	
+""" Type definition for target details used in request handling. """
 
-
-# This factor determines how often the monitor looks for expired request resources
 expirationCheckFactor = 2.0
+""" This factor determines how often the monitor looks for expired request resources. """
 
-class RequestManager(object):
+@eventHandler
+@requires(httpServer='acme.plugins.bindings.HttpServer', required=False)
+@requires(coapServer='acme.plugins.bindings.CoAPServer', required=False)
+@requires(mqttClient='acme.plugins.bindings.MQTTClient', required=False)
+@requires(websocketServer='acme.plugins.bindings.WebSocketServer', required=False)
+@requires(remoteCSEManager='acme.plugins.services.RemoteCSEManager', required=False)
+@requires(storage='acme.runtime.Storage')
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(registration='acme.services.RegistrationManager')
+@requires(notificationManager='acme.services.NotificationManager')
+@requires(validator='acme.services.Validator')
+@requires(securityManager='acme.services.SecurityManager')
+class RequestManager(metaclass=Singleton):
 	"""	RequestManager class.
 	"""
+
+	storage:Storage = None
+	"""	Injected Storage instance. """
+
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
+
+	registration: RegistrationManager = None
+	""" Injected RegistrationManager instance. """
+
+	notificationManager: NotificationManager = None
+	""" Injected NotificationManager instance. """
+
+	validator: Validator = None
+	""" Injected Validator instance. """
+
+	securityManager: SecurityManager = None
+	""" Injected SecurityManager instance. """
+
 
 	__slots__ = (
 		'_requestLock',
@@ -71,9 +113,7 @@ class RequestManager(object):
 		'_pcWorker',
 		'_receivedResponses',
 		'_receivedResponsesLock',
-		
-
-
+	
 		'requestHandlers',
 		'flexBlockingBlocking',
 		'requestExpirationDelta',
@@ -81,33 +121,40 @@ class RequestManager(object):
 		'sendToFromInResponses',
 		'enableRequestRecording',
 		'requestRingBuffer',
-
-		'_eventRequestReceived',
-		'_eventRequestReceived',
-		'_eventCoAPSendRetrieve',
-		'_eventCoAPSendCreate',
-		'_eventCoAPSendUpdate',
-		'_eventCoAPSendDelete',
-		'_eventCoAPSendNotify',
-		'_eventHttpSendRetrieve',
-		'_eventHttpSendCreate',
-		'_eventHttpSendUpdate',
-		'_eventHttpSendDelete',
-		'_eventHttpSendNotify',
-		'_eventMqttSendRetrieve',
-		'_eventMqttSendCreate',
-		'_eventMqttSendUpdate',
-		'_eventMqttSendDelete',
-		'_eventMqttSendNotify',
-		'_eventWsSendRetrieve',
-		'_eventWsSendCreate',
-		'_eventWsSendUpdate',
-		'_eventWsSendDelete',
-		'_eventWsSendNotify',
-		'_eventAcmeSendNotify',
 	)
+	""" Slots for RequestManager class. """
 
-	def __init__(self) -> None:
+	httpServer: Any = None	# type: ignore
+	"""	The injected HttpServer plugin instance is injected by the PluginManager based on the declared dependency."""
+	coapServer: Any = None	# type: ignore
+	"""	The injected CoAPServer plugin instance is injected by the PluginManager based on the declared dependency."""
+	mqttClient: Any = None	# type: ignore
+	"""	The injected MQTTClient plugin instance is injected by the PluginManager based on the declared dependency."""
+	websocketServer: Any = None	# type: ignore
+	"""	The injected WebSocketServer plugin instance is injected by the PluginManager based on the declared dependency."""
+	remoteCSEManager: Any = None	# type: ignore
+	"""	The injected RemoteCSEManager plugin instance is injected by the PluginManager based on the declared dependency."""
+
+
+	def initialize(self) -> None:
+		""" Initialize the RequestManager.
+		"""
+
+		self.flexBlockingBlocking:bool = None
+		""" Whether flexBlocking requests are handled as blocking or non-blocking. """
+
+		self.requestExpirationDelta:float = -1.0
+		""" The request expiration delta value. """
+
+		self.maxExpirationDelta:float = -1.0
+		""" The maximum request expiration delta value. """
+
+		self.sendToFromInResponses:bool = None
+		""" Whether to include the 'to' and 'from' fields in responses. """
+
+		self.enableRequestRecording:bool = None
+		""" Whether request recording is enabled. """
+
 
 		# Configuration values
 		self._assignConfig()	
@@ -133,131 +180,53 @@ class RequestManager(object):
 		self._receivedResponsesLock = Lock()
 		""" Lock to access the received responses dictionary."""
 
-		# Add a handler when the CSE is reset
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
-
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
-
-		# Optimized access to events
-		self._eventRequestReceived = CSE.event.requestReceived		# type:ignore [attr-defined]
-		""" Event for received requests. """
-
-		self._eventCoAPSendRetrieve = CSE.event.coapSendRetrieve 	# type: ignore [attr-defined]
-		""" Event for sending a RETRIEVE request via CoAP. """
-
-		self._eventCoAPSendCreate = CSE.event.coapSendCreate		# type: ignore [attr-defined]
-		""" Event for sending a CREATE request via CoAP. """
-
-		self._eventCoAPSendUpdate = CSE.event.coapSendUpdate		# type: ignore [attr-defined]
-		""" Event for sending an UPDATE request via CoAP. """
-
-		self._eventCoAPSendDelete = CSE.event.coapSendDelete		# type: ignore [attr-defined]
-		""" Event for sending a DELETE request via CoAP. """
-
-		self._eventCoAPSendNotify = CSE.event.coapSendNotify		# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via CoAP. """
-
-		self._eventHttpSendRetrieve = CSE.event.httpSendRetrieve 	# type: ignore [attr-defined]
-		""" Event for sending a RETRIEVE request via HTTP. """
-
-		self._eventHttpSendCreate = CSE.event.httpSendCreate		# type: ignore [attr-defined]
-		""" Event for sending a CREATE request via HTTP. """
-
-		self._eventHttpSendUpdate = CSE.event.mqttSendUpdate		# type: ignore [attr-defined]
-		""" Event for sending an UPDATE request via HTTP. """
-
-		self._eventHttpSendDelete = CSE.event.httpSendDelete		# type: ignore [attr-defined]
-		""" Event for sending a DELETE request via HTTP. """
-
-		self._eventHttpSendNotify = CSE.event.httpSendNotify		# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via HTTP. """
-
-		self._eventMqttSendRetrieve = CSE.event.mqttSendRetrieve	# type: ignore [attr-defined]
-		""" Event for sending a RETRIEVE request via MQTT. """
-
-		self._eventMqttSendCreate = CSE.event.mqttSendCreate		# type: ignore [attr-defined]
-		""" Event for sending a CREATE request via MQTT. """
-
-		self._eventMqttSendUpdate = CSE.event.httpSendUpdate		# type: ignore [attr-defined]
-		""" Event for sending an UPDATE request via MQTT. """
-
-		self._eventMqttSendDelete = CSE.event.mqttSendDelete		# type: ignore [attr-defined]
-		""" Event for sending a DELETE request via MQTT. """
-
-		self._eventMqttSendNotify = CSE.event.mqttSendNotify		# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via MQTT. """
-
-		self._eventWsSendRetrieve = CSE.event.wsSendRetrieve		# type: ignore [attr-defined]
-		""" Event for sending a RETRIEVE request via WebSocket. """
-
-		self._eventWsSendCreate = CSE.event.wsSendCreate			# type: ignore [attr-defined]
-		""" Event for sending a CREATE request via WebSocket. """
-
-		self._eventWsSendUpdate = CSE.event.wsSendUpdate			# type: ignore [attr-defined]
-		""" Event for sending an UPDATE request via WebSocket. """
-
-		self._eventWsSendDelete = CSE.event.wsSendDelete			# type: ignore [attr-defined]
-		""" Event for sending a DELETE request via WebSocket. """
-
-		self._eventWsSendNotify = CSE.event.wsSendNotify			# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via WebSocket. """
 		
-		self._eventAcmeSendNotify = CSE.event.acmeNotification		# type: ignore [attr-defined]
-		""" Event for sending a NOTIFY request via ACME internally. """
-
-
-		# Map request handlers and events for operations in the RequestManager and the dispatcher
-		self.requestHandlers:RequestHandler = { 		
-			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, 
-												  CSE.dispatcher.processRetrieveRequest, 
+		self.requestHandlers: RequestHandler = { 
+			Operation.RETRIEVE	: RequestCallback(self.handleRetrieveRequest, 
+												  self.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
-												  self._eventCoAPSendRetrieve,
-												  self._eventHttpSendRetrieve,
-												  self._eventMqttSendRetrieve,
-												  self._eventWsSendRetrieve),
-												#   self.sendRetrieveRequest),
-			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, 
-												  CSE.dispatcher.processRetrieveRequest, 
+												  eventManager.coapSendRetrieve,
+												  eventManager.httpSendRetrieve,
+												  eventManager.mqttSendRetrieve,
+												  eventManager.wsSendRetrieve),
+			Operation.DISCOVERY	: RequestCallback(self.handleRetrieveRequest, 
+												  self.dispatcher.processRetrieveRequest, 
 												  self._sendRequest,
-												  self._eventCoAPSendRetrieve,
-												  self._eventHttpSendRetrieve,
-												  self._eventMqttSendRetrieve,
-												  self._eventWsSendRetrieve),
-												#   self.sendRetrieveRequest),
-			Operation.CREATE	: RequestCallback(self.createRequest,
-												  CSE.dispatcher.processCreateRequest,
+												  eventManager.coapSendRetrieve,
+												  eventManager.httpSendRetrieve,
+												  eventManager.mqttSendRetrieve,
+												  eventManager.wsSendRetrieve),
+			Operation.CREATE	: RequestCallback(self.handleCreateRequest,
+												  self.dispatcher.processCreateRequest,
 												  self._sendRequest,
-												  self._eventCoAPSendCreate,
-												  self._eventHttpSendCreate,
-												  self._eventMqttSendCreate,
-												  self._eventWsSendCreate),
-												#   self.sendCreateRequest),
-			Operation.UPDATE	: RequestCallback(self.updateRequest,
-												  CSE.dispatcher.processUpdateRequest,
+												  eventManager.coAPSendCreate,
+												  eventManager.httpSendCreate,
+												  eventManager.mqttSendCreate,
+												  eventManager.wsSendCreate),
+			Operation.UPDATE	: RequestCallback(self.handleUpdateRequest,
+												  self.dispatcher.processUpdateRequest,
 												  self._sendRequest,
-												  self._eventCoAPSendUpdate,
-												  self._eventHttpSendUpdate,
-												  self._eventMqttSendUpdate,
-												  self._eventWsSendUpdate),
-												#   self.sendUpdateRequest),
-			Operation.DELETE	: RequestCallback(self.deleteRequest,
-												  CSE.dispatcher.processDeleteRequest,
+												  eventManager.coAPSendUpdate,
+												  eventManager.httpSendUpdate,
+												  eventManager.mqttSendUpdate,
+												  eventManager.wsSendUpdate),
+			Operation.DELETE	: RequestCallback(self.handleDeleteRequest,
+												  self.dispatcher.processDeleteRequest,
 												  self._sendRequest,
-												  self._eventCoAPSendDelete,
-												  self._eventHttpSendDelete,
-												  self._eventMqttSendDelete,
-												  self._eventWsSendDelete),
-												#   self.sendDeleteRequest),
-			Operation.NOTIFY	: RequestCallback(self.notifyRequest,
-												  CSE.dispatcher.processNotifyRequest,
+												  eventManager.coAPSendDelete,
+												  eventManager.httpSendDelete,
+												  eventManager.mqttSendDelete,
+												  eventManager.wsSendDelete),
+			Operation.NOTIFY	: RequestCallback(self.handleNotifyRequest,
+												  self.dispatcher.processNotifyRequest,
 												  self._sendRequest,
-												  self._eventCoAPSendNotify,
-												  self._eventHttpSendNotify,
-												  self._eventMqttSendNotify,
-												  self._eventWsSendNotify),
-												#   self.sendNotifyRequest),
+												  eventManager.coAPSendNotify,
+												  eventManager.httpSendNotify,
+												  eventManager.mqttSendNotify,
+												  eventManager.wsSendNotify),
 		}
+		""" Dictionary to map operations to their corresponding request handling functions, 
+		dispatcher processing functions, send functions, and events for different protocols. """
 
 		self.requestRingBuffer:RequestRingBuffer = RequestRingBuffer(Configuration.cse_operation_requests_size)
 		""" RingBuffer to store requests for later retrieval. """
@@ -266,6 +235,11 @@ class RequestManager(object):
 
 
 	def shutdown(self) -> bool:
+		""" Shutdown the RequestManager.
+
+			Return:
+				Always returns *True*.
+		"""
 		# Stop the PollingChannel Cleanup worker
 		if self._pcWorker:
 			self._pcWorker.stop()
@@ -273,7 +247,8 @@ class RequestManager(object):
 		return True
 
 	
-	def restart(self, name:str) -> None:
+	@onEvent(eventManager.cseReset)
+	def restart(self, eventData: EventData) -> None:
 		"""	Restart the registrationManager service.
 		"""
 		# Terminate waiting request and pollingQueue actors
@@ -297,16 +272,16 @@ class RequestManager(object):
 		self.enableRequestRecording	= Configuration.cse_operation_requests_enable
 
 
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Optional[Any] = None) -> None:
+	@onEvent(eventManager.configUpdate)
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the `configUpdate` event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in ( 'cse.flexBlockingPreference', 
 				 		'cse.requestExpirationDelta', 
 						'cse.maxExpirationDelta', 
@@ -339,11 +314,11 @@ class RequestManager(object):
 		"""
 		# Convert JSON to CSERequest
 		if isinstance(request, dict):
-			request = CSE.request.fillAndValidateCSERequest(request)
+			request = self.fillAndValidateCSERequest(request)
 		# L.logDebug(f'Handling request: {request}')
 
 		# Send event
-		self._eventRequestReceived(request)
+		eventManager.requestReceived(EventData(payload=request))
 
 		# Validate partial RETRIEVE first
 		# partial RETRIEVE: convert single fragment ID
@@ -412,17 +387,28 @@ class RequestManager(object):
 	#	RETRIEVE Request
 	#
 
-	def retrieveRequest(self, request:CSERequest) ->  Result:
+	def handleRetrieveRequest(self, request:CSERequest) ->  Result:
+		""" Handle an incoming RETRIEVE request.
+		
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+		"""
 		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 		
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return CSE.dispatcher.processRetrieveRequest(request, request.originator)
+				return self.dispatcher.processRetrieveRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processRetrieveRequest(request, request.originator)
+					return self.dispatcher.processRetrieveRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -434,7 +420,18 @@ class RequestManager(object):
 	#	CREATE resources
 	#
 
-	def createRequest(self, request:CSERequest) -> Result:
+	def handleCreateRequest(self, request:CSERequest) -> Result:
+		""" Handle an incoming CREATE request.
+
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+		"""
 		L.isDebug and L.logDebug(f'CREATE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Check contentType and resourceType
@@ -443,12 +440,12 @@ class RequestManager(object):
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return CSE.dispatcher.processCreateRequest(request, request.originator)
+				return self.dispatcher.processCreateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processCreateRequest(request, request.originator)
+					return self.dispatcher.processCreateRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -460,7 +457,18 @@ class RequestManager(object):
 	#	UPDATE resources
 	#
 
-	def updateRequest(self, request:CSERequest) -> Result:
+	def handleUpdateRequest(self, request:CSERequest) -> Result:
+		""" Handle an incoming UPDATE request.
+
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+
+		"""
 		L.isDebug and L.logDebug(f'UPDATE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't update the CSEBase
@@ -470,12 +478,12 @@ class RequestManager(object):
 		# Check contentType and resourceType
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking
-				return CSE.dispatcher.processUpdateRequest(request, request.originator)
+				return self.dispatcher.processUpdateRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processUpdateRequest(request, request.originator)
+					return self.dispatcher.processUpdateRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -488,7 +496,19 @@ class RequestManager(object):
 	#
 
 
-	def deleteRequest(self, request:CSERequest,) -> Result:
+	def handleDeleteRequest(self, request:CSERequest,) -> Result:
+		""" Handle an incoming DELETE request.
+
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+				OPERATION_NOT_ALLOWED: If the operation is not allowed.
+				BAD_REQUEST: If the request is invalid.
+		"""
 		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		# Don't delete the CSEBase
@@ -497,12 +517,12 @@ class RequestManager(object):
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
-				return CSE.dispatcher.processDeleteRequest(request, request.originator)
+				return self.dispatcher.processDeleteRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:								# flexBlocking as non-blocking
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processDeleteRequest(request, request.originator)
+					return self.dispatcher.processDeleteRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 			
@@ -514,17 +534,28 @@ class RequestManager(object):
 	#	Notify resources
 	#
 
-	def notifyRequest(self, request:CSERequest) -> Result:
+	def handleNotifyRequest(self, request:CSERequest) -> Result:
+		""" Handle an incoming NOTIFY request.
+
+			Args:
+				request: The incoming request.
+
+			Return:
+				Result of the request handling.
+
+			Raises:
+				BAD_REQUEST: If the request is invalid.
+		"""
 		L.isDebug and L.logDebug(f'NOTIFY ID: {request.id if request.id else request.srn}, originator: {request.originator}')
 
 		match request.rt:
 			case ResponseType.blockingRequest | ResponseType.noResponse:	# "no reponse" is always handled as blocking	
-				return CSE.dispatcher.processNotifyRequest(request, request.originator)
+				return self.dispatcher.processNotifyRequest(request, request.originator)
 			case ResponseType.nonBlockingRequestSynch | ResponseType.nonBlockingRequestAsynch:
 				return self._handleNonBlockingRequest(request)
 			case ResponseType.flexBlocking:
 				if self.flexBlockingBlocking:			# flexBlocking as blocking
-					return CSE.dispatcher.processNotifyRequest(request, request.originator)
+					return self.dispatcher.processNotifyRequest(request, request.originator)
 				else:									# flexBlocking as non-blocking
 					return self._handleNonBlockingRequest(request)
 
@@ -537,19 +568,27 @@ class RequestManager(object):
 	#
 
 	def _createRequestResource(self, request:CSERequest) -> Resource:
+		""" Create a <request> resource for the given request.
+		
+			Args:
+				request: The request for which to create the <request> resource.
+				
+			Return:
+				The created <request> resource.
+		"""
 
 		# Get initialized resource
 		resource = REQ.createRequestResource(request)
 
 		# Register <request>
 		cseres = getCSE()
-		CSE.registration.checkResourceCreation(resource, request.originator, cseres)
+		self.registration.checkResourceCreation(resource, request.originator, cseres)
 		
 		# set the CSE.ri as indicator that this resource was created internally
 		resource.setCreatedInternally(cseres.pi)
 
 		# create <request>
-		return CSE.dispatcher.createLocalResource(resource, cseres, request.originator)
+		return self.dispatcher.createLocalResource(resource, cseres, request.originator)
 
 
 	def _handleNonBlockingRequest(self, request:CSERequest) -> Result:
@@ -624,7 +663,7 @@ class RequestManager(object):
 
 		if (nus := request.rtu) is None:	# might be an empty list
 			# RTU is not set, get POA's from the resp. AE.poa
-			# aes = CSE.storage.searchByFragment({ 'ty' : ResourceTypes.AE, 'aei' : to })	# search all <AE>s for aei=originator
+			# aes = storage.searchByFragment({ 'ty' : ResourceTypes.AE, 'aei' : to })	# search all <AE>s for aei=originator
 			# if len(aes) != 1:
 			# 	L.isWarn and L.logWarn(f'Wrong number of AEs with aei: {to} ({len(aes):d}): {str(aes)}')
 			# 	nus = aes[0].poa
@@ -635,7 +674,7 @@ class RequestManager(object):
 			nus = [ to ]
 
 		# send notifications.Ignore any errors here
-		CSE.notification.sendNotificationWithDict(responseNotification, nus, originator = RC.cseCsi)
+		self.notificationManager.sendNotificationWithDict(responseNotification, nus, originator=RC.cseCsi)
 
 		return True
 
@@ -693,7 +732,7 @@ class RequestManager(object):
 				pc = { 'm2m:dbg' : e.dbg }
 
 		# Retrieve the <request> resource
-		reqres = cast(REQ, CSE.dispatcher.retrieveResource(reqRi, originator = request.originator))
+		reqres = cast(REQ, self.dispatcher.retrieveResource(reqRi, originator = request.originator))
 
 		# Fill the <request>
 		reqres['ors'] = {	# operationResult
@@ -779,25 +818,41 @@ class RequestManager(object):
 		return self.handleSendRequest(request)[0].result	# there should be at least one result
 
 
-	def _originatorAdaptToScope(self, request:CSERequest) -> None:
-		"""	Convert *from* to SP-relative or Absolute format in the request. The *from* is converted in
+	def _originatorAdaptToScope(self, request: CSERequest, simplify: bool=False) -> None:
+		"""	Convert *from* to CSE-relative, SP-relative or Absolute format in the request. The *from* is converted in
 			*request.originator* and *request.originalRequest*, but NOT in 
 			*request.originalData*.
 		
 			See TS-0004, 7.3.2.6, Forwarding
 		"""
-		if request.spid != RC.cseSPid:
-			# If the request is not to the same SP, convert the originator to Absulute format
-			request.originator = toAbsolute(request.originator)
-			if request.originalRequest:
-				setXPath(request.originalRequest, 'fr', request.originator, overwrite = True)	# Also in the original request
-			# Attn: not changed in originatData !
+		if simplify:
 
-		elif isCSERelative(request.originator):
-			request.originator = toSPRelative(request.originator)
-			if request.originalRequest:
-				setXPath(request.originalRequest, 'fr', request.originator, overwrite = True)	# Also in the original request
-			# Attn: not changed in originatData !
+			if isAbsolute(request.originator) and request.originator.startswith(RC.cseSPidSlash):
+				request.originator = toSPRelative(request.originator)
+				if request.originalRequest:
+					setXPath(request.originalRequest, 'fr', request.originator, overwrite=True)	# Also in the original request
+				# Attn: not changed in originatData !
+
+			if isSPRelative(request.originator) and request.originator.startswith(RC.cseCsiSlash):
+				request.originator = toCSERelative(request.originator)
+				if request.originalRequest:
+					setXPath(request.originalRequest, 'fr', request.originator, overwrite=True)	# Also in the original request
+				# Attn: not changed in originatData !
+		
+		else:
+
+			if request.spid and request.spid != RC.cseSPid:
+				# If the request is not to the same SP, convert the originator to Absolute format
+				request.originator = toAbsolute(request.originator)
+				if request.originalRequest:
+					setXPath(request.originalRequest, 'fr', request.originator, overwrite=True)	# Also in the original request
+				# Attn: not changed in originatData !
+
+			elif isCSERelative(request.originator):
+				request.originator = toSPRelative(request.originator)
+				if request.originalRequest:
+					setXPath(request.originalRequest, 'fr', request.originator, overwrite=True)	# Also in the original request
+				# Attn: not changed in originatData !
 
 
 	##############################################################################
@@ -926,7 +981,7 @@ class RequestManager(object):
 						continue
 					# if fall through then there is no further request available.
 					# build the aggregated request
-					agrp = { 'm2m:agrp' : [ requestFromResult(Result(request = each)).data for each in lst ] }
+					agrp = { 'm2m:agrp' : [ self.requestFromResult(Result(request=each)).data for each in lst ] }
 					return Result(resource=agrp, rsc=ResponseStatusCode.OK)
 				
 			else:
@@ -1009,6 +1064,11 @@ class RequestManager(object):
 
 
 	def _cleanupPollingRequests(self) -> bool:
+		""" Remove expired requests from the polling request queue. This method is called periodically by an actor.
+
+			Returns:
+
+		"""
 		with self._requestLock:
 			# Search all entries in the queue and remove those that have expired in the past
 			# Remove those requests also from 
@@ -1057,7 +1117,7 @@ class RequestManager(object):
 						  dbg = 'Target not reachable or timeout'), None
 		# resp.data = resp.request.pc					# Add the pc to the data, since components excepct this. 
 													# TODO perhaps unify the use of response values throughout the CSE
-		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
+		eventManager.responseReceived(EventData(payload=resp.request))	# type:ignore [attr-defined]
 		return resp, info
 
 
@@ -1076,7 +1136,15 @@ class RequestManager(object):
 	#	Sending Requests
 	#
 
-	def handleSendRequest(self, request:CSERequest) -> RequestResponseList:
+	def handleSendRequest(self, request: CSERequest) -> RequestResponseList:
+		""" Handle a send request. This method is used to send a request to a remote CSE or to a local resource.
+		
+			Args:
+				request: The request to send.
+
+			Return:
+				A list of RequestResponse objects containing the request and the result of the send operation.
+		"""
 
 		if request.op is None:
 			raise BAD_REQUEST(L.logErr('request is missing operation attribute'))
@@ -1093,12 +1161,11 @@ class RequestManager(object):
 			# further function is needed.
 			res = self.requestHandlers[request.op].sendRequest(request)
 		except ResponseException as e:
-			res = [ RequestResponse(request, Result(rsc = e.rsc, dbg = e.dbg, request = e.data)) ]
+			res = [ RequestResponse(request, Result(rsc=e.rsc, dbg=e.dbg, request=e.data)) ]
 
 		# Add to requests database
 		for r in res:
 			self.recordRequest(r.request, r.result)
-
 		return res
 
 
@@ -1140,7 +1207,7 @@ class RequestManager(object):
 				(_id := localResourceID(to)) is not None and \
 				not ResourceTypes.isNotificationEntity(targetType) and \
 				targetType != ResourceTypes.UNKNOWN:
-					_result = CSE.dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
+					_result = self.dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
 					results.append( RequestResponse(request, _result) )
 					continue
 
@@ -1150,38 +1217,54 @@ class RequestManager(object):
 				continue		
 			_request.ct = ct
 
-			# Otherwise send it via one of the bindings
-			match url:
-				case _ if isHttpUrl(url):
-					self.requestHandlers[_request.op].httpEvent()	# send event
-					results.append( RequestResponse(_request, CSE.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
-					continue
-			
-				case _ if isMQTTUrl(url):
-					self.requestHandlers[_request.op].mqttEvent()	# send event
-					results.append( RequestResponse(_request, CSE.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
-					continue
+			try:
 
-				case _ if isCoAPUrl(url):
-					self.requestHandlers[_request.op].coapEvent()	# send event
-					results.append( RequestResponse(_request, CSE.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
-					continue
+				# Otherwise send it via one of the bindings
+				match url:
+					case _ if isHttpUrl(url):
+						if not self.httpServer:
+							raise NotImplementedError(f'HTTP server not activated. Cannot send HTTP request to url: {url}')
+						self.requestHandlers[_request.op].httpEvent()	# send event
+						results.append( RequestResponse(_request, self.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
+						continue
+				
+					case _ if isMQTTUrl(url):
+						if not self.mqttClient:
+							raise NotImplementedError(f'MQTT client not activated. Cannot send MQTT request to url: {url}')
+						self.requestHandlers[_request.op].mqttEvent()	# send event
+						results.append( RequestResponse(_request, self.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
+						continue
 
-				case _ if isWSUrl(url):
-					self.requestHandlers[_request.op].wsEvent()	# send event
-					try:
-						results.append( RequestResponse(_request, CSE.webSocketServer.sendWSRequest(_request, url, isDirectURL)) )
-					except TARGET_NOT_REACHABLE as e:
-						L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
-					continue
+					case _ if isCoAPUrl(url):
+						if not self.coapServer:
+							raise NotImplementedError(f'CoAP server not activated. Cannot send CoAP request to url: {url}')
+						self.requestHandlers[_request.op].coapEvent()	# send event
+						results.append( RequestResponse(_request, self.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
+						continue
 
-				# Special handling for ACME internal events.
-				# This might be more generalize when other opeations are supported as well
-				case _ if isAcmeUrl(url) and request.op == Operation.NOTIFY:
-					self._eventAcmeSendNotify(url, _request)	# Don't wait for any real result
-					results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
-					continue
+					case _ if isWSUrl(url):
+						if not self.websocketServer:
+							raise NotImplementedError(f'WebSocket server not activated. Cannot send WS request to url: {url}')
+						self.requestHandlers[_request.op].wsEvent()	# send event
+						try:
+							results.append( RequestResponse(_request, self.websocketServer.sendWSRequest(_request, url, isDirectURL)) )
+						except TARGET_NOT_REACHABLE as e:
+							L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
+						continue
 
+					# Special handling for ACME internal events.
+					# This might be more generalize when other opeations are supported as well
+					case _ if isAcmeUrl(url) and request.op == Operation.NOTIFY:
+						eventManager.acmeNotification(EventData(payload=(url, _request)))	# Don't wait for any real result
+						results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
+						continue
+
+			except NotImplementedError as e:
+				results.append(RequestResponse(_request, 
+								   			   Result(rsc=ResponseStatusCode.TARGET_NOT_REACHABLE, dbg=L.logWarn(str(e)))))
+				return results
+
+			# Fall-through if no case matched
 			raise BAD_REQUEST(L.logWarn(f'unsupported url scheme: {url}'))
 		
 		if not len(results):
@@ -1218,7 +1301,7 @@ class RequestManager(object):
 				if greedy:
 					del dct[attribute]
 				try:
-					_, newValue = CSE.validator.validateAttribute(attribute, value, attributeType, rtype=ResourceTypes.REQRESP)
+					_, newValue = self.validator.validateAttribute(attribute, value, attributeType, rtype=ResourceTypes.REQRESP)
 				except ResponseException as e:
 					e.dbg = f'attribute: {attribute}, value: {value} : {e.dbg}'
 					e.data = cseRequest
@@ -1230,7 +1313,7 @@ class RequestManager(object):
 					newValueList = []
 					for v in newValue:
 						try:
-							_, _nv = CSE.validator.validateAttribute(attribute, v, rtype=ResourceTypes.REQRESP)
+							_, _nv = self.validator.validateAttribute(attribute, v, rtype=ResourceTypes.REQRESP)
 						except ResponseException as e:
 							raise BAD_REQUEST(f'attribute: {attribute}, value: {value} : {e.dbg}', data=cseRequest)
 						newValueList.append(_nv) #type: ignore [index]
@@ -1257,7 +1340,8 @@ class RequestManager(object):
 			# 	raise BAD_REQUEST(L.logDebug('from/originator parameter is mandatory in request'), data = cseRequest)
 			# else:
 			# 	cseRequest.originator = fr
-			cseRequest.originator = gget(cseRequest.originalRequest, 'fr', greedy=False)
+			cseRequest.originator = cseRequest.originalOriginator = gget(cseRequest.originalRequest, 'fr', greedy=False)
+			self._originatorAdaptToScope(cseRequest, True)	# Convert "from" to CSE-relative format if possible
 
 			# RQI - requestIdentifier
 			# Check as early as possible
@@ -1508,8 +1592,9 @@ class RequestManager(object):
 					raise BAD_REQUEST(L.logDebug(f'Missing primitive content or body in request for operation: {cseRequest.op}'), data=cseRequest)
 			else:
 				cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content
+				cseRequest.topElememt = list(cseRequest.pc.keys())[0] if cseRequest.pc else None
 				try:
-					CSE.validator.validatePrimitiveContent(cseRequest.pc)
+					self.validator.validatePrimitiveContent(cseRequest.pc, cseRequest.topElememt)
 				except ResponseException as e:
 					L.isDebug and L.logDebug(e.dbg)
 					e.data = cseRequest
@@ -1599,13 +1684,13 @@ class RequestManager(object):
 		if not originator:
 			return []
 		# First check whether there is an AE with that originator
-		if (l := len(aes := CSE.storage.searchByFragment({ 'aei' : originator }))) > 0:
+		if (l := len(aes := self.storage.searchByFragment({ 'aei' : originator }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one AE with the same aei: {originator}')
 				return []
 			csz = aes[0].csz
 		# Else try whether there is a CSE or CSR
-		elif (l := len(cses := CSE.storage.searchByFragment({ 'csi' : getIdFromOriginator(originator) }))) > 0:
+		elif (l := len(cses := self.storage.searchByFragment({ 'csi' : getIdFromOriginator(originator) }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one CSE with the same csi: {originator}')
 				return []
@@ -1680,7 +1765,7 @@ class RequestManager(object):
 			if (ri := localResourceID(uri)) is not None:	# If this the local CSE
 
 				try:
-					resource = CSE.dispatcher.retrieveResource(ri)
+					resource = self.dispatcher.retrieveResource(ri)
 				except ResponseException as e:
 					L.logWarn(f'Cannot retrieve local resource: {ri}: {e.dbg}')
 					return []
@@ -1689,17 +1774,19 @@ class RequestManager(object):
 					targetResource = resource
 				else:
 					targetResource = getCSE()			# for all other resources without a poa is the CSE responsible
-			elif (t := CSE.remote.getCSRFromPath(uri)): # target is a registering CSE
-				targetResource, _ = t
-				isForwardedRequest = True
-			elif CSE.remote.registrarConfig._registrarCSEBaseResource:	# just send it up to the registrar CSE, if any
-				targetResource = CSE.remote.registrarConfig._registrarCSEBaseResource
-				isForwardedRequest = True
+			
+			elif self.remoteCSEManager is not None:
+				if (t := self.remoteCSEManager.getCSRFromPath(uri)): # target is a registered CSE
+					targetResource, _ = t
+					isForwardedRequest = True
+				elif self.remoteCSEManager.registrarConfig._registrarCSEBaseResource:	# just send it up to the registrar CSE, if any
+					targetResource = self.remoteCSEManager.registrarConfig._registrarCSEBaseResource
+					isForwardedRequest = True
 
-		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarded request to: {uri}')
+		isForwardedRequest and L.isDebug and L.logDebug(f'Forwarding request to: {uri}')
 
 		# If not found: The uri is an indirect resource with poa, retrieve one or more URIs from it
-		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri)):
+		if not targetResource and not (targetResource := self.dispatcher.retrieveResource(uri)):
 			L.isWarn and L.logWarn(f'Resource not found to get URL: {uri}')
 			return []
 		
@@ -1708,7 +1795,7 @@ class RequestManager(object):
 		if not uri.startswith(RC.cseCsiSlash):	# TODO make a utility out of this
 			if originator == RC.cseCsi:
 				L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
-			elif not isForwardedRequest and not CSE.security.hasAccess(originator, targetResource, permission, request = request, resultResource = targetResource):
+			elif not isForwardedRequest and not self.securityManager.hasAccess(originator, targetResource, permission, request=request, resultResource=targetResource):
 				L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
 				return []
 
@@ -1717,7 +1804,7 @@ class RequestManager(object):
 		pollingChannelResources = []
 		if targetResource.rr == False and targetResource.ri != RC.cseRi:
 			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')
-			if not len(pollingChannelResources := CSE.dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
+			if not len(pollingChannelResources := self.dispatcher.retrieveDirectChildResources(targetResource.ri, ResourceTypes.PCH)):
 				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')
 				return []
 			# Take the first resource and return it. There should hopefully only be one, but we don't check this here
@@ -1761,12 +1848,208 @@ class RequestManager(object):
 		return resultList
 
 
+	def requestFromResult(self,
+						   inResult: Result, 
+						   originator: Optional[str]=None, 
+						   ty: Optional[ResourceTypes]=None, 
+						   op: Optional[Operation]=None, 
+						   isResponse: Optional[bool]=False,
+						   originalRequest: Optional[CSERequest]=None) -> Result:
+		"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
+			with the full Response structure. Recursively do this if the *embeddedRequest* is also
+			a full Request or Response.
+
+			Args:
+				inResult: The input `Result` object.
+				originator: The request originator.
+				ty: Optional resource type.
+				op: Optional request operation type
+				isResponse: Whether the result is actually a response, and not a request.
+			
+			Return:
+				`Result` object with the response. The request or response is in *data*.
+
+			See Also:
+				`responseFromResult`
+		"""
+
+		req:JSON = {}
+		inRequest = inResult.request	# a bit of optimization to avoid too many accesses to the request attribute
+
+		# Assign the From and to of the request. An assigned originator has priority for this
+		# TO and FROM are optional in a response. So, don't put them in by default.
+		if not isResponse or (isResponse and self.sendToFromInResponses):
+			if originator:
+				req['fr'] = RC.cseCsi if isResponse else originator
+				req['to'] = inRequest.id if inRequest.id else originator
+			elif inRequest and inRequest.originator:
+				req['fr'] = RC.cseCsi if isResponse else inRequest.originator
+				req['to'] = inRequest.originator if isResponse else inRequest.id
+			else:
+				req['fr'] = RC.cseCsi
+				req['to'] = inRequest.id if inRequest.id else RC.cseCsi
+
+
+		# Originating Timestamp
+		if inRequest.ot:
+				req['ot'] = inRequest.ot
+		else:
+			# Always add the OT in a response if not already present
+			if isResponse:
+				req['ot'] = getResourceDate()
+		
+		# Response Status Code
+		if inResult.rsc and inResult.rsc != ResponseStatusCode.UNKNOWN:
+			req['rsc'] = int(inResult.rsc)
+		
+		# Operation
+		if not isResponse:
+			if op:
+				req['op'] = int(op)
+			elif inRequest.op:
+				req['op'] = int(inRequest.op)
+
+		# Type
+		if ty:
+			req['ty'] = int(ty)
+		elif inRequest.ty:
+			req['ty'] = int(inRequest.ty)
+		
+		# Request Identifier 
+		if inRequest.rqi:					# copy from the original request
+			req['rqi'] = inRequest.rqi
+		
+		# Release Version Indicator
+		# TODO handle version 1 correctly
+		if inRequest.rvi:			# copy from the original request
+			req['rvi'] = inRequest.rvi
+		
+		# Vendor Information
+		if inRequest.vsi:					# copy from the original request
+			req['vsi'] = inRequest.vsi
+		
+		# Event Category
+		if inRequest.ec:
+			req['ec'] = int(inRequest.ec)
+		
+		# Result Content
+		if inRequest.rcn:
+			req['rcn'] = int(inRequest.rcn)
+
+		# Result Content
+		if inRequest.drt:
+			req['drt'] = int(inRequest.drt)
+		
+		# Result Expiration Timestamp
+		if inRequest.rset is not None:
+			req['rset'] = inRequest.rset
+
+
+		# If the response contains a request (ie. for polling), then add that request to the pc
+		pc = None
+		# L.isDebug and L.logDebug(inResult)
+
+		if inResult.embeddedRequest:
+			if inResult.embeddedRequest.originalRequest:
+				pc = inResult.embeddedRequest.originalRequest
+			else:
+				pc = cast(JSON, self.requestFromResult(Result(request=inResult.embeddedRequest)).data)
+			# L.isDebug and L.logDebug(pc)
+
+		else:
+			# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
+			pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
+		
+		if pc:
+			# If the request has selected attributes, then the pc content must be filtered
+			if originalRequest and originalRequest.selectedAttributes:
+				_typeShortname = list(pc.keys())[0]
+				pc = { _typeShortname : filterAttributes(pc[_typeShortname], originalRequest.selectedAttributes) }
+
+			scope = IdentifierScope.CSERelative
+			if originalRequest:
+				if isAbsolute(originalRequest.originalOriginator):
+					scope = IdentifierScope.Absolute
+				elif isSPRelative(originalRequest.originalOriginator):
+					scope = IdentifierScope.SPRelative
+
+			if scope != IdentifierScope.CSERelative:
+				for k, v in pc.items():
+					pc[k] = self.validator.convertIDsToScope(k, v, ResourceTypes.RESPONSE, scope)
+
+
+			# if the request/result is actually an incoming request targeted to the receiver, then the
+			# whole request must be embeded as a "m2m:rqp" request.
+			if inResult.embeddedRequest and inResult.embeddedRequest.requestType == RequestType.REQUEST:
+				req['pc'] = { 'm2m:rqp' : pc }
+			else:
+				req['pc'] = pc
+
+		# Filter Criteria attributes
+		if inResult.request.fc:
+			fcAttributes:JSON = {}
+			inResult.request.fc.mapAttributes(lambda k,v: fcAttributes.update({k:v}), False)
+			if fcAttributes:
+				req['fc'] = fcAttributes
+
+		return Result(data=req, 
+					resource=inResult.resource, 
+					request=inResult.request, 
+					embeddedRequest=inResult.embeddedRequest, 
+					rsc=inResult.rsc)
+
+
+	def responseFromResult(self, inResult: Result, originator: Optional[str] = None) -> Result:
+		"""	Shortcut for `requestFromResult` to create a response object.
+		
+			Args:
+				inResult: Result that contains the response.
+				originator: Originator for the response.
+			
+			Return:
+				`Result` object with the response.
+		"""
+		return self.requestFromResult(inResult, originator, isResponse=True)
+
+
+
+
+	def prepareResultForSending(self, 
+								inResult: Result, 
+								isResponse: Optional[bool] = False,
+								originalRequest: Optional[CSERequest] = None) -> Tuple[Result, bytes]:
+		"""	Prepare a new request for MQTT or WebSocket sending. 
+		
+			Attention:
+				Remember, a response is actually just a new request. This takes care of the fact that in MQTT or WebSockets
+				a response is very similar to a response.
+		
+			Args:
+				inResult: A `Result` object, that contains a request in its *request* attribute.
+				isResponse: Indicator whether the `Result` object is actually a response or a request.
+				originalRequest: The original request that was received.
+
+			Return:
+				A tuple with an updated `Result` object and the serialized content.
+		"""
+		result = self.requestFromResult(inResult, isResponse=isResponse, originalRequest=originalRequest)
+		return (result, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
+
+
+
+
 ##############################################################################
 #
 #	Requests recording
 #
 
 	def recordRequest(self, request:Optional[CSERequest], result:Result) -> None:
+		""" Record a request and its response in the database.
+		
+			Args:
+				request: The request to record. If None, then no recording is done.
+				result: The result of the request, containing the response to record.
+		  """
 
 		# Recoding enabled or disabled?
 		if not self.enableRequestRecording or not request:
@@ -1817,15 +2100,15 @@ class RequestManager(object):
 		request.fillOriginalRequest(update = True)
 
 		# Store the request
-		CSE.storage.addRequest(request.op,
-							   rid, 
-							   srn,
-							   request.originator if request.originator else 'unknown',
-							   request._outgoing,
-							   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
-							   request.originalRequest,
-							   response,
-							   self.requestRingBuffer.append)
+		self.storage.addRequest(request.op,
+						   rid, 
+						   srn,
+						   request.originator if request.originator else 'unknown',
+						   request._outgoing,
+						   request.ot if request.ot else toISO8601Date(request._ot),	# Only convert now to ISO8601 to avoid unnecessary conversions
+						   request.originalRequest,
+						   response,
+						   self.requestRingBuffer.append)
 	
 class RequestRingBuffer(RingBuffer[JSON]):
 	"""	A ring buffer for requests.

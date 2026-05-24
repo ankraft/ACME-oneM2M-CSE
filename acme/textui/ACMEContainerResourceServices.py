@@ -8,20 +8,27 @@
 """
 
 from __future__ import annotations
-from typing import cast
+from typing import cast, TYPE_CHECKING
 
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, VerticalScroll, Vertical
-from textual.widgets import Button, Rule, Static, Markdown, Checkbox, LoadingIndicator, Label
+from textual.widgets import Button, Static, Checkbox, LoadingIndicator, Label
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Types import ResourceTypes
 from ..resources.Resource import Resource
-from ..runtime import CSE
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..runtime.Management import ManagementSupport
+
+@requires(managementSupport='acme.runtime.Management')
 class ACMEContainerResourceServices(Container):
 	"""	The *Services* view for the ACME text UI.
 	"""
+
+	managementSupport: ManagementSupport = None
+	"""	Injected ManagementSupport instance. """
 
 	def __init__(self, id:str) -> None:
 		"""	Initialize the view.
@@ -202,7 +209,7 @@ class ACMEContainerResourceServices(Container):
 		def _exportResource() -> None:
 			"""	Background runner callback to xport the resource.
 			"""
-			count, filename = CSE.console.doExportResource(self.resource.ri, self.exportIncludingChildResources)
+			count, filename = self.managementSupport.doExportResource(self.resource.ri, self.exportIncludingChildResources)
 			self.exportResourceLoadingIndicator.display = False
 			self.exportResourceResult.display = True
 			self.exportResourceResult.update(n := f'Exported [{self._app.objectColor}]{count}[/] resource(s) to file [{self._app.objectColor}]{filename}[/]')
@@ -229,7 +236,7 @@ class ACMEContainerResourceServices(Container):
 		def _exportInstances() -> None:
 			"""	Background runner callback to export the instances.
 			"""
-			count, filename = CSE.console.doExportInstances(self.resource.ri)
+			count, filename = self.managementSupport.doExportInstances(self.resource.ri)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
 			self.exportInstancesResult.update(n := f"Exported [{self._app.objectColor}]{count}[/] data point(s) to file [@click=open_file('{filename}')]{filename}[/]")
@@ -251,7 +258,7 @@ class ACMEContainerResourceServices(Container):
 		def _copyInstances() -> None:
 			"""	Background runner callback to copy the instances to the clipboard.
 			"""
-			count, data = CSE.console.doExportInstances(self.resource.ri, asString = True)
+			count, data = self.managementSupport.doExportInstances(self.resource.ri, asString=True)
 			self.exportInstancesLoadingIndicator.display = False
 			self.exportInstancesResult.display = True
 			if self._app.copyToClipboard(data):

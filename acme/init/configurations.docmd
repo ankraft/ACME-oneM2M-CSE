@@ -254,6 +254,125 @@ This setting indicate whether the optional "to" and "from" parameters shall be s
 The default value is `True`.
 
 
+# cse.service
+
+This section contains settings that control the CSE's core services
+
+
+# cse.service.action
+
+This section contains settings that control the CSE's action service.
+
+
+# cse.service.action.enable
+
+This setting enables or disables the action service.
+This includes the ActionManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+# cse.service.announcement
+
+This section contains settings that control the CSE's announcement service.
+
+
+# cse.service.announcement.enable
+
+This setting enables or disables the announcement service.
+This includes the AnnouncementManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+
+# cse.service.group
+
+This section contains settings that control the CSE's group service.
+
+
+# cse.service.group.enable
+
+This setting enables or disables the group service.
+This includes the GroupManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+# cse.service.location
+
+This section contains settings that control the CSE's location service.
+
+
+# cse.service.location.enable
+
+This setting enables or disables the location service. 
+This includes the LocationManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+# cse.service.remoteCSE
+
+This section contains settings that control the CSE's remote CSE service.
+
+
+# cse.service.remoteCSE.enable
+
+This setting enables or disables the remote CSE service.
+
+This includes the RemoteCSEManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+# cse.service.semantic
+
+This section contains settings that control the CSE's semantic service.
+
+
+# cse.service.semantic.enable
+
+This setting enables or disables the semantic service.
+This includes the SemanticManager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+# cse.service.time
+
+This section contains settings that control the CSE's time service.
+
+
+# cse.service.time.enable
+
+This setting enables or disables the Time Manager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+
+# cse.service.timeSeries
+
+This section contains settings that control the CSE's Time Series service.
+
+
+# cse.service.timeSeries.enable
+
+This setting enables or disables the Time Series Manager plugin and the related features in the CSE.
+
+The default value is `True`.
+
+
+
+
+# cse.serviceProviderID
+
+This is the CSE's service provider ID.
+
+The default is `acme.example.com`.
+
+
 
 # cse.sortDiscoveredResources
 
@@ -272,14 +391,6 @@ The default value is `True`.
 This is a comma-separated list of the supported oneM2M release versions. 
 
 The default value is `2a,3,4`
-
-
-
-# cse.serviceProviderID
-
-This is the CSE's service provider ID.
-
-The default is `acme.example.com`.
 
 
 
@@ -371,6 +482,25 @@ The default value is `3`.
 6 paused and 2 running threads -> factor 3
 
 
+# cse.operation.plugins
+
+The settings in this section control the CSE behavior of plugins.
+
+
+# cse.operation.plugins.disabledPlugins
+
+This setting specifies a list of plugins that are disabled and will not be loaded.
+
+The entries in this list are the module names of the plugins to disable. A plugin name may contain simple wildcards (e.g. plugin*) to match multiple plugins.
+
+The default value is an empty list, which means that all plugins are enabled and loaded.
+
+
+# cse.operation.plugins.replace
+
+This setting specifies whether to replace existing plugins with the same name when loading. The replaced plugins will be stopped, finalized, and unloaded before the new plugin is loaded.
+
+The default value is `False`.
 
 # cse.operation.requests
 
@@ -458,16 +588,6 @@ The default value is `/in-cse`.
 This setting specifies the URL of the registrar CSE.
 
 There is NO default value.
-
-
-
-# cse.registrar.checkInterval
-
-This setting specifies the pause, in seconds, between tries to connect to the registrar CSE. 
-This value is also used to check the connectivity to the registrar CSE after a successful registration.
-
-The default value is `30 seconds`.
-
 
 
 #  cse.registrar.cseID
@@ -571,9 +691,6 @@ The default value is an empty string.
 
 # cse.registrar.security.selfWsPassword
 
-
-
-
 The password that is added to the URL when registering to the registrar CSE via **WebSockets**. This password part of the credentials for the registrar CSE to authenticate itself to this hosting CSE.
 
 The default value is an empty string.
@@ -634,10 +751,17 @@ The default value is `C*,S*`.
 This setting specifies a comma-separated list of CSR originators (or CSE-IDs) that can register. 
 Simple wildcards (* and ?) are supported.
 
-Note: No leading `/` characters are allowed.
+**Note**: Since the values are CSE-IDs, they must start with a "/" character.
 
 The default value is an empty list.
 
+
+# cse.registration.checkInterval
+
+This setting specifies the pause, in seconds, between tries to connect to the registrar CSE. 
+This value is also used to check the connectivity to the registrar CSE after a successful registration.
+
+The default value is `30 seconds`.
 
 
 # cse.registration.checkLiveliness
@@ -649,6 +773,12 @@ Registrations will be removed if the respective connectivity liveliness could no
 
 The default value is `True`.
 
+
+# cse.registration.unregisterWhenStopping
+
+This setting specifies whether to automatically unregister from the registrar CSE when stopping the CSE. This includes deleting the CSR resource at the registrar CSE.
+
+The default value is `True`.
 
 
 # cse.security
@@ -677,6 +807,12 @@ This setting enables or disables the CSE's full access admin mode.
 
 The default value is `True`.
 
+
+# cse.security.secret
+
+This setting specifies the CSE's secret key. This key is used for seeding hash functions and encryption.
+
+The default value is `acme`.
 
 
 #  cse.statistics
@@ -890,6 +1026,18 @@ This setting specifies the CSE's console resource tree mode.
 The default value is `normal`.
 
 
+# console.type
+
+This setting specifies the CSE's console type.
+
+The `rich` console provides a more advanced user interface, while the `simple` console provides only a minimal functionality.
+
+**Allowed values**: `simple`, `rich`
+
+The default value is `rich`.
+
+
+
 # database
 
 This section contains settings that control the CSE's database setup.
@@ -1050,6 +1198,26 @@ This is useful for constraint devices that only support "http/1.0", which doesn'
 The default value is `False`.
 
 
+# http.enable
+
+This setting enables or disables the CSE's HTTP binding.
+
+The default value is `True`.
+
+
+# http.enableManagementEndpoint
+
+This setting enables or disables the CSE's HTTP server's management endpoint.  
+This allows to manage the CSE and retrieve information about its operation via HTTP requests.
+
+The management endpoint is available at the URL path `/__mgmt__`.
+
+**ATTENTION**: Enabling this feature may expose sensitive information. It may also lead to a total loss of data.
+
+This endpoint can only be enabled when the *http.enable* setting is enabled.
+
+The default value is `False`.
+
 
 #  http.enableStructureEndpoint
 
@@ -1063,6 +1231,7 @@ The structure endpoint can queried by a http GET request with the following URL 
 
 **ATTENTION**: Enabling this feature exposes various potentially sensitive information.
 
+This endpoint can only be enabled when the *http.enable* setting is enabled.
 
 The default value is `False`.
 
@@ -1079,8 +1248,16 @@ The Upper tester endpoint is available at the URL path `/__ut__`.
 
 Remember, that this endpoint only accepts *POST* requests.
 
+This endpoint can only be enabled when the *http.enable* setting is enabled.
+
 The default value is `False`.
 
+
+# http.externalRoot
+
+This setting specifies an optional external root path. This is used when the CSE is accessed from external addresses, e.g. in a Kubernetes cluster. It should only be set when the external root path is different from the local root.
+
+The default value is the same the `http.root` setting.
 
 
 # http.listenIF
@@ -1105,7 +1282,7 @@ The default value is `8080`.
 This setting specifies the root path of the CSE's HTTP server. 
 This is the URL path prefix under which the CSE is reachable.
 
-Note: Don't provide a trailing `/` character
+**Note**: Don't provide a trailing `/` character
 
 The default value is an empty string.
 
@@ -1522,6 +1699,37 @@ The default value is `False`.
 
 
 
+# mqtt.websocket
+
+
+The ACME CSE supports MQTT communication over WebSocket. This allows for MQTT messages to be sent and received over a WebSocket connection.
+
+
+
+# mqtt.websocket.enable
+
+This setting enables or disables the CSE's MQTT over WebSocket support.
+
+The default value is `False`.
+
+
+
+# mqtt.websocket.path
+
+Path it is the endpoint where the mqtt broker is accepting connections.
+
+The default value is an empty string.
+
+
+
+# mqtt.websocket.port
+
+This setting specifies the port on which the CSE's MQTT over WebSocket client is listening.
+
+The default value is `8080`.
+
+
+
 # resource
 
 This section contains settings that control the CSE's resource handling and default values.
@@ -1852,9 +2060,16 @@ The default value is `False`.
 
 # textui
 
-This section contains settings that control the CSE's terminal user interface.
+This section contains settings that control the CSE's terminal text user interface.
 
 Settings in this section are listed under the `[textui]` section.
+
+
+# textui.enable
+
+This setting enables or disables the CSE's text user interface.
+
+The default value is `True`.
 
 
 # textui.enableTextEditorSyntaxHighlighting
@@ -2072,6 +2287,13 @@ The default value is `False`.
 This section contains settings that control the CSE's web user interface.
 
 Settings in this section are listed under the `[webui]` section.
+
+
+# webui.enable
+
+This setting enables or disables the CSE's web user interface.
+
+The default value is `true`.
 
 
 

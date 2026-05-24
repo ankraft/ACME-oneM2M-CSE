@@ -22,6 +22,7 @@ class ConsoleConfiguration(ModuleConfiguration):
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
 		#	Console
+		config.console_type = parser.get('console', 'type', fallback='rich')
 		config.console_confirmQuit = parser.getboolean('console', 'confirmQuit', fallback=False)
 		config.console_headless = parser.getboolean('console', 'headless', fallback=False)
 		config.console_hideResources = parser.getlist('console', 'hideResources', fallback=[])		# type: ignore[attr-defined]
@@ -40,17 +41,20 @@ class ConsoleConfiguration(ModuleConfiguration):
 
 		# Console settings
 
+		if config.console_type not in [ 'rich', 'simple' ]:
+			raise ConfigurationError(fr'[i]\[console]:type[/i] must be "rich" or "simple"')
+
 		if config.console_refreshInterval <= 0.0:
-			raise ConfigurationError(r'Configuration Error: [i]\[console]:refreshInterval[/i] must be > 0.0')
+			raise ConfigurationError(r'[i]\[console]:refreshInterval[/i] must be > 0.0')
 		
 		if isinstance(Configuration.console_treeMode, str):
 			if not (treeMode := TreeMode.to(Configuration.console_treeMode, insensitive = True)):
-				raise ConfigurationError(fr'Configuration Error: [i]\[console]:treeMode[/i] must be one of {TreeMode.names()}')
+				raise ConfigurationError(fr'[i]\[console]:treeMode[/i] must be one of {TreeMode.names()}')
 			Configuration.console_treeMode = treeMode
 		
 		Configuration.console_theme = Configuration.console_theme.lower()
 		if Configuration.console_theme not in [ 'dark', 'light' ]:
-			raise ConfigurationError(fr'Configuration Error: [i]\[console]:theme[/i] must be "light" or "dark"')
+			raise ConfigurationError(fr'[i]\[console]:theme[/i] must be "light" or "dark"')
 
 		if Configuration.console_headless:
 			Configuration.logging_enableScreenLogging = False

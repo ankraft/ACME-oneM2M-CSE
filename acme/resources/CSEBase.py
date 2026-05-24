@@ -9,108 +9,60 @@
 """ CSEBase (CSEBase) resource type. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes, ContentSerializationType, JSON
+from ..etc.Types import CSERequest, ResourceTypes, ContentSerializationType, JSON, CSEType
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.IDUtils import isValidCSI
 from ..etc.ACMEUtils import resourceFromCSI
 from ..etc.Constants import Constants
-from ..resources.Resource import Resource
+from ..etc.DateUtils import getResourceDate
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..runtime import CSE
 from ..etc.Constants import RuntimeConstants as RC
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Dispatcher import Dispatcher
+
 
 # TODO notificationCongestionPolicy
 
+@requires(dispatcher='acme.services.Dispatcher')
 class CSEBase(AnnounceableResource):
 	""" CSEBase (CSEBase) resource type. """
 
-	resourceType = ResourceTypes.CSEBase
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.ACP,
-								   ResourceTypes.ACTR, 
-								   ResourceTypes.AE, 
-								   ResourceTypes.CRS, 
-								   ResourceTypes.CSR, 
-								   ResourceTypes.CNT, 
-								   ResourceTypes.FCNT, 
-								   ResourceTypes.GRP, 
-								   ResourceTypes.LCP,
-								   ResourceTypes.NOD,
-								   ResourceTypes.NTP,
-								   ResourceTypes.PRMR,
-								   ResourceTypes.PRP,
-								   ResourceTypes.REQ, 
-								   ResourceTypes.SCH,
-								   ResourceTypes.SUB, 
-								   ResourceTypes.TS, 
-								   ResourceTypes.TSB, 
-								   ResourceTypes.CSEBaseAnnc ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-			# Common and universal attributes
-			'rn': None,
-		 	'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'lbl': None,
-			'loc': None,	
-			'cstn': None,
-			'acpi': None,
-
-			# Resource attributes
-			'csi': None,
-			'cst': None,
-			'csz': None,
-			'ctm': None,
-			'daci': None,
-			'esi': None,
-			'nl': None,
-			'poa': None,
-			'srt': None,
-			'srv': None,
-	}
-	"""	Represent a dictionary of attribute policies used in validation. """
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
 
 
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi: str) -> None:
 
-		self.setAttribute('ri', 'cseid', overwrite = False)
-		self.setAttribute('rn', 'cse', overwrite = False)
-		self.setAttribute('csi', '/cse', overwrite = False)
+		self.setAttribute('ri', 'cseid', overwrite=False)
+		self.setAttribute('rn', 'cse', overwrite=False)
+		self.setAttribute('csi', '/cse', overwrite=False)
 
-		self.setAttribute('cst', RC.cseType, overwrite = False)
+		self.setAttribute('cst', RC.cseType, overwrite=False)
 		self.setAttribute('csz', ContentSerializationType.supportedContentSerializations())
-		self.setAttribute('poa', RC.csePOA, overwrite = False)	
+		self.setAttribute('poa', RC.csePOA, overwrite=False)	
 		self.setAttribute('srt', ResourceTypes.supportedResourceTypes())			#  type: ignore
 		self.setAttribute('srv', RC.supportedReleaseVersions)			# This must be a list
 
 		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	
-		self.delAttribute('et', setNone = False)	
+		self.delAttribute('et', setNone=False)	
 
-		super().initialize(pi, originator)
+		super().initialize(pi)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 		if not isValidCSI(self.csi):
 			raise BAD_REQUEST(f'Wrong format for CSEBase.csi: {self.csi}')
 
 
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator: Optional[str]=None, 
+					   dct: Optional[JSON]=None, 
+					   parentResource: Optional[Resource]=None) -> None:
 		super().validate(originator, dct, parentResource)
 		self._normalizeURIAttribute('poa')
 
@@ -121,32 +73,39 @@ class CSEBase(AnnounceableResource):
 		if nl or _nl_:
 			if nl != _nl_:
 				if _nl_:
-					if nresource := CSE.dispatcher.retrieveResource(_nl_):
+					if nresource := self.dispatcher.retrieveResource(_nl_):
 						nresource['hcl'] = None # remove old link
-						CSE.dispatcher.updateLocalResource(nresource)
+						self.dispatcher.updateLocalResource(nresource)
 				self[Constants.attrNode] = nl
 
-				nresource = CSE.dispatcher.retrieveResource(nl)
+				nresource = self.dispatcher.retrieveResource(nl)
 				nresource['hcl'] = self['ri']
 				nresource.dbUpdate(True)
 				#CSE.dispatcher.updateLocalResource(nresource)
 
 			self[Constants.attrNode] = nl
+		
+		# Set ici and spi if not set and cst == IN
+		if self.cst == CSEType.IN:
+			if self.ici is None:		# type: ignore[has-type]
+				self.setAttribute('ici', self.csi)	# type: ignore[has-type]
+			if self.spi is None:		# type: ignore[has-type]
+				self.setAttribute('spi', self.csi)	# type: ignore[has-type]
 
 
-	def willBeRetrieved(self, originator:str, 
-							  request:Optional[CSERequest] = None, 
-							  subCheck:Optional[bool] = True) -> None:
-		super().willBeRetrieved(originator, request, subCheck = subCheck)
+	def willBeRetrieved(self, originator: str, 
+							  request: Optional[CSERequest]=None, 
+							  subCheck: Optional[bool]=True) -> None:
+		super().willBeRetrieved(originator, request, subCheck=subCheck)
 
 		# add the current time to this resource instance
-		self.setAttribute('ctm', CSE.time.getCSETimestamp())
+		self.setAttribute('ctm', getResourceDate())
 
 
 	def childWillBeAdded(self, childResource: Resource, originator: str) -> None:
 		super().childWillBeAdded(childResource, originator)
 		if childResource.ty == ResourceTypes.SCH:
-			if CSE.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.SCH):
+			if self.dispatcher.retrieveDirectChildResources(self.ri, ResourceTypes.SCH):
 				raise BAD_REQUEST('Only one <schedule> resource is allowed for the CSEBase')
 
 

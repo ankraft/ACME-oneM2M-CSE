@@ -11,48 +11,29 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Result, CSERequest
+from ..etc.Types import ResourceTypes, Result, CSERequest
 from ..etc.ResponseStatusCodes import ResponseStatusCode, OPERATION_NOT_ALLOWED, NOT_FOUND
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
+from ..runtime.PluginSupport import requires
 from ..resources.VirtualResource import VirtualResource
 from ..resources.FCI import FCI
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
+@requires(dispatcher='acme.services.Dispatcher')
 class FCNT_OL(VirtualResource):
 	"""	This class implements the virtual <oldest> resource for <flexContainer> resources.
 	"""
 
-	resourceType = ResourceTypes.FCNT_OL
-	""" The resource type """
+	dispatcher: Dispatcher = None
+	"""	Injected Dispatcher instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	resourceName = 'ol'
-	""" Possibility for virtual sub-classes to provide a specific resource name. """
-
-
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ]
-	"""	A list of allowed child-resource types for this resource type. """
-
-	_attributes:AttributePolicyDict = {		
-		# None for virtual resources
-	}
-	""" A dictionary of the attributes and attribute policies for this resource type. 
-		The attribute policies are assigned during startup by the `Importer`.
-	"""
-
-
-
-	def handleRetrieveRequest(self, request:Optional[CSERequest] = None, 
-									id:Optional[str] = None, 
-									originator:Optional[str] = None) -> Result:
+	def handleRetrieveRequest(self, request: Optional[CSERequest] = None, 
+									id: Optional[str] = None, 
+									originator: Optional[str] = None) -> Result:
 		""" Handle a RETRIEVE request.
 
 			Args:
@@ -64,10 +45,10 @@ class FCNT_OL(VirtualResource):
 				The oldest <flexContainerInstance> for the parent <flexContainer>, or an error `Result`.
 		"""
 		L.isDebug and L.logDebug('Retrieving oldest FCI from FCNT')
-		return self.retrieveLatestOldest(request, originator, ResourceTypes.FCI, oldest = True)
+		return self.retrieveLatestOldest(request, originator, ResourceTypes.FCI, oldest=True)
 
 
-	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleCreateRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle a CREATE request. 
 
 			Args:
@@ -81,7 +62,7 @@ class FCNT_OL(VirtualResource):
 		raise OPERATION_NOT_ALLOWED('operation not allowed for <oldest> resource type')
 
 
-	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleUpdateRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle an UPDATE request.			
 	
 			Args:
@@ -95,7 +76,7 @@ class FCNT_OL(VirtualResource):
 		raise OPERATION_NOT_ALLOWED('operation not allowed for <oldest> resource type')
 
 
-	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleDeleteRequest(self, request: CSERequest, id: str, originator: str) -> Result:
 		""" Handle a DELETE request.
 
 			Delete the oldest resource.
@@ -109,11 +90,11 @@ class FCNT_OL(VirtualResource):
 				Result object indicating success or failure.
 		"""
 		L.isDebug and L.logDebug('Deleting oldest FCI from FCNT')
-		if not (resource := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.FCI, oldest = True)):
+		if not (resource := self.dispatcher.retrieveLatestOldestInstance(self.pi, ResourceTypes.FCI, oldest=True)):
 			raise NOT_FOUND('no instance for <oldest>')
-		CSE.dispatcher.deleteLocalResource(resource, originator, withDeregistration = True)
-		return Result(rsc = ResponseStatusCode.DELETED, resource = resource)
+		self.dispatcher.deleteLocalResource(resource, originator, withDeregistration=True)
+		return Result(rsc=ResponseStatusCode.DELETED, resource=resource)
 
 
 	def hasAttributeDefined(self, name: str) -> bool:
-		return name in FCI._attributes
+		return name in FCI._attributes	# type: ignore[attr-defined]

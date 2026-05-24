@@ -74,7 +74,7 @@ if __name__ == '__main__':
 	parser.add_argument('--disable-uppertester', '-nout', action='store_true', dest='disableUpperTester', default=False, help='disable the use of the upper tester interface')
 	parser.add_argument('--exclude-tests', '-et', action='store', dest='excludeTests', nargs='+', type=str, default=[], help='exclude the specified test cases from running')
 	parser.add_argument('--run-teardown', '-runtd', action='store_true', dest='runTearDown', default=False, help='run the specified test cases\' tear-down functions and exit')
-	parser.add_argument('--run-count', action='store', dest='numberOfRuns', type=checkPositive, default=1, help='run each test suite n times (default: 1)')
+	parser.add_argument('--run-count', action='store', dest='numberOfRuns', type=checkPositive, default=1, help='run each test suite n times (default: 1). Disables upper tester interface if n > 1.')
 	parser.add_argument('--run-tests', '-run', action='store', dest='testCaseName', nargs='+', type=str, default=None, help='run only the specified test cases from the set of test suites')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped test cases in summary')
 	parser.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='continue running test cases after a failure')
@@ -100,7 +100,6 @@ if __name__ == '__main__':
 	# Disable the upper tester interface
 	if args.disableUpperTester:
 		init.disableUpperTester()
-		print("hu")
 
 	# Import all test* modules.
 	for name in filenames:
@@ -172,7 +171,17 @@ if __name__ == '__main__':
 		quit()
 			
 
+	console.rule(f'[bright_blue]Running Tests on CSE', characters='═')
+	console.print(f'[bright_blue][b]CSE-ID:[/b] {init.CSEID}')
+	console.print(f'[bright_blue][b]Name:[/b]   {init.CSERN}')
+	console.print(f'[bright_blue][b]Type:[/b]   {init.cseType}')
+	console.print(f'[bright_blue][b]URL:[/b]    {init.CSEURL}')
 	
+	# Disable upper tester interface if number of runs is greater than 1
+	if args.numberOfRuns > 1 and not args.disableUpperTester:
+		console.print(f'[yellow]Running each test suite {args.numberOfRuns} times. Disabling upper tester interface.[/yellow]')
+		init.disableUpperTester()
+		
 	for module in modules:
 		if hasattr(module, 'run'):
 			totalSuites += 1
@@ -181,7 +190,7 @@ if __name__ == '__main__':
 				for n in range(args.numberOfRuns):
 					if args.numberOfRuns > 1:
 						name = f'{module.__name__}_{n}'
-					console.print(f'[bright_blue]Running tests from [bold]{name}{" (skipping tear-down)" if args.disableTearDown else ""}')
+					console.rule(f'[bright_blue]Running Tests From [b]"{name}"{" (skipping tear-down)" if args.disableTearDown else ""}')
 					startProcessTime = time.process_time()
 					startPerfTime = time.perf_counter()
 					startRequestCount = init.requestCount

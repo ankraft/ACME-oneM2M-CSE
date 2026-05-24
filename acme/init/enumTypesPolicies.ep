@@ -271,6 +271,9 @@
 		"28": "flexContainer",
 		"29": "timeSeries",
 		"30": "timeSeriesInstance",
+		"34": "dymamicAuthorizationConsultation",
+		"43": "AEContactList",
+		"47": "triggerRequest",
 		"48": "crossResourceSubscription",
 		"58": "flexContainerInstance",
 		"60": "timeSyncBeacon",
@@ -479,6 +482,12 @@
 	"m2m:timeWindowType" : {
 		"1": "Periodic Window",
 		"2": "Sliding Window"
+	},
+	"m2m:triggerPurpose" : {
+		"1": "establishConnection",
+		"2": "registrationRequest",
+		"3": "executeCRUD",
+		"4": "enrolmentRequest"
 	},
 	"dcfg:wifiConnectionStatus" : {
 		"0": "Disconnected",

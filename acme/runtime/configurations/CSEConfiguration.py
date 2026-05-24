@@ -22,7 +22,7 @@ class CSEConfiguration(ModuleConfiguration):
 	"""
 
 	def readConfiguration(self, parser:configparser.ConfigParser, config:Configuration) -> None:
-			#	CSE
+		#	CSE
 
 		config.cse_asyncSubscriptionNotifications = parser.getboolean('cse', 'asyncSubscriptionNotifications', fallback=True)
 		config.cse_checkExpirationsInterval = parser.getint('cse', 'checkExpirationsInterval', fallback=60)		# Seconds
@@ -43,7 +43,7 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_sendToFromInResponses = parser.getboolean('cse', 'sendToFromInResponses', fallback=True)
 		config.cse_sortDiscoveredResources = parser.getboolean('cse', 'sortDiscoveredResources', fallback=True)
 		config.cse_supportedReleaseVersions = parser.getlist('cse', 'supportedReleaseVersions', fallback=['2a', '3', '4', '5']) # type: ignore [attr-defined]
-		config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback='acme.example.com')
+		config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback='//acme.example.com')
 		config.cse_type = parser.get('cse', 'type', fallback='IN')		# IN, MN, ASN
 		config.cse_idLength = parser.getint('cse', 'idLength', fallback=10)
 
@@ -58,6 +58,17 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_operation_requests_enable = parser.getboolean('cse.operation.requests', 'enable', fallback=False)
 		config.cse_operation_requests_size = parser.getint('cse.operation.requests', 'size', fallback=1000)
 
+		#	CSE Operation : Plugins
+		config.cse_operation_plugins_disabledPlugins = parser.getlist('cse.operation.plugins', 'disabledPlugins', fallback=[])  # type: ignore [attr-defined]
+		config.cse_operation_plugins_replace = parser.getboolean('cse.operation.plugins', 'replace', fallback=False)
+
+		# Derive enabled components from the configuration. This is used to determine which plugins to load.
+		# Create a dictionary with names starting and ending with _ to avoid conflicts with actual configuration options. 
+		# The _ are stripped when checking the configuration in the PluginManager.
+		config._cse_operation_plugins_enabledComponents = { o[1:-1] : parser.getboolean('cse.operation.plugins', o) 
+														    for o in parser.options('cse.operation.plugins') 
+														    if '_' == o[0] == o[-1] }
+		
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# override configuration with command line arguments
@@ -79,51 +90,49 @@ class CSEConfiguration(ModuleConfiguration):
 				case 'in':
 					config.cse_type = CSEType.IN
 				case _:
-					raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:type: {RC.cseType}')
+					raise ConfigurationError(fr'Unsupported \[cse]:type: {RC.cseType}')
 
 		# CSE Serialization
 		if isinstance(config.cse_defaultSerialization, str):
 			config.cse_defaultSerialization = ContentSerializationType.getType(config.cse_defaultSerialization)
 			if config.cse_defaultSerialization == ContentSerializationType.UNKNOWN:
-				raise ConfigurationError(fr'Configuration Error: Unsupported \[cse]:defaultSerialization: {config.cse_defaultSerialization}')
+				raise ConfigurationError(fr'Unsupported \[cse]:defaultSerialization: {config.cse_defaultSerialization}')
 			
 		# Operation
 		if config.cse_operation_jobs_balanceTarget <= 0.0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0')
+			raise ConfigurationError(fr'[i]\[cse.operation.jobs]:balanceTarget[/i] must be > 0.0')
 		if config.cse_operation_jobs_balanceLatency < 0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0')
+			raise ConfigurationError(fr'[i]\[cse.operation.jobs]:balanceLatency[/i] must be >= 0')
 		if config.cse_operation_jobs_balanceReduceFactor < 1.0:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0')
-
+			raise ConfigurationError(fr'[i]\[cse.operation.jobs]:balanceReduceFactor[/i] must be >= 1.0')
 		# check the csi format and value
 		if not isValidCSI(config.cse_cseID):
-			raise ConfigurationError(fr'Configuration Error: Wrong format for [i]\[cse]:cseID[/i]: {config.cse_cseID}')
+			raise ConfigurationError(fr'Wrong format for [i]\[cse]:cseID[/i]: {config.cse_cseID}')
 		if config.cse_cseID[1:] == config.cse_resourceName:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]')
+			raise ConfigurationError(fr'[i]\[cse]:cseID[/i] must be different from [i]\[cse]:resourceName[/i]')
 
 		# Check flexBlocking value
 		config.cse_flexBlockingPreference = config.cse_flexBlockingPreference.lower()
 		if config.cse_flexBlockingPreference not in ['blocking', 'nonblocking']:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"')
+			raise ConfigurationError(r'[i]\[cse]:flexBlockingPreference[/i] must be "blocking" or "nonblocking"')
 
 		# Check release versions
 		if len(config.cse_supportedReleaseVersions) == 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:supportedReleaseVersions[/i] must not be empty')
+			raise ConfigurationError(r'[i]\[cse]:supportedReleaseVersions[/i] must not be empty')
 		if len(config.cse_releaseVersion) == 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:releaseVersion[/i] must not be empty')
+			raise ConfigurationError(r'[i]\[cse]:releaseVersion[/i] must not be empty')
 		if config.cse_releaseVersion not in config.cse_supportedReleaseVersions:
-			raise ConfigurationError(fr'Configuration Error: [i]\[cse]:releaseVersion[/i]: {config.cse_releaseVersion} not in [i]\[cse].supportedReleaseVersions[/i]: {config.cse_supportedReleaseVersions}')
-
+			raise ConfigurationError(fr'[i]\[cse]:releaseVersion[/i]: {config.cse_releaseVersion} not in [i]\[cse].supportedReleaseVersions[/i]: {config.cse_supportedReleaseVersions}')
 		# Check various intervals
 		if config.cse_checkExpirationsInterval <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:checkExpirationsInterval[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[cse]:checkExpirationsInterval[/i] must be > 0')
 		if config.cse_maxExpirationDelta <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:maxExpirationDelta[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[cse]:maxExpirationDelta[/i] must be > 0')
 
 
 		# Check ID Length
 		if config.cse_idLength < 1:
-			raise ConfigurationError(r'Configuration Error: [i]\[cse]:idLength[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[cse]:idLength[/i] must be > 0')
 
 
 		# Already assign some Constants
@@ -138,6 +147,7 @@ class CSEConfiguration(ModuleConfiguration):
 		RC.cseCsiSlashLen = len(RC.cseCsiSlash)
 		RC.cseCsiSlashLess = RC.cseCsi[1:]
 		RC.cseSPid = config.cse_serviceProviderID
+		RC.cseSPidSlash = f'{RC.cseSPid}/'
 		RC.cseSPIDSlashLess = RC.cseSPid[2:] 
 		RC.cseSPCsi = f'{RC.cseSPid}{RC.cseCsi}'
 		RC.cseSPCsiSlash = f'{RC.cseSPCsi}/'
@@ -153,15 +163,23 @@ class CSEConfiguration(ModuleConfiguration):
 
 		RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
 		RC.releaseVersion = Configuration.cse_releaseVersion
-
-		# Set the CSE's point-of-access
-		RC.csePOA = [ Configuration.http_address ]
-		if Configuration.mqtt_enable:
-			RC.csePOA.append(f'mqtt://{Configuration.mqtt_address}:{Configuration.mqtt_port}')
-		if Configuration.websocket_enable:
-			RC.csePOA.append(Configuration.websocket_address)
-		if Configuration.coap_enable:
-			RC.csePOA.append(Configuration.coap_address)
 		
 		# Other configuration values
 		RC.idLength = Configuration.cse_idLength
+
+		# Add some configurations here that will not be set because the plugins will not be loaded
+		if not hasattr(config, 'cse_statistics_enable'):
+			config.cse_statistics_enable = False
+		
+		# Check whether any binding is enabled, if not, raise an error
+		if not any([config._cse_operation_plugins_enabledComponents['http_enable'],
+		   			config._cse_operation_plugins_enabledComponents['mqtt_enable'],
+		   			config._cse_operation_plugins_enabledComponents['websocket_enable'],
+		   			config._cse_operation_plugins_enabledComponents['coap_enable']]):
+			raise ConfigurationError('At least one binding must be enabled (http, mqtt, websocket, or coap)')
+		
+
+		# Check that remoteCSEManager is enabled if AnnouncementManager is enabled
+		if config._cse_operation_plugins_enabledComponents['announcementManager_enable'] and not config._cse_operation_plugins_enabledComponents['remoteCSEManager_enable']:
+			raise ConfigurationError('AnnouncementManager plugin requires RemoteCSEManager plugin to be enabled. Either enable the RemoteCSEManager plugin or disable the AnnouncementManager plugin.')
+		

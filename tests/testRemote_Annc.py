@@ -86,7 +86,7 @@ class TestRemote_Annc(unittest.TestCase):
 				 	'at': 	[ REMOTECSEID ]
 				}}
 		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
-		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(rsc, RC.CREATED, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 1)
@@ -838,6 +838,25 @@ class TestRemote_Annc(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{CSEURL}{TestRemote_Annc.remoteCntRI}', CSEID)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:cntA'))
+
+		# Update locally announced resource
+		dct = 	{ 'm2m:cnt' : {
+				 	'lbl':	[ 'aLabel', 'bLabel']
+				}}
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}', ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.UPDATED)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lbl'))
+		self.assertIsInstance(findXPath(r, 'm2m:cnt/lbl'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:cnt/lbl')), 2)
+
+		# Retrieve locally announced resource
+		r, rsc = RETRIEVE(f'{CSEURL}{TestRemote_Annc.remoteCntRI}', CSEID)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:cntA'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:cntA/lbl'), r)
+		self.assertIsInstance(findXPath(r, 'm2m:cntA/lbl'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:cntA/lbl')), 2)
+
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')

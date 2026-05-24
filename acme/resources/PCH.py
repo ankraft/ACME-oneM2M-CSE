@@ -10,16 +10,19 @@
 """
 
 from __future__ import annotations
-from typing import Optional, cast
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON
+from ..etc.Types import ResourceTypes, JSON
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..helpers.TextTools import findXPath
 from ..resources.Resource import Resource, addToInternalAttributes
-from ..resources import Factory		# attn: circular import
-from ..resources import PCH_PCU
-from ..runtime import CSE
+from ..runtime.PluginSupport import requires
+
 from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
 
 # Add to internal attributes
@@ -29,74 +32,27 @@ addToInternalAttributes(Constants.attrPCURI)
 
 # Tests for special access to PCH resource is done in SecurityManager.hasAccess()
 
+@requires(dispatcher='acme.services.Dispatcher')
 class PCH(Resource):
 	"""	PollingChannel resource class.
 	"""
 
-	resourceType = ResourceTypes.PCH
-	""" The resource type """
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.PCH_PCU ]
-	"""	Allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-
-		# Resource attributes
-		'rqag': None,
-	}
-	"""	Attributes and Attribute policies for this Resource Class. """
-
-
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi: str) -> None:
 		# Set optional default for requestAggregation
-		self.setAttribute('rqag', False, overwrite = False)	
-		super().initialize(pi, originator)
+		self.setAttribute('rqag', False, overwrite=False)	
+		super().initialize(pi)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		"""	Activate the PCH resource. Create the PCU resource and set the parent's originator.
 
 			Args:
 				parentResource:	The parent resource.
 				originator:		The originator of the request.
 		"""
-		# register pollingChannelURI PCU virtual resource before anything else, because
-		# it will be needed during validation, 
-		L.isDebug and L.logDebug(f'Registering <PCU> for: {self.ri}')
-		dct = {
-			'm2m:pcu' : {
-				'rn' : 'pcu'
-			}
-		}
-		pcu = Factory.resourceFromDict(dct, 
-								 	   pi = self.ri, 
-									   ty = ResourceTypes.PCH_PCU,
-									   create = True,
-									   originator = originator)	# rn is assigned by resource itself
-		
-		resource = CSE.dispatcher.createLocalResource(pcu, self, originator = originator)
-		self.setAttribute(Constants.attrPCURI, resource.ri)	# store own PCU ri
-
-		# General activation + validation
 		super().activate(parentResource, originator)
 
 		# Store the parent's orginator/AE-ID/CSE-ID
@@ -105,29 +61,36 @@ class PCH(Resource):
 		else:
 			raise BAD_REQUEST(L.logWarn(f'PCH must be registered under CSE or AE, not {str(ResourceTypes(parentResource.ty))}'))
 
-		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
-		
-
-	def validate(self, originator:Optional[str] = None, 
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
-		"""	Validate the PCH resource.
-		
-			Args:
-				originator:		The originator of the request.
-				dct:			The dictionary containing the resource data.
-				parentResource:	The parent resource.
-		"""
-		super().validate(originator, dct, parentResource)
+		L.isDebug and L.logDebug(f'Registering <PCU> for: {self.ri}')
+		(pcuResource, pcuRi) = self.createChildResourceFromDict({ 'rn' : 'pcu'}, 
+											  					ty=ResourceTypes.PCH_PCU, 
+																originator=originator)		# rn is assigned by resource itself. Activation later!
+		self.setAttribute(Constants.attrPCURI, pcuRi)	# store own PCU ri
 
 		# Set the aggregation state in the own PCU
-		# This is done in activate and update
-		resource = CSE.dispatcher.retrieveLocalResource(self.attribute(Constants.attrPCURI))
-		pcu = cast(PCH_PCU.PCH_PCU, resource)
-		pcu.setAggregate(self.rqag)
-		pcu.dbUpdate(True)
-		
+		pcuResource.setAggregate(self.rqag)
+		pcuResource.dbUpdate(True)
 
+
+		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
+		
+	
+	def update(self, dct: JSON=None, 
+					 originator: Optional[str]=None,
+					 doValidateAttributes: Optional[bool]=True) -> None:
+		
+		# Set the aggregation state in the own PCU if rqag is updated
+		if dct is not None:
+			rqagNew = findXPath(dct, '{*}/rqag')
+			if rqagNew is not None:
+				# Update the aggregation state in the own PCU
+				pcuResource = self.dispatcher.retrieveLocalResource(self.attribute(Constants.attrPCURI))
+				pcuResource.setAggregate(rqagNew)
+				pcuResource.dbUpdate(True)
+
+		super().update(dct, originator, doValidateAttributes)
+
+	
 	def getParentOriginator(self) -> str:
 		"""	Return the <PCU>'s parent originator.
 		

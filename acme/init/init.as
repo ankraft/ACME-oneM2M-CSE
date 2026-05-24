@@ -35,13 +35,15 @@
 			"ri":   "${get-config \"cse.resourceID\"}",
 			"rn":   "${get-config \"cse.resourceName\"}",
 			"csi":  "${get-config \"cse.cseID\"}",
+			"spi":  "${get-config \"cse.serviceProviderID\"}",
 			"csz":  [ "application/json", "application/cbor" ],
-			"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources" ]
+			"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources"
+				    ]
 		}}
 		"m2m:cb/poa" 
 		(get-config "cse.poa")))
 
-
+;;,				  "${get-config \"cse.cseID\"}/acpRetrieveCSEBase" s
 
 ;;
 ;;	Allow all originators to create (only) <ACP> and <NTP> under the CSEBase
@@ -69,6 +71,30 @@
 			]
 		}
 	}})
+
+
+(import-raw 
+	cse-originator
+	{ "m2m:acp": {
+		"rn": "acpRetrieveCSEBase",
+		"ri": "acpRetrieveCSEBase",
+		"pi": "${get-config \"cse.resourceID\"}",
+		"pv": {
+			"acr": [ 
+				{	"acor": [ "all"	],
+					"acop": 2
+				}
+			]
+		},
+		"pvs": {
+			"acr": [ 
+				{	"acor": [ "${cse-originator}" ],
+					"acop": 63
+				}
+			]
+		}
+	}})
+
 
 ;;
 ;;	Default admin AE
@@ -99,4 +125,18 @@
 		"acn": 2,	;; reject as a default
 		"plbl": "Default"
 	}})
+
+
+;;
+;;	Default <AEContactList> resource, only on the IN-CSE
+;;
+(if (== (get-config "cse.type") 1)
+	(import-raw 
+		cse-originator
+		{ "m2m:alst": {
+			"ri":  "AEContactList",
+			"rn":  "AEContactList",
+			"pi":  "${get-config \"cse.resourceID\"}"
+		}}))
+
 

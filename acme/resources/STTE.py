@@ -6,61 +6,37 @@
 #
 #	ResourceType: State
 #
+"""	Implementation of the State (STTE) resource type. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Any, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, ProcessState
-from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND
+from ..etc.Types import JSON, ProcessState
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND, NOT_IMPLEMENTED
+from ..helpers.PluginManager import requires	
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources.Resource import Resource
-from ..runtime import CSE
+from ..runtime.Logging import Logging as L
 
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..plugins.services.ActionManager import ActionManager
 
 # TODO annc version
 # TODO add to UML diagram
 # TODO add to statistics, also in console
 
+@requires(actionManager='acme.plugins.services.ActionManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
 class STTE(AnnounceableResource):
+	"""	Class for the State (STTE) resource type. """
 
-	resourceType = ResourceTypes.STTE
-	""" The resource type """
+	actionManager: Optional[ActionManager] = None
+	""" Injected ActionManager instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.ACTR,
-								   ResourceTypes.SUB
-								 ]
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'acpi': None,
-		'lbl': None,
-		'cr': None,
-		'cstn': None,
-		'daci': None,
-
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'sact': None,
-		'stac': None,
-		'sttrs': None,
-	}
-	
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
@@ -80,10 +56,12 @@ class STTE(AnnounceableResource):
 					nxstID = sttr['nxst']
 					# Check access
 					# EXPRIMENTAL assuming a subject rsource ID attribute in stateTransition
-					CSE.action.checkEvalCriteria(sttr['evc'], sttr['sri'], _orig)
+					if not self.actionManager:
+						raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+					self.actionManager.checkEvalCriteria(sttr['evc'], sttr['sri'], _orig)
 
 					# Check parent of references next state resource
-					stateResource = CSE.dispatcher.retrieveResource(nxstID)
+					stateResource = self.dispatcher.retrieveResource(nxstID)
 					if stateResource.pi != self.pi:
 						raise INVALID_PROCESS_CONFIGURATION(f'Referenced state resource "{nxstID}" is not a direct child of this state\'s parent resource')
 
@@ -91,12 +69,12 @@ class STTE(AnnounceableResource):
 					raise INVALID_PROCESS_CONFIGURATION(f'Referenced state resource "{nxstID}" does not exist')
 				
 
-	def update(self, dct:JSON = None, 
-					 originator:Optional[str] = None,
-					 doValidateAttributes:Optional[bool] = True) -> None:
+	def update(self, dct: JSON = None, 
+					 originator: Optional[str] = None,
+					 doValidateAttributes: Optional[bool] = True) -> None:
 		
 		# Get parent resource
-		parentResource = CSE.dispatcher.retrieveResource(self.pi)
+		parentResource = self.dispatcher.retrieveResource(self.pi)
 
 		# Check if state resource is still active (ie. not disabled)
 		if parentResource.prst != ProcessState.Disabled:
@@ -118,7 +96,12 @@ class STTE(AnnounceableResource):
 # 6) For any evalCriteria defined in the stateTransitions attribute of the request, the Receiver shall check the value provided for the threshold element of the evalCriteria attribute is within the value space (as defined in [3]) of the data type of the subject element of the evalCriteria attribute. The Receiver shall also check that the value provided for the operator element of the evalCriteria attribute is a valid value based on Table 6.3.4.2.86-1. If either check fails, the receiver shall return a response primitive with a Response Status Code indicating an "INVALID_PROCESS_CONFIGURATION" error.
 
 
-	def willBeDeactivated(self, originator: str, parentResource: Resource) -> None:
+	def willBeDeactivated(self, originator: str, parentResource: Resource, parentDelete: bool=False) -> None:
+
+		# If the parent resource is deleted, we do not have to check the stateActive attribute of
+		# the state resource, because the whole parent resource will be deleted.
+		if parentDelete:
+			return
 		# Check own stateActive attribute
 		if self.sact:
 			raise OPERATION_NOT_ALLOWED('State resource is still active. Deletion not allowed.')
@@ -127,4 +110,4 @@ class STTE(AnnounceableResource):
 		if parentResource.prst != ProcessState.Disabled:
 			raise OPERATION_NOT_ALLOWED('Parent <processManagement> resource must be in state "Disabled"')
 	
-		super().willBeDeactivated(originator, parentResource)
+		super().willBeDeactivated(originator, parentResource, parentDelete)

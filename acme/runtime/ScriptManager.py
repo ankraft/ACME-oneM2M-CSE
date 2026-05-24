@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, Dict, Union, Any, Tuple, cast, Optional, List
+from typing import Callable, Dict, Union, Any, Tuple, cast, Optional, List, TYPE_CHECKING
 
 from pathlib import Path
 import json, os, fnmatch, traceback, shlex
@@ -17,18 +17,16 @@ from decimal import Decimal
 from rich.text import Text
 
 
-from ..helpers.KeyHandler import FunctionKey
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes, Result,\
 	BasicType, AttributePolicy, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
 from ..etc.IDUtils import uniqueRI, uniqueID
-from ..etc.ACMEUtils import pureResource
+from ..etc.JSONUtils import pureResource
 from ..etc.Utils import runsInIPython, isURL
 from ..etc.Constants import RuntimeConstants as RC
-from ..runtime.Configuration import Configuration
-from ..runtime import Management as Mgmt
-
+from ..helpers.Singleton import Singleton
+from ..helpers.KeyHandler import FunctionKey
 from ..helpers.interpreter.Interpreter import assertSymbol, valueFromArgument, resultFromArgument, getArgument
 from ..helpers.interpreter.Types import PFuncCallable, PError, PState, \
 	SSymbol, SNumberSymbol, SBooleanSymbol, SStringSymbol, SListQuoteSymbol, \
@@ -36,15 +34,26 @@ from ..helpers.interpreter.Types import PFuncCallable, PError, PState, \
 	SType, PSymbolCallable
 from ..helpers.interpreter.Exceptions import PUndefinedError, PInvalidArgumentError, \
 	PInvalidTypeError, PRuntimeError, PUnsupportedError, PPermissionError
-from ..helpers.interpreter.PContext import PContext
-
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, simpleMatch
 from ..helpers.NetworkTools import pingTCPServer, isValidPort
-from ..resources.Factory import resourceFromDict
-from ..resources.Resource import Resource
-from ..runtime import CSE
+from ..helpers.interpreter.PContext import PContext
+from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
+from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
+
+from ..resources.Resource import Resource
+
+if TYPE_CHECKING:
+	from ..plugins.runtime.TextUI import TextUI
+	from ..runtime.Factory import Factory
+	from ..runtime.Importer import Importer
+	from ..runtime.Management import ManagementSupport
+	from ..services.Dispatcher import Dispatcher
+	from ..services.RegistrationManager import RegistrationManager
+	from ..services.RequestManager import RequestManager
+	from ..services.Validator import Validator
 
 #
 #	Meta Tags
@@ -88,9 +97,46 @@ _httpMethods = {
 
 
 
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(factory='acme.runtime.Factory')
+@requires(managementSupport='acme.runtime.Management')
+@requires(registration='acme.services.RegistrationManager')
+@requires(requestManager='acme.services.RequestManager')
+@requires(resetCSE='acme.runtime.CSE.resetCSE')
+@requires(scriptManager='acme.runtime.ScriptManager')
+@requires(textUI='acme.plugins.runtime.TextUI', required=False)
+@requires(validator='acme.services.Validator')
 class ACMEPContext(PContext):
 	"""	Child class of the `PContext` context class that adds further functions and details.
 	"""
+
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
+
+	factory: Factory = None
+	""" Injected Factory instance. """
+
+	managementSupport: ManagementSupport = None
+	""" Injected ManagementSupport instance. """
+
+	registration: RegistrationManager = None
+	"""	Injected RegistrationManager instance. """
+
+	requestManager: RequestManager = None
+	""" Injected RequestManager instance. """
+
+	resetCSE: Callable[[], None] = None
+	""" Injected function to reset the CSE. """
+
+	scriptManager: ScriptManager = None
+	""" Injected ScriptManager instance. """
+
+	textUI: Optional[TextUI] = None
+	""" Injected TextUI plugin, if available. """
+
+	validator: Validator = None
+	""" Injected Validator instance. """
+
 
 	__slots__ = (
 		'scriptFilename',
@@ -98,7 +144,6 @@ class ACMEPContext(PContext):
 		'nextScript',
 	)
 	""" Slots of class attributes. """
-
 
 	def __init__(self, 
 				 script:str, 
@@ -216,7 +261,7 @@ class ACMEPContext(PContext):
 		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			CSE.textUI.scriptLog(pcontext.scriptName, line)	# Additionally print to the text UI script console
+			self.textUI and self.textUI.scriptLog(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			L.isDebug and L.logDebug(line, stackOffset=1)
 
 
@@ -231,7 +276,7 @@ class ACMEPContext(PContext):
 		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			CSE.textUI.scriptLogError(pcontext.scriptName, line)	# Additionally print to the text UI script console
+			self.textUI and self.textUI.scriptLogError(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			L.isWarn and L.logWarn(line, stackOffset=1)
 
 
@@ -245,8 +290,8 @@ class ACMEPContext(PContext):
 		if RC.isHeadless:
 			return
 		for line in msg.split('\n'):	# handle newlines in the msg
-			if CSE.textUI.tuiApp:
-				CSE.textUI.scriptPrint(pcontext.scriptName, line)	# Additionally print to the text UI script console
+			if self.textUI and self.textUI.tuiApp:
+				self.textUI.scriptPrint(pcontext.scriptName, line)	# Additionally print to the text UI script console
 			else:
 				# L.console(line, nl = not len(line))
 				L.console(Text.from_markup(line))
@@ -305,7 +350,7 @@ class ACMEPContext(PContext):
 		"""
 		assertSymbol(pcontext, symbol, 1)
 		if not RC.isHeadless:
-			CSE.textUI.scriptClearConsole(pcontext.scriptName) # Additionally clear the text UI script console
+			self.textUI and self.textUI.scriptClearConsole(pcontext.scriptName) # Additionally clear the text UI script console
 			L.consoleClear()
 		return pcontext.setResult(SNilSymbol(parent=symbol))
 
@@ -388,7 +433,7 @@ class ACMEPContext(PContext):
 		# get attribute name
 		pcontext, _name = valueFromArgument(pcontext, symbol, 1, SType.tString)
 
-		result = CSE.validator.getAttributePoliciesByName(_name)
+		result = self.validator.getAttributePoliciesByName(_name)
 		resultSymbolList = []
 		if result is not None:
 			for policy in result:
@@ -487,7 +532,6 @@ class ACMEPContext(PContext):
 		# config value
 		if (_v := Configuration.get(_key)) is None:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'undefined configuration key: {_key}'))
-		
 		return pcontext.setResult(SSymbol.symbolFromValue(_v))
 
 
@@ -543,7 +587,7 @@ class ACMEPContext(PContext):
 		# get key
 		pcontext, _key = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
-		if (_val := CSE.script.storageGet(_storage, _key)) is None:
+		if (_val := self.scriptManager.storageGet(_storage, _key)) is None:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'Undefined storage key: {_key}'))
 		
 		return pcontext.setResult(_val)
@@ -595,7 +639,7 @@ class ACMEPContext(PContext):
 		# extract key
 		pcontext, _key = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
-		return pcontext.setResult(SBooleanSymbol(CSE.script.storageHas(_storage, _key), symbol))
+		return pcontext.setResult(SBooleanSymbol(self.scriptManager.storageHas(_storage, _key), symbol))
 
 
 	def doHttp(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -723,28 +767,25 @@ class ACMEPContext(PContext):
 
 		# resource object
 		pcontext, _resource = valueFromArgument(pcontext, symbol, 2, SType.tJson)
-		_resource = resourceFromDict(cast(dict, _resource),
-							   		 create = True, 
-									 isImported = True,
-									 originator = _originator)
+		_resource = self.factory.resourceFromDict(cast(dict, _resource), create=True)
 
 		# Get a potential parent resource
-		parentResource:Any = None
+		parentResource:Resource = None
 		if _resource.pi:
 			try:
-				parentResource = CSE.dispatcher.retrieveLocalResource(ri = _resource.pi)
+				parentResource = self.dispatcher.retrieveLocalResource(ri=_resource.pi)
 			except ResponseException as e:
 				raise PRuntimeError(self.setError(PError.runtime, e.dbg))
 
 		# Check resource registration
 		try:
-			CSE.registration.checkResourceCreation(_resource, _originator, parentResource)
+			self.registration.checkResourceCreation(_resource, _originator, parentResource)
 		except ResponseException as e:
 			raise PRuntimeError(self.setError(PError.runtime, e.dbg))
 
 		# Create the resource
 		try:
-			resource = CSE.dispatcher.createLocalResource(_resource, parentResource, originator = _originator)
+			resource = self.dispatcher.createLocalResource(_resource, parentResource, originator=_originator)
 		except ResponseException as e:
 			raise PRuntimeError(self.setError(PError.runtime, L.logErr(f'Error during import: {e.dbg}', showStackTrace = False)))
 		# return self._pcontextFromRequestResult(pcontext, result)
@@ -945,7 +986,7 @@ class ACMEPContext(PContext):
 		# get value
 		pcontext, _value = resultFromArgument(pcontext, symbol, 3, _storageTypes)
 
-		CSE.script.storagePut(_storage, _key, _value)
+		self.scriptManager.storagePut(_storage, _key, _value)
 		return pcontext
 
 
@@ -976,7 +1017,7 @@ class ACMEPContext(PContext):
 		# get JSON
 		pcontext, _json = valueFromArgument(pcontext, symbol, 2, SType.tJson)
 
-		return pcontext.setResult(SBooleanSymbol(CSE.script.runComparisonQuery(_query, _json), symbol))
+		return pcontext.setResult(SBooleanSymbol(self.scriptManager.runComparisonQuery(_query, _json), symbol))
 
 
 	def doRefreshRegistrations(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -995,7 +1036,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result.
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		Mgmt.refreshRegistrations()
+		self.managementSupport.refreshRegistrations()
 		return pcontext.setResult(SNilSymbol(symbol))
 
 
@@ -1022,7 +1063,7 @@ class ACMEPContext(PContext):
 
 			# get storage
 			pcontext, _storage = valueFromArgument(pcontext, symbol, 1, SType.tString)
-			CSE.script.storageRemoveStorage(_storage)
+			self.scriptManager.storageRemoveStorage(_storage)
 			return pcontext
 		
 		# get storage
@@ -1031,7 +1072,7 @@ class ACMEPContext(PContext):
 		# get key
 		pcontext, _key = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
-		CSE.script.storageRemove(_storage, _key)
+		self.scriptManager.storageRemove(_storage, _key)
 		return pcontext
 
 
@@ -1051,7 +1092,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result.
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		CSE.resetCSE()
+		self.resetCSE()
 		return pcontext.setResult(SNilSymbol(symbol))
 	
 
@@ -1078,7 +1119,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result. 
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		Mgmt.restartCSE()
+		self.managementSupport.restartCSE()
 		return pcontext.setResult(SNilSymbol(symbol))
 
 
@@ -1147,7 +1188,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result, ie. a boolean value.
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		return pcontext.setResult(SBooleanSymbol(CSE.textUI.tuiApp is not None, symbol))
+		return pcontext.setResult(SBooleanSymbol(self.textUI is not None and self.textUI.tuiApp is not None, symbol))
 
 
 	def doScheduleNextScript(self, pcontext:PContext, symbol:SSymbol) -> PContext:
@@ -1179,7 +1220,7 @@ class ACMEPContext(PContext):
 				arguments.append(str(value))
 
 		# find script
-		if len(scripts := CSE.script.findScripts(name = name)) == 0:
+		if len(scripts := self.scriptManager.findScripts(name=name)) == 0:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'script: "{name}" not found'))
 		
 		# Set the next-running script and its arguments
@@ -1222,12 +1263,12 @@ class ACMEPContext(PContext):
 				arguments.append(value.toString())
 
 		# find script
-		if len(scripts := CSE.script.findScripts(name = name)) == 0:
+		if len(scripts := self.scriptManager.findScripts(name=name)) == 0:
 			raise PUndefinedError(pcontext.setError(PError.undefined, f'script: "{name}" not found'))
 
 		# run script
 		script = scripts[0]
-		if not CSE.script.runScript(script, arguments=arguments, background=False):
+		if not self.scriptManager.runScript(script, arguments=arguments, background=False):
 			raise PRuntimeError(pcontext.setError(PError.runtime, f'Error in running script: {script.scriptName}: {script.error.message}'))
 		
 		if isInclude:
@@ -1265,7 +1306,7 @@ class ACMEPContext(PContext):
 		pcontext, _description = valueFromArgument(pcontext, symbol, 2, SType.tString)
 
 		# Set the description
-		CSE.script.categoryDescriptions[_category] = _description
+		self.scriptManager.categoryDescriptions[_category] = _description
 		return pcontext
 	
 
@@ -1389,7 +1430,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object with the operation result. 
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		Mgmt.shutdownCSE()
+		self.managementSupport.shutdownCSE()
 		return pcontext.setResult(SNilSymbol(symbol))
 
 
@@ -1433,7 +1474,7 @@ class ACMEPContext(PContext):
 			pcontext, cancelButtonText = valueFromArgument(pcontext, symbol, 4, SType.tString, optional=True, default='Cancel')
 
 			# show the confirmation dialog
-			result = CSE.textUI.scriptShowConfirmation(text, title, confirmButtonText, cancelButtonText)
+			result = self.textUI.scriptShowConfirmation(text, title, confirmButtonText, cancelButtonText) if self.textUI else None
 
 			if result is None:
 				# User cancelled the confirmation, neither confirm nor cancel was pressed
@@ -1484,7 +1525,7 @@ class ACMEPContext(PContext):
 		pcontext, timeout = valueFromArgument(pcontext, symbol, 4, SType.tNumber, optional=True)
 
 		# show the notification
-		CSE.textUI.scriptShowNotification(value, title, severity, float(timeout) if timeout is not None else None)
+		self.textUI and self.textUI.scriptShowNotification(value, title, severity, float(timeout) if timeout is not None else None) # type: ignore [func-returns-value]
 
 		return pcontext.setResult(SNilSymbol())
 
@@ -1506,7 +1547,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object.
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		CSE.textUI.refreshResources()
+		self.textUI and self.textUI.refreshResources()
 		return pcontext
 
 
@@ -1526,7 +1567,7 @@ class ACMEPContext(PContext):
 				The updated `PContext` object.
 		"""
 		assertSymbol(pcontext, symbol, 1)
-		CSE.textUI.scriptVisualBell(pcontext.scriptName)
+		self.textUI and self.textUI.scriptVisualBell(pcontext.scriptName)
 		return pcontext
 
 
@@ -1667,52 +1708,52 @@ class ACMEPContext(PContext):
 
 		# Prepare request
 		try:
-			request = CSE.request.fillAndValidateCSERequest(req)
+			request = self.requestManager.fillAndValidateCSERequest(req)
 		except ResponseException as e:
-			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {e.dbg}', exception = e))
+			raise PInvalidArgumentError(pcontext.setError(PError.invalid, f'Invalid resource: {e.dbg}', exception=e))
 		
 		# Send request
 		L.isDebug and L.logDebug(f'Sending request from script: {request.originalRequest} to: {target}')
 		if isURL(target):
 			match operation:
 				case Operation.RETRIEVE:
-					res = CSE.request.handleSendRequest(CSERequest(op = Operation.RETRIEVE,
-																ot = getResourceDate(),
-																to = target, 
-																originator = originator)
+					res = self.requestManager.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
+																ot=getResourceDate(),
+																to=target, 
+																originator=originator)
 													)[0].result	# there should be at least one result
 				case Operation.DELETE:
-					res = CSE.request.handleSendRequest(CSERequest(op = Operation.DELETE,
-																ot = getResourceDate(),
-																to = target, 
-																originator = originator)
+					res = self.requestManager.handleSendRequest(CSERequest(op=Operation.DELETE,
+																ot=getResourceDate(),
+																to=target, 
+																originator=originator)
 													)[0].result	# there should be at least one result
 				case Operation.CREATE:
-					res = CSE.request.handleSendRequest(CSERequest(op = Operation.CREATE,
-												ot = getResourceDate(),
-												to = target, 
-												originator = originator, 
-												ty = ty,
-												pc = request.pc)
+					res = self.requestManager.handleSendRequest(CSERequest(op=Operation.CREATE,
+												ot=getResourceDate(),
+												to=target, 
+												originator=originator, 
+												ty=ty,
+												pc=request.pc)
 									)[0].result	# there should be at least one result
 				case Operation.UPDATE:
-					res = CSE.request.handleSendRequest(CSERequest(op = Operation.UPDATE,
-																ot = getResourceDate(),
-																to = target, 
-																originator = originator, 
-																pc = request.pc)
+					res = self.requestManager.handleSendRequest(CSERequest(op=Operation.UPDATE,
+																ot=getResourceDate(),
+																to=target, 
+																originator=originator, 
+																pc=request.pc)
 													)[0].result	# there should be at least one result
 				case Operation.NOTIFY:
-					res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-												ot = getResourceDate(),
-												to = target, 
-												originator = originator, 
-												pc = request.pc)
+					res = self.requestManager.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+												ot=getResourceDate(),
+												to=target, 
+												originator=originator, 
+												pc=request.pc)
 									)[0].result	# there should be at least one result
 
 		else:
 			# Request via CSE-ID, either local, or otherwise a transit request. Let the CSE handle it
-			res = CSE.request.handleRequest(request)
+			res = self.requestManager.handleRequest(request)
 
 		return self._pcontextFromRequestResult(pcontext, res)
 
@@ -1722,9 +1763,23 @@ class ACMEPContext(PContext):
 #	Script Manager
 #
 
-class ScriptManager(object):
+@eventHandler
+@requires(textUI='acme.plugins.runtime.TextUI', required=False)
+@requires(importer='acme.runtime.Importer')
+@requires(validator='acme.services.Validator')
+class ScriptManager(metaclass=Singleton):
 	"""	This manager entity handles script execution in the CSE.
 	"""
+
+	textUI: Optional[TextUI] = None
+	""" TextUI plugin, if available. """
+
+	importer: Importer = None
+	""" Importer instance """
+
+	validator: Validator = None
+	""" Validator instance. """
+
 
 	__slots__ = (
 		'scripts',
@@ -1735,11 +1790,10 @@ class ScriptManager(object):
 		'categoryDescriptions',
 	)
 	""" Slots of class attributes. """
-
+	
 	def __init__(self) -> None:
-		"""	Initializer for the ScriptManager class.
+		"""	Constructor for the ScriptManager class.
 		"""
-
 		self.scripts:Dict[str,ACMEPContext] = {}				# The managed scripts
 		""" Dictionary of scripts and script `ACMEPContext`. The key is the script name. """
 
@@ -1755,16 +1809,10 @@ class ScriptManager(object):
 		self.scriptCronWorker:BackgroundWorker = None
 		""" `BackgroundWorker` worker to run cron-enabled scripts. """
 
-		# Also do some internal handling
-		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)				# type: ignore
-		CSE.event.addHandler(CSE.event.cseRestarted, self.restartFinished)	# type: ignore
-		CSE.event.addHandler(CSE.event.keyboard, self.onKeyboard)			# type: ignore
-		CSE.event.addHandler(CSE.event.acmeNotification, self.onNotification)	# type: ignore
 
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
-
+	def initialize(self) -> None:
+		"""	Initializer for the ScriptManager class.
+		"""
 		L.isInfo and L.log('ScriptManager initialized')
 
 
@@ -1790,16 +1838,16 @@ class ScriptManager(object):
 		return True
 	
 	
-	def configUpdate(self, name:str, 
-						   key:Optional[str] = None, 
-						   value:Optional[Any] = None) -> None:
+	@onEvent(eventManager.configUpdate)	# type: ignore
+	def configUpdate(self, eventData: EventData) -> None:
 		"""	Callback for the *configUpdate* event.
 			
 			Args:
-				name: Event name.
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
+				eventData: The event data, containing the updated configuration key.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		if key not in [ 'scripting.verbose', 
 						'scripting.fileMonitoringInterval', 
 						'scripting.scriptDirectories',
@@ -1820,7 +1868,8 @@ class ScriptManager(object):
 	#	Event handlers
 	#
 
-	def cseStarted(self, name:str) -> None:
+	@onEvent(eventManager.cseStartup)	# type: ignore
+	def cseStarted(self, eventData: EventData) -> None:
 		"""	Callback for the *cseStartup* event.
 
 			Start a background worker to monitor directories for scripts.
@@ -1841,7 +1890,8 @@ class ScriptManager(object):
 		self.runEventScripts(_metaOnStartup)
 
 
-	def restart(self, name:str) -> None:
+	@onEvent(eventManager.cseReset)	# type: ignore
+	def restart(self, eventData: EventData) -> None:
 		"""	Callback for the *cseReset* event.
 		
 			Restart the script manager service, ie. clear the scripts and storage. 
@@ -1852,7 +1902,8 @@ class ScriptManager(object):
 		L.isDebug and L.logDebug('ScriptManager restarted')
 	
 
-	def restartFinished(self, name:str) -> None:
+	@onEvent(eventManager.cseRestarted)	# type: ignore
+	def restartFinished(self, eventData: EventData) -> None:
 		"""	Callback for the *cseRestarted* event.
 		
 			Run the restart script(s), if any.
@@ -1861,31 +1912,33 @@ class ScriptManager(object):
 		self.runEventScripts(_metaOnRestart)
 
 
-	def onKeyboard(self, name:str, ch:str) -> None:
+	@onEvent(eventManager.keyboard)	# type: ignore
+	def onKeyboard(self, eventData: EventData) -> None:
 		"""	Callback for the *keyboard* event.
 		
 			Run script(s) with configured meta tags, if any.
 
 			Args:
-				name:Event name.
-				ch: The pressed key.
+				eventData: The event data, containing the pressed key.
 		"""
 		# Check for function key names first
 		# Look for the shutdown script(s) and run them. 
+		ch: FunctionKey|str = eventData.payload	# type: ignore[assignment]
 		self.runEventScripts(_metaOnKey, 
 							 cast(FunctionKey, ch).name if isinstance(ch, FunctionKey) else ch)
 
 
-	def onNotification(self, name:str, uri:str, request:CSERequest) -> None:
+	@onEvent(eventManager.acmeNotification)	# type: ignore
+	def onNotification(self, eventData: EventData) -> None:
 		"""	Callback for the *notification* event.
 
 			Run script(s) with configured meta tags, if any.
 
 			Args:
-				name:Event name.
-				uri: The target URI.
-				request: The notifiction request.
+				eventData: The event data, containing the notification information. The first element is the notification URI, the second element is the request that caused the notification.
 		"""
+		uri = eventData[0]
+		request = eventData[1]
 		try:
 			self.runEventScripts( _metaOnNotification,	# !!! Lower case
 								  uri,
@@ -1923,8 +1976,8 @@ class ScriptManager(object):
 				del self.scripts[eachName]
 
 		# Read new scripts
-		if CSE.importer.extendedScriptPaths:	# from the init directory
-			if self.loadScriptsFromDirectory(CSE.importer.extendedScriptPaths) == -1:
+		if self.importer.extendedScriptPaths:	# from the init directory
+			if self.loadScriptsFromDirectory(self.importer.extendedScriptPaths) == -1:
 				L.isWarn and L.logWarn('Cannot import script(s)')
 		if Configuration.scripting_scriptDirectories:	# from the extra script directories
 			if self.loadScriptsFromDirectory(Configuration.scripting_scriptDirectories) == -1:
@@ -2097,6 +2150,20 @@ class ScriptManager(object):
 		return result
 
 
+	def getContext(self, name: str) -> Optional[PContext]:
+		"""	Returns the context for the given script name or None if not found. 
+
+			Args:
+				name: The name of the script.
+		
+			Return:
+				The context for the given script name or None if not found.
+		"""
+		if (res := self.findScripts(name)):
+			return res[0]
+		return None
+
+
 	def runScript(self, pcontext:PContext, 
 						arguments:Optional[list[str]|str]='', 
 						background:Optional[bool]=False, 
@@ -2109,7 +2176,7 @@ class ScriptManager(object):
 				arguments: Optional arguments to the script. These are available to the script via the *argv* macro.
 				background: Boolean to indicate whether to run the script in the backhround (as an Actor).
 				finished: An optional function that will be called after the script finished.
-				environment: An optional set of variables that are passed to script.
+				environment: An optional set of variables that are passed to the script.
 
 			Return:
 				Boolean that indicates the successful running of the script. A background script always returns *True*.
@@ -2153,7 +2220,7 @@ class ScriptManager(object):
 			pcontext.setMaxRuntime(Configuration.scripting_maxRuntime)
 
 			# Set environemt
-			environment['tui.theme'] = SStringSymbol(Configuration.textui_theme)
+			environment['tui.theme'] = SStringSymbol(Configuration.textui_theme) if self.textUI else SNilSymbol()
 			pcontext.setEnvironment(environment)
 
 			# Handle arguments
@@ -2199,10 +2266,10 @@ class ScriptManager(object):
 				The result of the script run in a tuple. Boolean indicating success, and an optional result.
 		"""
 		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {arguments if arguments else "None"}, meta: {metaFilter}')
-		if len(scripts := self.findScripts(name = scriptName, meta = metaFilter, ignoreCase = ignoreCase)) != 1:
+		if len(scripts := self.findScripts(name=scriptName, meta=metaFilter, ignoreCase=ignoreCase)) != 1:
 			return (False, SStringSymbol(L.logWarn(f'Script not found: "{scriptName}"')))
 		script = scripts[0]
-		if self.runScript(script, arguments = arguments, background = False):
+		if self.runScript(script, arguments=arguments, background=False):
 			L.isDebug and L.logDebug(f'Script: "{scriptName}" finished successfully')
 			return (True, script.result if script.result else SNilSymbol())
 			

@@ -30,6 +30,6 @@ class LCPResourceConfiguration(ModuleConfiguration):
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.resource_lcp_mni <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.lcp]:mni[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.lcp]:mni[/i] must be > 0')
 		if config.resource_lcp_mbs <= 0:
-			raise ConfigurationError(r'Configuration Error: [i]\[resource.lcp]:mbs[/i] must be > 0')
+			raise ConfigurationError(r'[i]\[resource.lcp]:mbs[/i] must be > 0')

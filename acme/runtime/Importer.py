@@ -11,65 +11,104 @@
 """	Import various resources, scripts, policies etc into the CSE. """
 
 from __future__ import annotations
-from typing import cast, Optional
+from typing import cast, Optional, TYPE_CHECKING
 
 import json, os, fnmatch, re
 from copy import deepcopy
 
 from ..helpers.TextTools import findXPath
-from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST
+from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST, ResourceDescription
+from ..etc.Types import resourceTypeDetails
 from ..etc.Constants import RuntimeConstants as RC
-from .Configuration import Configuration
-from ..runtime import CSE
+from ..runtime.Logging import Logging as L
+from ..runtime.ScriptManager import _metaInit
+from ..runtime.Configuration import Configuration
+from ..helpers.Singleton import Singleton
 from ..helpers.TextTools import removeCommentsFromJSON
-from .Logging import Logging as L
-from .ScriptManager import _metaInit
 from ..resources.CSEBase import getCSE
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..runtime.Factory import Factory
+	from ..services.Dispatcher import Dispatcher
+	from ..services.Validator import Validator
+	from ..runtime.ScriptManager import ScriptManager
+
 
 # TODO Support child specialization in attribute definitionsEv
 
 # TODO change error handling to exceptions
-
-class Importer(object):
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(factory='acme.runtime.Factory')
+@requires(validator='acme.services.Validator')
+@requires(scriptManager='acme.runtime.ScriptManager')
+class Importer(metaclass=Singleton):
 	""" Importer class to import various objects, configurations etc.
 	
 		It is mainly run before the CSE is actually started or restarted."""
+
+	factory: Factory = None
+	""" Injected Factory instance. """
+
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
+
+	validator: Validator = None
+	""" Injected Validator instance. """
+
+	scriptManager: ScriptManager = None
+	""" ScriptManager instance. """
 
 	__slots__ = (
 		'resourcePath',
 		'extendedScriptPaths',
 		'macroMatch',
 		'isImporting',
+		'rtDir',
 
-		'_oldacp',
+		'_oldEnabbleAcpChecks',
 	)
+	""" Slots for Importer class. """
 
 
-	# List of "priority" resources that must be imported first for correct CSE operation
-	_firstImporters = [ 'csebase.json']
 	_enumValues:dict[str, dict[int, str]] = {}
+	"""	Imported enumeration values. """
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 		"""	Initialization of an *Importer* instance.
 		"""
+
 		self.resourcePath = Configuration.cse_resourcesPath
+		""" Path to the directory from where to import resources, policies, scripts etc. """
+		
 		self.extendedScriptPaths:list[str] = []
+		""" Extended list of script paths, which is used for importing scripts."""
+		
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
+		""" Regular expression to match macros in scripts. """
+
 		self.isImporting = False
+		""" Boolean flag to indicate whether the importer is currently importing resources. """
+
+		self.rtDir = f'{Configuration.baseDirectory}{os.sep}init'
+		""" Path to the directory from where to import additional resources, policies, scripts etc. """
+
+		self._oldEnabbleAcpChecks: Optional[bool] = None
+		""" Used to store the old value of the enableAcpChecks configuration setting during importing."""
+
 		L.isInfo and L.log('Importer initialized')
 
 
-	def doImport(self) -> bool:
-		"""	Perform all the imports. This imports the attribute policies, flexContainer policies,
-			and scripts.
+	def importPolicies(self) -> bool:
+		"""	Import the attribute, enum, flexContainer policies, and documentation.
 
 			Return:
 				Boolean indicating success or failure
 		"""
 		# Remove previously imported structures before importing
-		self.removeImports()
+		self.removePolicyImports()
 
-		# Do Imports
+		# Do Imports from the internal init directory of the CSE
 		L.isInfo and L.log(f'Importing standard resources and policies from: {self.resourcePath}')
 
 		if not (self.importEnumPolicies(self.resourcePath) and
@@ -78,40 +117,118 @@ class Importer(object):
 			return False
 		
 		# Do extra imports from the init directory of the runtime data directory
-		rtDir = f'{Configuration.baseDirectory}{os.sep}init'
-		if os.path.exists(rtDir):
-			L.isInfo and L.log(f'Importing additional resources from runtime data directory: {rtDir}')
-			if not (self.importEnumPolicies(rtDir) and
-					self.importAttributePolicies(rtDir) and
-					self.importFlexContainerPolicies(rtDir)):
+		if os.path.exists(self.rtDir):
+			L.isInfo and L.log(f'Importing additional resources from runtime data directory: {self.rtDir}')
+			if not (self.importEnumPolicies(self.rtDir) and
+					self.importAttributePolicies(self.rtDir) and
+					self.importFlexContainerPolicies(self.rtDir)):
 				return False
-
+	
 		# Assign the attribute policies 
 		if not self.assignAttributePolicies():
 			return False
-	
-		# Import 
-		if not (self.importConfigDocs() and
-				self.importScripts([self.resourcePath, rtDir])):
+		
+		# Import configuation documentation and scripts
+		if not self.importConfigDocs():
 			return False
-
-		# TODO
-		# - modify and simplify import functions
-		# - add test script in /tmp/acme/init
-				
-		if Configuration.scripting_scriptDirectories:
-			if not self.importScripts(Configuration.scripting_scriptDirectories):
-				return False
+		
 		return True		
 
 
-	def removeImports(self) -> None:
+	def removePolicyImports(self) -> None:
 		"""	Remove all previous imported scripts and definitions.
 		"""
-		CSE.validator.clearAttributePolicies()
-		CSE.validator.clearFlexContainerAttributes()
-		CSE.validator.clearFlexContainerSpecializations()
-		CSE.script.removeScripts()
+		self.validator.clearAttributePolicies()
+		self.validator.clearFlexContainerAttributes()
+		self.validator.clearFlexContainerSpecializations()
+	
+	
+	def removeScripts(self) -> None:
+		""" Internally remove all imported scripts.
+		"""
+		self.scriptManager.removeScripts()
+
+
+	###########################################################################
+	#
+	#	ResourceType policies
+	#
+
+	
+	def importResourcePolicies(self) -> None:
+		"""	Import the resource type policies from the resource paths.
+		"""
+
+		def _importResourcePolicies(path: str) -> None:
+			"""	Import the resource type policies.
+
+				Args:
+					path: Path to a directory from where to import resource type policies.
+				Return:
+					True if the policies were successfully imported, False otherwise.
+			"""
+			if not os.path.exists(path):
+				raise RuntimeError(L.logWarn(f'Import directory for resource type policies does not exist: {path}'))
+
+			L.isDebug and L.logDebug('Importing resource type policies')
+			countRP = 0
+
+			filenames = fnmatch.filter(os.listdir(path), '*.rtp')
+			for fno in filenames:
+				fn = os.path.join(path, fno)
+				L.isDebug and L.logDebug(f'Importing resource type policies: {fno}')
+				if not os.path.exists(fn):
+					continue
+
+				# Read the JSON file
+				if not (resourceTypes := cast(JSON, self.readJSONFromFile(fn))):
+					raise RuntimeError(f'Error reading resource type policies from file: {fn}')
+			
+				# Add a ResourceDescription for each resource type
+				for rtName, rtDef in resourceTypes.items():
+					if not isinstance(rtDef, dict):
+						raise RuntimeError(L.logErr(f'Wrong or empty resource type definition for resource type: {rtName} in file: {fn}'))
+					try:
+						resourceTypeDetails[ResourceTypes[rtName]] = ResourceDescription(
+							type=ResourceTypes(rtDef['type']),
+							typeName=rtDef['typeName'],
+							fullName=rtDef['fullName'],
+							announcedType=ResourceTypes[rtDef.get('announcedType')] if rtDef.get('announcedType') else None,
+							virtualResourceName=rtDef.get('virtualResourceName'),
+							isAnnouncedResource=rtDef.get('isAnnouncedResource', False),
+							isContainer=rtDef.get('isContainer', False),
+							isInstanceResource=rtDef.get('isInstanceResource', False),
+							isInternalType=rtDef.get('isInternalType', False),
+							isMgmtSpecialization=rtDef.get('isMgmtSpecialization', False),
+							isNotificationEntity=rtDef.get('isNotificationEntity', False),
+							isRequestCreatable=rtDef.get('isRequestCreatable', True),
+							isRequestUpdatable=rtDef.get('isRequestUpdatable', True),
+							isRequestDeletable=rtDef.get('isRequestDeletable', True),
+							isSpecializationBaseResource=rtDef.get('isSpecializationBaseResource', False),
+							inheritACP=rtDef.get('inheritACP', False),
+							mgmtType=ResourceTypes(rtDef.get('mgmtType', ResourceTypes.UNKNOWN)),
+							attributes=rtDef.get('attributes', []) if rtDef.get('attributes') is not None else None,
+							childResourceTypes=[ ResourceTypes.to(crt, insensitive=True) for crt in rtDef.get('childResourceTypes', []) ] if rtDef.get('childResourceTypes') is not None else None
+						)
+						countRP += 1
+					except KeyError as e:
+						raise RuntimeError(L.logErr(f'Wrong resource type definition for resource type: {rtName} in file: {fn} - missing or wrong value for: {str(e)}'))
+
+
+			L.isDebug and L.logDebug(f'Imported {countRP} resource policies')
+
+
+		# Resource type policies are the first thing to import, 
+		# because they are needed for the attribute policies and the resource factory initialization.	
+		_importResourcePolicies(self.resourcePath)
+
+		# Initialize the resource factory, e.g. register resource types and their constructors
+		# This can only be done after the importer has imported the resource type definitions, 
+		# which are used in the resource descriptions for the factory registration
+		if not self.factory.initResources():
+			raise RuntimeError(L.logErr('Failed to initialize resources'))
+
+
 
 
 	###########################################################################
@@ -119,81 +236,98 @@ class Importer(object):
 	#	Scripts
 	#
 
-	def importScripts(self, path:str|list[str] = None) -> bool:
-		"""	Import the ACME script from a directory.
-		
-			Args:
-				path: Optional string with the path to a directory to look for scripts. Default is the CSE's data directory.
-			Return:
-				Boolean indicating success or failure.
+	def importScripts(self) -> bool:
+		"""	Import the scripts from the resource path and additional directories specified in the configuration.
 		"""
-		countScripts = 0
-
-		# Import
-		if isinstance(path, str):
-			path = [ path ]
-		scriptPaths = path.copy()
-
-		for p in list(scriptPaths):
-			if not os.path.exists(p):
-				L.isDebug and L.logDebug(f'Import directory for scripts does not exist: {p}')
-				scriptPaths.remove(p)
-				continue
-			# automatically add all subdirectories with the .scripts suffix
-			for _e in os.scandir(p):
-				if _e.is_dir() and _e.name.endswith('.scripts'):
-					scriptPaths.append(_e.path)
-		self.extendedScriptPaths.extend(scriptPaths)	# save for later use
-
-		self._prepareImporting()
-		try:
-			L.isDebug and L.logDebug(f'Importing scripts from directory(s): {self.extendedScriptPaths}')
-			if (countScripts := CSE.script.loadScriptsFromDirectory(self.extendedScriptPaths)) == -1:
-				return False
+	
+		def _importScripts(path: str|list[str]=None) -> bool:
+			"""	Import the ACME script from a directory.
 			
-			# Check that there is only one startup script, then execute it
-			match len(scripts := CSE.script.findScripts(meta = _metaInit)):
-				case l if l > 1:
-					L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
-					return False
-				case 1:
-					# Check whether there is already a filled DB, then skip the imports
-					if CSE.dispatcher.countResources() > 0:
-						L.isInfo and L.log('Resources already imported, skipping boostrap')
-					else:
-						# Run the startup script. There shall only be one.
-						s = scripts[0]
-						L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
-						if not CSE.script.runScript(s):	
-							L.logErr(f'Error during startup: {s.error}')
-							return False
-		finally:
-			# This is executed no matter whether the code above returned or just succeeded
-			self._finishImporting()
+				Args:
+					path: Optional string with the path to a directory to look for scripts. Default is the CSE's data directory.
+				Return:
+					Boolean indicating success or failure.
+			"""
+			countScripts = 0
 
-		# But we still need the CSI etc of the CSE, and also check presence of CSE
-		if cse := getCSE():
-			# Set some values in the configuration and the CSE instance
-			if RC.cseCsi != cse.csi:
-				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {RC.cseCsi} -> {cse.csi}')
-				RC.cseCsi = cse.csi
-				Configuration.update('cse.cseID', cse.csi)
-			if RC.cseRi != cse.ri:
-				L.logWarn(f'Imported CSEBase overwrites configuration. ri: {RC.cseRi} -> {cse.ri}')
-				RC.cseRi = cse.ri
-				Configuration.update('cse.resourceID',cse.ri)
-			if RC.cseRn != cse.rn:
-				L.logWarn(f'Imported CSEBase overwrites configuration. rn: {RC.cseRn} -> {cse.rn}')
-				RC.cseRn  = cse.rn
-				Configuration.update('cse.resourceName', cse.rn)
-		else:
-			# We don't have a CSE!
-			L.logErr('CSE missing during startup, or database mismatch due to wrong CSE-ID in configuration settings.')
+			# Import
+			if isinstance(path, str):
+				path = [ path ]
+			scriptPaths = path.copy()
+
+			for p in list(scriptPaths):
+				if not os.path.exists(p):
+					L.isDebug and L.logDebug(f'Import directory for scripts does not exist: {p}')
+					scriptPaths.remove(p)
+					continue
+				# automatically add all subdirectories with the .scripts suffix
+				for _e in os.scandir(p):
+					if _e.is_dir() and _e.name.endswith('.scripts'):
+						scriptPaths.append(_e.path)
+			self.extendedScriptPaths.extend(scriptPaths)	# save for later use
+
+			self._prepareImporting()
+			try:
+				L.isDebug and L.logDebug(f'Importing scripts from directory(s): {self.extendedScriptPaths}')
+				if (countScripts := self.scriptManager.loadScriptsFromDirectory(self.extendedScriptPaths)) == -1:
+					return False
+				
+				# Check that there is only one startup script, then execute it
+				match len(scripts := self.scriptManager.findScripts(meta=_metaInit)):
+					case l if l > 1:
+						L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
+						return False
+					case 1:
+						# Check whether there is already a filled DB, then skip the imports
+						if self.dispatcher.countResources() > 0:
+							L.isInfo and L.log('Resources already imported, skipping boostrap')
+						else:
+							# Run the startup script. There shall only be one.
+							s = scripts[0]
+							L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
+							if not self.scriptManager.runScript(s):	
+								L.logErr(f'Error during startup: {s.error}')
+								return False
+			finally:
+				# This is executed no matter whether the code above returned or just succeeded
+				self._finishImporting()
+
+			# But we still need the CSI etc of the CSE, and also check presence of CSE
+			if cse := getCSE():
+				# Set some values in the configuration and the CSE instance
+				if RC.cseCsi != cse.csi:
+					L.logWarn(f'Imported CSEBase overwrites configuration. csi: {RC.cseCsi} -> {cse.csi}')
+					RC.cseCsi = cse.csi
+					Configuration.update('cse.cseID', cse.csi)
+				if RC.cseRi != cse.ri:
+					L.logWarn(f'Imported CSEBase overwrites configuration. ri: {RC.cseRi} -> {cse.ri}')
+					RC.cseRi = cse.ri
+					Configuration.update('cse.resourceID',cse.ri)
+				if RC.cseRn != cse.rn:
+					L.logWarn(f'Imported CSEBase overwrites configuration. rn: {RC.cseRn} -> {cse.rn}')
+					RC.cseRn  = cse.rn
+					Configuration.update('cse.resourceName', cse.rn)
+			else:
+				# We don't have a CSE!
+				L.logErr('CSE missing during startup, or database mismatch due to wrong CSE-ID in configuration settings.')
+				return False
+
+			L.isDebug and L.logDebug(f'Imported {countScripts} scripts')
+			return True
+
+		# remove scripts before importing
+		self.removeScripts()
+
+		# Import from the CSE's init directory
+		if not _importScripts([self.resourcePath, self.rtDir]):
 			return False
 
-		L.isDebug and L.logDebug(f'Imported {countScripts} scripts')
-		return True
+		# Import from additional directories specified in the configuration
+		if Configuration.scripting_scriptDirectories:
+			if not _importScripts(Configuration.scripting_scriptDirectories):
+				return False
 
+		return True
 
 	###########################################################################
 	#
@@ -201,6 +335,11 @@ class Importer(object):
 	#
 
 	def importConfigDocs(self) -> bool:
+		""" Import the configuration documentation from the resource path. 
+		
+			Return:
+				True if the documentation was successfully imported, False otherwise.
+		"""
 		# Get import path
 		if (path := self.resourcePath) is None:
 			L.logErr('cse.resourcesPath not set')
@@ -265,45 +404,47 @@ class Importer(object):
 		for fno in filenames:
 			fn = os.path.join(path, fno)
 			L.isDebug and L.logDebug(f'Importing policies: {os.path.basename(fno)}')
-			if os.path.exists(fn):
-				
-				# Read the JSON file
-				if not (enums := cast(JSON, self.readJSONFromFile(fn))):
+
+			if not os.path.exists(fn):
+				continue
+			
+			# Read the JSON file
+			if not (enums := cast(JSON, self.readJSONFromFile(fn))):
+				return False
+
+			for enumName, enumDef in enums.items():
+				if not isinstance(enumDef, dict):
+					L.logErr(f'Wrong or empty enumeration definition for enum: {enumName} in file: {fn}')
 					return False
+				
+				enm:dict[int, str] = {}
+				for enumValue, enumInterpretation in enumDef.items():
+					s, found, e = enumValue.partition('..')
+					if not found:
+						# Single value
+						try:
+							value = int(enumValue)
+						except ValueError:
+							L.logErr(f'Wrong enumeration value: {enumValue} in enum: {enumName} in file: {fn} (must be an integer)')
+							return False
+						if not isinstance(enumInterpretation, str):
+							L.logErr(f'Wrong interpretation for enum value: {enumValue} in enum: {enumName} in file: {fn}')
+							return False
+						enm[value] = enumInterpretation
 
-				for enumName, enumDef in enums.items():
-					if not isinstance(enumDef, dict):
-						L.logErr(f'Wrong or empty enumeration definition for enum: {enumName} in file: {fn}')
-						return False
-					
-					enm:dict[int, str] = {}
-					for enumValue, enumInterpretation in enumDef.items():
-						s, found, e = enumValue.partition('..')
-						if not found:
-							# Single value
-							try:
-								value = int(enumValue)
-							except ValueError:
-								L.logErr(f'Wrong enumeration value: {enumValue} in enum: {enumName} in file: {fn} (must be an integer)')
-								return False
-							if not isinstance(enumInterpretation, str):
-								L.logErr(f'Wrong interpretation for enum value: {enumValue} in enum: {enumName} in file: {fn}')
-								return False
-							enm[value] = enumInterpretation
+					else:
+						# Range
+						try:
+							si = int(s)
+							ei = int(e)
+						except ValueError:
+							L.logErr(f'Error in evalue range definition: {enumValue} (range shall consist of integer numbers) for enum attribute: {enumName} in file: {fn}', showStackTrace=False)
+							return None
+						for i in range(si, ei+1):
+							enm[i] = enumInterpretation
 
-						else:
-							# Range
-							try:
-								si = int(s)
-								ei = int(e)
-							except ValueError:
-								L.logErr(f'Error in evalue range definition: {enumValue} (range shall consist of integer numbers) for enum attribute: {enumName} in file: {fn}', showStackTrace=False)
-								return None
-							for i in range(si, ei+1):
-								enm[i] = enumInterpretation
-
-					self._enumValues[enumName] = enm
-					countEP += 1
+				self._enumValues[enumName] = enm
+				countEP += 1
 
 
 		L.isDebug and L.logDebug(f'Imported {countEP} enum policies')
@@ -329,53 +470,55 @@ class Importer(object):
 		for each in filenames:
 			fn = os.path.join(path, each)
 			L.isDebug and L.logDebug(f'Importing policies: {os.path.relpath(fn)}')
-			if os.path.exists(fn):
-				if (definitions := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
+			if not os.path.exists(fn):
+				continue
+
+			if (definitions := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
+				return False
+			for eachDefinition in definitions:
+				if not (typeShortname := findXPath(eachDefinition, 'type')):
+					L.logErr(f'Missing or empty resource type in file: {fn}')
 					return False
-				for eachDefinition in definitions:
-					if not (typeShortname := findXPath(eachDefinition, 'type')):
-						L.logErr(f'Missing or empty resource type in file: {fn}')
+				if (cnd := findXPath(eachDefinition, 'cnd')) is None:
+					L.logDebug(f'Missing containerDefinition (cnd) for type: {typeShortname} in file: {fn}')
+				if (lname := findXPath(eachDefinition, 'lname')) is None:
+					L.logDebug(f'Missing long name (lname) for type: {typeShortname} in file: {fn}')
+				
+				# Attributes are optional. However, add a dummy entry
+				if not (attrs := findXPath(eachDefinition, 'attributes')):
+					attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
+					
+				definedAttrs:list[str] = []
+				for attr in attrs:
+					if not (attributePolicy := self._parseAttribute(attr, fn, typeShortname, checkListType=False)):		# TODO Handle list sub-types for flexContainers
 						return False
-					if (cnd := findXPath(eachDefinition, 'cnd')) is None:
-						L.logDebug(f'Missing containerDefinition (cnd) for type: {typeShortname} in file: {fn}')
-					if (lname := findXPath(eachDefinition, 'lname')) is None:
-						L.logDebug(f'Missing long name (lname) for type: {typeShortname} in file: {fn}')
-					
-					# Attributes are optional. However, add a dummy entry
-					if not (attrs := findXPath(eachDefinition, 'attributes')):
-						attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
-						
-					definedAttrs:list[str] = []
-					for attr in attrs:
-						if not (attributePolicy := self._parseAttribute(attr, fn, typeShortname, checkListType = False)):		# TODO Handle list sub-types for flexContainers
-							return False
 
-						# Test whether an attribute has been defined twice
-						# Prevent copy-paste errors
-						if attributePolicy.sname in definedAttrs:
-							L.logErr(f'Double defined attribute: {attributePolicy.sname} type: {typeShortname}')
-							return False
-						definedAttrs.append(attributePolicy.sname)
+					# Test whether an attribute has been defined twice
+					# Prevent copy-paste errors
+					if attributePolicy.sname in definedAttrs:
+						L.logErr(f'Double defined attribute: {attributePolicy.sname} type: {typeShortname}')
+						return False
+					definedAttrs.append(attributePolicy.sname)
 
-						# Add the attribute to the additional policies structure
-						try:
-							if not CSE.validator.addFlexContainerAttributePolicy(attributePolicy):
-								L.logErr(f'Cannot add attribute policies for attribute: {attributePolicy.sname} type: {typeShortname}')
-								return False
-							countFCP += 1
-						except Exception as e:
-							L.logErr(str(e))
+					# Add the attribute to the additional policies structure
+					try:
+						if not self.validator.addFlexContainerAttributePolicy(attributePolicy):
+							L.logErr(f'Cannot add attribute policies for attribute: {attributePolicy.sname} type: {typeShortname}')
 							return False
-					
-					# Add the available specialization information
-					if cnd:
-						if CSE.validator.hasFlexContainerContainerDefinition(cnd):
-							L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
-							return False
+						countFCP += 1
+					except Exception as e:
+						L.logErr(str(e))
+						return False
+				
+				# Add the available specialization information
+				if cnd:
+					if self.validator.hasFlexContainerContainerDefinition(cnd):
+						L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
+						return False
 
-						if not CSE.validator.addFlexContainerSpecialization(typeShortname, cnd, lname):
-							L.logErr(f'Cannot add flexContainer specialization for type: {typeShortname}')
-							return False
+					if not self.validator.addFlexContainerSpecialization(typeShortname, cnd, lname):
+						L.logErr(f'Cannot add flexContainer specialization for type: {typeShortname}')
+						return False
 
 		L.isDebug and L.logDebug(f'Imported {countFCP} flexContainer policies')
 		return True
@@ -401,56 +544,60 @@ class Importer(object):
 		for fno in filenames:
 			fn = os.path.join(path, fno)
 			L.isDebug and L.logDebug(f'Importing policies: {fno}')
-			if os.path.exists(fn):
-				
-				# Read the JSON file
-				if not (attributeList := cast(JSON, self.readJSONFromFile(fn))):
+			
+			if not os.path.exists(fn):
+				continue
+			
+			# Read the JSON file
+			if not (attributeList := cast(JSON, self.readJSONFromFile(fn))):
+				return False
+			
+			# go through all the attributes in that attribute definition file
+			for sname in attributeList:
+				if not isinstance(sname, str):
+					L.logErr(f'Attribute name must be a string: {str(sname)} in file: {fn}', showStackTrace=False)
 					return False
-				
-				# go through all the attributes in that attribute definition file
-				for sname in attributeList:
-					if not isinstance(sname, str):
-						L.logErr(f'Attribute name must be a string: {str(sname)} in file: {fn}', showStackTrace = False)
-						return False
 
-					attributeDefs = attributeList[sname]
-					if not attributeDefs or not isinstance(attributeDefs, list):
-						L.logErr(f'Attribute definition must be a non-empty list for attribute: {sname} in file: {fn}', showStackTrace = False)
-						return False
+				attributeDefs = attributeList[sname]
+				if not attributeDefs or not isinstance(attributeDefs, list):
+					L.logErr(f'Attribute definition must be a non-empty list for attribute: {sname} in file: {fn}', showStackTrace=False)
+					return False
 
-					# for each definition for this attribute parse it and add one or more attribute Policies
-					for entry in attributeDefs:
-						if not (attributePolicy := self._parseAttribute(entry, fn, sname = sname)):
+				# for each definition for this attribute parse it and add one or more attribute Policies
+				for entry in attributeDefs:
+					if not (attributePolicy := self._parseAttribute(entry, fn, sname=sname)):
+						return False
+					if not attributePolicy.rtypes:
+						L.logErr(f'Missing or unknown resource type definition for attribute: {sname} in file {fn}', showStackTrace=False)
+						return False
+					for rtype in attributePolicy.rtypes:
+						ap = deepcopy(attributePolicy)
+						try:
+							self.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
+							countAP += 1
+						except ValueError as e:
+							L.logErr(str(e))
 							return False
-						if not attributePolicy.rtypes:
-							L.logErr(f'Missing or unknown resource type definition for attribute: {sname} in file {fn}', showStackTrace = False)
-							return False
-						for rtype in attributePolicy.rtypes:
-							ap = deepcopy(attributePolicy)
-							try:
-								CSE.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
-							except ValueError as e:
-								L.logErr(str(e))
-								return False
+
 
 		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
 		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
-		for p in CSE.validator.getAllAttributePolicies().values():
+		for p in self.validator.getAllAttributePolicies().values():
 			match p.type:
 				case BasicType.complex:
-					for each in CSE.validator.getAllAttributePolicies().values():
+					for each in self.validator.getAllAttributePolicies().values():
 						if p.typeName == each.ctype:	# found a definition
 							break
 					else:
-						L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+						L.logErr(f'No type or complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace=False)
 						return False
 				case BasicType.list | BasicType.listNE if p.ltype is not None:
 					if p.ltype == BasicType.complex:
-						for each in CSE.validator.getAllAttributePolicies().values():
+						for each in self.validator.getAllAttributePolicies().values():
 							if p.lTypeName == each.ctype:	# found a definition
 								break
 						else:
-							L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+							L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace=False)
 							return False			
 		
 		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
@@ -466,28 +613,28 @@ class Importer(object):
 		"""
 		L.isDebug and L.logDebug('Assigning attribute policies to resource types')
 
-		noErrors = True
+		hasErrors = False
 		for ty in ResourceTypes:
-			if (rc := ty.resourceClass()):											# Get the Python class for each Resource (only real resources)
-				if hasattr(rc, '_attributes'):										# If it has attributes defined
+			if (rc := self.factory.getResourceClassForType(ty)):									# Get the Python class for each Resource (only real resources)
+				if hasattr(rc, '_attributes') and isinstance(rc._attributes, dict):	# If it has attributes defined
 					for sn in rc._attributes.keys():								# Then add the policies for those attributes
-						if not (ap := CSE.validator.getAttributePolicy(ty, sn)):
+						if not (ap := self.validator.getAttributePolicy(ty, sn)):
 							L.logErr(f'No attribute policy for: {ty.name}.{sn}', showStackTrace=False)
-							noErrors = False
+							hasErrors = True
 							continue
 						rc._attributes[sn] = ap
-				else:
-					L.logErr(f'Cannot assign attribute policies for resource class: {str(ty)}', showStackTrace=False)
-					noErrors = False
-					continue
+				# else:
+				# 	L.logErr(f'Cannot assign attribute policies for resource class: {str(ty)}', showStackTrace=False)
+				# 	hasErrors = True
+				# 	continue
 				# Check for presence of _allowedChildResourceTypes attribute
 				# TODO Move this to a general health check test function
 				if not hasattr(rc, '_allowedChildResourceTypes'):
 					L.logErr(f'Attribute "_allowedChildResourceTypes" missing for: {str(ty)}', showStackTrace=False)
-					noErrors = False
+					hasErrors = True
 					continue
 
-		return noErrors
+		return not hasErrors
 
 
 	def _parseAttribute(self, attr:JSON, 
@@ -519,7 +666,7 @@ class Importer(object):
 			L.logErr(f'"ns" must be a non-empty string for attribute: {sname} in file: {fn}', showStackTrace=False)
 			return None
 		if not typeShortname:
-			typeShortname = f'{ns}:{sname}'
+			typeShortname = f'{ns}:{sname}' if not sname.startswith(f'{ns}:') else sname
 		
 		#	Get the attribute long name
 		if not (lname := findXPath(attr, 'lname')) or not isinstance(lname, str) or len(lname) == 0:
@@ -667,7 +814,7 @@ class Importer(object):
 		"""	Prepare the importing process.
 		"""
 		# temporarily disable access control
-		self._oldacp = Configuration.cse_security_enableACPChecks
+		self._oldEnabbleAcpChecks = Configuration.cse_security_enableACPChecks
 		Configuration.update('cse.security.enableACPChecks', False)
 		self.isImporting = True
 
@@ -714,11 +861,23 @@ class Importer(object):
 
 
 	def _finishImporting(self) -> None:
-		Configuration.update('cse.security.enableACPChecks', self._oldacp)
+		""" Finish the importing process, e.g. re-enable access control.
+		"""
+		Configuration.update('cse.security.enableACPChecks', self._oldEnabbleAcpChecks)
 		self.isImporting = False
 
 
 	def _expandEnumValues(self, evalues:list[int|str], typeShortname:str, fn:str) -> Optional[list[int]]:
+		""" Expand an enum values list by parsing the range definitions and return a list of integer values.
+		
+			Args:
+				evalues: A list of integer values or range definitions (e.g. "1..10") to expand.
+				typeShortname: The type and attribute name (for logging purposes).
+				fn: The filename where the enum values are defined (for logging purposes).
+
+			Return:
+				A list of integer values, or *None* in case of an error.
+		"""
 
 		#	Check and get enum definitions
 		_evalues:list[int] = []

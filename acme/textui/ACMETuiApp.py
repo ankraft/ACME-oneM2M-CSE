@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast, Optional
+from typing import Callable, Optional, TYPE_CHECKING
 
 from typing_extensions import Literal, get_args
 import asyncio
@@ -32,11 +32,14 @@ from ..textui.ACMEContainerRequests import ACMEContainerRequests
 from ..textui.ACMEContainerTools import ACMEContainerTools
 from ..textui.ACMEContentConfirmDialog import ACMEContentConfirmDialog
 
-from ..runtime import CSE
-from ..runtime.Configuration import Configuration
 from ..etc.Types import ResourceTypes
+from ..runtime.Configuration import Configuration
+from ..runtime.PluginSupport import requires
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..etc.Utils import openFileWithDefaultApplication
+
+if TYPE_CHECKING:
+	from ..services.Validator import Validator
+
 
 tabResources = 'tab-resources'
 """ The ID of the resource tab. """
@@ -74,11 +77,14 @@ class ACMETuiQuitReason(IntEnum):
 	restart = auto()
 	"""	Restart the TUI. """
 
-
+@requires(validator='acme.services.Validator')
 class ACMETuiApp(App):
 	"""A Textual app to manage the ACME text UI."""
 
-	from ..runtime import TextUI
+	validator: Validator = None
+	"""	Injected Validator instance. """
+
+	# from ..plugins.runtime import TextUI
 
 	CSS_PATH = 'ACMETUI.tcss'
 	"""	The path to the app's CSS file. """
@@ -104,7 +110,7 @@ class ACMETuiApp(App):
 		self.quitReason = ACMETuiQuitReason.undefined
 		"""	The reason for quitting the TUI. """
 
-		self.attributeExplanations = CSE.validator.getShortnameLongNameMapping()
+		self.attributeExplanations = self.validator.getShortnameLongNameMapping()
 		"""	The attribute explanations dictionary. """
 
 		# Set some default color values

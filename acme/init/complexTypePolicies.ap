@@ -157,6 +157,15 @@
 			"car": "01"
 		},
 		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "eventCategory",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:eventCat",
+			"car": "01"
+		},
+		{
 			"rtypes": [ "REQUEST" ],
 			"lname": "eventCategory",
 			"ns": "m2m",
@@ -260,6 +269,14 @@
 			"car": "01"
 		},
 		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "from",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01"
+		},
+		{
 			"rtypes": [ "REQUEST", "RESPONSE" ],
 			"lname": "from",
 			"ns": "m2m",
@@ -289,6 +306,28 @@
 			"car": "01"
 		}
 	],
+	"net": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "notificationEventType",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum",
+			"etype": "m2m:notificationEventType",
+			"car": "01"	// 0..5
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notificationEvent_type",
+			"lname": "notificationEventType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:notificationEventType",
+			"car": "1"
+		}
+
+	],
 	"nm": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -309,6 +348,14 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:attribute",
+			"lname": "name",
+			"ns": "m2m",
+			"type": "ncname",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:childResourceRef",
 			"lname": "name",
 			"ns": "m2m",
 			"type": "ncname",
@@ -362,10 +409,39 @@
 			"annc": "NA"
 		}
 	],
+	"om": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "operationMonitor",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:operationMonitor",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notificationEvent_type",
+			"lname": "operationMonitor",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:operationMonitor",
+			"car": "01"
+		}
+	],
 	"op": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:requestPrimitive",
+			"lname": "operation",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:operation",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
 			"lname": "operation",
 			"ns": "m2m",
 			"type": "enum",
@@ -403,6 +479,32 @@
 			"car": "01"
 		}
 	],
+	"or": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationMonitor",
+			"lname": "originator",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "originator",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:IPEDiscoveryRequest_type",
+			"lname": "originator",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "1"
+		}
+	],
 	"ot": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -423,6 +525,14 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:requestPrimitive",
+			"lname": "originatingTimestamp",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
 			"lname": "originatingTimestamp",
 			"ns": "m2m",
 			"type": "timestamp",
@@ -467,6 +577,14 @@
 			"ou": "NP",
 			"od": "O",
 			"annc": "OA"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "primitiveContent",
+			"ns": "m2m",
+			"type": "adict",		//	m2m:primitiveContent
+			"car": "01"
 		},
 		{
 			"rtypes": [ "REQUEST", "RESPONSE" ],
@@ -548,6 +666,14 @@
 			"car": "1"
 		},
 		{
+			"rtypes": [ "COMPLEX"],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "requestIdentifier",
+			"ns": "m2m",
+			"type": "string",	// m2m:requestID
+			"car": "1"
+		},
+		{
 			"rtypes": [ "REQUEST", "RESPONSE" ],
 			"lname": "requestIdentifier",
 			"ns": "m2m",
@@ -571,6 +697,14 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:metaInformation",
+			"lname": "resultExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
 			"lname": "resultExpirationTimestamp",
 			"ns": "m2m",
 			"type": "absRelTimestamp",
@@ -676,6 +810,16 @@
 			"car": "01"
 		}
 	],
+	"tkid": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthLocalTokenIdAssignment_type",
+			"lname": "tokenID",
+			"ns": "m2m",
+			"type": "string",	// m2m:tokenID # TODO: validation
+			"car": "1"
+		}
+	],
 	"to": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -692,6 +836,14 @@
 			"ns": "m2m",
 			"type": "ID",
 			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "to",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01"
 		},
 		{
 			"rtypes": [ "REQUEST", "RESPONSE" ],
@@ -775,6 +927,33 @@
 			"type": "enum",
 			"etype": "m2m:mgmtDefinition",
 			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:childResourceRef",
+			"lname": "type",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:resourceType"	,
+			"car": "1"
+		}
+	],
+	"uri": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:contentRef",
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthTokenReqInfo_type",
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
 		}
 	],
 	"us": [
@@ -807,6 +986,14 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:attribute",
+			"lname": "value",
+			"ns": "m2m",
+			"type": "any",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:childResourceRef",
 			"lname": "value",
 			"ns": "m2m",
 			"type": "any",
@@ -918,6 +1105,14 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:accessControlObjectDetails",
+			"lname": "specializationType",
+			"ns": "m2m",
+			"type": "m2m:specializationType", 
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:childResourceRef",
 			"lname": "specializationType",
 			"ns": "m2m",
 			"type": "m2m:specializationType", 
@@ -1108,19 +1303,8 @@
 	//
 	//	m2m:contentRef
 	//
+	// see also "nm", "uri" above
 	
-	// see also "nm" definition above
-	
-	"uri": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:contentRef",
-			"lname": "URI",
-			"ns": "m2m",
-			"type": "ID",
-			"car": "1"
-		}
-	],
 
 	//
 	//	m2m:deletionContexts
@@ -1150,33 +1334,163 @@
 
 
 	//
-	//	m2m:eventNotificationCriteria
+	//	m2m:dynAuthDasRequest
 	//
-	//	See also "atr", "cra", "crb", "chty", "exa", "exb", "ms" "us",
-	//	"sts", "stb", "sza", "szb", "fo" above
-	"om": [
+	// See also "or", "op", "tids", "asi"
+
+	"tirt": [
 		{
 			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:eventNotificationCriteria",
-			"lname": "operationMonitor",
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "targetedResourceType",
 			"ns": "m2m",
-			"type": "list",
-			"ltype": "m2m:operationMonitor",
+			"type": "enum",
+			"etype": "m2m:resourceType",
 			"car": "01"
 		}
 	],
-	"net": [
+	"oid": [
 		{
 			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:eventNotificationCriteria",
-			"lname": "notificationEventType",
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "originatorID",
 			"ns": "m2m",
-			"type": "list",
-			"ltype": "enum",
-			"etype": "m2m:notificationEventType",
-			"car": "01"	// 0..5
+			"type": "m2m:ipAddress",
+			"car": "01"
 		}
 	],
+	"olo": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "originatorLocation",
+			"ns": "m2m",
+			"type": "m2m:locationRegion",
+			"car": "01"
+		}
+	],
+	"orid": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "originatorRoleIDs",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",	// TODO: m2m:roleIDs validation
+			"car": "01L"
+		}
+	],
+	"rts": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "requestTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		}
+	],
+	"trid": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "targetedResourceID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
+		}
+	],
+	"ppl": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "proposedPrivilegesLifetime",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		}
+	],
+	"rfa": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "roleIDsFromACPs",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",	// TODO: m2m:roleIDs validation
+			"car": "01L"
+		}
+	],
+
+	//
+	//	m2m:dynAuthLocalTokenIdAssignments
+	//
+
+	"ltia": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthLocalTokenIdAssignments",
+			"lname": "localTokenIdAssignment",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:dynAuthLocalTokenIdAssignment_type",
+			"car": "1L"
+		}
+	],
+
+	"lti": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthLocalTokenIdAssignment_type",
+			"lname": "localTokenId",
+			"ns": "m2m",
+			"type": "ncname",
+			"car": "1"
+		}
+	],
+
+	//
+	//	m2m:dynAuthTokenReqInfo
+	//
+
+	"dasi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthTokenReqInfo",
+			"lname": "dasInfo",
+			"ns": "m2m",
+			"type": "m2m:dynAuthTokenReqInfo_type",	// this struct contains only one anonymous attribute "dasInfo", so we need to invent an inner type name for it
+			"car": "01"
+		}
+	],
+	"dreq": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthTokenReqInfo_type",
+			"lname": "darRequest",
+			"ns": "m2m",
+			"type": "m2m:dynAuthDasRequest",
+			"car": "01"
+		}
+	],
+	"sdr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthTokenReqInfo_type",
+			"lname": "securedDasRequest",
+			"ns": "m2m",
+			"type": "string",	//TODO m2m:dynAuthJWT validation
+			"car": "01"
+		}
+	],
+
+	
+
+	//
+	//	m2m:eventNotificationCriteria
+	//
+	//	See also "net", "om", "atr", "cra", "crb", "chty", "exa", "exb", "ms" "us",
+	//	"sts", "stb", "sza", "szb", "fo" above
 	"md": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -1490,6 +1804,23 @@
 
 
 	//
+	//	m2m:listOfChildResourceRef
+	//
+
+	"rrf": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:listOfChildResourceRef",
+			"lname": "resourceRef",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:childResourceRef",
+			"car": "1L"
+		}
+	],
+
+
+	//
 	//	m2m:locationRegion
 	//
 	"accr": [
@@ -1580,6 +1911,14 @@
 			"ns": "m2m",
 			"type": "m2m:filterCriteria",
 			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:IPEDiscoveryRequest_type",
+			"lname": "filterCriteria",
+			"ns": "m2m",
+			"type": "m2m:filterCriteria",
+			"car": "1"
 		}
 	],
 	"tqi": [
@@ -1610,7 +1949,16 @@
 			"lname": "tokenIDs",
 			"ns": "m2m",
 			"type": "list",	
-			"ltype": "ncname",
+			"ltype": "string",	// TODO: m2m:tokenIDs validation
+			"car": "01L"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "tokenIDs",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",	// TODO: m2m:tokenIDs validation
 			"car": "01L"
 		}
 	],
@@ -1653,6 +2001,14 @@
 			"lname": "authorSignIndicator",
 			"ns": "m2m",
 			"type": "boolean",	
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:dynAuthDasRequest",
+			"lname": "authorSignIndicator",
+			"ns": "m2m",
+			"type": "boolean",
 			"car": "01"
 		}
 	],
@@ -1706,12 +2062,29 @@
 			"ns": "m2m",
 			"type": "string",	// m2m:releaseVersion
 			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "ReleaseVersionIndicator",
+			"ns": "m2m",
+			"type": "string",	// m2m:releaseVersion
+			"car": "1"
 		}
+
 	],
 	"vsi": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:metaInformation",
+			"lname": "vendorInformation",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
 			"lname": "vendorInformation",
 			"ns": "m2m",
 			"type": "string",
@@ -1724,7 +2097,15 @@
 			"ctype": "m2m:metaInformation",
 			"lname": "m2mServiceUser",
 			"ns": "m2m",
-			"type": "string",	// m2m:ID
+			"type": "ID",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "m2mServiceUser",
+			"ns": "m2m",
+			"type": "ID",
 			"car": "01"
 		}
 	],
@@ -1743,20 +2124,166 @@
 
 
 	//
-	//	m2m:operationMonitor
+	//	m2m:notification
 	//
-	//	See also "ops" above
-	"or": [
+	//	See also "om", "or", "fc" above
+
+	"nev": [
 		{
 			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:operationMonitor",
-			"lname": "originator",
+			"ctype": "m2m:notification",
+			"lname": "notificationEvent",
+			"ns": "m2m",
+			"type": "m2m:notificationEvent_type", // this struct contains only one anonymous attribute "notificationEvent", so we need to invent an inner type name for it
+			"car": "01"
+		}
+	],
+	"rep": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notificationEvent_type",
+			"lname": "representation",
+			"ns": "m2m",
+			"type": "any",	// TODO: "rep" validation. see Table 6.3.5.62-1.
+			"car": "01"
+		}
+	],
+	"vrq": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "verificationRequest",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+	"sur": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "subscriptionReference",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
+		}
+	],
+	"cr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "creator",
 			"ns": "m2m",
 			"type": "ID",
 			"car": "01"
 		}
 	],
+	"nfu": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "notificationForwardingURI",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+	"ntt": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "notificationTarget",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01"
+		}
+	],
+	"trr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "targetRemovalRequest",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+	"tra":[
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "targetRemovalAllowance",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+	"idr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "IPEDiscoveryRequest",
+			"ns": "m2m",
+			"type": "m2m:IPEDiscoveryRequest_type",
+			"car": "01"
+		}
 
+	],
+	"aerp": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "AERegistrationPointChange",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+	"aerid": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "AEReferenceIDChange",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+	"tid1": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "trackingID1",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01"
+		}
+	],
+	"tid2": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "trackingID2",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01"
+		}
+	],
+	"sud": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "subscriptionDeletion",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+
+	//
+	//	m2m:operationMonitor
+	//
+	//	See also "ops", "or" above
 
 	//
 	//	m2m:operationResult
@@ -1767,6 +2294,15 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:operationResult",
+			"lname": "responseStatusCode",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:responseStatusCode",
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
 			"lname": "responseStatusCode",
 			"ns": "m2m",
 			"type": "enum",
@@ -1783,12 +2319,29 @@
 			"type": "enum",
 			"etype": "m2m:contentStatus",
 			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "contentStatus",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:contentStatus",
+			"car": "01"
 		}
 	],
 	"cnot": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:operationResult",
+			"lname": "contentOffset",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
 			"lname": "contentOffset",
 			"ns": "m2m",
 			"type": "positiveInteger",
@@ -1846,6 +2399,41 @@
 	//
 
 
+	//
+	//	m2m:responsePrimitive
+	//
+	// see also "rsc", "rqi", "pc", "to", "fr", "ot", "rset", "ec", "cnst", "cnot", "rvi", "vsi", "msu" elsewhere 
+
+	"ati": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "assignedTokenIdentifiers",
+			"ns": "m2m",
+			"type": "m2m:dynAuthLocalTokenIdAssignments",
+			"car": "01"
+		}
+	],
+	"tqf": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "tokenRequestInformation",
+			"ns": "m2m",
+			"type": "m2m:dynAuthTokenReqInfo",
+			"car": "01"
+		}
+	],
+	"asri": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responsePrimitive",
+			"lname": "authorSignReqInfo",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
 
 	//
 	//	m2m:responseTypeInfo

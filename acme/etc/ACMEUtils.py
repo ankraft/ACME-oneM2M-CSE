@@ -13,18 +13,15 @@
 from __future__ import annotations
 
 from typing import Any, Tuple, cast, Optional
-import sys, re
+import sys
 
-from .Constants import Constants
 from .Types import ResourceTypes
-from .Types import JSON
-from .IDUtils import isStructured, isCSERelative, toSPRelative, isAbsolute, toAbsolute, isSPRelative
-from ..runtime import CSE
+from .IDUtils import isStructured, isAbsolute, toAbsolute
 from ..etc.Constants import RuntimeConstants as RC
+from ..runtime.Storage import Storage
 
-
-# Optimize access (fewer look-up)
-_attrType = Constants.attrRtype
+storage: Storage = Storage()	# type: ignore
+""" Storage singleton instance. """
 
 
 def isUniqueRI(ri:str) -> bool:
@@ -35,7 +32,7 @@ def isUniqueRI(ri:str) -> bool:
 		Return:
 			Boolean indicating the result of the test
 	"""
-	return not CSE.storage.identifier(ri)
+	return not storage.identifier(ri)
 
 
 def structuredPathFromRI(ri:str) -> Optional[str]:
@@ -47,7 +44,7 @@ def structuredPathFromRI(ri:str) -> Optional[str]:
 			Structured path, or None in case of an error.
 	"""
 	try:
-		return CSE.storage.identifier(ri)[0]['srn']
+		return storage.identifier(ri)[0]['srn']
 	except:
 		return None
 
@@ -62,7 +59,7 @@ def riFromStructuredPath(srn: str) -> Optional[str]:
 			Resource ID, or None in case of an error.
 	"""
 	try:
-		return CSE.storage.structuredIdentifier(srn)[0]['ri']
+		return storage.structuredIdentifier(srn)[0]['ri']
 	except:
 		return None
 
@@ -76,9 +73,9 @@ def resourceTypeFromID(id:str) -> Optional[ResourceTypes]:
 			Resource type, or None in case of an error.
 	"""
 	if isStructured(id):
-		lst = CSE.storage.structuredIdentifier(id)
+		lst = storage.structuredIdentifier(id)
 	else:
-		lst = CSE.storage.identifier(id)
+		lst = storage.identifier(id)
 	if not lst:
 		return None
 	return ResourceTypes(lst[0]['ty'])
@@ -122,23 +119,35 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 	ri 			= None
 	vrPresent	= None
 
-	# split path
-	idsLen = len(ids := id.split('/'))
-
-	# # Test for empty ID
-	# if (idsLen := len(ids)) == 0:	# There must be something!
-	# 	return None, None, None, 'ID must not be empty'
-
-	# Remove the empty elements in the beginnig of the list (they result from a single "/")
-	# and calculate from that the "level", which indicates CSE relative,
-	# SP relative or absolute
 	lvl = 0
-	while not ids[0]:
-		ids.pop(0)
+	_l = len(id)
+	while lvl < _l and id[lvl] == '/':
 		lvl += 1
-		idsLen -= 1
 	if lvl > 2:						# not more than 2 * / in front
-		return None, None, None, None, 'Too many "/" level'
+		return None, None, None, None, 'Too many "/" in front of ID'
+
+	idsLen = len(ids := id[lvl:].split('/'))
+
+	if not ids[-1]:
+		return None, None, None, None, f'{"CSE-relative" if lvl == 0 else "SP-relative" if lvl == 1 else "Absolute"} ID: "{id}" - last path element must not be empty.'
+
+	# # split path
+	# idsLen = len(ids := id.split('/'))
+
+	# # # Test for empty ID
+	# # if (idsLen := len(ids)) == 0:	# There must be something!
+	# # 	return None, None, None, 'ID must not be empty'
+
+	# # Remove the empty elements in the beginnig of the list (they result from a single "/")
+	# # and calculate from that the "level", which indicates CSE relative,
+	# # SP relative or absolute
+	# lvl = 0
+	# while not ids[0]:
+	# 	ids.pop(0)
+	# 	lvl += 1
+	# 	idsLen -= 1
+	# if lvl > 2:						# not more than 2 * / in front
+	# 	return None, None, None, None, 'Too many "/" in front of ID'
 
 	# Remove virtual resource shortname if it is present
 	if ResourceTypes.isVirtualResourceName(ids[-1]):
@@ -161,28 +170,31 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 		case 1:
 			# L.logDebug("SP-Relative")
 			if idsLen < 2:
-				return None, None, None, None, f'ID too short: {id}. Must be /<cseid>/<structured|unstructured>.'
+				return None, None, None, None, f'SP-relative ID is too short: "{id}". Must be /<cseid>/<structured path | unstructured ID>.'
+
 			csi = ids[0]					# extract the csi
 			if csi != RC.cseCsiSlashLess:	# Not for this CSE? retargeting
 				if vrPresent:				# append last path element again
 					ids.append(vrPresent)
 				return id, csi, srn, None, None	# Early return. ri is the (un)structured path
 			# replace placeholder "-", convert in CSE-relative when the target is this CSE
-			if ids[1] == '-' and ids[0] == RC.cseCsiSlashLess:	
+			# if ids[1] == '-' and ids[0] == RC.cseCsiSlashLess:	
+			if ids[1] == '-':	
 				ids[1] = RC.cseRn
 			if ids[1] == RC.cseRn:			# structured
 				srn = '/'.join(ids[1:])		# remove the csi part
 			elif idsLen == 2:				# unstructured
 				ri = ids[1]
 			else:
-				return None, None, None, None, 'Too many "/" level'
+				return None, None, None, None, f'Too many "/" level ({idsLen}) for SP-Relative ID: "{id}". Perhaps resource name mismatch?'
 
 
 		# Absolute (2 first elements are /)
 		case 2:
 			# L.logDebug("Absolute")
 			if idsLen < 3:
-				return None, None, None, None, 'ID too short. Must be //<spid>/<cseid>/<structured|unstructured>.'
+				return None, None, None, None, 'Absolute ID is too short. Must be //<spid>/<cseid>/<structured path | unstructured ID>.'
+
 			spi = ids[0]
 			csi = ids[1]
 			# if spi != RC.cseSpid:			# Check for SP-ID
@@ -193,14 +205,15 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 				return id, csi, srn, spi, None	# Not for this CSE or SP? retargeting
 
 			# replace placeholder "-", convert in absolute when the target is this CSE
-			if ids[2] == '-' and ids[1] == RC.cseCsiSlashLess:	
+			# if ids[2] == '-' and ids[1] == RC.cseCsiSlashLess:	
+			if ids[2] == '-':	
 				ids[2] = RC.cseRn
 			if ids[2] == RC.cseRn:			# structured
 				srn = '/'.join(ids[2:])
 			elif idsLen == 3:				# unstructured
 				ri = ids[2]
 			else:
-				return None, None, None, None, 'Too many "/" level'
+				return None, None, None, None, f'Too many "/" level ({idsLen}) for Absolute ID: "{id}". Perhaps resource name mismatch?'
 
 	# Now either csi, ri or structured srn is set
 	if ri:
@@ -269,85 +282,6 @@ def riFromID(id:str) -> str:
 	return riFromStructuredPath(id) if isStructured(id) else id
 
 
-##############################################################################
-#
-#	Resource and content related
-#
-
-_excludeFromRoot = [ 'pi' ]
-"""	Attributes that are excluded from the root of a resource tree. """
-
-_pureResourceRegex = re.compile(r'[\w]+:[\w]')
-"""	Regular expression to test for a pure resource name. """
-
-def pureResource(dct:JSON) -> Tuple[JSON, str, str]:
-	"""	Return the "pure" structure without the "<domain>:xxx" resource type name, and the oneM2M type identifier. 
-
-		Args:
-			dct: JSON dictionary with the resource attributes.
-		Return:
-			Tupple with the inner JSON, the resource type name, and the found key.
-			If the resource type name is not in the correct format, eg the domain is missing, it is *None*.
-			The third element always contains the found outer attribute name.
-	"""
-	try:
-		rootKeys = list(dct.keys())
-		# Try to determine the root identifier 
-		if (lrk := len(rootKeys)) == 1 and (rk := rootKeys[0]) not in _excludeFromRoot and re.match(_pureResourceRegex, rk):
-			return dct[rootKeys[0]], rootKeys[0], rootKeys[0]
-		# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
-		return dct, dct.get(_attrType), rootKeys[0] if lrk > 0 else None
-	except Exception:
-		raise
-
-
-def resourceDiff(old:JSON, new:JSON, modifiers:Optional[JSON] = None) -> JSON:
-	"""	Compare an old and a new resource. A comparison happens for keywords and values.
-		Attributes which names start and end with "__" (ie internal attributes) are ignored.
-
-		Args:
-			old: Old resource dictionary to compare.
-			new: New resource dictionary to compare.
-			modifiers: A dictionary. If this dictionary is given then it contains the changes that let from old to new. This is used to determine if attributes were just updated with the same values.
-		Return:	
-			Return a dictionary of identified changes.
-	"""
-	res = {}
-	for k, v in new.items():
-		if k.startswith('__'):	# ignore all internal attributes
-			continue
-		if not k in old:		# Key not in old
-			res[k] = v
-		elif v != old[k]:		# Value different
-			res[k] = v
-		elif modifiers and k in modifiers:	# this means the attribute is overwritten by the same value. But still modified
-			res[k] = v
-
-	# Process deleted attributes. This is necessary since attributes can be
-	# explicitly set to None/Nulls.
-	for k, v in old.items():
-		if k not in new:
-			res[k] = None
-
-	return res
-
-
-
-def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Optional[JSON] = None) -> JSON:
-	"""	Calculate the difference between an original resource and after it has been updated, and then remove the attributes
-		that are part of the update request.
-
-		Args:
-			old: Old resource dictionary to compare.
-			new: New resource dictionary to compare.
-			requestPC: The original request's content. This is used to remove the attributes that are part of the update request.
-			modifiers: A dictionary. If this dictionary is given then it contains the changes that let from old to new. This is used to determine if attributes were just updated with the same values.
-		Return:	
-			Return a dictionary of those attributes that have been changed in a CREATE or UPDATE request.	
-	"""
-	return { k:v for k,v in resourceDiff(old, new, modifiers).items() if k not in requestPC or v != requestPC[k] }
-
-
 def resourceFromCSI(csi:str) -> Optional[Any]:	# Actual a Resource object
 	""" Get A CSEBase resource by its csi. This might be a different <CSEBase> resource then the hosting CSE.
 
@@ -358,7 +292,7 @@ def resourceFromCSI(csi:str) -> Optional[Any]:	# Actual a Resource object
 			<CSEBase> resource or None if not found.
 	"""
 	try:
-		return CSE.storage.retrieveResource(csi = csi)
+		return storage.retrieveResource(csi = csi)
 	except Exception as e:
 		import traceback
 		traceback.print_exc()

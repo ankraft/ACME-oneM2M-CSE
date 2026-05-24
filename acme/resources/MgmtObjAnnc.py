@@ -6,21 +6,16 @@
 #
 #	MgmtObj : Announceable variant
 #
+"""	Implementation of the Announced variant of the MgmtObj resource type. """
 
-from __future__ import annotations
-
-from ..etc.Types import ResourceTypes
 from ..resources.AnnouncedResource import AnnouncedResource
 
 
 class MgmtObjAnnc(AnnouncedResource):
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
-
+	"""	Class for the Announced variant of the MgmtObj resource type. """
 	
-	def initialize(self, pi:str, originator:str) -> None:
+	def initialize(self, pi: str) -> None:
 		# The "mgd" attribute is mandatory must be the unaanounced variant!
-		self.setAttribute('mgd', int(self.mgmtType), overwrite = True)
-		super().initialize(pi, originator)
+		self.setAttribute('mgd', int(self.mgmtType), overwrite=True)
+		super().initialize(pi)
 

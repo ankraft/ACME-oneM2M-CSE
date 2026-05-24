@@ -13,7 +13,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Any, Union, Optional, cast
+from typing import List, Any, Union, Optional, cast, Callable
 
 import traceback
 import logging, logging.handlers, os, inspect, datetime, time, threading
@@ -41,17 +41,22 @@ from ..helpers import TextTools
 from ..helpers.RingBuffer import RingBuffer
 from ..helpers.BackgroundWorker import BackgroundWorker
 from ..runtime.Configuration import Configuration
+from ..runtime.EventManager import EventData, eventManager
+
 
 levelName = {
 	logging.INFO :    'ℹ️  I',
 	logging.DEBUG :   '🐞 D',
 	logging.ERROR :   '🔥 E',
 	logging.WARNING : '⚠️  W'
-	# logging.INFO :    'INFO   ',
-	# logging.DEBUG :   'DEBUG  ',
-	# logging.ERROR :   'ERROR  ',
-	# logging.WARNING : 'WARNING'
 }
+""" Mapping of log levels to their corresponding names and emojis for console output. 
+"""
+# logging.INFO :    'INFO   ',
+# logging.DEBUG :   'DEBUG  ',
+# logging.ERROR :   'ERROR  ',
+# logging.WARNING : 'WARNING'
+
 
 # Color Schemes for the terminal
 terminalColorDark		= '#2DFE54' 
@@ -93,6 +98,8 @@ class LogFilter(logging.Filter):
 		"""
 		super().__init__()
 		self.sources = sources if sources else ()
+		""" Tuple of sources to filter out. If empty, no filtering is done. 
+		"""
 
 
 	def filter(self, record:LogRecord) -> bool:
@@ -230,7 +237,7 @@ class Logging:
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
 		Logging._console				= Console()								# Console object
 		Logging._richHandler			= ACMERichLogHandler()
-		Logging.ringBufferHandler		= ACMERingBufferLogHandler()
+		Logging.ringBufferHandler		= ACMERingBufferLogHandler(capacity=1000)
 
 		# Add logging filter
 		Logging._richHandler.addFilter(LogFilter(Logging.filterSources))
@@ -252,14 +259,13 @@ class Logging:
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			from ..runtime import CSE as CSE
 
 			logpath = Configuration.logging_path
-			os.makedirs(logpath, exist_ok = True)# create log directory if necessary
+			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
 			logfile = f'{logpath}/cse-{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}.log'
 			logfp = logging.handlers.RotatingFileHandler(logfile,
-														 maxBytes = Configuration.logging_size,
-														 backupCount = Configuration.logging_count)
+														 maxBytes=Configuration.logging_size,
+														 backupCount=Configuration.logging_count)
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(ACMESimpleLogFormatter('%(levelname)s %(asctime)s %(message)s'))
 			logfp.addFilter(LogFilter(Logging.filterSources))
@@ -267,7 +273,7 @@ class Logging:
 			Logging._handlers.append(logfp)
 
 		# config the logging system
-		logging.basicConfig(level = Logging.logLevel, format = '%(message)s', datefmt = '[%X]', handlers = Logging._handlers)
+		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=Logging._handlers)
 
 		# Start worker to handle logs in the background
 		from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -276,17 +282,22 @@ class Logging:
 									# actor callback is executed, and this might result in a None exception
 
 		# React on config update. Only assig if it hasn't assigned before
-		from ..runtime import CSE
-		if not CSE.event.hasHandler(CSE.event.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
-			CSE.event.addHandler(CSE.event.configUpdate, Logging.configUpdate)			# type: ignore
+		# We need to use addHandler instead of a decorator because we use static methods.
+		if not eventManager.hasHandler(eventManager.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
+			eventManager.addHandler(eventManager.configUpdate, Logging.configUpdate)			# type: ignore
 
 		# Optimized eventing
-		Logging._eventLogError = CSE.event.logError	# type: ignore
-		Logging._eventLogWarning = CSE.event.logWarning 	# type: ignore
+		Logging._eventLogError = eventManager.logError	# type: ignore
+		Logging._eventLogWarning = eventManager.logWarning 	# type: ignore
 
 
 	@staticmethod
 	def _configureColors(theme:str) -> None:
+		""" Configure the colors for the terminal output based on the given theme.
+		
+			Args:
+				theme: The name of the theme to use. Supported values are 'dark' and 'light'.
+		"""
 		Logging.terminalStyle 		= Style(color = terminalColorDark if theme == 'dark' else terminalColorLight)
 		Logging.tableRowStyle		= Style(bgcolor = tableRowColorDark if theme == 'dark' else tableRowColorLight)
 		Logging.terminalStyleError	= Style(color = terminalColorErrorDark if theme == 'dark' else terminalColorErrorLight)
@@ -294,11 +305,12 @@ class Logging:
 
 
 	@staticmethod
-	def configUpdate(name:str, 
-					 key:Optional[str] = None, 
-					 value:Optional[Any] = None) -> None:
+	def configUpdate(eventData: EventData) -> None:
 		"""	Handle configuration update.
 		"""
+		key:Optional[str] = eventData[0]
+		value:Any = eventData[1]
+
 		restartNeeded = False
 		if key.startswith('logging.'):
 			# No special action needed
@@ -342,7 +354,17 @@ class Logging:
 
 
 	@staticmethod
-	def _logMessageToLoggerConsole(level:int, msg:str, caller:inspect.Traceback, threadName:str) -> None:
+	def _logMessageToLoggerConsole(level: int, msg: str, caller: inspect.Traceback, threadName: str) -> None:
+		""" Log a message to the console logger. This is used to log messages to the console with the correct formatting.
+		
+			Args:
+				level: The log level of the message.
+				msg: The log message.
+				caller: The caller information from the stack frame. 
+					The caller information is used to determine the source file and line number of the log message.
+				threadName: The name of the current thread.
+		"""
+				
 		if isinstance(msg, str):
 			
 			# optimize determining the source file's basename
@@ -353,12 +375,17 @@ class Logging:
 			Logging.loggerConsole.log(level, f'{basename}\x04{caller.lineno}\x04{threadName:<10.10}\x04{msg}')
 		else:
 			try:
-				richInspect(msg, private=True, docs=False, dunder=False)
+				richInspect(msg, private=True, docs=False, dunder=False, all=True)
 			except:
 				pass
 			
 	@staticmethod
 	def loggingActor() -> bool:
+		""" Actor method to handle logging in the background. 
+		
+			Returns:
+				*True* if the actor should continue running, False otherwise.
+		"""
 		while Logging._logWorker.running:
 			# Check queue and give up the CPU
 			if Logging.queue.empty():
@@ -415,9 +442,8 @@ class Logging:
 			Return:
 				Return the log *msg* again. 
 		"""
-		from ..runtime import CSE
 		# raise logError event
-		Logging._eventLogError()
+		Logging._eventLogError(msg)
 
 		if exc:
 			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
@@ -430,7 +456,7 @@ class Logging:
 
 
 	@staticmethod
-	def logWarn(msg:Any, stackOffset:Optional[int] = 0) -> str:
+	def logWarn(msg:Any, stackOffset: Optional[int] = 0) -> str:
 		"""	Print a log message with log-level **WARNING**. 
 
 			Args:
@@ -439,10 +465,9 @@ class Logging:
 			Return:
 				Return the log *msg* again. 
 		"""
-		from ..runtime import CSE as CSE
 		# raise logWarning event
-		Logging._eventLogWarning()
-		return Logging._log(logging.WARNING, msg, stackOffset = stackOffset)
+		Logging._eventLogWarning(msg)
+		return Logging._log(logging.WARNING, msg, stackOffset=stackOffset)
 
 
 	@staticmethod
@@ -637,7 +662,7 @@ class Logging:
 
 	
 	@staticmethod
-	def inspect(obj:Any, immediate:bool = False) -> None:
+	def inspect(obj: Any, immediate: bool=False) -> None:
 		"""	Output a very comprehensive description of an object.
 		
 			Args:
@@ -645,7 +670,7 @@ class Logging:
 				immediate: Immediately log the message, don't put it into the log queue.
 		"""
 		if Logging.logLevel != LogLevel.OFF:
-			Logging._log(Logging.logLevel, obj, immediate = immediate)
+			Logging._log(Logging.logLevel, obj, immediate=immediate)
 	
 
 	@staticmethod
@@ -726,10 +751,13 @@ class Logging:
 #
 
 class ACMERichLogHandler(RichHandler):
+	""" Custom Rich log handler to support the log formatting for the console output.
+	"""
 
 	__slots__ = (
 		'_fromtimestamp',
 	)
+	""" Slots for the ACMERichLogHandler"""
 
 
 	_levels = {
@@ -738,8 +766,11 @@ class ACMERichLogHandler(RichHandler):
 		'WARNING': Text(f'{"WARNING":<7}', style='WARNING'),
 		'ERROR': Text(f'{"ERROR":<7}', style='ERROR'),
 	}
+	""" Custom log level styles for the console output."""
 
 	def __init__(self, level: int = logging.NOTSET) -> None:
+		""" Initialize the ACMERichLogHandler with the given log level. This also adds custom styles for the console output.
+		"""
 
 		# Add own styles to the default styles and create a new theme for the console
 		ACMEStyles = { 
@@ -802,6 +833,9 @@ class ACMERichLogHandler(RichHandler):
 		]
 
 		# Set the time conversion function, depending on the setting of UTC time
+		self._fromtimestamp: Callable
+		"""	Function to convert a timestamp to a datetime object. This is set depending on the setting of UTC time.
+		"""
 		if Logging.utcTime:
 			self._fromtimestamp = lambda t : datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc)
 		else:

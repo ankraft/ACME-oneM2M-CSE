@@ -187,8 +187,8 @@ class TestACP(unittest.TestCase):
 				}}
 		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
-		self.assertEqual(rsc, RC.CREATED)
-		self.assertIsNotNone(findXPath(TestACP.ae, 'm2m:ae/acpi'))
+		self.assertEqual(rsc, RC.CREATED, TestACP.ae)
+		self.assertIsNotNone(findXPath(TestACP.ae, 'm2m:ae/acpi'),  TestACP.ae)
 		self.assertIsInstance(findXPath(TestACP.ae, 'm2m:ae/acpi'), list)
 		self.assertGreater(len(findXPath(TestACP.ae, 'm2m:ae/acpi')), 0)
 		self.assertIn(findXPath(TestACP.acp, 'm2m:acp/ri'), findXPath(TestACP.ae, 'm2m:ae/acpi'))
@@ -746,6 +746,11 @@ class TestACP(unittest.TestCase):
 		# try to retrieve the CNT -> Fail
 		r, rsc = RETRIEVE(cntURL, TestACP.originator)
 		self.assertEqual(rsc, RC.OK, r)
+
+		# try to create a CNT under the CNT -> Success
+		dct = { "m2m:cnt": { } }
+		r, rsc = CREATE(cntURL, TestACP.originator, T.CNT, dct	)
+		self.assertEqual(rsc, RC.CREATED, r)
 
 
 #

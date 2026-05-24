@@ -9,9 +9,11 @@
 #
 
 import unittest, sys
+
+from testDiscovery import TestDiscovery
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, FilterUsage, DesiredIdentifierResultType
 from init import *
 
 csrOriginator = '/Ctest'
@@ -95,6 +97,24 @@ class TestRemote(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createWithAEOriginatorFail(self) -> None:
+		""" Create a local <CSR> with an AE originator -> Fail """
+		dct = { 'm2m:csr' : {
+			'rn': csrRN,
+			'rr': False,
+			'csi': '/someCSI',
+			'cst': 2, 
+			'csz': [ 'application/json' ],
+			'poa': [ CSEURL ], 
+			'srv': [ '2a', '3', '4' ],
+			'dcse': [],
+		}}
+		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
+		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED, r)
+
+
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createCSRmissingCSI(self) -> None:
 		""" Create a local <CSR> with missing CSI """
 		dct = { 'm2m:csr' : {
@@ -107,10 +127,11 @@ class TestRemote(unittest.TestCase):
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
-		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CSR, dct)
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print(f'\n[r]Please add "[b]{csrOriginator}[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -127,56 +148,10 @@ class TestRemote(unittest.TestCase):
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
-		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CSR, dct)
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print(f'\n[r]Please add "[b]{csrOriginator}[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
-
-
-	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_createCSRwrongCSI(self) -> None:
-		""" Create a local <CSR> with wrong CSI """
-		dct = { 'm2m:csr' : {
-			'rn': csrRN,
-			'cb': '/someCB',
-			'csi': '/wrongCSI',	# wrong
-			'rr': False,
-			'cst': 2, 
-			'csz': [ 'application/json' ],
-			'poa': [ CSEURL ], 
-			'srv': [ '2a', '3', '4' ],
-			'dcse': [],
-		}}
-		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
-		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
-			console.print(f'\n[r]Please add "[b]{csrOriginator}[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
-		self.assertEqual(rsc, RC.CREATED, r)	# actually, it is overwritten by the CSE
-		rn = findXPath(r, 'm2m:csr/rn')
-
-		r, rsc = DELETE(f'{cseURL}/{rn}', csrOriginator)
-		self.assertEqual(rsc, RC.DELETED, r)
-
-
-	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_createCSRnoCsi(self) -> None:
-		""" Create a local <CSR> without csi, but allowed originator"""
-		dct = { 'm2m:csr' : {
-			'rn': csrRN,
-			'cb': '/someCB',
-			'rr': False,
-			'cst': 2, 
-			'csz': [ 'application/json' ],
-			'poa': [ CSEURL ], 
-			'srv': [ '2a', '3', '4' ],
-			'dcse': [],
-		}}
-		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
-		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
-			console.print('\n[r]Please add "id-nocsi" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
-		self.assertEqual(rsc, RC.CREATED, r)
-		
-		_, rsc = DELETE(csrURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.DELETED)
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -203,7 +178,7 @@ class TestRemote(unittest.TestCase):
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
-		r, rsc = CREATE(cseURL, '/Ctest', T.CSR, dct)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CSR, dct)
 		if rsc == RC.ORIGINATOR_HAS_NO_PRIVILEGE:
 			console.print('\n[r]Please add "[b]/Ctest[/b]" to the configuration \\[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.CONFLICT, r)
@@ -212,21 +187,47 @@ class TestRemote(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_transferDiscoverOnRemoteCSE(self) -> None:
+		""" Discover on remote CSE with remote CSE originator """
+		r, rsc = RETRIEVE(f'{CSEURL}~{REMOTECSEID}/{REMOTECSERN}?fu={int(FilterUsage.discoveryCriteria)}&drt={int(DesiredIdentifierResultType.structured)}', f'{REMOTECSEID}/{ORIGINATOR}')
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uril'), r)
+		uril = findXPath(r, 'm2m:uril')
+		self.assertIsInstance(uril, list, r)
+		self.assertGreater(len(uril), 0, r)
+		for uri in uril:
+			self.assertTrue(uri.startswith(f'{REMOTECSEID}/'), r)
 
-# TODO Transfer requests
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_transferDiscoverOnRemoteCSEWithLocalOriginatorFail(self) -> None:
+		""" Discover on remote CSE with local originator -> Fail"""
+		r, rsc = RETRIEVE(f'{CSEURL}~{REMOTECSEID}/{REMOTECSERN}?fu={int(FilterUsage.discoveryCriteria)}&drt={int(DesiredIdentifierResultType.structured)}', ORIGINATOR)
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Should return an empty list, but at least the uril attribute should be there
+		self.assertIsNotNone(findXPath(r, 'm2m:uril'), r)
+		uril = findXPath(r, 'm2m:uril')
+		self.assertIsInstance(uril, list, r)
+		self.assertEqual(len(uril), 0, r)
+
+
+# TODO more Transfer requests
 
 def run(testFailFast:bool) -> TestResult:
 
 	# Assign tests
 	suite = unittest.TestSuite()
 	addTests(suite, TestRemote, [
+		'test_createWithAEOriginatorFail',
 		'test_retrieveLocalCSR',
 		'test_retrieveRemoteCSR',
 		'test_createCSRmissingCSI',
 		'test_createCSRmissingCB',
-		'test_createCSRwrongCSI',
-		'test_createCSRnoCsi',
 		'test_createCSRsameAsAE',
+		'test_transferDiscoverOnRemoteCSE',
+		'test_transferDiscoverOnRemoteCSEWithLocalOriginatorFail',
 	])
 	
 	# Run tests

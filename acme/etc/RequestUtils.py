@@ -14,7 +14,7 @@ from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode, 
 
 from .DateUtils import getResourceDate
 from .Types import ContentSerializationType, JSON, RequestType, ResponseStatusCode
-from .Types import Result, ResourceTypes, Operation, CSERequest
+from .Types import Result, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST, UNSUPPORTED_MEDIA_TYPE
 from .Constants import Constants
 from ..runtime.Logging import Logging as L
@@ -26,6 +26,7 @@ from ..etc.Types import ReqResp
 from ..etc.Constants import RuntimeConstants as RC
 from .IDUtils import uniqueRI
 
+# TODO request -> singleton
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> Optional[str|bytes|JSON]:
 	"""	Serialize a dictionary, depending on the serialization type.
@@ -144,7 +145,7 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentS
 	# Dissect url and check whether ct is an argumemnt. If yes, then remove it
 	# and store it to check later
 	uu = list(urlparse(url))
-	qs = parse_qs(uu[4], keep_blank_values = True)
+	qs = parse_qs(uu[4], keep_blank_values=True)
 	if ('ct' in qs):
 		ct = qs.pop('ct')[0]	# remove the ct=
 		uu[4] = urlencode(qs, doseq=True)
@@ -195,181 +196,6 @@ def contentAsString(content:bytes|str|Any, ct:ContentSerializationType) -> str:
 	return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
-def requestFromResult(inResult:Result, 
-					  originator:Optional[str] = None, 
-					  ty:Optional[ResourceTypes] = None, 
-					  op:Optional[Operation] = None, 
-					  isResponse:Optional[bool] = False,
-					  originalRequest:Optional[CSERequest] = None) -> Result:
-	"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
-		with the full Response structure. Recursively do this if the *embeddedRequest* is also
-		a full Request or Response.
-
-		Args:
-			inResult: The input `Result` object.
-			originator: The request originator.
-			ty: Optional resource type.
-			op: Optional request operation type
-			isResponse: Whether the result is actually a response, and not a request.
-		
-		Return:
-			`Result` object with the response. The request or response is in *data*.
-
-		See Also:
-			`responseFromResult`
-	"""
-	from ..runtime import CSE
-
-	req:JSON = {}
-
-	# Assign the From and to of the request. An assigned originator has priority for this
-	# TO and FROM are optional in a response. So, don't put them in by default.
-	if not isResponse or (isResponse and CSE.request.sendToFromInResponses):
-		if originator:
-			req['fr'] = RC.cseCsi if isResponse else originator
-			req['to'] = inResult.request.id if inResult.request.id else originator
-		elif inResult.request and inResult.request.originator:
-			req['fr'] = RC.cseCsi if isResponse else inResult.request.originator
-			req['to'] = inResult.request.originator if isResponse else inResult.request.id
-		else:
-			req['fr'] = RC.cseCsi
-			req['to'] = inResult.request.id if inResult.request.id else RC.cseCsi
-
-
-	# Originating Timestamp
-	if inResult.request.ot:
-			req['ot'] = inResult.request.ot
-	else:
-		# Always add the OT in a response if not already present
-		if isResponse:
-			req['ot'] = getResourceDate()
-	
-	# Response Status Code
-	if inResult.rsc and inResult.rsc != ResponseStatusCode.UNKNOWN:
-		req['rsc'] = int(inResult.rsc)
-	
-	# Operation
-	if not isResponse:
-		if op:
-			req['op'] = int(op)
-		elif inResult.request.op:
-			req['op'] = int(inResult.request.op)
-
-	# Type
-	if ty:
-		req['ty'] = int(ty)
-	elif inResult.request.ty:
-		req['ty'] = int(inResult.request.ty)
-	
-	# Request Identifier 
-	if inResult.request.rqi:					# copy from the original request
-		req['rqi'] = inResult.request.rqi
-	
-	# Release Version Indicator
-	# TODO handle version 1 correctly
-	if inResult.request.rvi:			# copy from the original request
-		req['rvi'] = inResult.request.rvi
-	
-	# Vendor Information
-	if inResult.request.vsi:					# copy from the original request
-		req['vsi'] = inResult.request.vsi
-	
-	# Event Category
-	if inResult.request.ec:
-		req['ec'] = int(inResult.request.ec)
-	
-	# Result Content
-	if inResult.request.rcn:
-		req['rcn'] = int(inResult.request.rcn)
-
-	# Result Content
-	if inResult.request.drt:
-		req['drt'] = int(inResult.request.drt)
-	
-	# Result Expiration Timestamp
-	if inResult.request.rset is not None:
-		req['rset'] = inResult.request.rset
-
-
-	# If the response contains a request (ie. for polling), then add that request to the pc
-	pc = None
-	# L.isDebug and L.logDebug(inResult)
-
-	if inResult.embeddedRequest:
-		if inResult.embeddedRequest.originalRequest:
-			pc = inResult.embeddedRequest.originalRequest
-		else:
-			pc = cast(JSON, requestFromResult(Result(request = inResult.embeddedRequest)).data)
-		# L.isDebug and L.logDebug(pc)
-
-	else:
-		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
-		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
-	
-	if pc:
-		# If the request has selected attributes, then the pc content must be filtered
-		if originalRequest and originalRequest.selectedAttributes:
-			_typeShortname = list(pc.keys())[0]
-			pc = { _typeShortname : filterAttributes(pc[_typeShortname], originalRequest.selectedAttributes) }
-
-
-		# if the request/result is actually an incoming request targeted to the receiver, then the
-		# whole request must be embeded as a "m2m:rqp" request.
-		if inResult.embeddedRequest and inResult.embeddedRequest.requestType == RequestType.REQUEST:
-			req['pc'] = { 'm2m:rqp' : pc }
-		else:
-			req['pc'] = pc
-
-	# Filter Criteria attributes
-	if inResult.request.fc:
-		fcAttributes:JSON = {}
-		inResult.request.fc.mapAttributes(lambda k,v: fcAttributes.update({k:v}), False)
-		if fcAttributes:
-			req['fc'] = fcAttributes
-
-
-	
-	return Result(data = req, 
-				  resource = inResult.resource, 
-				  request = inResult.request, 
-				  embeddedRequest = inResult.embeddedRequest, 
-				  rsc = inResult.rsc)
-
-
-def prepareResultForSending(inResult:Result, 
-					   		isResponse:Optional[bool] = False,
-							originalRequest:Optional[CSERequest] = None) -> Tuple[Result, bytes]:
-	"""	Prepare a new request for MQTT or WebSocket sending. 
-	
-		Attention:
-			Remember, a response is actually just a new request. This takes care of the fact that in MQTT or WebSockets
-			a response is very similar to a response.
-	
-		Args:
-			inResult: A `Result` object, that contains a request in its *request* attribute.
-			isResponse: Indicator whether the `Result` object is actually a response or a request.
-			originalRequest: The original request that was received.
-
-		Return:
-			A tuple with an updated `Result` object and the serialized content.
-	"""
-	result = requestFromResult(inResult, isResponse = isResponse, originalRequest = originalRequest)
-	return (result, cast(bytes, serializeData(cast(JSON, result.data), result.request.ct)))
-
-
-def responseFromResult(inResult:Result, originator:Optional[str] = None) -> Result:
-	"""	Shortcut for `requestFromResult` to create a response object.
-	
-		Args:
-			inResult: Result that contains the response.
-			originator: Originator for the response.
-		
-		Return:
-			`Result` object with the response.
-	"""
-	return requestFromResult(inResult, originator, isResponse = True)
-
-
 def createRawRequest(**kwargs:Any) -> JSON:
 	"""	Create a dictionary with a couple of pre-initialized fields. No validation is done.
 	
@@ -394,8 +220,8 @@ def createPositiveResponseResult() -> Result:
 		Return:
 			A `Result` object with a positive response.
 	"""
-	return Result(rsc = ResponseStatusCode.OK, request = CSERequest(requestType = RequestType.RESPONSE,
-																 	rsc = ResponseStatusCode.OK))
+	return Result(rsc = ResponseStatusCode.OK, request = CSERequest(requestType=RequestType.RESPONSE,
+																 	rsc=ResponseStatusCode.OK))
 			   
 
 def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str, ParseResult]:

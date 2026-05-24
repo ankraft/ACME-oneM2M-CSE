@@ -51,11 +51,17 @@ function setRestUI(resourceFull) {
 	currentResourceType = Object.keys(resourceFull)[0];
 	currentResource = resourceFull[currentResourceType]
 	// bri = document.getElementById("baseri").value
-	// cri = "/" + currentResource.ri
-	// if (bri == cri) {
-	//   document.getElementById("rest-url").value=bri
+	// base = getUrlParameterByName("nlhr")
+	// if (base.startsWith('/')) {
+	// 	base = base.substring(1);
+	// 	cri = "/" + currentResource.ri
+    // } else {
+	// 	cri = currentResource.ri
+	// }
+	// if (base == cri) {
+	//   document.getElementById("rest-url").value = base
 	// } else {
-	//   document.getElementById("rest-url").value=bri + cri
+	//   document.getElementById("rest-url").value = base + cri
 	// }
 	document.getElementById("rest-url").value=currentResource.ri
 
@@ -100,7 +106,7 @@ function disableButton(btn, spn) {
 
 function restSendForm() {
 	restSendData(document.querySelector('input[name="rest-method"]:checked').value,
-				 '/'+document.getElementById("rest-url").value,
+				 "/" + document.getElementById("httproot").value + "/" + document.getElementById("rest-url").value,
 				 document.getElementById("rest-headers").value,
 				 requestarea.value)
 }

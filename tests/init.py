@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Any, Callable, Tuple, cast, Optional, TypeAlias, Type
+from typing import Any, Tuple, cast, Optional, TypeAlias, Type
 from dataclasses import dataclass
 
 from urllib.parse import ParseResult, urlparse, parse_qs
@@ -20,7 +20,7 @@ from datetime import timedelta
 import requests.adapters
 from rich import inspect
 from rich.console import Console
-import requests, sys, json, time, ssl, urllib3, random, re, random, importlib
+import requests, sys, json, time, ssl, urllib3, random, re, random
 from datetime import datetime, timezone
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -224,6 +224,15 @@ CoAPthonTools.registerOneM2MContentTypes()	# register extra content types
 # HTTP Session
 httpSession:requests.Session = None
 
+
+def createHttPSession() -> None:
+	global httpSession
+	httpSession = requests.Session()
+	httpAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=20)
+	httpsAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=20)
+	httpSession.mount('http://', httpAdapter)
+	httpSession.mount('https://', httpsAdapter)
+
 # A timestamp far in the future
 # Why 8888? Year 9999 may actually problematic, because this might be interpreteted
 # already as year 10000 (and this hits the limit of the isodate module implementation)
@@ -248,13 +257,16 @@ console = Console()
 ###############################################################################
 
 actrRN	= 'testACTR'
-aeRN	= 'testAE'
 acpRN	= 'testACP'
+aeRN	= 'testAE'
+alpcRN	= 'testALPC'	# This is the fixed name for ACME
+alstRN	= 'AEContactList'	# This is the fixed name for ACST
 batRN	= 'testBAT'
 cinRN	= 'testCIN'
 cntRN	= 'testCNT'
 crsRN	= 'testCRS'
 csrRN	= 'testCSR'
+dacRN	= 'testDAC'
 deprRN	= 'testDEPR'
 fcntRN	= 'testFCNT'
 grpRN	= 'testGRP'
@@ -280,12 +292,15 @@ wificRN	= 'testWIFIC'
 
 cseURL 	= f'{CSEURL}{CSERN}'
 csiURL 	= f'{CSEURL}{CSEID}'
-aeURL 	= f'{cseURL}/{aeRN}'
 acpURL 	= f'{cseURL}/{acpRN}'
+aeURL 	= f'{cseURL}/{aeRN}'
+alpcURL	= f'{cseURL}/{alpcRN}'
+alstURL	= f'{cseURL}/{alstRN}'
 cntURL 	= f'{aeURL}/{cntRN}'
 cinURL 	= f'{cntURL}/{cinRN}'	# under the <cnt>
 crsURL	= f'{aeURL}/{crsRN}'
 csrURL	= f'{cseURL}/{csrRN}'
+dacURL	= f'{cseURL}/{dacRN}'
 fcntURL	= f'{aeURL}/{fcntRN}'
 grpURL 	= f'{aeURL}/{grpRN}'
 lcpURL 	= f'{aeURL}/{lcpRN}'	# under the <ae>
@@ -388,11 +403,7 @@ def sendRequest(operation:Operation,
 	requestCount += 1
 	if url.startswith(('http', 'https')):
 		if not httpSession:
-			httpSession = requests.Session()
-			httpAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=20)
-			httpsAdapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=20)
-			httpSession.mount('http://', httpAdapter)
-			httpSession.mount('https://', httpsAdapter)
+			createHttPSession()
 
 
 		# if operation == Operation.CREATE:
@@ -650,7 +661,10 @@ def sendHttpRequest(method:str, url:str, originator:str, ty:ResourceTypes=None, 
 		console.print('\n'.join([f'{h}: {v}' for h,v in r.headers.items()]))
 		if r.content:
 			console.print()
-			console.print(r.json())
+			try:
+				console.print(r.json())
+			except:
+				console.print(r.text)
 
 	# return plain text
 	if (ct := r.headers.get('Content-Type')) is not None and ct.startswith('text/plain'):
@@ -1018,17 +1032,20 @@ def checkUpperTester() -> None:
 		try:
 			headers = { UTCMD: f'Status'}
 			addHttpAuthorizationHeader(headers)
-			response = requests.post(UTURL, headers = headers)
+			if not httpSession:
+				createHttPSession()
+			response = httpSession.post(UTURL, headers=headers)
 			match response.status_code:
 				case 200:
+					#print(f'Response from Upper Tester Interface: {response.headers.get(UTRSP)}')
 					pass
 				case 401:
-					console.print('[red]CSE requires authorization')
+					console.print('[red]CSE requires authorization header')
 					console.print('Add authorization settings to the test suite configuration file')
 					quit(-1)
 				case _:
-					console.print('[red]Upper Tester Interface not enabeled in CSE')
-					console.print(r'Enable with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
+					console.print('[red]Upper Tester Interface not enabeled in CSE or wrong root path[/red]')
+					console.print(r'Try enabling Upper Tester with configuration setting: "\[http]:enableUpperTesterEndpoint=True"')
 					quit(-1)
 		except (ConnectionRefusedError, requests.exceptions.ConnectionError):
 			console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
@@ -1081,7 +1098,9 @@ def enableShortResourceExpirations() -> None:
 	# Send UT request
 	headers = { UTCMD: f'enableShortResourceExpiration {expirationCheckDelay}'}
 	addHttpAuthorizationHeader(headers)
-	resp = requests.post(UTURL, headers = headers)
+	if not httpSession:
+		createHttPSession()
+	resp = httpSession.post(UTURL, headers = headers)
 	_maxExpiration = -1
 	_orgExpCheck = -1
 	if resp.status_code == 200:
@@ -1103,7 +1122,9 @@ def disableShortResourceExpirations() -> None:
 		# Send UT request
 		headers = { UTCMD: f'disableShortResourceExpiration'}
 		addHttpAuthorizationHeader(headers)
-		resp = requests.post(UTURL, headers = headers)
+		if not httpSession:
+			createHttPSession()
+		resp = httpSession.post(UTURL, headers = headers)
 		if resp.status_code == 200:
 			_orgExpCheck = -1
 			_orgREQExpCheck = -1
@@ -1137,7 +1158,9 @@ def enableShortRequestExpirations() -> None:
 	# Send UT request
 	headers = { UTCMD: f'enableShortRequestExpiration {requestExpirationDelay}'}
 	addHttpAuthorizationHeader(headers)
-	resp = requests.post(UTURL, headers = headers)
+	if not httpSession:
+		createHttPSession()
+	resp = httpSession.post(UTURL, headers = headers)
 	if resp.status_code == 200:
 		if UTRSP in resp.headers:
 			_orgRequestExpirationDelta = float(resp.headers[UTRSP])
@@ -1151,7 +1174,9 @@ def disableShortRequestExpirations() -> None:
 	# Send UT request
 	headers = { UTCMD: f'disableShortRequestExpiration'}
 	addHttpAuthorizationHeader(headers)
-	resp = requests.post(UTURL, headers = headers)
+	if not httpSession:
+		createHttPSession()
+	resp = httpSession.post(UTURL, headers = headers)
 	if resp.status_code == 200:
 		_orgRequestExpirationDelta = -1.0
 	
@@ -1174,7 +1199,10 @@ def testCaseStart(name:str) -> None:
 	if UPPERTESTERENABLED:
 		headers = { UTCMD: f'testCaseStart {name}'}
 		addHttpAuthorizationHeader(headers)
-		requests.post(UTURL, headers = headers)
+		if not httpSession:
+			createHttPSession()
+		response = httpSession.post(UTURL, headers = headers)
+		response.close()
 	if verboseRequests:
 		console.print('')
 		ln  = '=' * int((console.width - 11 - len(name)) / 2)
@@ -1191,7 +1219,10 @@ def testCaseEnd(name:str) -> None:
 	if UPPERTESTERENABLED:
 		headers = { UTCMD: f'testCaseEnd {name}'}
 		addHttpAuthorizationHeader(headers)
-		requests.post(UTURL, headers = headers)
+		if not httpSession:
+			createHttPSession()
+		response = httpSession.post(UTURL, headers = headers)
+		response.close()
 	if verboseRequests:
 		console.print('')
 		ln  = '=' * int((console.width - 9 - len(name)) / 2)
@@ -1203,6 +1234,59 @@ def disableUpperTester() -> None:
 	"""
 	global UPPERTESTERENABLED
 	UPPERTESTERENABLED = False
+
+
+def dacEnabled() -> bool:
+	"""	Return whether the dynamic authorization is enabled in the CSE. This sends
+		a request to the CSE's upper tester interface.
+
+		Return:
+			Boolean.
+	"""
+	if UPPERTESTERENABLED:
+		headers = { UTCMD: f'GetConfig cse.security.enableDynamicAuthorization'}
+		addHttpAuthorizationHeader(headers)
+		try:
+			if not httpSession:
+				createHttPSession()
+			resp = httpSession.post(UTURL, headers=headers)
+		except requests.exceptions.ConnectionError as e:
+			# print(f'Connection error checking DAC enabled: {e}')
+			return False
+		if resp.status_code == 200:
+			if UTRSP in resp.headers:
+				return resp.headers[UTRSP].lower() == 'true'
+	return False
+
+
+def sutCSEType() -> str:
+	"""	Return the CSE type of the SUT. This sends
+		a request to the CSE's upper tester interface.
+
+		Return:
+			String with the CSE type.
+	
+	"""
+	if UPPERTESTERENABLED:
+		headers = { UTCMD: f'GetConfig cse.type'}
+		addHttpAuthorizationHeader(headers)
+		try:
+			if not httpSession:
+				createHttPSession()
+			resp = httpSession.post(UTURL, headers=headers)
+		except requests.exceptions.ConnectionError as e:
+			# print(f'Connection error checking CSE type: {e}')
+			return 'UNKNOWN'
+		
+		if resp.status_code == 200:
+			if UTRSP in resp.headers:
+				try:
+					return { '1': 'IN',
+							 '2': 'MN',
+							 '3': 'ASN' }[resp.headers[UTRSP]]
+				except KeyError:
+					return resp.headers[UTRSP]
+	return 'UNKNOWN'
 
 
 ###############################################################################
@@ -1321,7 +1405,9 @@ def stopNotificationServer() -> None:
 	if notificationServerIsRunning:
 		notificationServerIsRunning = False
 		try:
-			requests.post(NOTIFICATIONSERVER, verify=verifyCertificate, timeout=1)	# send empty/termination request
+			if not httpSession:
+				createHttPSession()
+			httpSession.post(NOTIFICATIONSERVER, verify=verifyCertificate, timeout=1)	# send empty/termination request
 		except Exception:
 			pass
 		waitMessage('Stopping notification server', 2.0)
@@ -1330,7 +1416,9 @@ def stopNotificationServer() -> None:
 
 def isNotificationServerRunning() -> bool:
 	try:
-		_ = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
+		if not httpSession:
+			createHttPSession()
+		_ = httpSession.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
 		return True
 	except Exception:
 		return False
@@ -1632,17 +1720,23 @@ match PROTOCOL:
 # It checks whether there actually is a CSE running.
 _r, status = connectionPossible(cseURL)
 if status == 401:	# Access denied
-	console.print('[red]CSE requires authorization')
+	console.print('[red]CSE requires authorization header')
 	console.print('Add authorization settings to the test suite configuration file')
 	quit(-1)
 noCSE = not _r
 
 _r,status = connectionPossible(REMOTEcseURL)
 if status == 401:	# Access denied
-	console.print('[red]Remote CSE requires authorization')
+	console.print('[red]Remote CSE requires authorization header')
 	console.print('Add authorization settings to the test suite configuration file')
 	quit(-1)
 noRemote = not _r
+
+# Check whether Dynamic Authorization is enabled
+noDac = not dacEnabled()
+
+# Get the CSE type of the SUT
+cseType = sutCSEType()
 
 # Set the notification server URL
 setNotificationServerURL()

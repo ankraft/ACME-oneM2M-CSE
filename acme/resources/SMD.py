@@ -12,77 +12,40 @@
 """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, CSERequest
+from ..etc.Types import JSON, CSERequest
 from ..etc.Constants import Constants
-from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException
+from ..etc.ResponseStatusCodes import BAD_REQUEST, ResponseException, NOT_IMPLEMENTED
 from ..helpers.TextTools import findXPath
-from ..runtime import CSE
+from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
-from ..resources import Factory as Factory
+from ..runtime import Factory as Factory
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from ..plugins.services.SemanticManager import SemanticManager
 
 # internal attributes
 addToInternalAttributes(Constants.attrDecodedDsp)
 
 
+@requires(semanticManager='acme.plugins.services.SemanticManager', required=False)
 class SMD(AnnounceableResource):
 	""" The <semanticDescriptor> resource is used to store a semantic description pertaining to a
 		resource and potentially subresources.
 	"""
 
-	resourceType = ResourceTypes.SMD
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.SUB ]
-
-#AE, container, contentInstance, group, node, flexContainer, timeSeries, mgmtObj
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'daci': None,
-		'cr': None,
-
-		# Resource attributes
-		'dcrp': None,
-		'soe': None,
-		'dsp': None,
-		'or': None,
-		'rels': None,
-		'svd': None,
-		'vlde': None,
-	}
-
+	semanticManager: Optional[SemanticManager] = None
+	""" The injected SemanticManager plugin instance."""
 
 # TODO SOE cannot be retrieved. Also in Updates?
 # TODO clarify: or is RW or WO?
 
-	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute(Constants.attrDecodedDsp, None, overwrite = False)	
-		super().initialize(pi, originator)
+	def initialize(self, pi: str) -> None:
+		self.setAttribute(Constants.attrDecodedDsp, None, overwrite=False)	
+		super().initialize(pi)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -91,7 +54,9 @@ class SMD(AnnounceableResource):
 		# Validation of CREATE is done in self.validate()
 		
 		# Perform Semantic validation process and add descriptor
-		CSE.semantic.addDescriptor(self)
+		if not self.semanticManager:
+			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot add descriptor to graph'))
+		self.semanticManager.addDescriptor(self)
 		self.setAttribute('svd', True)
 
 
@@ -112,7 +77,9 @@ class SMD(AnnounceableResource):
 		
 		# If soe exists then validate it
 		if soeNew:
-			CSE.semantic.validateSPARQL(soeNew)
+			if not self.semanticManager:
+				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate SPARQL query for soe attribute'))
+			self.semanticManager.validateSPARQL(soeNew)
 
 		# Generic update and validation (with semantic procdures)
 		super().update(dct, originator, doValidateAttributes)
@@ -126,7 +93,9 @@ class SMD(AnnounceableResource):
 
 	
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
-		CSE.semantic.removeDescriptor(self)
+		if not self.semanticManager:
+			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot remove descriptor from graph'))
+		self.semanticManager.removeDescriptor(self)
 		return super().deactivate(originator, parentResource)
 
 
@@ -137,17 +106,24 @@ class SMD(AnnounceableResource):
 		super().validate(originator, dct, parentResource)
 		
 		# Validate validationEnable attribute
-		CSE.semantic.validateValidationEnable(self)
+		if not self.semanticManager:
+			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate vlde attribute'))
+		self.semanticManager.validateValidationEnable(self)
 
 		# Validate descriptor attribute
+		if not self.semanticManager:
+			raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot validate dcrp attribute'))
 		try:
-			CSE.semantic.validateDescriptor(self)
+			self.semanticManager.validateDescriptor(self)
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 		
 		# Perform Semantic validation process and add descriptor
 		if findXPath(dct, 'm2m:smd/dsp') or dct is None:	# only on create or when descriptor is present in the UPDATE request
-			CSE.semantic.addDescriptor(self)
+			if self.semanticManager:
+				self.semanticManager.addDescriptor(self)
+			else:
+				raise NOT_IMPLEMENTED(L.logWarn('SemanticManager is disabled, cannot add descriptor to graph'))
 		self.setAttribute('svd', True)
 		
 		# The above procedures might have updated this instance.		

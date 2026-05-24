@@ -6,56 +6,29 @@
 #
 #	ResourceType: NotificationTargetPolicy
 #
+"""	Implementation of the NotificationTargetPolicy (NTP) resource type. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, LogicalOperator
+from ..etc.Types import ResourceTypes, JSON, LogicalOperator
 from ..etc.Constants import RuntimeConstants as RC
 from ..resources.Resource import Resource
-from ..runtime import CSE
 from ..etc.ResponseStatusCodes import BAD_REQUEST
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..runtime.Storage import Storage
+	
 _defaultPLBL = 'Default'
 """ Default policy label for NTP resources. """
 
+@requires(storage='acme.runtime.Storage')
 class NTP(Resource):
+	"""	Class for the NotificationTargetPolicy (NTP) resource type. """
 
-	resourceType = ResourceTypes.NTP
-	""" The resource type """
-
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [	ResourceTypes.SUB,
-														ResourceTypes.PDR,
-	]
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = { 
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'et': None,
-		'acpi':None,
-		'ct': None,
-		'lbl': None,
-		'lt': None,
-		'daci': None,
-		'cr': None,
-		'cstn': None,
-
-		# Resource attributes
-   		'acn': None,
-		'plbl': None,
-		'rrs': None
-	}
+	storage: Storage =None
+	"""	Injected Storage instance. """
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -75,16 +48,16 @@ class NTP(Resource):
 			self.setAttribute('rrs', LogicalOperator.AND.value)	# EXPERIMENTAL Check spec change for default value
 
 		# Validate that only one NTP resource with the same creator and label exists
-		res = CSE.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'cr': self.cr, 'plbl': self.plbl })
+		res = self.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'cr': self.cr, 'plbl': self.plbl })
 		for r in res:
 			if r.ri != self.ri:	# ignore self
 				if r.plbl == self.plbl and r.cr == self.cr:
 					raise BAD_REQUEST(f'Only one NTP resource with the same creator and policyLabel is allowed. Existing NTP: {r.ri}')
 
 	
-	def willBeDeactivated(self, originator:str, parentResource:Resource) -> None:
+	def willBeDeactivated(self, originator:str, parentResource:Resource, parentDelete: bool=False) -> None:
 		# Check that the system default policy is not deleted
 		if self.plbl == _defaultPLBL and self.getOriginator() == RC.cseOriginator:
 			raise BAD_REQUEST(f'The system default NTP resource cannot be deleted.')
-		super().willBeDeactivated(originator, parentResource)
+		super().willBeDeactivated(originator, parentResource, parentDelete)
 	

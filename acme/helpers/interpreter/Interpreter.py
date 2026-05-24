@@ -1548,7 +1548,7 @@ def _doIf(pcontext:PContext, symbol:SSymbol) -> PContext:
 	"""
 	assertSymbol(pcontext, symbol, minLength=3)
 
-	pcontext, _e = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tT, SType.tList, SType.tListQuote, SType.tString))
+	pcontext, _e = valueFromArgument(pcontext, symbol, 1, (SType.tBool, SType.tNIL, SType.tT, SType.tList, SType.tListQuote, SType.tString, SType.tNumber))
 	if isinstance(_e, (list, str)):
 		_e = len(_e) > 0
 
@@ -3069,7 +3069,13 @@ def _doZip(pcontext:PContext, symbol:SSymbol) -> PContext:
 	return pcontext.setResult(SListSymbol(_result, symbol))	# type:ignore[arg-type]
 
 
-builtinFunctions:PSymbolDict = {
+builtinFunctions: PSymbolDict
+""" Dictionary to map the interpreter functions to Python functions. 
+"""
+# We need to have this separated because due to an issue in "pydoctor" comments in initializations
+# cause problems (ie not recognized)
+
+builtinFunctions = {
 	'<':				lambda p, a : _doOperation(p, a, operator.lt, SType.tBool),
 	'<=':				lambda p, a : _doOperation(p, a, operator.le, SType.tBool),
 	'>':				lambda p, a : _doOperation(p, a, operator.gt, SType.tBool),
@@ -3169,4 +3175,3 @@ builtinFunctions:PSymbolDict = {
 	
 	# argc
 }
-""" Dictionary to map the functions to Python functions. """

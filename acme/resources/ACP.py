@@ -7,61 +7,34 @@
 """ AccessControlPolicy (ACP) resource type. """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from ..helpers.TextTools import findXPath
-from ..etc.Types import AttributePolicyDict, ResourceTypes, Permission, JSON
+from ..etc.Types import ResourceTypes, Permission, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
-from ..runtime import CSE
 from ..runtime.Logging import Logging as L
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
+from ..runtime.PluginSupport import requires
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..runtime.Storage import Storage
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrRiTyMapping)
 
-
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(storage='acme.runtime.Storage')
 class ACP(AnnounceableResource):
 	""" AccessControlPolicy (ACP) resource type """
 
-	resourceType = ResourceTypes.ACP
-	""" The resource type """
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	inheritACP = True
-	"""	Flag to indicate if the resource type inherits the ACP from the parent resource. """
-
-
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ] # TODO Transaction to be added
-	""" The allowed child-resource types. """
-
-	# Assigned during startup in the Importer.
-	_attributes:AttributePolicyDict = {	
-			# Common and universal attributes
-			'rn': None,
-			'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'at': None,
-			'aa': None,
-			'ast': None,
-
-			# Resource attributes
-			'pv': None,
-			'pvs': None,
-			'adri': None,
-			'apri': None,
-			'airi': None
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
+	storage:Storage = None
+	"""	Injected Storage instance. """
 
 
 	def activate(self, parentResource:Resource, originator:str) -> None:
@@ -102,9 +75,10 @@ class ACP(AnnounceableResource):
 					if (acor := acr.get('acor')):
 						for o in acor:
 							try:
-								r = CSE.dispatcher.retrieveResource(o)
+								r = self.dispatcher.retrieveResource(o)
 								riTyDict[o] = r.ty		
-							except:
+							except Exception as ex:
+								L.isDebug and L.logDebug(f'Unable to retrieve resource for acor entry: {o}. Error: {ex}')	
 								# ignore any errors here. The acor might not be a resource yet
 								continue
 
@@ -120,7 +94,7 @@ class ACP(AnnounceableResource):
 
 		# Remove own resourceID from all acpi
 		L.isDebug and L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
-		for r in CSE.storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi):	# search for presence in acpi, not perfect match
+		for r in self.storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi):	# search for presence in acpi, not perfect match
 			acpi = r.acpi
 			if self.ri in acpi:
 				acpi.remove(self.ri)

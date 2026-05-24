@@ -20,127 +20,76 @@ from threading import Lock
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..etc.Constants import Constants as C, RuntimeConstants as RC
-from ..etc.DateUtils import waitFor
+from ..etc.DateUtils import waitFor, utcTime
 from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, LogLevel
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import ResponseException
-from ..services.ActionManager import ActionManager
-from ..runtime.Configuration import Configuration
-from ..runtime.Console import Console
 
+from ..runtime.Configuration import Configuration
+from ..runtime.ConsoleBase import ConsoleBase
+from ..runtime.Factory import Factory
+from ..runtime.Importer import Importer
+from ..runtime.Logging import Logging as L
+from ..runtime.Management import ManagementSupport
+from ..runtime.PluginSupport import pluginManager, DependencyError, provide
+from ..runtime.ScriptManager import ScriptManager
+from ..runtime.Storage import Storage
+from ..runtime.EventManager import eventManager
 
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
-from ..services.EventManager import EventManager
-from ..services.GroupManager import GroupManager
-from ..runtime.Importer import Importer
-from ..services.LocationManager import LocationManager
 from ..services.NotificationManager import NotificationManager
 from ..services.RegistrationManager import RegistrationManager
-from ..services.RemoteCSEManager import RemoteCSEManager
-from ..runtime.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
-from ..services.SemanticManager import SemanticManager
-from ..runtime.Statistics import Statistics
-from ..runtime.Storage import Storage
-from ..runtime.TextUI import TextUI
-from ..services.TimeManager import TimeManager
-from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
-from ..protocols.HttpServer import HttpServer
-from ..protocols.CoAPServer import CoAPServer
-from ..protocols.MQTTClient import MQTTClient
-from ..protocols.WebSocketServer import WebSocketServer
-from ..services.AnnouncementManager import AnnouncementManager
-from ..runtime.Logging import Logging as L
 
 ##############################################################################
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
 
-action:ActionManager = None
-"""	Runtime instance of the `ActionManager`. """
+console:ConsoleBase = None
+""" Runtime instance of the `acme.plugins.runtime.Console.Console` or `acme.plugins.runtime.MinimalConsole.MinimalConsole`. """
 
-announce:AnnouncementManager = None
-"""	Runtime instance of the `AnnouncementManager`. """
-
-coapServer:CoAPServer = None
-"""	Runtime instance of the `CoAPServer`. """
-
-console:Console = None
-""" Runtime instance of the `Console`. """
-
-dispatcher:Dispatcher = None
+dispatcher:Dispatcher = Dispatcher()
 """	Runtime instance of the `Dispatcher`. """
 
-event:EventManager = None
-"""	Runtime instance of the `EventManager`. """
+factory:Factory = Factory()
+"""	Runtime instance of the resource factory. """
 
-groupResource:GroupManager = None
-"""	Runtime instance of the `GroupManager`. """
-
-httpServer:HttpServer = None
-"""	Runtime instance of the `HttpServer`. """
-
-importer:Importer = None
+importer:Importer = Importer()
 """	Runtime instance of the `Importer`. """
 
-location:LocationManager = None
-"""	Runtime instance of the `LocationManager`. """
+managementSupport:ManagementSupport = ManagementSupport()
+"""	Runtime instance of the `ManagementSupport`. """
 
-mqttClient:MQTTClient = None
-"""	Runtime instance of the `MQTTClient`. """
-
-notification:NotificationManager = None
+notification:NotificationManager = NotificationManager()
 """	Runtime instance of the `NotificationManager`. """
 
-registration:RegistrationManager = None
+registration:RegistrationManager = RegistrationManager()
 """	Runtime instance of the `RegistrationManager`. """
 
-remote:RemoteCSEManager = None
-"""	Runtime instance of the `RemoteCSEManager`. """
-
-request:RequestManager = None
+request:RequestManager = RequestManager()
 """	Runtime instance of the `RequestManager`. """
 
-script:ScriptManager = None
+script:ScriptManager = ScriptManager()
 """	Runtime instance of the `ScriptManager`. """
 
-security:SecurityManager = None
+security:SecurityManager = SecurityManager()
 """	Runtime instance of the `SecurityManager`. """
 
-semantic:SemanticManager = None
-"""	Runtime instance of the `SemanticManager`. """
-
-statistics:Statistics = None
-"""	Runtime instance of the `Statistics`. """
-
-storage:Storage = None
+storage:Storage = Storage()
 """	Runtime instance of the `Storage`. """
 
-textUI:TextUI = None
-"""	Runtime instance of the `TextUI`. """
-
-time:TimeManager = None
-"""	Runtime instance of the `TimeManager`. """
-
-timeSeries:TimeSeriesManager = None
-"""	Runtime instance of the `TimeSeriesManager`. """
-
-validator:Validator = None
+validator:Validator = Validator()
 """	Runtime instance of the `Validator`. """
-
-webSocketServer:WebSocketServer	= None
-"""	Runtime instance of the `WebSocketServer`. """
-
-
 
 # Global variables to hold various (configuation) values.
 
 _cseResetLock = Lock()
 """ Internal CSE's lock when resetting. """
+
 
 ##############################################################################
 
@@ -154,10 +103,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		Return:
 			False if the CSE couldn't initialized and started. 
 	"""
-	global action, announce, coapServer, console, dispatcher, event, groupResource, httpServer, importer, location, mqttClient
-	global notification, registration, remote, request, script, security, semantic, statistics, storage, textUI, time
-	global timeSeries, validator, webSocketServer
-
 	# Set status
 	RC.cseStatus = CSEStatus.STARTING
 
@@ -170,8 +115,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		args.headless	= False
 		for key, value in kwargs.items():
 			args.__setattr__(key, value)
-
-	event = EventManager()					# Initialize the event manager before anything else
 
 	if not Configuration.init(args):
 		RC.cseStatus = CSEStatus.STOPPED
@@ -191,86 +134,95 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	# set the logger for the backgroundWorkers. Add an offset to compensate for
 	# this and other redirect functions to determine the correct file / linenumber
 	# in the log output
-	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l, m, stackOffset = 2))
-	BackgroundWorkerPool.setJobBalance(	balanceTarget = Configuration.cse_operation_jobs_balanceTarget,
-										balanceLatency = Configuration.cse_operation_jobs_balanceLatency,
-										balanceReduceFactor = Configuration.cse_operation_jobs_balanceReduceFactor)
+	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l, m, stackOffset=2))
+	BackgroundWorkerPool.setJobBalance(	balanceTarget=Configuration.cse_operation_jobs_balanceTarget,
+										balanceLatency=Configuration.cse_operation_jobs_balanceLatency,
+										balanceReduceFactor=Configuration.cse_operation_jobs_balanceReduceFactor)
 
 	try:
-		textUI = TextUI()						# Start the textUI
-		console = Console()						# Start the console
+		# Provide the main components to the plugin manager, so that they can be injected into 
+		# plugins and other components. 
+		pluginManager.provide('acme.runtime.Factory', factory)
+		pluginManager.provide('acme.runtime.Importer', importer)
+		pluginManager.provide('acme.runtime.Storage', storage)		
+		pluginManager.provide('acme.services.Dispatcher', dispatcher)	
+		pluginManager.provide('acme.services.NotificationManager', notification)
+		pluginManager.provide('acme.services.RegistrationManager', registration)
+		pluginManager.provide('acme.services.RequestManager', request)
+		pluginManager.provide('acme.services.SecurityManager', security)
+		pluginManager.provide('acme.services.Validator', validator)
+		pluginManager.provide('acme.runtime.ScriptManager', script)
+		pluginManager.provide('acme.runtime.Management', managementSupport)
 
-		storage = Storage()						# Initialize the resource storage
-		statistics = Statistics()				# Initialize the statistics system
-		registration = RegistrationManager()	# Initialize the registration manager
-		validator = Validator()					# Initialize the resource validator
-		dispatcher = Dispatcher()				# Initialize the resource dispatcher
-		request = RequestManager()				# Initialize the request manager
-		security = SecurityManager()			# Initialize the security manager
-		httpServer = HttpServer() if not httpServer else httpServer		# Initialize the HTTP server
-		coapServer = CoAPServer()				# Initialize the CoAP server
-		mqttClient = MQTTClient()				# Initialize the MQTT client
-		webSocketServer = WebSocketServer()		# Initialize the WebSocket server
-		notification = NotificationManager()	# Initialize the notification manager
-		groupResource = GroupManager()					# Initialize the group manager
-		timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
-		remote = RemoteCSEManager()				# Initialize the remote CSE manager
-		announce = AnnouncementManager()		# Initialize the announcement manager
-		semantic = SemanticManager()			# Initialize the semantic manager
-		location = LocationManager()			# Initialize the location manager
-		time = TimeManager()					# Initialize the time mamanger
-		script = ScriptManager()				# Initialize the script manager
-		action = ActionManager()				# Initialize the action manager
 
-		# → Experimental late loading
-		#
-		# import importlib
-		# mod = importlib.import_module('acme.services.ActionManager')
-		# action = mod.ActionManager()	
+		# TODO provide the eventmanger as well? Check the usage in ACME modules
 
-		# mod = importlib.import_module('acme.runtime.ScriptManager')			# Initialize the action manager
-		# # script = mod.ScriptManager()				# Initialize the script manager
-		# thismodule = sys.modules[__name__]
-		# setattr(thismodule, 'script', mod.ScriptManager())
+		# TODO add a FORCESHUTDOWN event
 
-		# Import a default set of resources, e.g. the CSE, first ACP or resource structure
-		# Import extra attribute policies for specializations first
-		# When this fails, we cannot continue with the CSE startup
-		importer = Importer()
-		if not importer.doImport():
-			RC.cseStatus = CSEStatus.STOPPED
-			return False
 		
-		# Start the HTTP server
-		if not httpServer.run(): 						# This does return (!)
-			L.logErr('Terminating', showStackTrace = False)
-			RC.cseStatus = CSEStatus.STOPPED
-			return False 					
+		# Initialize the plugin manager
+		# This loads, configures and validates the plugins as well
+		pluginManager.startup()					# Initialize and starts
+		importer.initialize()					# Call the initialize method
+		
+		# Start the database plugins and the storage first
+		pluginManager.start(tags=['acme', 'database'])	
 
-		# Start the CoAP server
-		if not coapServer.run():					# This does return
-			L.logErr('Terminating', showStackTrace = False)
+		storage.initialize()					# Initialize the storage manager
+
+		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
+
+		# Initialize other components
+		registration.initialize()
+		validator.initialize()
+		dispatcher.initialize()	
+		security.initialize()
+		request.initialize()
+		script.initialize()	
+		notification.initialize()
+		
+		# Start the remaining plugins
+		pluginManager.start(tags=['acme', 'binding'])
+		pluginManager.start(tags=['acme', 'core'])	
+		pluginManager.start(tags=['acme', 'remote'])
+		pluginManager.start(tags=['acme', 'ui'])
+
+
+		# Check whether all plugin dependencies are resolved. This is done after starting the plugins to give them a chance to resolve their dependencies. If this fails, we cannot continue with the CSE startup.
+		pluginManager.setupFinished()				
+		
+		# Import attribute, flexContainer and enum policies, and configuration documentation
+		#
+		# After this, the CSE reads the scripts from the default and runtime init directories.
+		# It also runs the init script, if there is one. 
+		#
+		# When this fails, we cannot continue with the CSE startup
+		if not importer.importPolicies() or not importer.importScripts():
 			RC.cseStatus = CSEStatus.STOPPED
 			return False
 
-		# Start the MQTT client
-		if not mqttClient.run():				# This does return
-			L.logErr('Terminating', showStackTrace = False)
-			RC.cseStatus = CSEStatus.STOPPED
-			return False 
+		# Start any non-ACME plugins 
+		pluginManager.start(excludedTags=['acme'])
 
-		# Start the WebSocket server
-		if not webSocketServer.run():			# This does return
-			L.logErr('Terminating', showStackTrace = False)
-			RC.cseStatus = CSEStatus.STOPPED
-			return False
-	
+		# event.cseBootstrap()	# Send an event that the CSE bootstrap finished. This is executed after all components are initialized and started, but before importing policies and scripts.
+		
+		
 	except ResponseException as e:
 		L.logErr(f'Error during startup: {e.dbg}')
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
+	except KeyError as e:
+		L.logErr(f'Error during startup: {e}')
+		import traceback
+		traceback.print_exc()
+		RC.cseStatus = CSEStatus.STOPPED
+		return False
+	except (DependencyError, ValueError) as e:
+		L.logErr(f'Error during startup: {e}')
+		RC.cseStatus = CSEStatus.STOPPED
+		return False
 	except Exception as e:
-		L.logErr(f'Error during startup: {e}', exc = e)
+		L.logErr(f'Error during startup: {e}', exc=e)
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
 
@@ -284,19 +236,22 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		"""	Internal function to print the CSE startup message after a delay
 		"""
 		RC.cseStatus = CSEStatus.RUNNING
+		RC.startupTime = utcTime()	# Set the startup time when the CSE is fully started and running
+
 		# Send an event that the CSE startup finished
-		event.cseStartup()	# type: ignore
+		eventManager.cseStartup()	# type: ignore
 
 		L.console('CSE started')
 		L.log('CSE started')
 
-	BackgroundWorkerPool.newActor(_startUpFinished, delay = C.cseStartupDelay if RC.isHeadless else C.cseStartupDelay / 2.0, name = 'Delayed_startup_message' ).start()
+	BackgroundWorkerPool.newActor(_startUpFinished, delay=C.cseStartupDelay if RC.isHeadless else C.cseStartupDelay / 2.0, name='Delayed_startup_message').start()
 	
 	return True
 
 
+@provide('acme.runtime.CSE.shutdown')
 def shutdown() -> None:
-	"""	Gracefully shutdown the CSE programmatically. This will end the mail console loop
+	"""	Gracefully shutdown the CSE programmatically. This will end the main console loop
 		to terminate.
 
 		The actual shutdown happens in the _shutdown() method.
@@ -312,7 +267,7 @@ def shutdown() -> None:
 		console.stop()				# This will end the main run loop.
 	
 	if runsInIPython():
-		L.console('CSE shut down', nlb = True)
+		L.console('CSE shut down complete', nlb=True)
 
 
 @atexit.register
@@ -321,6 +276,7 @@ def _shutdown() -> None:
 	"""
 	if RC.cseStatus not in [CSEStatus.RUNNING, CSEStatus.SHUTTINGDOWNRESTART]:
 		return
+	L.console('CSE shutting down now', nlb=True)
 	
 	# The status STOPPINGRESTART is used to indicate that the CSE is shutting down to restart.
 	# This is a normal shutdown but in the end the CSE process will return with a special exit code
@@ -329,36 +285,36 @@ def _shutdown() -> None:
 	RC.cseStatus = CSEStatus.SHUTTINGDOWN
 	L.queueOff()
 	L.isInfo and L.log('CSE shutting down')
-	if event:	# send shutdown event
-		event.cseShutdown() 	# type: ignore
+	if eventManager:	# send shutdown event
+		eventManager.cseShutdown() 	# type: ignore
 	
+	# Shutdown any non-ACME plugins 
+	pluginManager.stop(excludedTags=['acme'])
+
 	# shutdown the services
-	textUI and textUI.shutdown()
-	console and console.shutdown()
-	time and time.shutdown()
-	location and location.shutdown()
-	semantic and semantic.shutdown()
-	remote and remote.shutdown()
-	coapServer and coapServer.shutdown()
-	webSocketServer and webSocketServer.shutdown()
-	mqttClient and mqttClient.shutdown()
-	httpServer and httpServer.shutdown()
+	# Stop all the plugins, except the database plugins, which are needed during shutdown 
+	# This leaves only the database plugins running
+	pluginManager and pluginManager.stop(tags=['acme', 'ui'])
+	pluginManager and pluginManager.stop(tags=['acme', 'remote'])
+	pluginManager and pluginManager.stop(tags=['acme', 'core'])
+
 	script and script.shutdown()
-	announce and announce.shutdown()
-	timeSeries and timeSeries.shutdown()
-	groupResource and groupResource.shutdown()
 	notification and notification.shutdown()
 	request and request.shutdown()
 	dispatcher and dispatcher.shutdown()
 	security and security.shutdown()
 	validator and validator.shutdown()
 	registration and registration.shutdown()
-	statistics and statistics.shutdown()
-	event and event.shutdown()
+
 	storage  and storage.shutdown()
-	
-	L.isInfo and L.log('CSE shut down')
-	L.console('CSE shut down', nlb = True)
+	pluginManager and pluginManager.stop(tags=['acme', 'database'])
+	pluginManager and pluginManager.stop(tags=['acme', 'bindings'])
+
+	# This shutdowns all plugins, stopping the ones that are still running
+	pluginManager and pluginManager.shutdown()	
+
+	L.isInfo and L.log('CSE shut down complete')
+	L.console('CSE shut down complete', nlb=True)
 
 	L.finit()
 	RC.cseStatus = CSEStatus.STOPPED
@@ -367,6 +323,8 @@ def _shutdown() -> None:
 	if _cseStatus == CSEStatus.SHUTTINGDOWNRESTART:
 		os._exit(82) 
 
+
+@provide('acme.runtime.CSE.forceShutdown')
 def forceShutdown() -> None:
 	"""	Force shutdown the CSE. 
 	
@@ -379,8 +337,9 @@ def forceShutdown() -> None:
 	_platform = platform.system()
 	L.isDebug and L.logDebug(f'Forcing CSE shutdown (Platform: {_platform})')
 
-	if textUI and textUI.tuiApp:	# Shutdown the TextUI first
-		textUI.shutdown()	
+	
+	if pluginManager.textUI and pluginManager.textUI.tuiApp:	# Shutdown the TextUI first
+		pluginManager.textUI.shutdown()	
 		import time as _time
 		_time.sleep(1)	 			# Give the TextUI a moment to shutdown
 
@@ -394,6 +353,7 @@ def forceShutdown() -> None:
 			signal.raise_signal(signal.SIGINT)	# raise SIGINT to shutdown the CSE
 
 
+@provide('acme.runtime.CSE.resetCSE')
 def resetCSE() -> None:
 	""" Reset the CSE: Clear databases and import the resources again.
 	"""
@@ -405,45 +365,55 @@ def resetCSE() -> None:
 		L.setLogLevel(cast(LogLevel, Configuration.logging_level))
 		L.queueOff()	# Disable log queuing for restart
 		
-		httpServer.pause()
-		mqttClient.pause()
-		webSocketServer.shutdown()	# WS Server needs to be shutdown to close connections
-		coapServer.pause()
+		# Pause all binding plugins to stop receiving requests during reset.
+		pluginManager.pausePlugins(tags=['acme', 'binding'])
+		# Restart all plugins, except core plugins. They are restarted via an event
+		pluginManager.restartPlugins(tags=['acme', 'core'])	
+		pluginManager.restartPlugins(tags=['acme', 'ui'])	
 
 		storage.purge()
 
+		pluginManager.restartPlugins(excludedTags=['acme'])
+
 		# The following event is executed synchronously to give every component
 		# a chance to finish
-		event.cseReset()	# type: ignore [attr-defined]   
-		if not importer.doImport():
-			textUI and textUI.shutdown()
+		eventManager.cseReset()	# type: ignore [attr-defined]
+
+		# We only import policies, documentation and scripts during restart
+		# But we don't import the resource policies again.
+		if not importer.importPolicies() or not importer.importScripts():
+			pluginManager.textUI and pluginManager.textUI.shutdown()
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
-		remote.restart()
 
-		coapServer.unpause()
-		webSocketServer.run()	# WS Server restart
-		mqttClient.unpause()
-		httpServer.unpause()
+		# Unpause all binding plugins to start receiving requests again after reset.
+		pluginManager.unpausePlugins(tags=['acme', 'binding'])	
+
+		# Restart remote plugins after the main
+		pluginManager.restartPlugins(tags=['acme', 'remote'])	
+
 
 		# Enable log queuing again
 		L.queueOn()
 
-		# Send restart event
-		event.cseRestarted()	# type: ignore [attr-defined]   
+		# Send restarted event
+		eventManager.cseRestarted()	# type: ignore [attr-defined]   
 
 		RC.cseStatus = CSEStatus.RUNNING
+		RC.startupTime = utcTime()	# Set the startup time when the CSE is fully started and running
 		L.isWarn and L.logWarn('Resetting CSE finished')
 
 
 def restartCSE() -> None:
-	"""	Restart the CSE. This is a convenience function that calls the shutdown() function.
+	"""	Restart the CSE. This actually shuts down and terminates the CSE but with a special exit code 
+		to indicate that the CSE should be restarted. 
 	"""
 	if RC.cseStatus != CSEStatus.RUNNING:
 		L.logErr('CSE is not running, cannot restart')
 		return
 	L.isWarn and L._log(LogLevel.WARNING, 'Restarting CSE', immediate=True)
-	console.stop()
+	if console:
+		console.stop()
 	_shutdown()
 	RC.cseStatus = CSEStatus.SHUTTINGDOWNRESTART
 
@@ -455,8 +425,23 @@ def run() -> None:
 			TimeoutError: If the CSE does not start within the specified time.
 	"""
 	if waitFor(C.cseStartupDelay * 3, lambda: RC.cseStatus==CSEStatus.RUNNING):
-		console.run()
+		if console:
+			console.run()
 	else:
 		raise TimeoutError(L.logErr(f'CSE did not start within {C.cseStartupDelay * 3} seconds'))
 
 
+@provide('acme.runtime.CSE.setConsole')
+def setConsole(consoleInstance: ConsoleBase) -> None:
+	"""	Set the console instance for the CSE. This is used to set the console instance from the main console plugin.
+
+		Args:
+			consoleInstance: The console instance to set.
+	"""
+	global console
+	console = consoleInstance
+
+
+# @event.cseStartup
+# def testEvent(name: str) -> None:
+# 	print(f'Event {name} received')

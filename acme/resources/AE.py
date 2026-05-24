@@ -7,90 +7,32 @@
 """ Application Entity (AE) resource type. """
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, ContentSerializationType, JSON
+from ..etc.Types import ResourceTypes, ContentSerializationType, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE
 from ..etc.IDUtils import uniqueAEI
 from ..etc.Constants import Constants
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
+from ..runtime.PluginSupport import requires
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
 
+@requires(dispatcher='acme.services.Dispatcher')
 class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
 
-	resourceType = ResourceTypes.AE
-	""" The resource type """
+	dispatcher: Dispatcher = None
+	"""	Injected Dispatcher instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.ACP,
-													   ResourceTypes.ACTR,
-													   ResourceTypes.CNT,
-													   ResourceTypes.CRS,
-													   ResourceTypes.FCNT,
-													   ResourceTypes.GRP,
-													   ResourceTypes.LCP,
-													   ResourceTypes.PCH,
-													   ResourceTypes.PRMR,
-													   ResourceTypes.PRP,
-													   ResourceTypes.SMD,
-													   ResourceTypes.SUB,
-													   ResourceTypes.TS,
-													   ResourceTypes.TSB ]
-	""" The allowed child-resource types. """
-
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-			# Common and universal attributes
-			'rn': None,
-		 	'ty': None,
-			'ri': None,
-			'pi': None,
-			'ct': None,
-			'lt': None,
-			'et': None,
-			'lbl': None,
-			'cstn': None,
-			'acpi':None,
-			'at': None,
-			'aa': None,
-			'daci': None,
-			'ast': None,
-			'loc': None,	
-
-			# Resource attributes
-			'apn': None,
-			'api': None,
-			'aei': None,
-			'poa': None,
-			'nl': None,
-			'rr': None,
-			'csz': None,
-			'esi': None,
-			'mei': None,
-			'srv': None,
-			'regs': None,
-			'trps': None,
-			'scp': None,
-			'tren': None,
-			'ape': None,
-			'or': None,
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 
 		# Initialize default values
-		if not self.hasAttribute('aei'):
-			# small optimization: do not overwrite (and do calculations) the aei if it is already set
-			self.setAttribute('aei', uniqueAEI(), overwrite = False)
-		self.setAttribute('rr', False, overwrite = False)
+		self.setAttribute('aei', uniqueAEI(), overwrite=False)
+		self.setAttribute('rr', False, overwrite=False)
 
 		super().activate(parentResource, originator)
 
@@ -106,13 +48,13 @@ class AE(AnnounceableResource):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator must be the parent <AE>'))
 
 			# check that there will only by one PCH as a child
-			if CSE.dispatcher.countDirectChildResources(self.ri, ty = ResourceTypes.PCH) > 0:
+			if self.dispatcher.countDirectChildResources(self.ri, ty = ResourceTypes.PCH) > 0:
 				raise BAD_REQUEST('only one PCH per AE is allowed')
 
 
-	def validate(self, originator:Optional[str] = None,
-					   dct:Optional[JSON] = None, 
-					   parentResource:Optional[Resource] = None) -> None:
+	def validate(self, originator: Optional[str]=None,
+					   dct: Optional[JSON]=None, 
+					   parentResource: Optional[Resource]=None) -> None:
 		# Inherited
 		super().validate(originator, dct, parentResource)
 		self._normalizeURIAttribute('poa')
@@ -132,7 +74,7 @@ class AE(AnnounceableResource):
 				self[Constants.attrNode] = nl
 
 				# Add to new node
-				if node := CSE.dispatcher.retrieveResource(nl):	# new node
+				if node := self.dispatcher.retrieveResource(nl):	# new node
 					if not (hael := node.hael):
 						node['hael'] = [ ri ]
 					else:
@@ -187,7 +129,7 @@ class AE(AnnounceableResource):
 				nodeRi: The hosting node's resource ID.
 		"""
 		ri = self.ri
-		if node := CSE.dispatcher.retrieveResource(nodeRi):
+		if node := self.dispatcher.retrieveResource(nodeRi):
 			if (hael := node.hael) and isinstance(hael, list) and ri in hael:
 				hael.remove(ri)
 				if len(hael) == 0:

@@ -6,74 +6,38 @@
 #
 #	ResourceType: mgmtObj:Node
 #
+"""	Implementation of the Node (NOD) resource type."""
 
 from __future__ import annotations
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes
+from typing import TYPE_CHECKING
+
 from ..etc.IDUtils import uniqueID
-from ..runtime import CSE
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources.Resource import Resource
+from ..runtime.PluginSupport import requires
+
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..services.Dispatcher import Dispatcher
 
 
 # TODO Support cmdhPolicy
 # TODO Support storage
 
 
+@requires(dispatcher='acme.services.Dispatcher')
 class NOD(AnnounceableResource):
+	"""	Class for the Node (NOD) resource type. """
 
-	resourceType = ResourceTypes.NOD
-	""" The resource type """
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ ResourceTypes.ACTR,
-								   ResourceTypes.MGMTOBJ, 
-								   ResourceTypes.SCH,
-								   ResourceTypes.SMD, 
-								   ResourceTypes.FCNT,
-								   ResourceTypes.SUB ]
+	def initialize(self, pi: str) -> None:
+		self.setAttribute('ni', uniqueID(), overwrite=False)
+		super().initialize(pi)
 
 
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'et': None,
-		'lbl': None,
-		'cstn': None,
-		'acpi':None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-		'daci': None,
-
-		# Resource attributes
-		'ni': None,
-		'hcl': None,
-		'hael': None,
-		'hsl': None,
-		'mgca': None,
-		'rms': None,
-		'nid': None,
-		'nty': None
-	}
-
-
-	def initialize(self, pi:str, originator:str) -> None:
-		self.setAttribute('ni', uniqueID(), overwrite = False)
-		super().initialize(pi, originator)
-
-
-	def deactivate(self, originator:str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		super().deactivate(originator, parentResource)
 
 		# Remove self from all hosted AE's (their node links)
@@ -84,9 +48,9 @@ class NOD(AnnounceableResource):
 			self._removeNODfromAE(ae, ri)
 
 
-	def _removeNODfromAE(self, aeRI:str, ri:str) -> None:
+	def _removeNODfromAE(self, aeRI: str, ri: str) -> None:
 		""" Remove NOD.ri from AE node link. """
-		if aeResource := CSE.dispatcher.retrieveResource(aeRI):
+		if aeResource := self.dispatcher.retrieveResource(aeRI):
 			if (nl := aeResource.nl) and isinstance(nl, str) and ri == nl:
 				aeResource.delAttribute('nl')
 				aeResource.dbUpdate(True)

@@ -35,6 +35,6 @@ class StorageConfiguration(ModuleConfiguration):
 			Configuration.database_type = Configuration._args_DBStorageMode
 
 		if config.database_type not in ['tinydb', 'postgresql', 'memory']:
-			raise ConfigurationError(fr'Configuration Error: [i]\[database]:type[/i] must be "tinydb", "postgresql", or "memory"')
+			raise ConfigurationError(fr'[i]\[database]:type[/i] must be "tinydb", "postgresql", or "memory"')
 
 

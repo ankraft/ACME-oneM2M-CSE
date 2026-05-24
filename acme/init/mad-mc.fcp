@@ -831,14 +831,14 @@
             { "sname" : "enabd", "lname" : "enabled", "type" : "boolean", "car" : "1" }
         ],
 		"children"  : [
-            "mad:retLg",
+            "mad:reLog",
             "mad:dmELgInst"
         ]
     },
 
     // Action: retrieveLog
     {
-        "type"      : "mad:retLg",
+        "type"      : "mad:reLog",
         "lname"     : "retrieveLog",
         "cnd"       : "org.onem2m.management.action.retrieveLog",
         "sdttype"   : "action",	
@@ -851,7 +851,7 @@
             { "sname" : "end", "lname" : "end", "type" : "timestamp", "car" : "01" }
         ],
 		"children"  : [
-            "mad:retLgInst"
+            "mad:reLogInst"
         ]
     },
 
@@ -874,13 +874,13 @@
             { "sname" : "enabd", "lname" : "enabled", "type" : "boolean", "car" : "1" }
         ], 
         "children"  : [
-            "mad:retLg",
-            "mad:retLgAnnc"
+            "mad:reLog",
+            "mad:reLogAnnc"
         ]
     }, 
     // Action Announced: retrieveLogAnnc
     {
-        "type"      : "mad:retLgAnnc",
+        "type"      : "mad:reLogAnnc",
         "lname"     : "retrieveLogAnnc",
         "cnd"       : "org.onem2m.management.action.retrieveLogAnnc",
 		"sdttype"	: "action",
@@ -916,7 +916,7 @@
     }, 
     // Action Instance: retrieveLogInst
     {
-        "type"      : "mad:retLgInst",
+        "type"      : "mad:reLogInst",
         "lname"     : "retrieveLogInst",
         "cnd"       : "org.onem2m.management.action.retrieveLogInst",
 		"sdttype"	: "action",

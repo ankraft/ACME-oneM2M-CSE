@@ -1,0 +1,3643 @@
+//	resourceTypes.rtp
+//
+//	(c) 2026 by Andreas Kraft
+//	License: BSD 3-Clause License. See the LICENSE file for further details.
+//
+//	Definitions for oneM2M resourceTypes
+//
+
+{
+	"ACP": {
+		"typeName": "m2m:acp",
+		"fullName": "AccessControlPolicy",
+		"announcedType": "ACPAnnc",
+		"type": 1,
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"at",
+			"aa",
+			"ast",
+			
+			// Resource attributes
+			"pv",
+			"pvs",
+			"adri",
+			"apri",
+			"airi"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"ACPAnnc" : {
+		"typeName": "m2m:acpA",
+		"fullName": "AccessControlPolicy Announced",
+		"type": 10001,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+		 	"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// Resource attributes
+			"pv",
+			"pvs",
+			"adri",
+			"apri",
+			"airi"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"ACTR": {
+		"typeName": "m2m:actr",
+		"fullName": "Action",
+		"announcedType": "ACTRAnnc",
+		"type": 65,
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"lbl",
+			"acpi",
+			"et",
+			"daci",
+			"cstn",
+			"at",
+			"aa",
+			"ast",
+			"cr",
+
+			// Resource attributes
+			"apy",
+			"sri",
+			"evc",
+			"evm",
+			"ecp",
+			"dep",
+			"orc",
+			"apv",
+			"ipu",
+			"air"
+		],
+		"childResourceTypes": [ 
+			"DEPR",
+			"SUB"
+		]
+	},
+
+	"ACTRAnnc" : {
+		"typeName": "m2m:actrA",
+		"fullName": "Action Announced",
+		"type": 10065,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// Resource attributes
+			"apy",
+			"sri",
+			"evc",
+			"evm",
+			"ecp",
+			"dep",
+			"orc",
+			"apv",
+			"ipu",
+			"air"
+		],
+		"childResourceTypes": [
+			"SUB",
+			"DEPRAnnc"
+		]
+	},
+
+	"AE": {
+		"typeName": "m2m:ae",
+		"fullName": "ApplicationEntity",
+		"announcedType": "AEAnnc",
+		"type": 2,
+		"isNotificationEntity": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+		 	"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"daci",
+			"ast",
+			"loc",
+
+			// Resource attributes
+			"apn",
+			"api",
+			"aei",
+			"poa",
+			"nl",
+			"rr",
+			"csz",
+			"esi",
+			"mei",
+			"srv",
+			"regs",
+			"trps",
+			"scp",
+			"tren",
+			"ape",
+			"or"
+		],
+		"childResourceTypes": [
+			"ACP",
+			"ACTR",
+			"CNT",
+			"CRS",
+			"DAC",
+			"FCNT",
+			"GRP",
+			"LCP",
+			"PCH",
+			"PRMR",
+			"PRP",
+			"SMD",
+			"SUB",
+			"TS",
+			"TSB" 
+		]
+	},
+
+	"AEAnnc" : {
+		"typeName": "m2m:aeA",
+		"fullName": "ApplicationEntity Announced",
+		"type": 10002,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+		 	"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+			"loc",	
+	
+			// Resource attributes
+			"apn",
+			"api",
+			"aei",
+			"poa",
+			"nl",
+			"rr",
+			"csz",
+			"esi",
+			"mei",
+			"srv",
+			"regs",
+			"trps",
+			"scp",
+			"tren",
+			"ape",
+			"or"
+		],
+		"childResourceTypes": [
+			"ACP",
+			"ACPAnnc",
+			"ACTR",
+			"ACTRAnnc",
+			"CNT",
+			"CNTAnnc",
+			"FCNT", 
+			"FCNTAnnc", 
+			"GRP", 
+			"GRPAnnc",
+			"LCPAnnc",
+			"PRMRAnnc",
+			"TS", 
+			"TSAnnc" 
+		]
+	},
+
+	"ALPC": {
+		"typeName": "m2m:alpc",
+		"fullName": "AEContactListPerCSE",
+		"type": 44,
+		"isRequestCreatable": false,
+		"isRequestUpdatable": false,	// TODO This is propaply not correct, because there are some attributes (like lbl) that can be updated.
+		"isRequestDeletable": false,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"et",
+			"acpi",
+			"daci",
+			"cust",
+			"ct",
+			"lt",
+			"lbl",
+		
+			// Resource attributes
+			"csi",
+			"ail"
+		]
+	},
+
+	"ALST": {
+		"typeName": "m2m:alst",
+		"fullName": "AEContactList",
+		"type": 43,
+		"isRequestCreatable": false,
+		"isRequestUpdatable": false,	// TODO This is propaply not correct, because there are some attributes (like lbl) that can be updated.
+		"isRequestDeletable": false,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"et",
+			"acpi",
+			"daci",
+			"cust",
+			"ct",
+			"lt",
+			"lbl",
+		
+			// Resource attributes
+			"nic"
+		],
+
+		"childResourceTypes": [
+			"ALPC",
+			"SUB"
+		]
+	},
+
+	"CIN": {
+		"typeName": "m2m:cin",
+		"fullName": "ContentInstance",
+		"announcedType": "CINAnnc",
+		"type": 4,
+		"isInstanceResource": true,
+		"inheritACP": true,
+		"isRequestUpdatable": false,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"lbl",
+			"et",
+			"ct",
+			"lt",
+			"st",
+			"at",
+			"aa",
+			"ast",
+			"cr",
+			"loc",
+
+			// Resource attributes
+			"cnf",
+			"cs",
+			"conr",
+			"con",
+			"or",
+			"conr",
+			"dcnt",
+			"dgt"
+		],
+		"childResourceTypes": [
+			"SMD"
+		]
+	},
+
+	"CINAnnc": {
+		"typeName": "m2m:cinA",
+		"fullName": "ContentInstance Announced",
+		"type": 10004,
+		"isAnnouncedResource": true,
+		"isInstanceResource": true,
+		"isRequestUpdatable": false,
+		"inheritACP": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"et",
+			"ct",
+			"lt",
+			"lbl",
+			"ast",
+			"loc",
+			"lnk",
+
+			// Resource attributes
+			"cnf",
+			"conr",
+			"con",
+			"or",
+			"conr"
+		],
+		"childResourceTypes": [ ]
+	},
+
+	"CNT": {
+		"typeName": "m2m:cnt",
+		"fullName": "Container",
+		"announcedType": "CNTAnnc",
+		"type": 3,
+		"isContainer": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+			"st",
+			"cr",
+			"loc",
+
+			// Resource attributes
+			"mni",
+			"mbs",
+			"mia",
+			"cni",
+			"cbs",
+			"li",
+			"or",
+			"disr",
+
+			// EXPERIMENTAL
+			"subi"
+		],
+		"childResourceTypes": [
+			"ACTR",
+			"CIN",
+			"CNT", 
+			"CNT_LA",
+			"CNT_OL",
+			"FCNT",
+			"SMD",
+			"SUB",
+			"TS"
+		]
+	},
+
+	"CNTAnnc": {
+		"typeName": "m2m:cntA",
+		"fullName": "Container Announced",
+		"type": 10003,
+		"isAnnouncedResource": true,
+		"isContainer": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"ast",
+			"loc",
+			"lnk",
+
+			// Resource attributes
+			"mni",
+			"mbs",
+			"mia",
+			"li",
+			"or",
+			"disr"
+		],
+		"childResourceTypes": [
+			"ACTR", 
+			"ACTRAnnc",
+			"CIN", 
+			"CINAnnc", 
+			"CNT", 
+			"CNTAnnc", 
+			"FCNT", 
+			"FCNTAnnc", 
+			"SUB", 
+			"TS", 
+			"TSAnnc" 
+		]
+	},
+
+	"CNT_LA": {
+		"typeName": "m2m:la",
+		"fullName": "Latest",
+		"virtualResourceName": "la",
+		"isRequestCreatable": false,
+		"inheritACP": true,
+		"type": 20002
+	},
+
+	"CNT_OL": {
+		"typeName": "m2m:ol",
+		"fullName": "Oldest",
+		"virtualResourceName": "ol",
+		"isRequestCreatable": false,
+		"inheritACP": true,
+		"type": 20001
+	},
+
+	"CRS": {
+		"typeName": "m2m:crs",
+		"fullName": "CrossResourceSubscription",
+		"type": 48,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"acpi",
+			"lbl",
+			"cr",
+			"cstn",
+			"daci",
+
+			// Resource attributes
+			"exc",
+			"nu",
+			"nec",
+			"su",
+			"rrat",
+			"srat",
+			"rrats",
+			"eem",
+			"twt",
+			"tws",
+			"encs",
+			"nse",
+			"nsi"
+		],
+		"childResourceTypes": [
+			"NTSR",
+			"NTPR",
+			"SCH"		
+		]
+	},
+
+	"CSEBase": {
+		"typeName": "m2m:cb",
+		"fullName": "CSEBase",
+		"announcedType": "CSEBaseAnnc",
+		"type": 5,
+		"isRequestCreatable": false,
+		"isNotificationEntity": true,
+
+		"attributes": [
+			//Common and universal attributes
+			"rn",
+		 	"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"lbl",
+			"loc",
+			"cstn",
+			"acpi",
+
+			// Resource attributes
+			"csi",
+			"spi",
+			"ici",
+			"cst",
+			"csz",
+			"ctm",
+			"daci",
+			"esi",
+			"nl",
+			"poa",
+			"srt",
+			"srv"
+		],
+		"childResourceTypes": [
+			"ACP",
+			"ACTR", 
+			"ALST",
+			"AE", 
+			"CRS", 
+			"CSR", 
+			"CNT", 
+			"DAC",
+			"FCNT", 
+			"GRP", 
+			"LCP",
+			"NOD",
+			"NTP",
+			"PRMR",
+			"PRP",
+			"REQ", 
+			"SCH",
+			"SUB", 
+			"TS", 
+			"TSB", 
+			"CSEBaseAnnc",
+			"AEAnnc"	// EXPERIMENTAL, not in the standard, but we need it for "S" registration tracking
+		]
+	},
+
+	"CSEBaseAnnc": {
+		"typeName": "m2m:cbA",
+		"fullName": "CSEBase Announced",
+		"type": 10005,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			//Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"loc",
+			"cstn",
+			"acpi",
+			"daci",
+			"lnk",
+
+			//Resource attributes
+			"csi",
+			"spi",
+			"ici",
+			"cst",
+			"csz",
+			"ctm",
+			"daci",
+			"esi",
+			"nl",
+			"poa",
+			"srv"
+		],
+		"childResourceTypes": [
+			"ACPAnnc", 
+			"ACTRAnnc", 
+			"AEAnnc", 
+			"CNTAnnc", 
+			"FCNTAnnc", 
+			"GRPAnnc",
+			"LCPAnnc",
+			"NODAnnc", 
+			"PRMRAnnc",
+			"SCHAnnc",
+			"SUB", 
+			"TSAnnc", 
+			"TSBAnnc" 
+		]
+	},
+
+	"CSR": {
+		"typeName": "m2m:csr",
+		"fullName": "RemoteCSE",
+		"announcedType": "CSRAnnc",
+		"type": 16,
+		"isNotificationEntity": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"daci",
+			"at",
+			"aa",
+			"ast",
+			"cr",
+			"loc",
+
+			// Resource attributes
+			"cst",
+			"poa",
+			"cb",
+			"csi",
+			"spi",
+			"ici",
+			"mei",
+			"tri",
+			"rr",
+			"nl",
+			"csz",
+			"esi",
+			"trn",
+			"dcse",
+			"mtcc",
+			"egid",
+			"tren",
+			"ape",
+			"srv"
+		],
+
+		// 	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
+
+		"childResourceTypes": [
+			"ACP", 
+			"ACPAnnc", 
+			"ACTR", 
+			"ACTRAnnc", 
+			"AEAnnc", 
+			"CINAnnc",
+			"CNT",
+			"CNTAnnc", 
+			"CRS",
+			"CSRAnnc",
+			"FCNT",
+			"FCNTAnnc",
+			"FCI",
+			"GRP", 
+			"GRPAnnc",
+			"LCPAnnc",
+			"MGMTOBJAnnc",
+			"NODAnnc",
+			"PCH",
+			"PRMR",
+			"PRMRAnnc",
+			"PRP",
+			// "ResourceTypes".PRPAnnc,	# TODO
+			"SMDAnnc",
+			"SUB",
+			"TS",
+			"TSAnnc",
+			"TSB" 
+		]
+	},
+
+	"CSRAnnc" : {
+		"typeName": "m2m:csrA",
+		"fullName": "RemoteCSE Announced",
+		"type": 10016,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"ast",
+			"loc",
+			"lnk",
+
+			// Resource attributes
+			"cst",
+			"poa",
+			"cb",
+			"csi",
+			"spi",
+			"ici",
+			"rr",
+			"nl",
+			"csz",
+			"esi",
+			"dcse",
+			"egid",
+			"mtcc",
+			"tren",
+			"ape",
+			"srv"
+		],
+		"childResourceTypes": [
+			"ACTR", 
+			"ACTRAnnc",  
+			"ACP", 
+			"ACPAnnc",
+			"AEAnnc", 
+			"CNT", 
+			"CNTAnnc", 
+			"CINAnnc", 
+			"CSRAnnc", 
+			"FCNT", 
+			"FCNTAnnc", 
+			"GRP", 
+			"GRPAnnc", 
+			"LCPAnnc",
+			"MGMTOBJAnnc", 
+			"NODAnnc", 
+			"PRMR",
+			"PRMRAnnc",
+			"SCHAnnc",
+			"SUB", 
+			"TS", 
+			"TSAnnc", 
+			"TSB", 
+			"TSBAnnc" 
+		]
+	},
+
+	"DAC": {
+		"typeName": "m2m:dac",
+		"fullName": "DynamicAuthorizationConsultation",
+		"type": 34,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"lbl",
+			"et",
+			"ct",
+			"lt",
+			"acpi",
+			"daci",
+			"cstn",
+
+			// Resource attributes
+			"dae",
+			"dap",
+			"dal"
+		],
+
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"DEPR": {
+		"typeName": "m2m:depr",
+		"fullName": "Dependency",
+		"announcedType": "DEPRAnnc",
+		"type": 66,
+
+				"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"lbl",
+			"acpi",
+			"et",
+			"daci",
+			"at",
+			"aa",
+			"ast",
+			"cstn",
+			"cr",
+
+			// Resource attributes
+			"sfc",
+			"evc",
+			"rri"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"DEPRAnnc" : {
+		"typeName": "m2m:deprA",
+		"fullName": "Dependency Announced",
+		"type": 10066,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// Resource attributes
+			"sfc",
+			"evc",
+			"rri"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"FCI": {
+		"typeName": "m2m:fci",
+		"fullName": "FlexContainer Instance",
+		"type": 58,
+		"isInstanceResource": true,
+		"isRequestCreatable": false,
+		"isRequestUpdatable": false,
+		"inheritACP": true,
+		"isSpecializationBaseResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"et",
+			"lbl",
+			"loc",
+
+			// Resource attributes
+			"cs",
+			"org"
+		],
+		"childResourceTypes": [	]
+	},
+
+	"FCIAnnc": {
+		"typeName": "m2m:fciA",
+		"fullName": "FlexContainer Instance Announced",
+		"type": 10058,
+		"isAnnouncedResource": true,
+		"isInstanceResource": true,
+		"isRequestCreatable": false,
+		"isRequestUpdatable": false,
+		"inheritACP": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"ast",
+			"loc",
+			"lnk",
+
+			// Resource attributes
+			"cs",
+			"org"
+		],
+		"childResourceTypes": [	]
+	},
+
+	"FCNT": {
+		"typeName": "m2m:fcnt",
+		"fullName": "FlexContainer",
+		"announcedType": "FCNTAnnc",
+		"type": 28,
+		"isContainer": true,
+		"isSpecializationBaseResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+			"st",
+			"cr",
+			"loc",
+
+			// Resource attributes
+			"cnd",
+			"or",
+			"cs",
+			"nl",
+			"mni",
+			"mia",
+			"mbs",
+			"cbs",
+			"cni",
+			"fcied"		// EXPERIMENTAL fcinEnabled
+		],
+		"childResourceTypes": [	
+			"ACTR", 
+			"CNT", 
+			"FCNT", 
+			"SMD", 
+			"SUB", 
+			"TS", 
+			"FCI",
+			"FCNT_LA",
+			"FCNT_OL"
+		]
+	},
+
+	"FCNTAnnc": {
+		"typeName": "m2m:fcntA",
+		"fullName": "FlexContainer Announced",
+		"type": 10028,
+		"isAnnouncedResource": true,
+		"isContainer": true,
+		"isSpecializationBaseResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn", 
+			"ty", 
+			"ri", 
+			"pi", 
+			"ct", 
+			"lt", 
+			"et", 
+			"lbl", 
+			"acpi", 
+			"daci", 
+			"ast", 
+			"loc", 
+			"lnk",
+
+			// Resource attributes
+			"cnd",
+			"or",
+			"nl",
+			"mni",
+			"mia",
+			"mbs"
+		],
+
+		"childResourceTypes": [	
+			"ACTR", 
+			"ACTRAnnc", 
+			"CNT", 
+			"CNTAnnc", 
+			"CIN", 
+			"CINAnnc", 
+			"FCNT", 
+			"FCNTAnnc", 
+			"FCI", 
+			"TS", 
+			"TSAnnc", 
+			"SUB"
+		]
+	},
+
+	"FCNT_LA": {
+		"typeName": "m2m:la",
+		"fullName": "Latest",
+		"type": -20005,
+		"virtualResourceName": "la",
+		"isRequestCreatable": false,
+		"inheritACP": true
+	},
+
+	"FCNT_OL": {
+		"typeName": "m2m:ol",
+		"fullName": "Oldest",
+		"type": -20004,
+		"virtualResourceName": "ol",
+		"isRequestCreatable": false,
+		"inheritACP": true
+	},
+
+	"GRP": {
+		"typeName": "m2m:grp",
+		"fullName": "Group",
+		"announcedType": "GRPAnnc",
+		"type": 9,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+			"cr",
+
+			// Resource attributes
+			"mt",
+			"spty",
+			"cnm",
+			"mnm",
+			"mid",
+			"macp",
+			"mtv",
+			"csy",
+			"gn",
+			"ssi",
+			"nar"
+		],
+		"childResourceTypes": [
+			"ACTR", 
+			"SMD", 
+			"SUB", 
+			"GRP_FOPT"
+		]
+	},
+
+	"GRPAnnc" : {
+		"typeName": "m2m:grpA",
+		"fullName": "Group Announced",
+		"type": 10009,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"ast",
+			"lnk",
+
+			// Resource attributes
+			"mt",
+			"spty",
+			"mnm",
+			"mid",
+			"macp",
+			"mtv",
+			"csy",
+			"gn",
+			"ssi",
+			"nar"
+		],
+		"childResourceTypes": [
+			"ACTR",
+			"ACTRAnnc", 
+			"SUB"
+		]
+	},
+
+	"GRP_FOPT": {
+		"typeName": "m2m:fopt",
+		"fullName": "Fanout Point",	// not an official type name
+		"virtualResourceName": "fopt",
+		"inheritACP": true,
+		"isRequestCreatable": false,
+		"type": -20003,				// no official type number
+
+		"attributes": [ ],
+		"childResourceTypes": [ ]
+	},
+
+	"LCP": {
+		"typeName": "m2m:lcp",
+		"fullName": "LocationPolicy",
+		"announcedType": "LCPAnnc",
+		"type": 10,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"lbl",
+			"acpi",
+			"et",
+			"daci",
+			"cstn",
+			"at",
+			"aa",
+			"ast",
+
+			// Resource attributes
+			"los",
+			"lit",
+			"lou",
+			"lot",
+			"lor",
+			"loi",
+			"lon",
+			"lost",
+			"gta",
+			"gec",
+			"aid",
+			"rlkl",
+			"luec"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"LCPAnnc" : {
+		"typeName": "m2m:lcpA",
+		"fullName": "LocationPolicy Announced",
+		"type": 10010,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+
+			// Resource attributes
+			"los",
+			"lit",
+			"lou",
+			"lot",
+			"lor",
+			"loi",
+			"lon",
+			"lost",
+			"gta",
+			"gec",
+			"aid",
+			"rlkl",
+			"luec"
+		],
+		"childResourceTypes": [ ]
+	},
+
+	"MGMTOBJ": {
+		"typeName": "m2m:mgo",
+		"fullName": "ManagementObject",
+		"announcedType": "MGMTOBJAnnc",
+		"type": 13,
+		"isSpecializationBaseResource": true,
+
+
+		// attributes are defined in the specializations
+
+		"childResourceTypes": [
+			"SMD",
+			"SUB"
+		]
+	},
+
+	"MGMTOBJAnnc" : {
+		"typeName": "m2m:mgoA",
+		"fullName": "ManagementObject Announced",
+		"type": 10013,
+		"isAnnouncedResource": true,
+		"isSpecializationBaseResource": true,
+
+		// attributes are defined in the specializations
+
+		"childResourceTypes": [
+			"SMD",
+			"SUB"
+		]
+	},
+
+	"NOD": {
+		"typeName": "m2m:nod",
+		"fullName": "Node",
+		"announcedType": "NODAnnc",
+		"type": 14,
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+		// Resource attributes
+			"ni",
+			"hcl",
+			"hael",
+			"hsl",
+			"mgca",
+			"rms",
+			"nid",
+			"nty"
+		],
+		"childResourceTypes": [
+			"ACTR",
+			"FCNT",
+			"MGMTOBJ", 
+			"SCH",
+			"SMD", 
+			"SUB" 
+		]
+	},
+
+	"NODAnnc" : {
+		"typeName": "m2m:nodA",
+		"fullName": "Node Announced",
+		"type": 10014,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"ast",
+			"lnk",
+
+			// Resource attributes
+			"ni",
+			"hcl",
+			"hael",
+			"hsl",
+			"mgca",
+			"rms",
+			"nid",
+			"nty"
+		],
+		"childResourceTypes": [
+			"ACTR", 
+			"ACTRAnnc", 
+			"MGMTOBJAnnc", 
+			"SCHAnnc",
+			"SUB"		]
+	},
+
+	"NTP": {
+		"typeName": "m2m:ntp",
+		"fullName": "NotificationTargetPolicy",
+		"type": 26,
+		"inheritACP": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"et",
+			"acpi",
+			"ct",
+			"lbl",
+			"lt",
+			"daci",
+			"cr",
+			"cstn",
+
+			// Resource attributes
+   			"acn",
+			"plbl",
+			"rrs"
+		],
+		"childResourceTypes": [
+			"PDR",
+			"SUB"
+		]
+	},
+
+	"NTSR": {
+		"typeName": "m2m:ntsr",
+		"fullName": "NotificationTargetSelfReference",
+		"virtualResourceName": "ntsr",
+		"inheritACP": true,
+		"isRequestCreatable": false,
+		"type": -20009,				// no official type number
+
+		"attributes": [ ],
+		"childResourceTypes": [ ]
+	},
+
+	"NTPR": {
+		"typeName": "m2m:ntpr",
+		"fullName": "NotificationTargetMgmtPolicyRef",
+		"type": 25,
+		"inheritACP": true,
+
+		"attributes": [ 
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"et",
+			"acpi",
+			"ct",
+			"lbl",
+			"lt",
+			"daci",
+			"cstn",
+			
+			 // Resource attributes
+			"ntu",
+			"npi"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"PCH": {
+		"typeName": "m2m:pch",
+		"fullName": "PollingChannel",
+		"announcedType": "PCH_PCU",
+		"type": 15,
+		"inheritACP": true,
+
+		"attributes": [ 
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+
+			// Resource attributes
+   			"rqag"
+		],
+		"childResourceTypes": [
+			"PCH_PCU"
+		]
+	},
+
+	"PCH_PCU": {
+		"typeName": "m2m:pcu",
+		"fullName": "PollingChannelURI",
+		"virtualResourceName": "pcu",
+		"isRequestCreatable": false,
+		"inheritACP": true,
+		"type": -20006,	
+
+		"attributes": [ ],
+		"childResourceTypes": [ ]
+	},
+
+	"PDR": {
+		"typeName": "m2m:pdr",
+		"fullName": "PolicyDeletionRules",
+		"type": 27,
+		"inheritACP": true,
+
+		"attributes": [ 
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"et",
+			"acpi",
+			"ct",
+			"lbl",
+			"lt",
+			"daci",
+			"cstn",
+			
+			 // Resource attributes
+   			"dr",
+			"drr"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"PRMR": {
+		"typeName": "m2m:prmr",
+		"fullName": "ProcessManagement",
+		"announcedType": "PRMRAnnc",
+		"type": 63,
+
+		"attributes": [ 
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"acpi",
+			"lbl",
+			"cr",
+			"cstn",
+			"daci",
+			"at",
+			"aa",
+			"ast",
+
+			// Resource attributes
+			"prst",
+			"prct",
+			"cust",
+			"atcos",
+			"encos",
+			"inst"
+		],
+		"childResourceTypes": [
+			"STTE",
+			"SUB"
+		 ]
+	},
+
+	"PRMRAnnc" : {
+		"typeName": "m2m:prmrA",
+		"fullName": "ProcessManagement Announced",
+		"type": 10063,
+		"isAnnouncedResource": true,
+
+		"attributes": [ 
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// Resource attributes
+			"prst",
+			"prct",
+			"cust",
+			"atcos",
+			"encos",
+			"inst"
+		],
+		"childResourceTypes": [
+			"STTE", 
+			"SUB"
+		 ]
+	},
+	
+	"PRP": {
+		"typeName": "m2m:prp",
+		"fullName": "PrimitiveProfile",
+		"announcedType": "PRPAnnc",
+		"type": 62,
+
+		"attributes": [ 
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"lbl",
+			"et",
+			"ct",
+			"lt",
+			"acpi",
+			"daci",
+			"cstn",
+			"cr",
+			"at",
+			"aa",
+			"ast",
+
+			// Resource attributes
+			"idl",
+			"rtys",
+			"ops",
+			"rsds",
+			"rvs",
+			"adds",
+			"dels",
+			"appl"
+		],
+
+		"childResourceTypes": [
+			"SUB"
+		 ]
+	},
+
+	// TBD
+	"PRPAnnc" : {
+		"typeName": "m2m:prpA",
+		"fullName": "PrimitiveProfile Announced",
+		"type": 10062,
+		"isAnnouncedResource": true,
+
+		"attributes": [ 
+			// Common and universal attributes
+			// TBD
+
+			// Resource attributes
+
+		],
+
+		"childResourceTypes": [
+			// TBD
+		 ]
+	},
+
+	"REQ": {
+		"typeName": "m2m:req",
+		"fullName": "Request",
+		"isRequestCreatable": false,
+		"type": 17,
+
+		"attributes": [ 
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"daci",
+
+			// Resource attributes
+			"op",
+			"tg",
+			"org",
+			"rid",
+			"mi",
+			"pc",
+			"rs",
+			"ors"
+		],
+		"childResourceTypes": [
+			"SUB"
+		 ]
+	},
+
+	"SCH": {
+		"typeName": "m2m:sch",
+		"fullName": "Schedule",
+		"announcedType": "SCHAnnc",
+		"type": 18,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"lbl",
+			"acpi",
+			"et",
+			"daci",
+			"cstn",
+			"at",
+			"aa",
+			"ast",
+
+			// Resource attributes
+			"se",
+			"nco"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"SCHAnnc" : {
+		"typeName": "m2m:schA",
+		"fullName": "Schedule Announced",
+		"type": 10018,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// Resource attributes
+			"se",
+			"nco"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"SMD": {
+		"typeName": "m2m:smd",
+		"fullName": "SemanticDescriptor",
+		"announcedType": "SMDAnnc",
+		"type": 24,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+			"cr",
+
+			// Resource attributes
+			"dcrp",
+			"soe",
+			"dsp",
+			"or",
+			"rels",
+			"svd",
+			"vlde"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"SMDAnnc" : {
+		"typeName": "m2m:smdA",
+		"fullName": "SemanticDescriptor Announced",
+		"type": 10024,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"ast",
+			"lnk",
+
+			// Resource attributes
+			"dcrp",
+			"dsp",
+			"or",
+			"rels",
+			"svd",
+			"vlde"
+		],
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"STTE": {
+		"typeName": "m2m:stte",
+		"fullName": "State",
+		"announcedType": "STTEAnnc",
+		"type": 64,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"acpi",
+			"lbl",
+			"cr",
+			"cstn",
+			"daci",
+			"at",
+			"aa",
+			"ast",
+
+			// Resource attributes
+			"sact",
+			"stac",
+			"sttrs"
+		],
+		"childResourceTypes": [
+			"ACTR",
+			"SUB"
+		]
+	},
+
+	"STTEAnnc" : {
+		"typeName": "m2m:stteA",
+		"fullName": "State Announced",
+		"type": 10064,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// Resource attributes
+			"sact",
+			"stac",
+			"sttrs"
+		],
+		"childResourceTypes": [
+			"ACTRAnnc",
+			"SUB"
+		]
+	},
+
+	"SUB": {
+		"typeName": "m2m:sub",
+		"fullName": "Subscription",
+		"type": 23,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"daci",
+			"cr",
+
+			// Resource attributes
+			"enc",
+			"exc",
+			"nu",
+			"gpi",
+			"nfu",
+			"bn",
+			"rl",
+			"psn",
+			"pn",
+			"nsp",
+			"ln",
+			"nct",
+			"nec",
+			"su",
+			"acrs",
+			"nse",
+			"nsi",
+			"eeno",
+			"ma"
+		],
+		"childResourceTypes": [
+			"NTPR",
+			"NTSR",
+			"SCH"
+		]
+	},
+
+	"TGR": {
+		"typeName": "m2m:tgr",
+		"fullName": "TriggerRequest",
+		"type": 47,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"lbl",
+			"et",
+			"ct",
+			"lt",
+			"acpi",
+			"daci",
+			"cstn",
+
+			// Resource attributes
+			"mei",
+			"tri",
+			"tpe"
+			// TODO continue with the rest of the attributes
+		],
+
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"TS": {
+		"typeName": "m2m:ts",
+		"fullName": "TimeSeries",
+		"announcedType": "TSAnnc",
+		"type": 29,
+		"isContainer": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"lbl",
+			"et",
+			"ct",
+			"lt",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+			"cr",
+			"loc",
+
+			// Resource attributes
+			"mni",
+			"mbs",
+			"mia",
+			"cni",
+			"cbs",
+			"pei",
+			"peid",
+			"mdd",
+			"mdn",
+			"mdlt",
+			"mdc",
+			"mdt",
+			"cnf",
+			"or"
+		],
+		"childResourceTypes": [
+			"ACTR", 
+			"TSI", 
+			"SMD", 
+			"SUB",
+			"TS_LA",
+			"TS_OL"
+		]
+	},
+
+	"TSAnnc" : {
+		"typeName": "m2m:tsA",
+		"fullName": "TimeSeries Announced",
+		"type": 10029,
+		"isAnnouncedResource": true,
+		"isContainer": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"ast",
+			"loc",
+			"lnk",
+
+			// Resource attributes
+			"mni",
+			"mbs",
+			"mia",
+			"pei",
+			"peid",
+			"mdn",
+			"mdt",
+			"cnf",
+			"or"
+		],
+		"childResourceTypes": [
+			"ACTRAnnc", 
+			"SMD",
+			"SMDAnnc",
+			"SUB",
+			"TSI",
+			"TSIAnnc"
+		]
+	},
+
+	"TSB": {
+		"typeName": "m2m:tsb",
+		"fullName": "TimeSyncBeacon",
+		"announcedType": "TSBAnnc",
+		"type": 60,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"lbl",
+			"et",
+			"ct",
+			"lt",
+			"acpi",
+			"cstn",
+			"daci",
+			"at",
+			"aa",
+			"ast",
+
+			// Resource attributes
+			"bcnr",
+			"bcnc",
+			"bcni",
+			"bcnt",
+			"bcnu"
+		],
+
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"TSBAnnc" : {
+		"typeName": "m2m:tsbA",
+		"fullName": "TimeSyncBeacon Announced",
+		"type": 10060,
+		"isAnnouncedResource": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"ty",
+			"ri",
+			"rn",
+			"pi",
+			"lbl",
+			"et",
+			"ct",
+			"lt",
+			"acpi",
+			"daci",
+			"lnk",
+
+
+			// Resource attributes
+			"bcnr",
+			"bcnc",
+			"bcni",
+			"bcnt",
+			"bcnu"
+		],
+
+		"childResourceTypes": [
+			"SUB"
+		]
+	},
+
+	"TSI": {
+		"typeName": "m2m:tsi",
+		"fullName": "TimeSeriesInstance",
+		"announcedType": "TSIAnnc",
+		"type": 30,
+		"isInstanceResource": true,
+		"isRequestUpdatable": false,
+		"inheritACP": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"ri",
+			"ty",
+			"rn",
+			"pi",
+			"et",
+			"ct",
+			"lt",
+			"lbl",
+			"at",
+			"aa",
+			"ast",
+			"cr",
+			"loc",
+
+			// Resource attributes
+   			"dgt",
+			"con",
+			"cs",
+			"snr"
+		]
+	},
+
+	"TSIAnnc" : {
+		"typeName": "m2m:tsiA",
+		"fullName": "TimeSeriesInstance Announced",
+		"type": 10030,
+		"isAnnouncedResource": true,
+		"isInstanceResource": true,
+		"isRequestUpdatable": false,
+		"inheritACP": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"ast",
+			"loc",
+			"lnk",
+
+			// Resource attributes
+   			"dgt",
+			"con",
+			"cs",
+			"snr"
+		]
+	},
+
+	"TS_LA": {
+		"typeName": "m2m:la",
+		"fullName": "Latest",
+		"virtualResourceName": "la",
+		"isRequestCreatable": false,
+		"inheritACP": true,
+		"type": -20008
+	},
+
+	"TS_OL": {
+		"typeName": "m2m:ol",
+		"fullName": "Oldest",
+		"virtualResourceName": "ol",
+		"isRequestCreatable": false,
+		"inheritACP": true,
+		"type": -20007
+	},
+
+
+	//
+	// ManagementObject Specializations
+	//
+
+	"ANDI": {
+		"typeName": "m2m:andi",
+		"fullName": "AreaNetworkDeviceInfo",
+		"announcedType": "ANDIAnnc",
+		"type": 13,
+		"mgmtType": 1005,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"dvd",
+			"dvt",
+			"awi",
+			"sli",
+			"sld",
+			"ss",
+			"lnh"
+		]
+	},
+
+	"ANDIAnnc" : {
+		"typeName": "m2m:andiA",
+		"fullName": "AreaNetworkDeviceInfo Announced",
+		"type": 10013,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"dvd",
+			"dvt",
+			"awi",
+			"sli",
+			"sld",
+			"ss",
+			"lnh"
+		]
+	},
+
+	"ANI": {
+		"typeName": "m2m:ani",
+		"fullName": "AreaNetworkInfo",
+		"announcedType": "ANIAnnc",
+		"type": 13,
+		"mgmtType": 1004,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"ant",
+			"ldv"
+		]
+	},
+
+	"ANIAnnc" : {
+		"typeName": "m2m:aniA",
+		"fullName": "AreaNetworkInfo Announced",
+		"type": 10013,
+		"mgmtType": 1004,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"ant",
+			"ldv"
+		]
+	},
+
+	"BAT": {
+		"typeName": "m2m:bat",
+		"fullName": "Battery",
+		"announcedType": "BATAnnc",
+		"type": 13,
+		"mgmtType": 1006,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"btl",
+			"bts"
+		]
+	},
+
+	"BATAnnc" : {
+		"typeName": "m2m:batA",
+		"fullName": "Battery Announced",
+		"type": 10013,
+		"mgmtType": 1006,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"btl",
+			"bts"
+		]
+	},
+
+	"CRDS": {
+		"typeName": "dcfg:crds",
+		"fullName": "Credentials",
+		"announcedType": "CRDSAnnc",
+		"type": 13,
+		"mgmtType": 1029,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"pur",
+			"crid",
+			"crse",
+			"crtk"
+		]
+	},
+
+	"CRDSAnnc" : {
+		"typeName": "dcfg:crdsA",
+		"fullName": "Credentials Announced",
+		"type": 10013,
+		"mgmtType": 1029,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"pur",
+			"crid",
+			"crse",
+			"crtk"
+		]
+	},
+
+	"DATC": {
+		"typeName": "dcfg:datc",
+		"fullName": "DataCollection",
+		"announcedType": "DATCAnnc",
+		"type": 13,
+		"mgmtType": 1021,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"cntp",
+			"rpsc",
+			"mesc",
+			"meil",
+			"cmlk"
+		]
+	},
+
+	"DATCAnnc" : {
+		"typeName": "dcfg:datcA",
+		"fullName": "DataCollection Announced",
+		"type": 10013,
+		"mgmtType": 1021,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"cntp",
+			"rpsc",
+			"mesc",
+			"meil",
+			"cmlk"
+		]
+	},
+
+	"DVC": {
+		"typeName": "m2m:dvc",
+		"fullName": "DeviceCapability",
+		"announcedType": "DVCAnnc",
+		"type": 13,
+		"mgmtType": 1008,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"can",
+			"att",
+			"cas",
+			"ena",
+			"dis",
+			"cus"
+		]
+	},
+
+	"DVCAnnc" : {
+		"typeName": "m2m:dvcA",
+		"fullName": "DeviceCapability Announced",
+		"type": 10013,
+		"mgmtType": 1008,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"can",
+			"att",
+			"cas",
+			"ena",
+			"dis",
+			"cus"
+		]
+	},
+
+	"DVI": {
+		"typeName": "m2m:dvi",
+		"fullName": "DeviceInfo",
+		"announcedType": "DVIAnnc",
+		"type": 13,
+		"mgmtType": 1007,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"dlb",
+			"man",
+			"mfdl",
+			"mfd",
+			"mod",
+			"smod",
+			"dty",
+			"dvnm",
+			"fwv",
+			"swv",
+			"hwv",
+			"osv",
+			"cnty",
+			"loc",
+			"syst",
+			"spur",
+			"purl",
+			"ptl"
+		]
+	},
+
+	"DVIAnnc" : {
+		"typeName": "m2m:dviA",
+		"fullName": "DeviceInfo Announced",
+		"type": 10013,
+		"mgmtType": 1007,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"dlb",
+			"man",
+			"mfdl",
+			"mfd",
+			"mod",
+			"smod",
+			"dty",
+			"dvnm",
+			"fwv",
+			"swv",
+			"hwv",
+			"osv",
+			"cnty",
+			"loc",
+			"syst",
+			"spur",
+			"purl",
+			"ptl"
+		]
+	},
+
+	"EVL": {
+		"typeName": "m2m:evl",
+		"fullName": "EventLog",
+		"announcedType": "EVLAnnc",
+		"type": 13,
+		"mgmtType": 1010,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"lgt",
+			"lgd",
+			"lgst",
+			"lga",
+			"lgo"
+		]
+	},
+
+	"EVLAnnc" : {
+		"typeName": "m2m:evlA",
+		"fullName": "EventLog Announced",
+		"type": 10013,
+		"mgmtType": 1010,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"lgt",
+			"lgd",
+			"lgst",
+			"lga",
+			"lgo"
+		]
+	},
+
+	"FWR": {
+		"typeName": "m2m:fwr",
+		"fullName": "Firmware",
+		"announcedType": "FWRAnnc",
+		"type": 13,
+		"mgmtType": 1001,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"vr",
+			"fwn",
+			"url",
+			"uds",
+			"ud"
+		]
+	},
+
+	"FWRAnnc" : {
+		"typeName": "m2m:fwrA",
+		"fullName": "Firmware Announced",
+		"type": 10013,
+		"mgmtType": 1001,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"vr",
+			"fwn",
+			"url",
+			"uds",
+			"ud"
+		]
+	},
+
+	"MEM": {
+		"typeName": "m2m:mem",
+		"fullName": "Memory",
+		"announcedType": "MEMAnnc",
+		"type": 13,
+		"mgmtType": 1003,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"mma",
+			"mmt"
+		]
+	},
+
+	"MEMAnnc" : {
+		"typeName": "m2m:memA",
+		"fullName": "Memory Announced",
+		"type": 10013,
+		"mgmtType": 1003,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"mma",
+			"mmt"
+		]
+	},
+
+	"MNWK": {
+		"typeName": "dcfg:mnwk",
+		"fullName": "Mobile Network",
+		"announcedType": "MNWKAnnc",
+		"type": 13,
+		"mgmtType": 1031,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"cnb",
+			"rss",
+			"liqu",
+			"ipad",
+			"ripa",
+			"apna",
+			"ceid",
+			"smnc",
+			"smcc",
+			"lac",
+			"coel"
+		]
+	},
+
+	"MNWKAnnc" : {
+		"typeName": "dcfg:mnwkA",
+		"fullName": "Mobile Network Announced",
+		"type": 10013,
+		"mgmtType": 1031,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"cnb",
+			"rss",
+			"liqu",
+			"ipad",
+			"ripa",
+			"apna",
+			"ceid",
+			"smnc",
+			"smcc",
+			"lac",
+			"coel"
+		]
+	},
+
+	"NYCFC": {
+		"typeName": "dcfg:nycfc",
+		"fullName": "myCertFileCred",
+		"announcedType": "NYCFCAnnc",
+		"type": 13,
+		"mgmtType": 1023,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"suids",
+			"mcff",
+			"mcfc"
+		]
+	},
+
+	"NYCFCAnnc" : {
+		"typeName": "dcfg:nycfcA",
+		"fullName": "myCertFileCred Announced",
+		"type": 10013,
+		"mgmtType": 1023,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"suids",
+			"mcff",
+			"mcfc"
+		]
+	},
+
+	"RBO": {
+		"typeName": "m2m:rbo",
+		"fullName": "Reboot",
+		"announcedType": "RBOAnnc",
+		"type": 13,
+		"mgmtType": 1009,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"rbo",
+			"far"
+		]
+	},
+
+	"RBOAnnc" : {
+		"typeName": "m2m:rboA",
+		"fullName": "Reboot Announced",
+		"type": 10013,
+		"mgmtType": 1009,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"rbo",
+			"far"
+		]
+	},
+
+	"SIM": {
+		"typeName": "dcfg:sim",
+		"fullName": "SIM",
+		"announcedType": "SIMAnnc",
+		"type": 13,
+		"mgmtType": 1030,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"imsi",
+			"icid",
+			"sist",
+			"sity",
+			"spn"
+		]
+	},
+
+	"SIMAnnc" : {
+		"typeName": "dcfg:simA",
+		"fullName": "SIM Announced",
+		"type": 10013,
+		"mgmtType": 1030,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"imsi",
+			"icid",
+			"sist",
+			"sity",
+			"spn"
+		]
+	},
+
+	"SWR": {
+		"typeName": "m2m:swr",
+		"fullName": "Software",
+		"announcedType": "SWRAnnc",
+		"isMgmtSpecialization": true,
+		"type": 13,
+		"mgmtType": 1002,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"vr",
+			"swn",
+			"url",
+			"ins",
+			"acts",
+			"in",
+			"un",
+			"act",
+			"dea"
+		]
+	},
+
+	"SWRAnnc" : {
+		"typeName": "m2m:swrA",
+		"fullName": "Software Announced",
+		"type": 10013,
+		"mgmtType": 1002,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"vr",
+			"swn",
+			"url",
+			"ins",
+			"acts",
+			"in",
+			"un",
+			"act",
+			"dea"
+		]
+	},
+
+	"WIFIC": {
+		"typeName": "dcfg:wific",
+		"fullName": "WiFi Client",
+		"announcedType": "WIFICAnnc",
+		"type": 13,
+		"mgmtType": 1028,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"ssid",
+			"wcrds",
+			"maca",
+			"chanl",
+			"cons",
+			"scan",
+			"scanr",
+			"ud",
+			"uds",
+			"trdst",
+			"rdst"
+		]
+	},
+
+	"WIFICAnnc" : {
+		"typeName": "dcfg:wificA",
+		"fullName": "WiFi Client Announced",
+		"type": 10028,
+		"mgmtType": 1028,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"ssid",
+			"wcrds",
+			"maca",
+			"chanl",
+			"cons",
+			"scan",
+			"scanr",
+			"ud",
+			"uds",
+			"trdst",
+			"rdst"
+		]
+	},
+
+
+	//
+	//	Internal Resource Types
+	//	These resource types are used internally by the CSE and do not have a corresponding 
+	//	implementation class.
+	//
+
+	"UNKNOWN": {
+		"typeName": "unknown",
+		"fullName": "Unknown",
+		"type": -1,
+		"isInternalType": true
+	},
+
+	"ALL": {
+		"typeName": "all",
+		"fullName": "All",
+		"type": -2,
+		"isInternalType": true
+	},
+
+	"MIXED": {
+		"typeName": "m2m:mixed",
+		"fullName": "Mixed",
+		"type": 0,
+		"isInternalType": true
+	},
+
+	"REQRESP": {
+		"typeName": "reqresp",
+		"fullName": "Request/Response",
+		"type": -3,
+		"isInternalType": true
+	},
+
+	"COMPLEX": {
+		"typeName": "complex",
+		"fullName": "Complex",
+		"type": -4,
+		"isInternalType": true
+	},
+
+	"REQUEST": {
+		"typeName": "requestPrimitive",
+		"fullName": "Request Primitive",
+		"type": -5,
+		"isInternalType": true
+	},
+
+	"RESPONSE": {
+		"typeName": "responsePrimitive",
+		"fullName": "Response Primitive",
+		"type": -6,
+		"isInternalType": true
+	},
+
+	"NOTIFICATION": {
+		"typeName": "notificationPrimitive",
+		"fullName": "Notification Primitive",
+		"type": -7,
+		"isInternalType": true
+	}
+
+}

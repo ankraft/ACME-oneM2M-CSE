@@ -11,7 +11,7 @@
 """
 
 from __future__ import annotations
-from typing import Callable, Union, Any, cast, Optional
+from typing import Callable, Union, Any, cast, Optional, TYPE_CHECKING
 
 import sys, copy, isodate
 from threading import Lock, current_thread
@@ -26,33 +26,51 @@ from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, REMOTE_ENTITY_NOT_RE
 from ..etc.ResponseStatusCodes import OPERATION_DENIED_BY_REMOTE_ENTITY, NOT_FOUND, ORIGINATOR_HAS_NO_PRIVILEGE
 from ..etc.ResponseStatusCodes import NOT_IMPLEMENTED
 from ..etc.DateUtils import fromDuration, getResourceDate, cronMatchesTimestamp, utcDatetime
-from ..etc.ACMEUtils import toSPRelative, pureResource, compareIDs
+from ..etc.ACMEUtils import compareIDs
+from ..etc.IDUtils import toSPRelative
+from ..etc.JSONUtils import pureResource
 from ..etc.Utils import isAcmeUrl
 from ..etc.Constants import RuntimeConstants as RC
+from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers.TextTools import setXPath, findXPath
-from ..runtime import CSE
 from ..runtime.Configuration import Configuration
-from ..resources.Resource import Resource
+from ..runtime.PluginSupport import *
+from ..runtime.EventManager import *
+from ..runtime.Logging import Logging as L
 from ..resources.CRS import CRS
 from ..resources.SUB import SUB
 from ..resources.NTSR import NTSR
 from ..resources.PDR import PDR
 from ..resources.NTP import NTP
-from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
-from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..resources.Resource import Resource
+	from ..runtime.Storage import Storage
+	from ..services.Dispatcher import Dispatcher
+	from ..services.RequestManager import RequestManager
 
 # TODO: removal policy (e.g. unsuccessful tries)
 
 SenderFunction = Callable[[str], bool]	# type:ignore[misc] # bc cyclic definition 
 """ Type definition for sender callback function. """
 
-
+@eventHandler
+@requires(dispatcher='acme.services.Dispatcher')
+@requires(storage='acme.runtime.Storage')
+@requires(request='acme.services.RequestManager')
 class NotificationManager(object):
 	"""	This class defines functionalities to handle subscriptions and notifications.
-
-		Attributes:
-			lockBatchNotification: Internal lock instance for locking certain batch notification methods.
 	"""
+
+	dispatcher:Dispatcher = None
+	""" Injected Dispatcher instance. """
+
+	storage:Storage = None
+	""" Injected Storage instance. """
+
+	request:RequestManager = None
+	""" Injected RequestManager instance. """
+
 
 	__slots__ = (
 		'lockBatchNotification',
@@ -60,19 +78,21 @@ class NotificationManager(object):
 
 		'_eventNotification',
 	)
+	""" Slots for NotificationManager instance attributes."""
 
 
-	def __init__(self) -> None:
+	def initialize(self) -> None:
 		"""	Initialization of a *NotificationManager* instance.
 		"""
 
 		self.lockBatchNotification = Lock()					# Lock for batchNotifications
-		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
+		"""	An internal lock instance for locking certain batch notification methods. """
 
-		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
-		
-		# Optimize event handling
-		self._eventNotification = CSE.event.notification	# type: ignore
+		self.lockNotificationEventStats = Lock()			# Lock for notificationEventStats
+		"""	An internal lock instance for locking the notification event stats. """
+
+		self._eventNotification = eventManager.notification	# type: ignore
+		""" Cached reference to the notification event for optimized access. """
 
 		L.isInfo and L.log('NotificationManager initialized')
 
@@ -87,11 +107,12 @@ class NotificationManager(object):
 		return True
 
 
-	def restart(self, name:str) -> None:
+	@onEvent(eventManager.cseReset)
+	def restart(self, eventData: EventData) -> None:
 		"""	Restart the NotificationManager service.
 
 			Args:
-				name: The name of the event.
+				eventData: The event data. Not used in this handler.
 		"""
 		L.isInfo and L.log('NotificationManager: Stopping all <CRS> window workers')
 
@@ -125,7 +146,7 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug('Adding subscription')
 		self._verifyNusInSubscription(subscription, originator = originator)	# verification requests happen here
 		
-		if not CSE.storage.upsertSubscription(subscription):
+		if not self.storage.upsertSubscription(subscription):
 			raise INTERNAL_SERVER_ERROR('cannot add subscription to database')
 
 
@@ -155,7 +176,7 @@ class NotificationManager(object):
 		
 		# Finally remove subscriptions from storage
 		try:
-			if not CSE.storage.removeSubscription(subscription):
+			if not self.storage.removeSubscription(subscription):
 				raise INTERNAL_SERVER_ERROR('cannot remove subscription from database')
 		except NOT_FOUND:
 			pass	# ignore, could be expected
@@ -177,7 +198,7 @@ class NotificationManager(object):
 			"""
 		L.isDebug and L.logDebug('Updating subscription')
 		self._verifyNusInSubscription(subscription, previousNus, originator = originator)	# verification requests happen here
-		if not CSE.storage.upsertSubscription(subscription):
+		if not self.storage.upsertSubscription(subscription):
 			raise INTERNAL_SERVER_ERROR('cannot update subscription in database')
 
 
@@ -193,7 +214,7 @@ class NotificationManager(object):
 			Return:
 				List of storage subscription documents, NOT Subscription resources.
 			"""
-		if not (subs := CSE.storage.getSubscriptionsForParent(ri)):
+		if not (subs := self.storage.getSubscriptionsForParent(ri)):
 			return []
 		result:JSONLIST = []
 		for each in subs:
@@ -208,10 +229,19 @@ class NotificationManager(object):
 		return result
 
 
-	def checkOperationSubscription(self, resource:Resource,
-								op:Operation,
-								originator:str) -> None:
-		# TODO doc
+	def checkOperationSubscription(self, resource: Resource,
+										 op: Operation,
+										 originator: str) -> None:
+		"""	Check for and perform a notification for an operation subscription.
+		
+			Args:
+				resource: The resource that received the event resp. request.
+				op: The operation to check.
+				originator: The originator of the request that caused the event.
+
+			Raises:
+				`INTERNAL_SERVER_ERROR`: If there are issues retrieving the necessary resources or if multiple default NTP resources are found.
+		"""
 		L.isDebug and L.logDebug(f'Checking operation subscriptions ({op.name}) originator: {originator}')
 
 		self.checkSubscriptions(resource, reason = NotificationEventType.notSet, originator = originator, operation = op)
@@ -258,13 +288,13 @@ class NotificationManager(object):
 		# ATTN: The "subscription" returned here are NOT the <sub> resources,
 		# but an internal representation from the 'subscription' DB !!!
 		# Access to attributes is different bc the structure is flattened
-		if (subs := CSE.storage.getSubscriptionsForParent(ri)) is None:
+		if (subs := self.storage.getSubscriptionsForParent(ri)) is None:
 			return
 		
 		# EXPERIMENTAL Add "subi" subscriptions to the list of subscriptions to check
 		if resource and (subi := resource.subi) is not None:
 			for eachSubi in subi:
-				if (sub := CSE.storage.getSubscription(eachSubi)) is None:
+				if (sub := self.storage.getSubscription(eachSubi)) is None:
 					L.logErr(f'Cannot retrieve subscription: {eachSubi}')
 					continue
 				# TODO ensure uniqueness
@@ -312,7 +342,7 @@ class NotificationManager(object):
 
 			# Check the subscription's schedule, but only if it is not an immediate notification
 			if not ((nec := sub.get('nec')) and nec == EventCategory.Immediate):
-				if (_sc := CSE.storage.searchScheduleForTarget(ri)):
+				if (_sc := self.storage.searchScheduleForTarget(ri)):
 					_ts = utcDatetime()
 
 					# Check whether the current time matches the schedule
@@ -439,10 +469,10 @@ class NotificationManager(object):
 
 			# Send notification and handle possible negative response status codes
 			try:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-															   to = eachSub['nus'][0],
-															   originator = originator,
-															   pc = notification)
+				res = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+																to=eachSub['nus'][0],
+																originator=originator,
+																pc=notification)
 												   )[0].result	# there should be at least one result
 				if res.rsc == ResponseStatusCode.OK:
 					if finished:
@@ -541,10 +571,10 @@ class NotificationManager(object):
 				setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
 			countNotifications += 1
-			CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-													 to = eachSub['nus'][0], 
-													 originator = subOriginator,
-										  			 pc = notification))
+			self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+													  to=eachSub['nus'][0], 
+													  originator=subOriginator,
+										  			  pc=notification))
 			# TODO: correct RSC according to 7.3.2.9 - see above!
 		
 		if countNotifications == 0:
@@ -650,7 +680,7 @@ class NotificationManager(object):
 			L.isDebug and L.logDebug(f'Received sufficient notifications - sending notification')
 			
 			# Check the crossResourceSubscription's schedule, if there is one
-			if (_sc := CSE.storage.searchScheduleForTarget(crsRi)):
+			if (_sc := self.storage.searchScheduleForTarget(crsRi)):
 				_ts = utcDatetime()
 
 				# Check whether the current time matches any schedule
@@ -663,7 +693,7 @@ class NotificationManager(object):
 					return
 
 			try:
-				resource = CSE.dispatcher.retrieveResource(crsRi)
+				resource = self.dispatcher.retrieveResource(crsRi)
 			except ResponseException as e:
 				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}: {e.dbg}')	# Not much we can do here
 				return
@@ -693,7 +723,7 @@ class NotificationManager(object):
 				crs.dbUpdate(True)
 				if exc <= 0:
 					L.isDebug and L.logDebug(f'<crs>: {crs.ri} expiration counter expired. Deleting resources.')
-					CSE.dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
+					self.dispatcher.deleteLocalResource(crs, originator = crs.getOriginator())
 
 		else:
 			L.isDebug and L.logDebug(f'No notification sent')
@@ -701,7 +731,7 @@ class NotificationManager(object):
 
 	# Time Window Monitor : Periodic
 
-	def _getPeriodicWorkerName(self, ri:str) -> str:
+	def _getPeriodicWorkerName(self, ri: str) -> str:
 		"""	Return the name of a periodic window worker.
 		
 			Args:
@@ -713,10 +743,18 @@ class NotificationManager(object):
 		return f'crsPeriodic_{ri}'
 
 
-	def startCRSPeriodicWindow(self, crsRi:str, 
-			    					 tws:str, 
-									 expectedCount:int,
-									 eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> None:
+	def startCRSPeriodicWindow(self, crsRi: str, 
+			    					 tws: str, 
+									 expectedCount: int,
+									 eem: EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> None:
+		"""	Start a periodic window for a <crs> resource.
+		
+			Args:
+				crsRi: Resource ID of the <crs> resource for which to start the periodic window.
+				tws: Time window size as a duration string.
+				expectedCount: The expected number of notifications.
+				eem: Event evaluation mode.
+		"""
 
 		crsTws = fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. TimeWindowInterpretation: {eem}')
@@ -724,21 +762,38 @@ class NotificationManager(object):
 		# Start a background worker. "data", which will contain the RI's later is empty
 		BackgroundWorkerPool.newWorker(crsTws, 
 									   self._crsPeriodicWindowMonitor, 
-									   name = self._getPeriodicWorkerName(crsRi), 
-									   startWithDelay = True,
-									   data = []).start(crsRi = crsRi, expectedCount = expectedCount, eem = eem)
+									   name=self._getPeriodicWorkerName(crsRi), 
+									   startWithDelay=True,
+									   data=[]).start(crsRi=crsRi, expectedCount=expectedCount, eem=eem)
 
 
-	def stopCRSPeriodicWindow(self, crsRi:str) -> None:
+	def stopCRSPeriodicWindow(self, crsRi: str) -> None:
+		""" Stop a periodic window for a <crs> resource.
+
+			Args:
+				crsRi: Resource ID of the <crs> resource for which to stop the periodic window.
+		"""
 		L.isDebug and L.logDebug(f'Stopping PeriodicWindow for crs: {crsRi}')
 		BackgroundWorkerPool.stopWorkers(self._getPeriodicWorkerName(crsRi))
 
 
-	def _crsPeriodicWindowMonitor(self, _data:list[str], 
-							   			_worker:BackgroundWorker,
-			       						crsRi:str, 
-										expectedCount:int,
-										eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool: 
+	def _crsPeriodicWindowMonitor(self, _data: list[str], 
+							   			_worker: BackgroundWorker,
+			       						crsRi: str, 
+										expectedCount: int,
+										eem: EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool: 
+		""" Check for a <crs> periodic window and send notifications if the window requirements are met.
+		
+			Args:
+				_data: List of notification sources.
+				_worker: The background worker handling this periodic window.
+				crsRi: Resource ID of the <crs>.
+				expectedCount: The expected number of notifications.
+				eem: Event evaluation mode.
+			
+			Return:
+				Always returns *True*.
+		"""
 		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
 		self._crsCheckForNotification(_data, crsRi, expectedCount, eem)
 		_worker.data = []
@@ -747,7 +802,7 @@ class NotificationManager(object):
 
 	# Time Window Monitor : Sliding
 
-	def _getSlidingWorkerName(self, ri:str) -> str:
+	def _getSlidingWorkerName(self, ri: str) -> str:
 		"""	Return the name of a sliding window worker.
 		
 			Args:
@@ -759,31 +814,60 @@ class NotificationManager(object):
 		return f'crsSliding_{ri}'
 
 
-	def startCRSSlidingWindow(self, crsRi:str,
-			   						tws:str, 
-									sur:str, 
-									subCount:int,
-									eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> BackgroundWorker:
+	def startCRSSlidingWindow(self, crsRi: str,
+			   						tws: str, 
+									sur: str, 
+									subCount: int,
+									eem: EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> BackgroundWorker:
+		""" Start a sliding window for a <crs> resource.
+		
+			Args:
+				crsRi: Resource ID of the <crs> resource for which to start the sliding window.
+				tws: Time window size as a duration string.
+				sur: The notification source.
+				subCount: The expected number of notifications.
+				eem: Event evaluation mode.
+			
+			Return:
+				The background worker handling the sliding window.
+		"""
 		crsTws = fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting SlidingWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. SubScount: {subCount}')
 
 		# Start an actor for the sliding window. "data" already contains the first notification source in an array
 		return BackgroundWorkerPool.newActor(self._crsSlidingWindowMonitor, 
 											 crsTws,
-											 name = self._getSlidingWorkerName(crsRi), 
-											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount, eem = eem)
+											 name=self._getSlidingWorkerName(crsRi), 
+											 data=[ sur ]).start(crsRi=crsRi, subCount=subCount, eem=eem)
 
 
-	def stopCRSSlidingWindow(self, crsRi:str) -> None:
+	def stopCRSSlidingWindow(self, crsRi: str) -> None:
+		""" Stop a sliding window for a <crs> resource.
+
+			Args:
+				crsRi: Resource ID of the <crs> resource for which to stop the sliding window.
+		"""
 		L.isDebug and L.logDebug(f'Stopping SlidingWindow for crs: {crsRi}')
 		BackgroundWorkerPool.stopWorkers(self._getSlidingWorkerName(crsRi))
 
 
-	def _crsSlidingWindowMonitor(self, _data:Any,
-							  		   _worker:BackgroundWorker,
-			      					   crsRi:str, 
-									   subCount:int, 
-									   eem:EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool:
+	def _crsSlidingWindowMonitor(self, _data: Any,
+							  		   _worker: BackgroundWorker,
+			      					   crsRi: str, 
+									   subCount: int, 
+									   eem: EventEvaluationMode = EventEvaluationMode.ALL_EVENTS_PRESENT) -> bool:
+		""" Actor function to monitor a sliding window for a <crs> resource.
+		
+			Args:
+				_data: List of notification sources.
+				_worker: The background worker handling this sliding window.
+				crsRi: Resource ID of the <crs>.
+				subCount: The expected number of notifications.
+				eem: Event evaluation mode.
+			
+			Return:
+				Always returns *True*.
+		"""
 		L.isDebug and L.logDebug(f'Checking sliding window for <crs>: {crsRi}')
 		self._crsCheckForNotification(_data, crsRi, subCount, eem)
 		_worker.data = []
@@ -793,7 +877,13 @@ class NotificationManager(object):
 
 	# Received Notification handling
 
-	def receivedCrossResourceSubscriptionNotification(self, sur:str, crs:Resource) -> None:
+	def receivedCrossResourceSubscriptionNotification(self, sur: str, crs: Resource) -> None:
+		""" Handle a received notification for a <crs> resource.
+		
+			Args:
+				sur: The notification source received in the notification.
+				crs: The <crs> resource for which the notification was received.
+		"""
 		crsRi = crs.ri
 		crsTwt = crs.twt
 		crsTws = crs.tws
@@ -852,10 +942,10 @@ class NotificationManager(object):
 		def _sender(nu: str, originator:str, content:JSON) -> RequestResponseList:
 			if preFunc:
 				preFunc(nu)
-			res = CSE.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
-														   to=nu, 
-														   originator=originator, 
-														   pc=content))
+			res = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+															to=nu, 
+															originator=originator, 
+															pc=content))
 			if postFunc:
 				postFunc(nu)
 			return res
@@ -970,7 +1060,7 @@ class NotificationManager(object):
 		"""
 		if sub is None:
 			try:
-				sub = CSE.dispatcher.retrieveLocalResource(ri) # type:ignore[assignment]
+				sub = self.dispatcher.retrieveLocalResource(ri) # type:ignore[assignment]
 				# TODO check resource type?
 			except ResponseException as e:
 				return
@@ -1102,10 +1192,10 @@ class NotificationManager(object):
 			originator and setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
 			try:
-				res = CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-															   to = uri, 
-															   originator = RC.cseCsi,
-															   pc = verificationRequest)
+				res = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+																to=uri, 
+																originator=RC.cseCsi,
+																pc=verificationRequest)
 												   )[0].result	# there should be at least one result
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {e.dbg}')
@@ -1141,10 +1231,10 @@ class NotificationManager(object):
 			creator and setXPath(deletionNotification, 'm2m:sgn/cr', creator)
 
 			try:
-				responses = CSE.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
-																	to=uri, 
-																	originator=RC.cseCsi,
-													  				pc=deletionNotification))
+				responses = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+																	  to=uri, 
+																	  originator=RC.cseCsi,
+													  				  pc=deletionNotification))
 				# if (response := responses[0] if len(responses) > 0 else None): 
 				# 	L.inspect(response)
 				
@@ -1185,10 +1275,10 @@ class NotificationManager(object):
 
 		def _doSendNotification(uri:str, subscription:SUB, notificationRequest:JSON) -> bool:
 			try:
-				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-														 to = uri, 
-											  			 originator = RC.cseCsi,
-											  			 pc = notificationRequest))
+				self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+														  to=uri, 
+											  			  originator=RC.cseCsi,
+											  			  pc=notificationRequest))
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'Notification failed for: {uri} : {e.dbg}')
 				return False
@@ -1241,7 +1331,7 @@ class NotificationManager(object):
 
 			# Add the originator that caused the event to the notificaton
 			# See SDS-2023-0096 and SDS-2023-0143
-			if originator and sub.get('eeno'):
+			if not creator and originator and sub.get('eeno'):
 				setXPath(notificationRequest, 'm2m:sgn/cr', originator)
 
 			# Check for batch notifications
@@ -1252,7 +1342,7 @@ class NotificationManager(object):
 				subscription = None
 				if sub['nse']:
 					try:
-						subscription = cast(SUB, CSE.dispatcher.retrieveResource(sub['ri']))
+						subscription = cast(SUB, self.dispatcher.retrieveResource(sub['ri']))
 					except ResponseException as e:
 						L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {e.dbg}')
 						return False
@@ -1273,14 +1363,14 @@ class NotificationManager(object):
 			L.isDebug and L.logDebug(f'Decrement expirationCounter: {exc} -> {exc-1}')
 
 			exc -= 1
-			subResource = CSE.storage.retrieveResource(ri=sub['ri'])
+			subResource = self.storage.retrieveResource(ri=sub['ri'])
 			if exc < 1:
 				L.isDebug and L.logDebug(f'expirationCounter expired. Removing subscription: {subResource.ri}')
-				CSE.dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
+				self.dispatcher.deleteLocalResource(subResource)	# This also deletes the internal sub
 			else:
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
 				subResource.dbUpdate(True)						# Update the real subscription
-				CSE.storage.upsertSubscription(subResource)	# Also update the internal sub
+				self.storage.upsertSubscription(subResource)	# Also update the internal sub
 		return result								
 
 
@@ -1324,7 +1414,7 @@ class NotificationManager(object):
 		# Get the subscription information (not the <sub> resource itself!).
 		# Then get all the URIs/notification targets from that subscription. They might already
 		# be filtered.
-		if sub := CSE.storage.getSubscription(ri):
+		if sub := self.storage.getSubscription(ri):
 			ln = sub.get('ln', False)
 			for nu in sub['nus']:
 				self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
@@ -1343,11 +1433,11 @@ class NotificationManager(object):
 
 		# Alway add the notification first before doing the other handling
 		ri = sub['ri']
-		CSE.storage.addBatchNotification(ri, nu, notificationRequest)
+		self.storage.addBatchNotification(ri, nu, notificationRequest)
 
 		#  Check for actions
 		ln = sub.get('ln', False)
-		if (num := findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
+		if (num := findXPath(sub, 'bn/num')) and (cnt := self.storage.countBatchNotifications(ri, nu)) >= num:
 			L.isDebug and L.logDebug(f'Sending batch notification: bn/num: {num}  countBatchNotifications: {cnt}')
 
 			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
@@ -1383,7 +1473,7 @@ class NotificationManager(object):
 
 			# Collect the stored notifications for the batch and aggregate them
 			notifications = []
-			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key = lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
+			for notification in sorted(self.storage.getBatchNotifications(ri, nu), key = lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
 				if n := findXPath(notification['request'], 'sgn'):
 					notifications.append(n)
 			if (notificationCount := len(notifications)) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
@@ -1404,7 +1494,7 @@ class NotificationManager(object):
 			}
 
 			# Delete old notifications
-			if not CSE.storage.removeBatchNotifications(ri, nu):
+			if not self.storage.removeBatchNotifications(ri, nu):
 				L.isWarn and L.logWarn('Error removing aggregated batch notifications')
 				return False
 
@@ -1413,7 +1503,7 @@ class NotificationManager(object):
 			nse = sub['nse']
 			if nse:
 				try:
-					subscription = cast(SUB, CSE.dispatcher.retrieveResource(sub['ri']))
+					subscription = cast(SUB, self.dispatcher.retrieveResource(sub['ri']))
 				except ResponseException as e:
 					L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {e.dbg}')
 					return False
@@ -1421,11 +1511,11 @@ class NotificationManager(object):
 				
 			# Send the request
 			try:
-				CSE.request.handleSendRequest(CSERequest(op = Operation.NOTIFY,
-														 to = nu, 
-														 originator = RC.cseCsi,
-														 pc = notificationRequest,
-														 ec = ec))
+				self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
+														  to=nu, 
+														  originator=RC.cseCsi,
+														  pc=notificationRequest,
+														  ec=ec))
 			except ResponseException as e:
 				L.isWarn and L.logWarn(f'Error sending aggregated batch notifications: {e.dbg}')
 				return False
@@ -1435,8 +1525,19 @@ class NotificationManager(object):
 			return True
 
 
-	def _startNewBatchNotificationWorker(self, ri:str, nu:str, ln:bool, sub:JSON, dur:float) -> bool:
-		# TODO doc
+	def _startNewBatchNotificationWorker(self, ri: str, nu: str, ln: bool, sub: JSON, dur: float) -> bool:
+		"""	Start a new batch notification worker.
+
+			Args:
+				ri: Resource ID of the subscription.
+				nu: Notification URI of the notification target.
+				ln: *latestNotify*, if *True* then only send the latest notification.
+				sub: The internal *sub* structure.
+				dur: Duration for the batch notification.
+
+			Return:
+				Indication of the success of the operation.
+		"""
 		if dur is None or dur < 1:	
 			L.logErr('BatchNotification duration is < 1')
 			return False
@@ -1445,17 +1546,22 @@ class NotificationManager(object):
 			return True
 		L.isDebug and L.logDebug(f'Starting new batchNotificationsWorker. Duration : {dur:f} seconds')
 		BackgroundWorkerPool.newActor(self._sendSubscriptionAggregatedBatchNotification, 
-									  delay = dur,
-									  name = self._workerID(ri, nu)).start(ri = ri, nu = nu, ln = ln, sub = sub)
+									  delay=dur,
+									  name=self._workerID(ri, nu)).start(ri=ri, nu=nu, ln=ln, sub=sub)
 		return True
 
 
-	def _stopNotificationBatchWorker(self, ri:str, nu:str) -> None:
+	def _stopNotificationBatchWorker(self, ri: str, nu: str) -> None:
+		""" Stop a batch notification worker for a given ri and nu.
+		
+			Args:
+				ri: Resource ID of the subscription.
+				nu: Notification URI of the notification target."""
 		# TODO doc
 		BackgroundWorkerPool.stopWorkers(self._workerID(ri, nu))
 
 
-	def _workerID(self, ri:str, nu:str) -> str:
+	def _workerID(self, ri: str, nu: str) -> str:
 		"""	Return an ID for a batch notification background worker.
 		
 			Args:
@@ -1474,9 +1580,24 @@ class NotificationManager(object):
 	#	Target removal processing
 	#
 
-	def removeNotificationTarget(self, ntsr:NTSR, originator:str) -> None:
+	def removeNotificationTarget(self, ntsr: NTSR, originator: str) -> None:
+		""" Remove a notification target from a subscription and perform the necessary actions based on the associated policies.
+		
+			Args:
+				ntsr: The notification target subscription resource.
+				originator: The originator to be removed.
 
-		def removeOriginatorFromParentNUs(parentSubscription:Resource) -> None:
+			Raises:
+				`ORIGINATOR_HAS_NO_PRIVILEGE`: If the policies evaluated to false for the given originator and the notification target subscription resource.
+				`INTERNAL_SERVER_ERROR`: If there are issues retrieving the necessary resources or if multiple default NTP resources are found.
+		"""
+
+		def removeOriginatorFromParentNUs(parentSubscription: Resource) -> None:
+			""" Remove the given originator from the notification targets of the parent subscription or cross resource subscription.
+			
+				Args:
+					parentSubscription: The parent subscription or cross resource subscription from which to remove the originator.
+			"""
 			# Get the parent subscription or cross resource subscription
 			if (nu := parentSubscription.nu):
 				# Remove the Originator from the list of notification targets
@@ -1488,7 +1609,7 @@ class NotificationManager(object):
 					L.isDebug and L.logDebug(f'Originator {originator} not found in notification targets of: {parentSubscription.ri}')
 
 		# Get the sibling <notificationTargetMgmtPolicyRef> resources
-		ntprs = CSE.dispatcher.retrieveDirectChildResources(ntsr.pi, ResourceTypes.NTPR)
+		ntprs = self.dispatcher.retrieveDirectChildResources(ntsr.pi, ResourceTypes.NTPR)
 
 		# Check if the Originator is listed as one of the Notification Targets in any <notificationTargetMgmtPolicyRef> resource
 		ntp:NTP = None	# This is the linked to ntp resource
@@ -1500,7 +1621,7 @@ class NotificationManager(object):
 						L.isDebug and L.logDebug(f'No <ntp> resource referenced in <ntpr>: {ntpr.ri}')
 						continue
 					try:
-						r = CSE.dispatcher.retrieveLocalResource(npi, originator=originator)
+						r = self.dispatcher.retrieveLocalResource(npi, originator=originator)
 						if r.ty != ResourceTypes.NTP:
 							raise NOT_FOUND(f'Referenced resource is not a <ntp> resource: {r.ri}')
 						ntp = cast(NTP, r)
@@ -1514,7 +1635,7 @@ class NotificationManager(object):
 			# but in this implementation this is the same.
 			originalCreator = ntsr.getOriginator()	
 			L.isDebug and L.logDebug(f'No referenced <NTP> resource found, checking for Default <NTP> resource for original creator: {originalCreator}')
-			rs = CSE.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default', 'cr': originalCreator })
+			rs = self.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default', 'cr': originalCreator })
 			match len(rs):
 				case 1:
 					ntp = cast(NTP, rs[0])
@@ -1523,7 +1644,7 @@ class NotificationManager(object):
 				case 0:
 					L.isDebug and L.logDebug(f'Originator {originator} not found in any Default <NTP>. Searching for global Default <NTP>.')
 					# TODO this could be optimized. Cache the default NTP
-					rs = CSE.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default' })	
+					rs = self.storage.searchByFragment({ 'ty': ResourceTypes.NTP, 'plbl': 'Default' })	
 					if len(rs) == 1:
 						ntp = cast(NTP, rs[0])
 						L.isDebug and L.logDebug(f'Found Default <NTP> resource: {ntp.ri}')
@@ -1536,7 +1657,7 @@ class NotificationManager(object):
 		# From here on, we have the <ntp> resource
 
 		# Retrieve the <PDR> child resources of the <ntp> resource
-		pdrs:list[PDR] = cast(list[PDR], CSE.dispatcher.retrieveDirectChildResources(ntp.ri, ResourceTypes.PDR))
+		pdrs:list[PDR] = cast(list[PDR], self.dispatcher.retrieveDirectChildResources(ntp.ri, ResourceTypes.PDR))
 		action:NotificationTargetPolicyAction = None
 		match len(pdrs):
 			case 0:	

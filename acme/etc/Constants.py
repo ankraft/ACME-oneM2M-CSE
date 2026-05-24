@@ -17,7 +17,7 @@ class Constants(object):
 	""" Various CSE and oneM2M constants """
 
 	
-	version	= '2025.11'
+	version	= '2026.DEV'
 	"""	ACME's release version """
 
 	logoColor = '#b42025'
@@ -32,7 +32,7 @@ class Constants(object):
 	textLogo = fr'[dim]\[[/dim][{logoColor}][i]ACME[/i][/{logoColor}][dim]][/dim]'
 	"""	ACME's colorful console logo """
 
-	copyright = '(c) 2025 by Andreas Kraft'
+	copyright = '(c) 2026 by Andreas Kraft'
 	"""	ACME's copyright """
 
 	#
@@ -109,9 +109,6 @@ class Constants(object):
 	attrHasFCI	= '__hasFCI__'
 	""" Constant: Name of the `Resource` internal *__hasFCI__* attribute. This attribute indicates whether this resource has la/ol installed. """
 
-	attrImported = '__imported__'
-	""" Constant: Name of the `Resource` internal *__imported__* attribute. This attribute indicates whether a resource was imported or created by a script, of created by a request. """
-
 	attrIsManuallyInstantiated = '__isInstantiated__'
 	""" Constant: Name of the `Resource` internal *__isInstantiated__* attribute. This attribute indicates whether a resource is manually instantiated. """
 
@@ -170,6 +167,12 @@ class Constants(object):
 	""" Constant: Name of the `Resource` internal *__subCtr__* attribute. This attribute holds the subscription counter for a resource. """
 
 
+	#
+	#	Contants for fixed resource names
+	#
+	
+	AEContactList = 'AEContactList'
+	""" Constant: The fixed resource name for the AEContactList (ALST) resource. """
 
 
 	#
@@ -239,6 +242,9 @@ class RuntimeConstants(object):
 	cseSPid:str = None
 	""" The Service Provider ID. """
 
+	cseSPidSlash:str = None
+	""" The Service Provider ID with an additional trailing /. """
+
 	cseSPIDSlashLess:str = None
 	""" The Service Provider ID without the leading //. """
 
@@ -277,3 +283,7 @@ class RuntimeConstants(object):
 
 	cseIDs:list[str] = []
 	""" List of CSE IDs in SP-relative and Absolute format. """
+
+	startupTime:float = None
+	"""	The time when the CSE was started. This is set during the startup process. """
+

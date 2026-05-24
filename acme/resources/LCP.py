@@ -10,81 +10,41 @@
 """ LocationPolicy (LCP) resource type. """
 
 from __future__ import annotations
-from typing import Optional
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes, JSON, LocationSource
+from typing import Optional, TYPE_CHECKING
+
+from ..etc.Types import ResourceTypes, JSON, LocationSource
 from ..etc.Constants import Constants
+from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
+from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
-from ..runtime import CSE
 from ..runtime.Configuration import Configuration
 from ..resources.Resource import Resource, addToInternalAttributes
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources import Factory 
-from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
-from ..etc.GeoTools import getGeoPolygon
 
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..plugins.services.LocationManager import LocationManager
 
 # Add to internal attributes
 addToInternalAttributes(Constants.attrGTA)
 
 
-# TODO add annc
-# TODO add to supported resources of CSE
-
+@requires(locationManager='acme.plugins.services.LocationManager', required=False)
+@requires(dispatcher='acme.services.Dispatcher')
 class LCP(AnnounceableResource):
 	""" LocationPolicy (LCP) resource type. """
 
-	resourceType = ResourceTypes.LCP
-	""" The resource type """
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
 
-	typeShortname = resourceType.typeShortname()
-	"""	The resource's domain and type name. """
-
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB ]
-	""" The allowed child-resource types. """
-
-	# Attributes and Attribute policies for this Resource Class
-	# Assigned during startup in the Importer
-	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes
-		'rn': None,
-		'ty': None,
-		'ri': None,
-		'pi': None,
-		'ct': None,
-		'lt': None,
-		'lbl': None,
-		'acpi':None,
-		'et': None,
-		'daci': None,
-		'cstn': None,
-		'at': None,
-		'aa': None,
-		'ast': None,
-
-		# Resource attributes
-		'los': None,
-		'lit': None,
-		'lou': None,
-		'lot': None,
-		'lor': None,
-		'loi': None,
-		'lon': None,
-		'lost': None,
-		'gta': None,
-		'gec': None,
-		'aid': None,
-		'rlkl': None,
-		'luec': None
-	}
-	"""	Attributes and `AttributePolicy` for this resource type. """
-
+	locationManager: Optional[LocationManager] = None
+	""" Injected LocationManager instance. """
 
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
-		# Creating extra <container> resource
+		# Creating extra <container> resource under the parent
 		# Set the li attribute to the LCP's ri afterwards
 		_cnt:JSON = {
 			'mni': Configuration.resource_lcp_mni,
@@ -93,25 +53,23 @@ class LCP(AnnounceableResource):
 		if self.lon is not None:	# add container's resourcename if provided
 			_cnt['rn'] = self.lon
 
-		container = Factory.resourceFromDict(_cnt,
-											 pi = parentResource.ri, 
-											 ty = ResourceTypes.CNT,
-											 create = True,
-											 originator = originator)
 		try:
-			container = CSE.dispatcher.createLocalResource(container, parentResource, originator)
+			(container, cRi) = parentResource.createChildResourceFromDict(_cnt,
+																		  ty=ResourceTypes.CNT,
+																		  originator=originator)
 		except Exception as e:
-			L.isWarn and L.logWarn(f'Could not create container for LCP: {e}')
-			raise BAD_REQUEST(f'Could not create container for LCP. Resource name: {self.lon} already exists?')
+			raise BAD_REQUEST(L.logWarn(f'Could not create container for LCP: {e}. Resource name: {self.lon} already exists?'))
+		
 		# set internal attributes afterwards (after validation)
 		container.setLCPLink(self.ri)
 
 		# Set backlink to container in LCP
-		self.setAttribute('loi', container.ri)
-
+		self.setAttribute('loi', cRi)
 
 		# Register the LCP for periodic positioning procedure
-		CSE.location.addLocationPolicy(self)
+		if not self.locationManager:
+			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be registered for periodic positioning procedure.'))
+		self.locationManager.addLocationPolicy(self)
 
 
 
@@ -129,14 +87,20 @@ class LCP(AnnounceableResource):
 		super().updated(dct, originator)
 
 		# update the location policy handling
-		CSE.location.updateLocationPolicy(self)
+		if not self.locationManager:
+			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be updated.'))
+		self.locationManager.updateLocationPolicy(self)
 
 
-	def deactivate(self, originator:str, parentResource:Resource) -> None:
+	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		# Delete the extra <container> resource
 		if self.loi is not None:
-			CSE.dispatcher.deleteResource(self.loi, originator)
-		CSE.location.removeLocationPolicy(self)
+			self.dispatcher.deleteResource(self.loi, originator)
+
+		if not self.locationManager:
+			raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled. LocationPolicy will NOT be removed from periodic positioning procedure.'))
+		self.locationManager.removeLocationPolicy(self)
+
 		super().deactivate(originator, parentResource)
 
 
@@ -176,7 +140,9 @@ class LCP(AnnounceableResource):
 
 		# Validate the polygon
 		if (gta := self.gta) is not None:
-			if (g := getGeoPolygon(gta)) is None:
+			if not self.locationManager:
+				raise NOT_IMPLEMENTED(L.logWarn('LocationManager is disabled, cannot validate geographicalTargetArea.'))
+			if (g := self.locationManager.getGeoPolygon(gta)) is None:
 				raise BAD_REQUEST('Invalid geographicalTargetArea. Must be a valid geoJSON polygon.')
 			self.setAttribute(Constants.attrGTA, g)	# store the geoJSON polygon in the internal attribute
 		
