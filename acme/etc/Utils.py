@@ -215,41 +215,62 @@ def normalizeURL(url:str) -> str:
 	return url
 
 
-def getBasicAuthFromUrl(url:str) -> Tuple[str, str, str]:
-	""" Get the basic auth credentials from a URL.
+def getAuthFromUrl(url: str) -> Tuple[str, str, str]:
+	""" Get the basic or token bearer auth credentials from a URL.
 
 		Args:
-			url: URL to extract the basic auth credentials from.
+			url: URL to extract the basic or token bearer auth credentials from.
 		Returns:
-			A tuple with the URL without the basic auth credentials, the username and the password.
+			A tuple with the URL without the basic or token bearer auth credentials, the username or token, and the password (None if token bearer).
 	"""
 	split = urlsplit(url)
-	if split.username is not None and split.password is not None:
+	if split.username is not None:
+		if split.password is not None:
+			# If there is a password, then this is basic auth
+			return urlunsplit((split.scheme, 
+						 	   f'{split.hostname}{":"+str(split.port) if split.port else ""}',
+							   split.path,
+							   split.query, 
+							   split.fragment)), split.username, split.password
+		else:
+			# If there is no password, then this is token bearer auth
+			return urlunsplit((split.scheme, 
+						 	   f'{split.hostname}{":"+str(split.port) if split.port else ""}',
+							   split.path,
+							   split.query, 
+							   split.fragment)), split.username, None	
+	return url, None, None
+
+
+def buildAuthUrl(url: str, username: str, password: str) -> str:
+	""" Build a URL with basic or bearer token auth credentials.
+
+		Args:
+			url: URL to add the basic or bearer token auth credentials to.
+			username: Username for the basic auth.
+			password: Password for the basic auth. If this is None, then the username is treated as a token for bearer token auth.
+
+		Returns:
+			URL with the basic or bearer token auth credentials. If the username is None, then the URL is returned as it is.
+	"""
+	if not username:
+		return url # no credentials, return the URL as it is
+	
+	split = urlsplit(url)
+	if password is not None:
+		# Basic auth
 		return urlunsplit((split.scheme, 
-					 	   f'{split.hostname}{":"+str(split.port) if split.port else ""}',
+						   f'{username}:{password}@{split.hostname}{":"+str(split.port) if split.port else ""}',
 						   split.path,
 						   split.query, 
-						   split.fragment)), split.username, split.password
-	return url, '', ''
-
-
-def buildBasicAuthUrl(url:str, username:str, password:str) -> str:
-	""" Build a URL with basic auth credentials.
-
-		Args:
-			url: URL to add the basic auth credentials to.
-			username: Username for the basic auth.
-			password: Password for the basic auth.
-
-		Returns:
-			URL with the basic auth credentials.
-	"""
-	split = urlsplit(url)
-	return urlunsplit((split.scheme, 
-					   f'{username}:{password}@{split.hostname}{":"+str(split.port) if split.port else ""}',
-					   split.path,
-					   split.query, 
-					   split.fragment))
+						   split.fragment))
+	else:
+		# Bearer token auth
+		return urlunsplit((split.scheme, 
+						   f'{username}@{split.hostname}{":"+str(split.port) if split.port else ""}',
+						   split.path,
+						   split.query, 
+						   split.fragment))
 
 
 def hashString(s:str, salt:str='') -> str:
