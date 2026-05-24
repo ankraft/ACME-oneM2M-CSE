@@ -19,7 +19,7 @@ from acme.etc.Types import ContentSerializationType, BindingType, CSERegistrar
 from acme.etc.ResponseStatusCodes import exceptionFromRSC, ResponseException, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, CONFLICT, TARGET_NOT_REACHABLE
 from acme.etc.JSONUtils import pureResource
 from acme.etc.IDUtils import csiFromRelativeAbsoluteUnstructured, isValidSPID, isValidCSI, isAbsolute, getSPFromID, toSPRelative	# cannot import at the top because of circel import
-from acme.etc.Utils import isHttpUrl, isWSUrl, buildBasicAuthUrl, normalizeURL
+from acme.etc.Utils import isHttpUrl, isWSUrl, buildAuthUrl, getAuthFromUrl, normalizeURL
 from acme.etc.Constants import Constants, RuntimeConstants as RC
 from acme.helpers.TextTools import findXPath, setXPath
 from acme.helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
@@ -415,11 +415,15 @@ class RemoteCSEManager(object):
 
 		L.isDebug and L.logDebug(f'Handle registree or registrar CSR update: {csr}\nupdate: {updateDict}')
 
-	
 		# If this is the registrar CSR that has been updated, then update own CSEBase, and perhaps descendant CSRs
 		csrCsi = csr.csi
 		if csrCsi == self.registrarConfig.cseID:
 			L.isDebug and L.logDebug('Update of registrar CSR detected')
+
+			# add authentication information to the CSR's POA if necessary and available
+			# TODO is this really only the registrar CSE?
+			self._updateLocalCSRAuthInfo(csr)
+
 			# This is the registrar CSR that has been updated
 			updatedAttributes = self._updateOwnCSEBaseWithRegistrarCSEInfo(csr)
 			if updatedAttributes:
@@ -432,7 +436,6 @@ class RemoteCSEManager(object):
 			# Update the stored registrar CSEBase resource in the config.
 			# The registrar obviously has changed something.
 			self.registrarConfig._registrarCSEBaseResource = self._retrieveRegistrarCB(self.registrarConfig) # retrieve the remote CSEBase
-
 
 		else:
 			# This is any registree CSR that has been updated
@@ -658,10 +661,15 @@ class RemoteCSEManager(object):
 		csrResource = CSR()
 		csrResource.setAttribute('rr', True)
 		self._copyCSE2CSR(registrarConfig, csrResource, remoteCSE)
-		csrResource.initialize(localCSE.ri)	# remoteCSE.csi as name!
+
+		# add authentication information to the CSR's POA if necessary and available
+		# TODO is this really only the registrar CSE?
+		if registrarConfig.cseID == self.registrarConfig.cseID:
+			self._updateLocalCSRAuthInfo(csrResource)
 
 		# add local CSR and ACP's
 		try:
+			csrResource.initialize(localCSE.ri)	# remoteCSE.csi as name!
 			self.dispatcher.createLocalResource(csrResource, localCSE, originator=remoteCSE.csi)
 			self.registration.handleCSRRegistration(csrResource, csrResource.csi)
 		except ResponseException as e:
@@ -684,6 +692,41 @@ class RemoteCSEManager(object):
 
 		# Delete local CSR
 		self.dispatcher.deleteLocalResource(registreeCSR)
+
+
+	def _updateLocalCSRAuthInfo(self, csrResource: Resource) -> None:
+		"""	Update the authentication information in the local CSR's POA based on
+			the registrar configuration.
+
+			Args:
+				csrResource: The local <CSR> resource to update.
+		"""
+		L.isDebug and L.logDebug(f'Updating local CSR auth info for CSR: {csrResource.ri}')
+		if not self.registrarConfig:
+			return
+		
+		# add authentication information to the CSR's POA if necessary and available
+		# TODO in the future this should actually be stored somewhere else, not in the poa
+
+		_creds = self.registrarConfig.security.credentials
+		resultPoa = []
+		for p in csrResource.poa:
+			if isHttpUrl(p) or isWSUrl(p):
+				_url, username, password = getAuthFromUrl(p) 
+				if username: # either username or token - don't overwrite in URL
+					resultPoa.append(p)	# already has auth info, keep it as it is
+					continue
+			
+				# No auth info in the url, add it if available in the config
+				# If there no credentials at all, then the original URL will be kept
+				username = _creds.httpUsername if _creds.httpUsername else _creds.httpToken
+				password = _creds.httpPassword if _creds.httpUsername else None
+				resultPoa.append(buildAuthUrl(p, username, password))
+				
+			else:
+				resultPoa.append(p)
+		# Re-assign the potentially updated poa list to the CSR resource
+		csrResource.setAttribute('poa', resultPoa)
 
 
 	#
@@ -1020,15 +1063,15 @@ class RemoteCSEManager(object):
 			ri = f'{ids[2]}_{ids[3]}'
 
 		# Search for a <CSR> that either has the csi attribute set, or that has the looked-for
-		# registree CSE as a descendant CSE.
+		# registree CSE as a descendant CSE. This could also bei the registrar CSE.
 
 		try:
-			registreeCSR = self.dispatcher.retrieveLocalResource(ri=ri)
+			registeredCSR = self.dispatcher.retrieveLocalResource(ri=ri)
 		except ResponseException as e:
 			L.isDebug and L.logDebug(f'getCSRFromPath: {e.dbg}')
-			registreeCSR = getCSRWithDescendant(f'/{ri}')
-		# L.logWarn(csr)
-		return registreeCSR, ids
+			registeredCSR = getCSRWithDescendant(f'/{ri}')
+		# L.logWarn(registeredCSR)
+		return registeredCSR, ids
 
 
 	def getRemoteCSEBaseAddress(self, csi:str) -> Optional[str]:
@@ -1149,7 +1192,7 @@ class RemoteCSEManager(object):
 					# Check if we need to add basic auth to the URL (http or ws) and do so
 					if (bindingType == BindingType.HTTP and Configuration.http_security_enableBasicAuth) or (bindingType == BindingType.WS and Configuration.websocket_security_enableBasicAuth):
 						# Add basic auth to the URL (same for http and ws)
-						p = buildBasicAuthUrl(p, username, password)
+						p = buildAuthUrl(p, username, password)
 				else:
 					L.isWarn and L.logWarn(f'No credentials found for POA authentiction for CSE: {targetCsi} - using plain URL')
 							

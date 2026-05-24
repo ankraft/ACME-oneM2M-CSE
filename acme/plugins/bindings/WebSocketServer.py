@@ -22,8 +22,9 @@ from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 from acme.etc.Constants import Constants,  RuntimeConstants as RC
 from acme.etc.RequestUtils import createPositiveResponseResult, createRequestResultFromURI
 from acme.etc.IDUtils import uniqueID, csiFromSPRelative
-from acme.etc.Utils import renameThread, normalizeURL
-from acme.etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes, RequestType, ResponseType, AuthorizationResult, LogLevel
+from acme.etc.Utils import renameThread, normalizeURL, getAuthFromUrl
+from acme.etc.Types import ContentSerializationType, Result, CSERequest, Operation, ResourceTypes
+from acme.etc.Types import RequestType, ResponseType, AuthorizationResult, LogLevel, RequestCredentials
 from acme.etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, TARGET_NOT_REACHABLE, ORIGINATOR_HAS_NO_PRIVILEGE
 from acme.helpers.NetworkTools import isValidPort, isValidateIpAddress, isValidateHostname
 from acme.helpers.ThreadSafeCounter import ThreadSafeCounter
@@ -663,6 +664,16 @@ class WebSocketServer(object):
 			# Construct addional headers
 			additionalHeaders = { 'X-m2m-Origin': RC.cseCsi }	#  Always add the originator
 			authResult = AuthorizationResult.NOTSET
+
+			# check for basic authentication in the URL. This overwrites any other credentials!!!
+			plainURL, username, password = getAuthFromUrl(url)
+			if username:
+				if password: # credentials are present in the URL
+					request.credentials = RequestCredentials(httpUsername=username, httpPassword=password)
+				else: # token bearer credentials are present in the URL
+					request.credentials = RequestCredentials(httpToken=username)
+
+			
 			if request.credentials:	# Add the credentials if available
 				if request.credentials.wsUsername and request.credentials.wsPassword:
 					additionalHeaders['Authorization'] = f'Basic {request.credentials.getWsBasic()}'
@@ -677,18 +688,18 @@ class WebSocketServer(object):
 			# Else connect to the target WS server using the URL
 			L.isDebug and L.logDebug(f'Establishing new temporary WS connection to send request to: {target}')
 			try:
-				websocket = connect(url, 
+				websocket = connect(plainURL, 
 									subprotocols=[ct.toWSContentType()], 					# type:ignore[list-item]
 									additional_headers = additionalHeaders)
 			except Exception as e:
-				raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {url} - {e}'))
+				raise TARGET_NOT_REACHABLE(L.logWarn(f'Error connecting to WS server: {plainURL} - {e}'))
 			
 			# Associate the WS connection with the originator
 			self.addConnection(websocket, True)
 			self.associateConnectionWithOriginator(websocket, target) # In this case, the target is the originator
 
 			BackgroundWorkerPool.runJob(lambda: self.receiveLoop(websocket, target, ct, authResult),
-										name = f'ws_{uniqueID()}')
+										name=f'ws_{uniqueID()}')
 			return websocket, True
 
 

@@ -27,7 +27,7 @@ from acme.etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSO
 from acme.etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
 from acme.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
 from acme.etc.IDUtils import uniqueRI, toSPRelative, isCSERelative
-from acme.etc.Utils import renameThread, getThreadName, isURL, getBasicAuthFromUrl, normalizeURL
+from acme.etc.Utils import renameThread, getThreadName, isURL, getAuthFromUrl, normalizeURL
 from acme.etc.Constants import RuntimeConstants as RC
 from acme.etc.DateUtils import timeUntilAbsRelTimestamp, getResourceDate, rfc1123Date
 from acme.etc.RequestUtils import toHttpUrl, serializeData, deserializeData
@@ -469,10 +469,14 @@ class HttpServer(object):
 			hds[Constants.hfVSI] = request.vsi
 
 		# check for basic authentication in the URL. This overwrites any other credentials!!!
-		parsedUrl = getBasicAuthFromUrl(url)
-		url = parsedUrl[0] # replace with the URL without credentials
-		if parsedUrl[1] and parsedUrl[2]: # credentials are present in the URL
-			request.credentials = RequestCredentials(httpUsername=parsedUrl[1], httpPassword=parsedUrl[2])
+		plainURL, username, password = getAuthFromUrl(url)
+		url = plainURL # replace with the URL without credentials
+		if username:
+			if password: # credentials are present in the URL
+				request.credentials = RequestCredentials(httpUsername=username, httpPassword=password)
+			else: # token bearer credentials are present in the URL
+				request.credentials = RequestCredentials(httpToken=username)
+		
 
 		# Add authentication headers
 		if request.credentials:
@@ -541,6 +545,9 @@ class HttpServer(object):
 			if ignoreResponse and request.op == Operation.NOTIFY:
 				L.isDebug and L.logDebug('HTTP: Ignoring response to notification')
 				return createPositiveResponseResult()
+		
+			if r.status_code == 401:
+				raise INTERNAL_SERVER_ERROR(L.logErr(f'Unauthorized access when sending HTTP request. Check the credentials.'))
 
 			# Construct CSERequest response object from the result
 			resp = CSERequest(requestType=RequestType.RESPONSE)
