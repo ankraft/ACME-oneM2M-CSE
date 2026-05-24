@@ -289,7 +289,6 @@ class CRS(Resource):
 		except ResponseException as e:
 			raise CROSS_RESOURCE_OPERATION_FAILURE(L.logWarn(f'Cannot create subscription for {rrat}: {e.dbg}'))
 		
-		print(tup)
 		_subRes, subRi, subCsi, pID = tup # type: ignore [misc] # unpack
 		# Add the created <sub>'s full RI to the correct position in the rrats list
 		_rrats = self.rrats
