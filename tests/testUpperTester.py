@@ -51,13 +51,16 @@ class TestUpperTester(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkStatus(self) -> None:
-		""" Check CSE status via UT interface """#
-		resp = requests.post(UTURL, headers = { UTCMD: f'Status'})
-		self.assertEqual(resp.status_code, 200)
-		self.assertIn(C.hfRSC, resp.headers)
-		self.assertEqual(resp.headers[C.hfRSC], '2000')
-		self.assertIn(resp.headers[UTRSP], ['STOPPED', 'STARTING', 'RUNNING', 'STOPPING', 'RESETTING'])
-		self.assertTrue(CSEStatus.has(resp.headers[UTRSP]))
+		""" Check CSE status via UT interface """
+		headers = { UTCMD: f'Status'}
+		addHttpAuthorizationHeader(headers)
+
+		r = requests.post(UTURL, headers=headers)
+		self.assertEqual(r.status_code, 200, r)
+		self.assertIn(C.hfRSC, r.headers)
+		self.assertEqual(r.headers[C.hfRSC], '2000')
+		self.assertIn(r.headers[UTRSP], ['STOPPED', 'STARTING', 'RUNNING', 'STOPPING', 'RESETTING'])
+		self.assertTrue(CSEStatus.has(r.headers[UTRSP]))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -70,7 +73,10 @@ class TestUpperTester(unittest.TestCase):
 		self.assertIsNotNone(oldCt := findXPath(cse, 'm2m:cb/ct'))
 
 		# Reset
-		resp = requests.post(UTURL, headers = { UTCMD: f'Reset'})
+		headers = { UTCMD: f'Reset'}
+		addHttpAuthorizationHeader(headers)
+
+		resp = requests.post(UTURL, headers=headers)
 		self.assertEqual(resp.status_code, 200)
 		self.assertIn(C.hfRSC, resp.headers)
 		self.assertEqual(resp.headers[C.hfRSC], '2000')
@@ -88,7 +94,9 @@ class TestUpperTester(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_enableShortRequestExpiration(self) -> None:
 		""" Enable short request expiration interval via UT interface """#
-		resp = requests.post(UTURL, headers = { UTCMD: f'enableShortRequestExpiration 5'})
+		headers = { UTCMD: f'enableShortRequestExpiration 5'}
+		addHttpAuthorizationHeader(headers)
+		resp = requests.post(UTURL, headers=headers)
 		self.assertEqual(resp.status_code, 200)
 		self.assertIn(C.hfRSC, resp.headers)
 		self.assertEqual(resp.headers[C.hfRSC], '2000')
@@ -98,7 +106,9 @@ class TestUpperTester(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_disableShortRequestExpiration(self) -> None:
 		""" Disable short request expiration interval via UT interface """#
-		resp = requests.post(UTURL, headers = { UTCMD: f'disableShortRequestExpiration'})
+		headers = { UTCMD: f'disableShortRequestExpiration'}
+		addHttpAuthorizationHeader(headers)
+		resp = requests.post(UTURL, headers=headers)
 		self.assertEqual(resp.status_code, 200)
 		self.assertIn(C.hfRSC, resp.headers)
 		self.assertEqual(resp.headers[C.hfRSC], '2000')
@@ -107,7 +117,9 @@ class TestUpperTester(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_enableShortResourceExpiration(self) -> None:
 		""" Enable short resource expiration interval via UT interface """#
-		resp = requests.post(UTURL, headers = { UTCMD: f'enableShortResourceExpiration 5'})
+		headers = { UTCMD: f'enableShortResourceExpiration 5'}
+		addHttpAuthorizationHeader(headers)
+		resp = requests.post(UTURL, headers=headers)
 		self.assertEqual(resp.status_code, 200)
 		self.assertIn(C.hfRSC, resp.headers)
 		self.assertEqual(resp.headers[C.hfRSC], '2000')
@@ -117,7 +129,9 @@ class TestUpperTester(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_disableShortResourceExpiration(self) -> None:
 		""" Disable short request expiration interval via UT interface """#
-		resp = requests.post(UTURL, headers = { UTCMD: f'disableShortResourceExpiration'})
+		headers = { UTCMD: f'disableShortResourceExpiration'}
+		addHttpAuthorizationHeader(headers)
+		resp = requests.post(UTURL, headers=headers)
 		self.assertEqual(resp.status_code, 200)
 		self.assertIn(C.hfRSC, resp.headers)
 		self.assertEqual(resp.headers[C.hfRSC], '2000')
