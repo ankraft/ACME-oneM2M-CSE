@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
 
-## [2026.DEV] - unreleased 
+## [2026.05] - 2026-05-24
 
 ### Added
 - [CSE] Added support for &lt;dynamicAuthorizationConsultation> resource type. However, the actual dynamic authorization consultation functionality is not implemented yet.
@@ -27,8 +27,6 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [MISC] Published the API documentation to the project website at [https://api.acmecse.net](https://api.acmecse.net). The API documentation is generated from the source code using *pydoctor*.
 
 
-### Experimental
-
 ### Changed
 - [CSE] Major internal code restructuring to move most of the CSE's functionality, bindings, database connectors, Uis, HTTP server extensions etc to plugins. This allows for better modularity and extensibility of the CSE's functionality. 
 - [CSE] Internal restructuring how resource types are configured. The resource types are now defined by an external JSON file that is loaded during CSE initialization.
@@ -37,15 +35,11 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Certain ID-related attributes are now converted to SP-relative or Absolute format when responding via Mcc and Mcc'. 
 - [HTTP] The HTTP binding can now be enabled or disabled as well via configuration settings. 
 
-
 ### Fixed
 - [CSE] Fixed missing validation of mandatory list attributes (1L) when updating resources.
 - [CSE] Fixed a format issue with http and websocket authentication headers (basic and bearer). Thanks to Aaron Wiwior for reporting this issue.
 - [CSE] Improved detection of illegal trailing slashes in "to" identifiers. Thanks to Aaron Wiwior for reporting this issue.
 - [CSE] Fixed crash when forwarding a http DISCOVERY request to another CSE. Thanks to Aaron Wiwior for reporting this issue. 
-
-### Removed
-
 
 
 ## [2025.11] - 2025-11-23

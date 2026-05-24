@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2025.DEV
+Version 2026.06
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-52C82D.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-52C82D)](LICENSE) ![MyPy](https://img.shields.io/badge/MyPy-covered-52C82D)  
 [![](https://img.shields.io/pypi/v/acmecse)](https://pypi.org/project/acmecse/) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ankraft/ACME-oneM2M-CSE/main.yml?label=docs)](https://acmecse.net)   
@@ -21,11 +21,19 @@ See [https://acmecse.net](https://acmecse.net) for more exhaustive information.
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/172) for a detailed list of changes.
+Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/196) for a detailed list of changes.
 
 ### Highlights in this release
 
-- TBD
+- Support for plugins to extend the CSE's functionality.  
+  Most of the CSE's functionality is now implemented in plugins. This allows for better modularity and extensibility of the CSE's functionality. Plugins can be enabled and disabled, depending on the use case, requirements, and available system resources.  
+  User defined plugins can be added to the CSE to extend the CSE's functionality with custom handlers, bindings, HTTP server extensions, etc. This allows to easily add custom functionality to the CSE without modifying the CSE's source code.
+- The full API documentation is now available at [https://api.acmecse.net](https://api.acmecse.net). 
+- Implementation of various new oneM2M features, such as support for *SP-ID* and *IN-CSE-ID* attributes for remote CSEs.
+- Internal restructuring how resource types are defined and configured. The resource types are now defined by an external JSON file that is loaded during CSE initialization. This allows for better modularity and extensibility of the resource types and their attributes.
+- Improved support for data types for the *ContentInstance* resource type.
+- Many performance improvements and bug fixes, such as much better performance when many AE registrations are present.
+
 
 ### What to expect in the next release
 
