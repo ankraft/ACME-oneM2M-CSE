@@ -12,7 +12,7 @@ import isodate
 if '..' not in sys.path:
 	sys.path.append('..')
 from init import *
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, BeaconCriteria
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, BeaconCriteria
 
 
 # TODO update

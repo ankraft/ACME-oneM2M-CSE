@@ -41,13 +41,13 @@ from coapthon.messages.request import Request as CoAPRequest
 from coapthon.messages.response import Response as	CoAPResponse
 
 
-from acme.etc import DateUtils, RequestUtils
-from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode, ResponseType
-import acme.helpers.OAuth as OAuth
-from acme.helpers import CoAPthonTools
-from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
-from acme.etc.Constants import Constants as C
-from acme.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
+from acmecse.etc import DateUtils, RequestUtils
+from acmecse.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode, ResponseType
+import acmecse.helpers.OAuth as OAuth
+from acmecse.helpers import CoAPthonTools
+from acmecse.helpers.MQTTConnection import MQTTConnection, MQTTHandler
+from acmecse.etc.Constants import Constants as C
+from acmecse.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from config import *
 
 
@@ -1520,7 +1520,7 @@ def createScheduleString(range:int, delay:int=0) -> str:
 
 #
 #	Utilities
-#	Some are copied from acme.etc.Utils . 
+#	Some are copied from acmecs.etc.Utils . 
 #	We wont import Utils, because of circular imports with other CSE modules
 #
 
@@ -1582,7 +1582,7 @@ def getIPAddress() -> str:
 		Return:
 			String with the IP address.
 	"""
-	from acme.helpers.NetworkTools import getIPAddress as _getIPAddress
+	from acmecse.helpers.NetworkTools import getIPAddress as _getIPAddress
 	return _getIPAddress()
 
 

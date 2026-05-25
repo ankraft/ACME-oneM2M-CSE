@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import Permission, ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import Permission, ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 ae1RN  = f'{aeRN}1'

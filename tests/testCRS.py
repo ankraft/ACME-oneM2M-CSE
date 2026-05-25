@@ -10,9 +10,9 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
-from acme.etc.Types import ResultContentType as RCN
-from acme.etc.DateUtils import getResourceDate
+from acmecse.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
+from acmecse.etc.Types import ResultContentType as RCN
+from acmecse.etc.DateUtils import getResourceDate
 from init import *
 
 cntRN1 = f'{cntRN}1'

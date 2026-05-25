@@ -13,7 +13,7 @@ import unittest, sys
 from testDiscovery import TestDiscovery
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, FilterUsage, DesiredIdentifierResultType
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, FilterUsage, DesiredIdentifierResultType
 from init import *
 
 csrOriginator = '/Ctest'

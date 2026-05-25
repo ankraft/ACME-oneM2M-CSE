@@ -11,9 +11,9 @@ import unittest, sys
 
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.DateUtils import toISO8601Date
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
-from acme.etc.Types import NotificationEventType, NotificationEventType as NET
+from acmecse.etc.DateUtils import toISO8601Date
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
+from acmecse.etc.Types import NotificationEventType, NotificationEventType as NET
 from init import *
 
 

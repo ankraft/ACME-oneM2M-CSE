@@ -12,10 +12,10 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ResultContentType as RCN
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
-from acme.etc.Types import DesiredIdentifierResultType, FilterOperation
-from acme.etc.DateUtils import getResourceDate
+from acmecse.etc.Types import ResultContentType as RCN
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import DesiredIdentifierResultType, FilterOperation
+from acmecse.etc.DateUtils import getResourceDate
 from init import *
 
 

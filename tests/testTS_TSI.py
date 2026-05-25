@@ -10,8 +10,8 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
-from acme.etc.DateUtils import toISO8601Date, getResourceDate
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.DateUtils import toISO8601Date, getResourceDate
 from init import *
 
 maxBS	= 30

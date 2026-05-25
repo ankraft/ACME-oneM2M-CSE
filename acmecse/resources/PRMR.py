@@ -1,0 +1,201 @@
+#
+#	PRMI.py
+#
+#	(c) 2023 by Andreas Kraft
+#	License: BSD 3-Clause License. See the LICENSE file for further details.
+#
+#	ResourceType: ProcessManagement
+#
+"""	Implementation of the ProcessManagement (PRMR) resource type. """
+
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING
+
+from ..etc.Types import ResourceTypes, JSON, ProcessState, ProcessControl, Permission
+from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION, NOT_IMPLEMENTED	
+from ..helpers.TextTools import findXPath
+from ..helpers.PluginManager import requires
+from ..resources.AnnounceableResource import AnnounceableResource
+from ..runtime.Logging import Logging as L
+
+if TYPE_CHECKING:
+	from ..services.Dispatcher import Dispatcher
+	from ..services.SecurityManager import SecurityManager
+	from ..plugins.services.ActionManager import ActionManager
+	from ..resources.Resource import Resource
+
+# TODO annc version
+# TODO add to UML diagram
+# TODO add to statistics, also in console
+
+@requires(actionManager='acmecse.plugins.services.ActionManager', required=False)
+@requires(dispatcher='acmecse.services.Dispatcher')
+@requires(security='acmecse.services.SecurityManager')
+class PRMR(AnnounceableResource):
+	"""	Class for the ProcessManagement (PRMR) resource type. """
+
+	actionManager: Optional[ActionManager] = None
+	""" Injected ActionManager instance. """
+
+	dispatcher: Dispatcher = None
+	""" Injected Dispatcher instance. """
+
+	security: SecurityManager = None
+	""" Injected SecurityManager instance. """
+
+
+	def activate(self, parentResource: Resource, originator: str) -> None:
+		super().activate(parentResource, originator)
+
+		# Set the initial processStatus to Disabled
+		self.setAttribute('prst', ProcessState.Disabled.value)
+
+		# Set the initial processControl to Disable
+		self.setAttribute('prct', ProcessControl.Disable.value)
+
+		# EXPERIMENTAL: the currentState (cust) and initialState (inst) are NOT present initially.
+		# cust cannot be null. So, it must be "not present" initially. This must be changed in TS-0001 (to 0..1)
+
+	
+	def update(self, dct: JSON = None, originator: str | None = None, doValidateAttributes: bool | None = True) -> None:
+
+		# current processState
+		prst = self.prst
+
+		# Step 1) Update of initialState, activateCondition or endCondition attributes
+		newInst = findXPath(dct, 'm2m:prmr/inst')
+		newAtcos = findXPath(dct, 'm2m:prmr/atcos')
+		newEncos = findXPath(dct, 'm2m:prmr/encos')
+		if any([newInst, newAtcos, newEncos]) and prst != ProcessState.Disabled:
+			raise OPERATION_NOT_ALLOWED(L.logDebug('Process state must be "disabled" to update the initialState, activateCondition or endCondition attributes'))
+
+		# Step 2) AND 3):
+		# 	Check existence and access for activateCondition and endCondition
+		#	Check threshold of the values and operator in the activateCondition and endCondition attributes
+
+		# EXPERIMENTAL use custodian/originator for the followings
+		_originator = self.getCurrentOriginator()
+
+		if newAtcos:
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+			for atco in newAtcos:
+			# Check validity of the activateCondition attribute
+				try:
+					self.actionManager.checkEvalCriteria(atco['evc'], atco['sri'], _originator)
+				except ResponseException as e:
+					raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in activateCondition: {e}'))
+
+		if newEncos:
+			if not self.actionManager:
+				raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot check evalCriteria'))
+			for enco in newEncos:
+			# Check validity of the endCondition attribute
+				try:
+					self.actionManager.checkEvalCriteria(enco['evc'], enco['sri'], _originator)
+				except ResponseException as e:
+					raise INVALID_PROCESS_CONFIGURATION(L.logDebug(f'Error in endCondition: {e}'))
+	
+		# Step 4) Check existence and access to the <state> resource referenced by the (new) initialState attribute
+		if newInst:
+			# Try to retrieve the new state resource
+			try:
+				newInstResource = self.dispatcher.retrieveResource(newInst, originator)
+			except NOT_FOUND:
+				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The referenced state resource does not exist'))
+			# Check if the originator has access to the new state resource
+			if not self.security.hasAccess(originator, newInstResource, Permission.RETRIEVE):	# Check if the originator has RETRIEVE access to the state resource
+				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The originator does not have the necessary privileges to access the referenced state resource'))
+			# Check if the new state resource is a child resource of this process resource
+			if newInstResource.pi != self.ri:
+				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The referenced state resource is not a child resource of this process resource'))
+			# EXPERIMENTAL Check if the new state resource is of the correct resource type
+			if newInstResource.ty != ResourceTypes.STTE:
+				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The referenced state resource must be of the resource type "state"'))
+
+		#
+		# Check processControl updates
+		#
+		
+		match (newPrct := findXPath(dct, 'm2m:prmr/prct')):
+			
+			# Failure
+			# Step 5)
+			case ProcessControl.Enable if prst != ProcessState.Disabled:
+				raise OPERATION_NOT_ALLOWED(L.logDebug('Process state must be "disabled" to enable the process'))
+				# TODO test for this
+			# Step 6)
+			case ProcessControl.Disable if prst == ProcessState.Disabled:
+				raise OPERATION_NOT_ALLOWED(L.logDebug('Process state must not be "disabled" to disable the process'))
+				# TODO test for this
+
+			# Step 7)
+			case ProcessControl.Pause if prst != ProcessState.Activated:
+				raise OPERATION_NOT_ALLOWED(L.logDebug('Process state must be "activated" to pause the process'))
+				# TODO test for this
+			# Step 10)
+			case ProcessControl.Pause if prst == ProcessState.Activated:
+				self.setAttribute('prst', ProcessState.Paused.value)
+				if not self.actionManager:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter pause state'))
+				self.actionManager.enterPauseState(self)
+				# TODO test for this
+
+
+			# Step 8)
+			case ProcessControl.Reactivate if prst != ProcessState.Paused:
+				raise OPERATION_NOT_ALLOWED(L.logDebug('Process state must be "paused" to reactivate the process'))
+			
+			# Success
+			# Step 9)
+			case ProcessControl.Enable if prst == ProcessState.Disabled:
+				L.isDebug and L.logDebug('Enabling process')
+
+				# TODO
+				# Does the <state> resource referenced by the initialState attribute exist?
+				# Is it a child resource of this resource?
+				# has the originator retrieve privileges on it?
+				
+				# Does the originator has proper CRUD privileges for the <state> and <action> resources referenced by this resource and child resources?
+				# Are all the referenced resources child resources of this resource?
+				# Are all the referenced resources of the correct resource types?
+
+				# If yes: Set processStatus to "enabled"
+				# Start the process
+				# If no: Return error "INVALID_PROCESS_CONFIGURATION"
+				pass
+			
+			# Step 11)
+			case ProcessControl.Reactivate if prst == ProcessState.Paused:
+				self.setAttribute('prst', ProcessState.Activated.value)
+				if not self.actionManager:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter active state'))
+				self.actionManager.enterActiveState(self)
+				# TODO continues processing the process
+			
+			# Step 12)
+			case ProcessControl.Disable if prst != ProcessState.Disabled:
+				self.setAttribute('prst', ProcessState.Disabled.value)
+				# Set the stateActive attribute of the activate <state> resource to false
+				try:
+					_state = self.dispatcher.retrieveResource(self.cust)
+					_state.setAttribute('sact', False)
+					_state.dbUpdate()
+				except:
+					# ignore any error here
+					pass
+				# Remove the current state (cust) attribute
+				self.delAttribute('cust')	# EXPERIMENTAL In the spec this sets the cust attribute to Null
+				# disable the process
+				if not self.actionManager:
+					raise NOT_IMPLEMENTED(L.logWarn('ActionManager is disabled, cannot enter disabled state'))
+				self.actionManager.enterDisabledState(self)
+
+
+
+
+		super().update(dct, originator, doValidateAttributes)	
+
+
+	# EXPERIMENTAL Don't define a deactivate() method. This would cause problems with deregistering of AEs

@@ -28,6 +28,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 
 ### Changed
+- [MISC] The main package of the project is now called *acmecse* instead of *acme* to avoid confusion while working with the published *acmecse* package from PyPi.
 - [CSE] Major internal code restructuring to move most of the CSE's functionality, bindings, database connectors, Uis, HTTP server extensions etc to plugins. This allows for better modularity and extensibility of the CSE's functionality. 
 - [CSE] Internal restructuring how resource types are configured. The resource types are now defined by an external JSON file that is loaded during CSE initialization.
 - [CSE] Changed the internal handling of resource instantiation and optimized the resource factory.

@@ -13,7 +13,7 @@ import pathlib, os, sys
 parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent
 sys.path.append(f'{parent}')
 
-import acme.helpers.Zookeeper as Zookeeper
+import acmecse.helpers.Zookeeper as Zookeeper
 
 import os, configparser, argparse
 import atexit

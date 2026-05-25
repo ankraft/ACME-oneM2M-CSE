@@ -11,8 +11,8 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import AnnounceSyncType, ResultContentType as RCN
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import AnnounceSyncType, ResultContentType as RCN
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 
