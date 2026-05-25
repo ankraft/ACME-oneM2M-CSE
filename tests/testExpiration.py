@@ -12,9 +12,9 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from rich import print
-from acme.etc.Constants import Constants as C
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
-from acme.etc.DateUtils import getResourceDate
+from acmecse.etc.Constants import Constants as C
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.DateUtils import getResourceDate
 from init import *
 
 

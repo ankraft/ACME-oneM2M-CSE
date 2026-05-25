@@ -11,8 +11,8 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 import isodate
-from acme.etc.Types import NotificationEventType, ResponseStatusCode as RC, ResourceTypes as T, ResponseType
-from acme.etc.DateUtils import getResourceDate
+from acmecse.etc.Types import NotificationEventType, ResponseStatusCode as RC, ResourceTypes as T, ResponseType
+from acmecse.etc.DateUtils import getResourceDate
 from init import *
 
 # TODO move a couple of tests to a http or general request test

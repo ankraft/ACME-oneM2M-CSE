@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, ProcessControl, ProcessState
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, ProcessControl, ProcessState
 from init import *
 		
 

@@ -11,7 +11,7 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from rich import print
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Operation, ResponseType, RequestStatus
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Operation, ResponseType, RequestStatus
 from init import *
 
 # Headers for async requests

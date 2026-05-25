@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import NotificationEventType, ResourceTypes as T, ResponseStatusCode as RC, ResultContentType
+from acmecse.etc.Types import NotificationEventType, ResourceTypes as T, ResponseStatusCode as RC, ResultContentType
 from init import *
 
 

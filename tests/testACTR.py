@@ -10,8 +10,8 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Permission
-from acme.etc.Types import EvalMode, Operation, EvalCriteriaOperator
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Permission
+from acmecse.etc.Types import EvalMode, Operation, EvalCriteriaOperator
 from init import *
 
 

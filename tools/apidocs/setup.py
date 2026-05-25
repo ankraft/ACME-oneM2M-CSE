@@ -42,7 +42,7 @@ setup(
 	],
     entry_points={
         'console_scripts': [
-            'acme-cse=acme.__main__:main',
+            'acme-cse=acmecse.__main__:main',
         ]
     },
 )

@@ -11,7 +11,7 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from init import *
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 
 
 class TestTS(unittest.TestCase):

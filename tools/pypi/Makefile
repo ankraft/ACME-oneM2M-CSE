@@ -8,17 +8,15 @@
 #
 
 SRCDIR = ../..
-SOURCE = acme
-PROJNAME = acmecse
+SOURCE = acmecse
 
 PACKAGEDIR = ${SRCDIR}/${SOURCE}
-PACKAGECOPY = ${SRCDIR}/${PROJNAME}
 DISTDIR = ${SRCDIR}/dist
 
 .PHONY: all
 
 
-build: _prepare _build _finish		## (default) Build the package only
+build: _build 				## (default) Build the package only
 
 
 publish: build 				## Build and publish the package
@@ -44,17 +42,6 @@ help:					## Display this help
 _build:
 	cd ${SRCDIR} && python -m build -s
 	cd ${SRCDIR} && python -m build -w
-
-_prepare:
-	if [ ! -d ${PACKAGECOPY} ]; then \
-		cp -r ${PACKAGEDIR} ${PACKAGECOPY}; \
-	fi
-
-_finish:
-	if [ -d ${PACKAGECOPY} ]; then \
-		rm -r ${PACKAGECOPY}; \
-	fi
-
 
 # TODO remove dist ... directories
 

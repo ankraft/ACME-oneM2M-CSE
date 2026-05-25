@@ -10,8 +10,8 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC
-from acme.etc.Types import Operation
+from acmecse.etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC
+from acmecse.etc.Types import Operation
 from init import *
 
 numberOfBatchNotifications = 5

@@ -21,12 +21,12 @@ from rich.syntax import Syntax
 import pathlib, os
 parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent
 sys.path.append(f'{parent}')
-from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
-from acme.helpers.TextTools import toHex
-from acme.etc.RequestUtils import serializeData
-from acme.etc.DateUtils import getResourceDate
-from acme.etc.Types import ContentSerializationType
-from acme.etc.Constants import Constants as C
+from acmecse.helpers.MQTTConnection import MQTTConnection, MQTTHandler
+from acmecse.helpers.TextTools import toHex
+from acmecse.etc.RequestUtils import serializeData
+from acmecse.etc.DateUtils import getResourceDate
+from acmecse.etc.Types import ContentSerializationType
+from acmecse.etc.Constants import Constants as C
 
 ##############################################################################
 #

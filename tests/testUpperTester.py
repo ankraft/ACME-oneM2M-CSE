@@ -11,9 +11,9 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from init import *
-from acme.etc.Types import CSEStatus
-from acme.etc.Types import ResponseStatusCode as RC
-from acme.etc.Constants import Constants as C
+from acmecse.etc.Types import CSEStatus
+from acmecse.etc.Types import ResponseStatusCode as RC
+from acmecse.etc.Constants import Constants as C
 
 
 class TestUpperTester(unittest.TestCase):
