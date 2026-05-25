@@ -127,11 +127,11 @@ Use `web_fetch` on specific class/module URLs for detailed API questions. Key en
 | Index | https://api.acmecse.net/index.html |
 | Module index | https://api.acmecse.net/moduleIndex.html |
 | Class index | https://api.acmecse.net/classIndex.html |
-| acme.helpers (EventManager etc.) | https://api.acmecse.net/acme.helpers.html |
-| acme.runtime (PluginManager etc.) | https://api.acmecse.net/acme.runtime.html |
-| acme.plugins | https://api.acmecse.net/acme.plugins.html |
-| acme.resources | https://api.acmecse.net/acme.resources.html |
-| acme.services | https://api.acmecse.net/acme.services.html |
+| acmecse.helpers (EventManager etc.) | https://api.acmecse.net/acmecse.helpers.html |
+| acmecse.runtime (PluginManager etc.) | https://api.acmecse.net/acmecse.runtime.html |
+| acmecse.plugins | https://api.acmecse.net/acmecse.plugins.html |
+| acmecse.resources | https://api.acmecse.net/acmecse.resources.html |
+| acmecse.services | https://api.acmecse.net/acmecse.services.html |
 
 ### Plugins & HowTos
 
@@ -211,7 +211,7 @@ Two invocation styles — always show both when relevant:
 | Installation type | Command |
 |---|---|
 | pip package | `acmecse` |
-| Manual / git clone | `python3 -m acme` |
+| Manual / git clone | `python3 -m acmecse` |
 
 Key CLI flags (fetch `Running` page for the full table):
 - `--config <file>` — alternate config file
@@ -249,7 +249,7 @@ acmecse
 git clone https://github.com/ankraft/ACME-oneM2M-CSE.git
 cd ACME-oneM2M-CSE
 python3 -m pip install -r requirements.txt
-python3 -m acme
+python3 -m acmecse
 ```
 
 On first run with no config file, an interactive onboarding wizard starts and
