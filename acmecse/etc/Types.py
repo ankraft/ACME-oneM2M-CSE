@@ -2391,7 +2391,7 @@ class RequestCredentials:
 		"""	Return the HTTP basic authentication string.
 			
 			Return:
-				The HTTP basic authentication string as base64 encoded string. It is the base64 encoding of "username:password".
+				The HTTP basic authentication string as base64 encoded string. It is the base64 encoding of "username&colon;password".
 		"""
 		return base64.b64encode(f'{self.httpUsername}:{self.httpPassword}'.encode('utf-8')).decode('utf-8')
 	
@@ -2409,7 +2409,7 @@ class RequestCredentials:
 		"""	Return the WebSockets basic authentication string.
 			
 			Return:
-				The WebSockets basic authentication string as base64 encoded string. It is the base64 encoding of "username:password".
+				The WebSockets basic authentication string as base64 encoded string. It is the base64 encoding of "username&colon;password".
 		"""
 		return base64.b64encode(f'{self.wsUsername}:{self.wsPassword}'.encode('utf-8')).decode('utf-8')
 	
