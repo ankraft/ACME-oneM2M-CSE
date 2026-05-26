@@ -71,7 +71,6 @@ class CSEConfiguration(ModuleConfiguration):
 		_ec = {}
 		for o in parser.options('cse.operation.plugins'):
 			if o.startswith('_/') and o.endswith('\\_') and len(o) > 4:
-				print(f'Processing plugin configuration option: {o}')
 				try:
 					_ec[o[2:-2]] = parser.getboolean('cse.operation.plugins', o) 
 				except ValueError:

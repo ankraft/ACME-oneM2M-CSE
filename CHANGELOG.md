@@ -7,6 +7,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
+## [2026.05.1] - 2026-05-26
+
+### Fixed
+- [CSE] Fixed startup problem when bash underscore environment variable is present
+
 
 ## [2026.05] - 2026-05-24
 

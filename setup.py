@@ -8,7 +8,7 @@ import pathlib, os, time
 # _version=time.strftime("%Y%m%d%H%M%S")
 
 _name='acmecse'
-_version='2026.05'
+_version='2026.05.1'
 
 
 
