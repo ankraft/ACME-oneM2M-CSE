@@ -7,6 +7,7 @@
 """ CSE configurations"""
 
 from __future__ import annotations
+from logging import config
 from typing import Optional, cast
 
 import configparser
@@ -63,13 +64,21 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_operation_plugins_replace = parser.getboolean('cse.operation.plugins', 'replace', fallback=False)
 
 		# Derive enabled components from the configuration. This is used to determine which plugins to load.
-		# Create a dictionary with names starting and ending with _ to avoid conflicts with actual configuration options. 
-		# The _ are stripped when checking the configuration in the PluginManager.
-		config._cse_operation_plugins_enabledComponents = { o[1:-1] : parser.getboolean('cse.operation.plugins', o) 
-														    for o in parser.options('cse.operation.plugins') 
-														    if '_' == o[0] == o[-1] }
+		# Create a dictionary with names starting and ending with _/ and \_ to avoid conflicts with actual 
+		# configuration options. 
+		# The _/ and \_ are stripped when checking the configuration in the PluginManager.
 		
+		_ec = {}
+		for o in parser.options('cse.operation.plugins'):
+			if o.startswith('_/') and o.endswith('\\_') and len(o) > 4:
+				try:
+					_ec[o[2:-2]] = parser.getboolean('cse.operation.plugins', o) 
+				except ValueError:
+					config._warning(fr'Invalid boolean value for [i]\[cse.operation.plugins]:{o}[/i]: {parser.get("cse.operation.plugins", o)}. Defaulting to False.')
+					_ec[o[2:-2]] = False
+		config._cse_operation_plugins_enabledComponents = _ec
 
+		
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		# override configuration with command line arguments
 		if Configuration._args_initDirectory is not None:

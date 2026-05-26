@@ -155,29 +155,29 @@ replace=false
 ;                                                                                                                  ;
 ; The following options in this section are used by the PluginManager to determine which sub-system is enabled and ;
 ; thus which plugins to load. They are not intended to be set by the user, but are derived from other settings.    ;
-; They are prefixed with _ to avoid conflicts with actual configuration options. The _ are stripped when checking  ;
-; the configuration in the PluginManager.                                                                          ;
+; They are surrounded with _/ and \_ to avoid conflicts with actual configuration options. The _/ and \_ are       ;
+; stripped when checking the configuration in the PluginManager.                                                   ;
 ;                                                                                                                  ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-_coap_enable_=${coap:enable}
-_http_enable_=${http:enable}
-_mqtt_enable_=${mqtt:enable}
-_websocket_enable_=${websocket:enable}
-_http_enableManagementEndpoint_=${http:enableManagementEndpoint}
-_http_enableStructureEndpoint_=${http:enableStructureEndpoint}
-_http_enableUpperTesterEndpoint_=${http:enableUpperTesterEndpoint}
-_statistics_enable_=${cse.statistics:enable}
-_textui_enable_=${textui:enable}
-_webui_enable_=${webui:enable}
-_actionManager_enable_=${cse.service.action:enable}
-_announcementManager_enable_=${cse.service.announcement:enable}
-_groupManager_enable_=${cse.service.group:enable}
-_locationManager_enable_=${cse.service.location:enable}
-_remoteCSEManager_enable_=${cse.service.remoteCSE:enable}
-_semanticManager_enable_=${cse.service.semantic:enable}
-_timeManager_enable_=${cse.service.time:enable}
-_timeSeriesManager_enable_=${cse.service.timeSeries:enable}
+_/coap_enable\_=${coap:enable}
+_/http_enable\_=${http:enable}
+_/mqtt_enable\_=${mqtt:enable}
+_/websocket_enable\_=${websocket:enable}
+_/http_enableManagementEndpoint\_=${http:enableManagementEndpoint}
+_/http_enableStructureEndpoint\_=${http:enableStructureEndpoint}
+_/http_enableUpperTesterEndpoint\_=${http:enableUpperTesterEndpoint}
+_/statistics_enable\_=${cse.statistics:enable}
+_/textui_enable\_=${textui:enable}
+_/webui_enable\_=${webui:enable}
+_/actionManager_enable\_=${cse.service.action:enable}
+_/announcementManager_enable\_=${cse.service.announcement:enable}
+_/groupManager_enable\_=${cse.service.group:enable}
+_/locationManager_enable\_=${cse.service.location:enable}
+_/remoteCSEManager_enable\_=${cse.service.remoteCSE:enable}
+_/semanticManager_enable\_=${cse.service.semantic:enable}
+_/timeManager_enable\_=${cse.service.time:enable}
+_/timeSeriesManager_enable\_=${cse.service.timeSeries:enable}
 
 
 ;
