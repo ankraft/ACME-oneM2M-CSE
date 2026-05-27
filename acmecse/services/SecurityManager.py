@@ -108,7 +108,7 @@ class SecurityManager(object):
 
 
 		# Get the configuration settings
-		self._initAuthInformation()
+		self.initAuthInformation()
 
 		L.isInfo and L.log('SecurityManager initialized')
 		if Configuration.cse_security_enableACPChecks:
@@ -131,7 +131,7 @@ class SecurityManager(object):
 	def restart(self, eventData: EventData) -> None:
 		"""	Restart the Security manager service.
 		"""
-		self._initAuthInformation()
+		self.initAuthInformation()
 		L.logDebug('SecurityManager restarted')
 
 
@@ -153,7 +153,7 @@ class SecurityManager(object):
 		# TODO further optimization: only reload the changed files
 		key:Optional[str] = eventData[0]
 		value:Any = eventData[1]
-		self._initAuthInformation()
+		self.initAuthInformation()
 
 
 	###############################################################################################
@@ -1006,13 +1006,18 @@ class SecurityManager(object):
 		return hashString(token, Configuration.cse_security_secret) in self.wsTokenAuthData
 
 
-	def _initAuthInformation(self) -> None:
+	def initAuthInformation(self) -> None:
 		""" Initialize the authentication information by reading the configured authentication files for HTTP and WebSocket.
+
+			Raises:
+				ValueError: If there is an error reading any of the authentication files.
 		"""
-		self._readHttpBasicAuthFile()
-		self._readHttpTokenAuthFile()
-		# if CSE.pluginManager.websocketServer:
+		if self.httpServer:
+			L.isDebug and L.logDebug('Initializing HTTP authentication information.')
+			self._readHttpBasicAuthFile()
+			self._readHttpTokenAuthFile()
 		if self.websocketServer:
+			L.isDebug and L.logDebug('Initializing WebSocket authentication information.')
 			self._readWSBasicAuthFile()
 			self._readWSTokenAuthFile()
 		self.allowedCSIOriginators = [ r.cseID for r in Configuration.cse_registrars.values() ]
@@ -1023,6 +1028,9 @@ class SecurityManager(object):
 			The authentication information is stored as username:password.
 
 			The data is stored in the `httpBasicAuthData` dictionary.
+
+			Raises:
+				ValueError: If there is an error reading the basic authentication file.
 		"""
 		self.httpBasicAuthData = {}
 		# We need to access the configuration directly, since the http server is not yet initialized
@@ -1039,7 +1047,7 @@ class SecurityManager(object):
 							(username, password) = line.strip().split(':')
 							self.httpBasicAuthData[username] = password.strip()
 				except Exception as e:
-					L.logErr(f'Error reading basic authentication file: {e}')
+					raise ValueError(L.logErr(f'Error reading basic authentication file: {e}')) from e
 
 
 	def _readHttpTokenAuthFile(self) -> None:
@@ -1047,6 +1055,9 @@ class SecurityManager(object):
 			The authentication information is stored as a single token per line.
 
 			The data is stored in the `httpTokenAuthData` list.
+
+			Raises:
+				ValueError: If there is an error reading the token authentication file.
 		"""
 		self.httpTokenAuthData = []
 		# We need to access the configuration directly, since the http server is not yet initialized
@@ -1062,7 +1073,7 @@ class SecurityManager(object):
 								continue
 							self.httpTokenAuthData.append(line.strip())
 				except Exception as e:
-					L.logErr(f'Error reading token authentication file: {e}')
+					raise ValueError(L.logErr(f'Error reading token authentication file: {e}')) from e
 
 
 	def _readWSBasicAuthFile(self) -> None:
@@ -1070,6 +1081,9 @@ class SecurityManager(object):
 			The authentication information is stored as username:password.
 
 			The data is stored in the `wsBasicAuthData` dictionary.
+
+			Raises:
+				ValueError: If there is an error reading the basic authentication file.
 		"""
 		self.wsBasicAuthData = {}
 		# We need to access the configuration directly, since the http server is not yet initialized
@@ -1084,7 +1098,7 @@ class SecurityManager(object):
 						(username, password) = line.strip().split(':')
 						self.wsBasicAuthData[username] = password.strip()
 			except Exception as e:
-				L.logErr(f'Error reading basic authentication file: {e}')
+				raise ValueError(L.logErr(f'Error reading basic authentication file: {e}')) from e
 
 
 	def _readWSTokenAuthFile(self) -> None:
@@ -1092,6 +1106,9 @@ class SecurityManager(object):
 			The authentication information is stored as a single token per line.
 
 			The data is stored in the `wsTokenAuthData` list.
+
+			Raises:
+				ValueError: If there is an error reading the token authentication file.
 		"""
 		self.wsTokenAuthData = []
 		# We need to access the configuration directly, since the http server is not yet initialized
@@ -1105,7 +1122,7 @@ class SecurityManager(object):
 							continue
 						self.wsTokenAuthData.append(line.strip())
 			except Exception as e:
-				L.logErr(f'Error reading token authentication file: {e}')
+				raise ValueError(L.logErr(f'Error reading token authentication file: {e}')) from e
 	
 
 	def getPOACredentialsForCSEID(self, registrarConfig:CSERegistrar, cseID:Optional[str]=None, binding:Optional[BindingType]=BindingType.HTTP) -> Optional[Tuple[str, str]]:

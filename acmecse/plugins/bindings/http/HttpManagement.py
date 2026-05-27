@@ -92,6 +92,25 @@ class HttpManagement:
 					case 'config':
 						return Response(response=self.managementSupport.getConfig(), mimetype='application/json',	headers=self.httpServer._responseHeaders)
 				
+					case 'creds':
+						if param is None:
+							return Response(response=f'Use "help" for a list of credential management commands.', 
+											status=422, 
+											headers=self.httpServer._responseHeaders)
+						match param.lower():
+							case 'reload':
+								return Response(response=self.managementSupport.reloadCredentials(), headers=self.httpServer._responseHeaders)
+							case 'help':
+								return Response(response='''ACME oneM2M CSE Management Credential Commands
+						
+reload          Reload the HTTP and WebSocket credentials
+help            Show this help message
+''',
+										status=200,
+										headers=self.httpServer._responseHeaders)
+
+
+
 					case 'log':
 						return Response(self.managementSupport.getLogGenerator(), mimetype='text/event-stream')
 
@@ -134,9 +153,9 @@ help            Show this help message
 								case 'help':
 									return Response(response='''ACME oneM2M CSE Management Registrations Commands
 							
-(no command)  Get the current registrations
-refresh       Refresh the registrations
-help          Show this help message
+(no command)    Get the current registrations
+refresh         Refresh the registrations
+help            Show this help message
 ''',
 										status=200,
 										headers=self.httpServer._responseHeaders)
@@ -163,12 +182,12 @@ help          Show this help message
 								case 'help':
 									return Response(response='''ACME oneM2M CSE Management Requests Commands
 							
-(no command)  Stream the current requests
-enable        Enable request recording
-disable       Disable request recording
-status        Get the current request recording status
-puml          Get a UML sequence diagram of the recorded requests
-help          Show this help message
+(no command)    Stream the current requests
+enable          Enable request recording
+disable         Disable request recording
+status          Get the current request recording status
+puml            Get a UML sequence diagram of the recorded requests
+help            Show this help message
 ''',
 										status=200,
 										headers=self.httpServer._responseHeaders)
@@ -213,11 +232,11 @@ help          Show this help message
 							case 'help':
 								return Response(response='''ACME oneM2M CSE Management Status Commands
 						
-(no command)  Generale status information about the CSE
-modules       Information about the loaded Python modules
-plugins       Information about the loaded plugins
-services      Information about the registered services and endpoints
-help          Show this help message
+(no command)    General status information about the CSE
+modules         Information about the loaded Python modules
+plugins         Information about the loaded plugins
+services        Information about the registered services and endpoints
+help            Show this help message
 ''',
 									status=200,
 									headers=self.httpServer._responseHeaders)
@@ -225,16 +244,17 @@ help          Show this help message
 					case 'help':
 						return Response(response='''ACME oneM2M CSE Management Commands
 
-config         Get the current configuration
-log            Stream the live log output
-loglevel       Get or set the log level (.../{info|debug|warning|error|off})
-registrations  Get or refresh the registrations (.../refresh)
-requests       Get or set the request recording (.../{on|off|status})
-reset          Reset the CSE
-restart        Shutdown the CSE with exit code 82 (indicating a restart)
-shutdown       Shutdown the CSE normally (with exit code 0)
-status         Get the current CSE status
-help           Show this help message
+config          Get the current configuration
+creds           Credential management					  
+log             Stream the live log output
+loglevel        Get or set the log level (.../{info|debug|warning|error|off})
+registrations   Get or refresh the registrations (.../refresh)
+requests        Get or set the request recording (.../{on|off|status})
+reset           Reset the CSE
+restart         Shutdown the CSE with exit code 82 (indicating a restart)
+shutdown        Shutdown the CSE normally (with exit code 0)
+status          Get the current CSE status
+help            Show this help message
 ''',
 										status=200,
 										headers=self.httpServer._responseHeaders)

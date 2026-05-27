@@ -11,6 +11,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ## [2026.DEV] - unreleased 
 
 ### Added
+- [CSE] Added reloading of HTTP and WebSocket authentication credentials to the management API.
 
 ### Experimental
 

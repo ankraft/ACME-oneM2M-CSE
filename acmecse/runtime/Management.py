@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 	from ..runtime.Storage import Storage
 	from ..services.Dispatcher import Dispatcher
 	from ..services.RequestManager import RequestManager
+	from ..services.SecurityManager import SecurityManager
 	from ..services.Validator import Validator
 
 
@@ -50,6 +51,7 @@ _markupText = Text.from_markup
 @requires(storage='acmecse.runtime.Storage')
 @requires(dispatcher='acmecse.services.Dispatcher')
 @requires(requestManager='acmecse.services.RequestManager')
+@requires(securityManager='acmecse.services.SecurityManager')
 @requires(validator='acmecse.services.Validator')
 @requires(cseForceShutdown='acmecse.runtime.CSE.forceShutdown')
 @requires(cseReset='acmecse.runtime.CSE.resetCSE')
@@ -66,6 +68,9 @@ class ManagementSupport(metaclass=Singleton):
 
 	requestManager: RequestManager = None
 	""" Injected RequestManager instance. """
+
+	securityManager: SecurityManager = None
+	""" Injected SecurityManager instance. """
 
 	validator: Validator = None
 	""" Injected Validator instance. """
@@ -1571,6 +1576,21 @@ function createResource() {{
 		"""Shutdown the CSE.
 		"""
 		self.cseForceShutdown()	# This might not return (e.g. under Windows)
+
+
+	#########################################################################
+	#
+	#	Credential functions
+	#	
+
+	def reloadCredentials(self) -> str:
+		"""Reload the credentials from the credential storage.
+		"""
+		try:
+			self.securityManager.initAuthInformation()
+			return 'Credentials reloaded successfully'
+		except Exception as e:
+			return f'Error reloading credentials: {str(e)}'
 
 
 
