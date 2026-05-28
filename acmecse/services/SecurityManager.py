@@ -312,7 +312,7 @@ class SecurityManager(object):
 				# Allow remote CSE to RETRIEVE the CSEBase
 				# if originator == Configuration.cse_registrar_cseID:
 				if originator in self.allowedCSIOriginators:
-					L.isDebug and L.logDebug(f'Grant registrar CSE Originnator {originator} to RETRIEVE CSEBase. OK.')
+					L.isDebug and L.logDebug(f'Grant registrar CSE Originator {originator} to RETRIEVE CSEBase. OK.')
 					return True
 				if self.isAllowedOriginator(originator, Configuration.cse_registration_allowedCSROriginators):
 					L.isDebug and L.logDebug(f'Grant remote CSE Orignator {originator} to RETRIEVE CSEBase. OK.')

@@ -147,12 +147,12 @@ class RegistrationManager(metaclass=Singleton):
 				originator = self.handleAERegistration(resource, originator, parentResource)
 			case ResourceTypes.CSR:
 				if RC.cseType == CSEType.ASN:
-						raise OPERATION_NOT_ALLOWED('cannot register to ASN CSE')
+					raise OPERATION_NOT_ALLOWED('cannot register to ASN CSE')
 				try:
 					self.handleCSRRegistration(resource, originator)
 				except ResponseException as e:
 					e.dbg = f'cannot register CSR: {e.dbg}'
-					raise e
+					raise e from e
 			case ResourceTypes.REQ:
 				if not self.handleREQRegistration(resource, originator):
 					raise BAD_REQUEST('cannot register REQ')
@@ -161,7 +161,7 @@ class RegistrationManager(metaclass=Singleton):
 					self.handleCSEBaseAnncRegistration(resource, originator)
 				except ResponseException as e:
 					e.dbg = f'cannot register CSEBaseAnnc: {e.dbg}'
-					raise e
+					raise e from e
 			case ResourceTypes.CSEBase:
 				self.handleCSEBaseRegistration(resource, originator)
 
@@ -397,7 +397,7 @@ class RegistrationManager(metaclass=Singleton):
 		# Check that the originator is not an AE
 		if self.securityManager.isAEOriginator(originator):
 			if originator != RC.cseOriginator:
-				raise OPERATION_NOT_ALLOWED(L.logWarn('AE originator not allowed for CSR registration'))
+				raise OPERATION_NOT_ALLOWED(L.logWarn(f'Originator seems to be an AE-ID: {originator}, but AE originators are not allowed for CSR registration'))
 			L.isWarn and L.logWarn('Warning: CSR registration with Admin originator')
 
 		# Check whether a CSE with the same originator has already registered

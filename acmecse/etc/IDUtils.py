@@ -271,23 +271,25 @@ def isValidCSI(csi:str) -> bool:
 
 
 
-_aeRx = re.compile(r'^[SC][^/\s]+') # Must not start with a / and must not contain a further / or white space, but must start with "S" or "C"
+# The AE-ID format is a bit more complex, because it can be in SP-relative or absolute format, 
+# and the actual AE-ID is the last part of the path. 
+# The regular expression checks for the last part of the path to start with either "C" or "S" 
+# and to contain only unreserved characters. The only exception that "/Cabc" is NOT a valid
+# AE-ID, but "Cabc" and "/Sabc" are valid. 
+_aeRx = re.compile(r'(?<=\w/)C[^/]+$|(?:^|/)S[^/]+$|^C[^/]+$')
 """	Regular expression to test for valid AE-ID format. """
 
 def isValidAEI(aei:str) -> bool:
 	"""	Test for valid AE-ID format. 
 
-		It takes SP-Relative AEI's into account.
+		It takes SP-Relative and absolute AEI's into account, as well allows
+		"/Sabc" as a valid AE-ID, but not "/Cabc".
 
 		Args:
 			aei: The AE-ID to check
 		Return:
 			Boolean
 	"""
-	if isSPRelative(aei) or isAbsolute(aei):
-		ids = aei.split('/')
-		aei = ids[-1]
-
 	return re.fullmatch(_aeRx, aei) is not None
 
 

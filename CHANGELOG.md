@@ -18,6 +18,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 
 ### Fixed
+- [CSE] Fixed AE-ID recognition to allow "/Sabc" as a valid AE-ID, but not "/Cabc". 
 
 ### Removed
 
