@@ -458,6 +458,7 @@ def run(testFailFast:bool) -> TestResult:
 
 
 	disableUpperTester()
+	disableStructureAPI()
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()

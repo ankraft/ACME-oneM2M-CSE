@@ -303,7 +303,7 @@ class SecurityManager(object):
 				L.isDebug and L.logDebug('Announcement target originator. OK.')
 				return True
 
-		L.isDebug and L.logDebug(f'Permission check originator: {originator} ri: {resource.ri} permission: {requestedPermission} resource type: {resource.ty} type: {ty}')
+		L.isDebug and L.logDebug(f'Permission check originator: {originator} | ri: {resource.ri} | parent ri: {parentResource.ri if parentResource else None} | permission: {requestedPermission} | resource type: {resource.ty} | type: {ty} ')
 
 		match resource.ty:
 
@@ -374,8 +374,12 @@ class SecurityManager(object):
 				L.isDebug and L.logDebug('Self-Permission NOT granted')
 				return False
 
-			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
-			case ResourceTypes.SUB if parentResource:
+			case _:
+				pass	# fall-through to the permission checks below
+
+		match ty:
+			# If subscription should be created, then check whether originator has retrieve permissions on the subscribed-to resource (parent)	
+			case ResourceTypes.SUB if parentResource and requestedPermission == Permission.CREATE:
 				# check whether an originator has also RETRIEVES permissions on the parent resource		
 				if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
 					return False

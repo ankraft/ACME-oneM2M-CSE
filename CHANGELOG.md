@@ -12,6 +12,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Added
 - [CSE] Added reloading of HTTP and WebSocket authentication credentials to the management API.
+- [TESTS] Added printing of the current resource tree to verbose output of requests.
 
 ### Experimental
 
@@ -19,6 +20,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Fixed AE-ID recognition to allow "/Sabc" as a valid AE-ID, but not "/Cabc". 
+- [CSE] Fixed missing RETRIEVE permission check when creating a &lt;subscription> resource. Added a test case for this.   
 
 ### Removed
 

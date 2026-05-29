@@ -665,6 +665,19 @@ def sendHttpRequest(method:str, url:str, originator:str, ty:ResourceTypes=None, 
 				console.print(r.json())
 			except:
 				console.print(r.text)
+		
+		if RESOURCETREEAPIENABLED:
+			console.print(f'\n[b u]Resource Tree')
+			headers = {}	# type: ignore
+			addHttpAuthorizationHeader(headers)
+			if not httpSession:
+				createHttPSession()
+			response = httpSession.get(RTAPIURL, headers=headers)
+			if response.status_code == 200:
+				console.print(response.text)
+			response.close()
+		
+		console.rule(characters='.')
 
 	# return plain text
 	if (ct := r.headers.get('Content-Type')) is not None and ct.startswith('text/plain'):
@@ -1051,6 +1064,33 @@ def checkUpperTester() -> None:
 			console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
 			shutdown()
 			quit(-1)
+
+
+def checkStructureAPI() -> None:
+	if RESOURCETREEAPIENABLED:
+		try:
+			headers = {} # type: ignore
+			addHttpAuthorizationHeader(headers)
+			if not httpSession:
+				createHttPSession()
+			response = httpSession.get(RTAPIURL, headers=headers)
+			match response.status_code:
+				case 200:
+					#print(f'Response from Upper Tester Interface: {response.headers.get(UTRSP)}')
+					pass
+				case 401:
+					console.print('[red]CSE requires authorization header')
+					console.print('Add authorization settings to the test suite configuration file')
+					quit(-1)
+				case _:
+					console.print('[red]Resource Tree API not enabeled in CSE or wrong root path[/red]')
+					console.print(r'Try enabling Resource Tree API with configuration setting: "\[http]:enableStructureEndpoint=True"')
+					quit(-1)
+		except (ConnectionRefusedError, requests.exceptions.ConnectionError):
+			console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
+			shutdown()
+			quit(-1)
+
 		
 
 _lastHeaders:Parameters = None
@@ -1205,8 +1245,7 @@ def testCaseStart(name:str) -> None:
 		response.close()
 	if verboseRequests:
 		console.print('')
-		ln  = '=' * int((console.width - 11 - len(name)) / 2)
-		console.print(f'[dim]{ln}[ Start {name} ]{ln}')
+		console.rule(f'[ Start {name} ]', characters='=', style='bright_blue')
 
 
 
@@ -1225,8 +1264,7 @@ def testCaseEnd(name:str) -> None:
 		response.close()
 	if verboseRequests:
 		console.print('')
-		ln  = '=' * int((console.width - 9 - len(name)) / 2)
-		console.print(f'[dim]{ln}[ End {name} ]{ln}')
+		console.rule(f'[ End {name} ]', characters='=', style='bright_blue')
 
 
 def disableUpperTester() -> None:
@@ -1234,6 +1272,13 @@ def disableUpperTester() -> None:
 	"""
 	global UPPERTESTERENABLED
 	UPPERTESTERENABLED = False
+
+
+def disableStructureAPI() -> None:
+	"""	Disable the use of the resource tree structure API.
+	"""
+	global RESOURCETREEAPIENABLED
+	RESOURCETREEAPIENABLED = False
 
 
 def dacEnabled() -> bool:

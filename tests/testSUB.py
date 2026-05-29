@@ -8,10 +8,11 @@
 #
 
 import unittest, sys
+
 if '..' not in sys.path:
 	sys.path.append('..')
 from acmecse.etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC
-from acmecse.etc.Types import Operation
+from acmecse.etc.Types import Operation, Permission
 from init import *
 
 numberOfBatchNotifications = 5
@@ -2028,6 +2029,66 @@ class TestSUB(unittest.TestCase):
 		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
 		self.assertEqual(rsc, RC.DELETED)
 
+#
+#	Test Access Controls
+#
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubWithNoParentRetrieveAccessFail(self) -> None:
+		""" CREATE <sub> with parent that does not allow RETRIEVE -> Fail"""
+
+		# Register an AE 
+		dct = 	{ 'm2m:ae' : {
+					'rn'  : f'{aeRN}NoAccess', 
+					'api' : APPID,
+					'rr'  : True,
+					'srv' : [ RELEASEVERSION ]
+				}}
+		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED, ae)
+		originator = findXPath(ae, 'm2m:ae/aei')
+
+		# CREATE an ACP to the AE that disallows RETRIEVE for the originator
+		dct = 	{ 'm2m:acp' : {
+					'rn' : acpRN,
+					'pv' : {
+						'acr': [ {
+							'acor': [ originator ],
+							'acop': Permission.CREATE + Permission.DELETE + Permission.UPDATE,
+						}]
+					},
+					'pvs': { 
+						'acr': [ {
+							'acor': [ originator ],
+							'acop': Permission.ALL
+						} ]
+					},
+				}}
+		r, rsc = CREATE(f'{cseURL}/{aeRN}NoAccess', originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		acpRi = findXPath(r, 'm2m:acp/ri')
+
+		# UPDATE the AE with the ACP
+		dct = 	{ 'm2m:ae' : {
+					'acpi' : [ acpRi ]
+				}}
+		r, rsc = UPDATE(f'{cseURL}/{aeRN}NoAccess', originator, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+
+		# CREATE a SUB with the same originator. This should fail.
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'cr' : None,
+					'eeno': True,
+					'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+				}}
+		r, rsc = CREATE(f'{cseURL}/{aeRN}NoAccess', originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		# DELETE the AE
+		r, rsc = DELETE(f'{cseURL}/{aeRN}NoAccess', originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
 
 #
 #	Test defaults
@@ -2223,6 +2284,10 @@ def run(testFailFast:bool) -> TestResult:
 		# Test enableEventNotificationOriginator attribute
 		'test_testSUBwithEnableEventNotificationOriginator',
 		'test_testSUBwithEnableEventNotificationOriginatorAndCreator',
+
+
+		# Access Control tests
+		'test_createSubWithNoParentRetrieveAccessFail',
 
 		# Test defaults
 		'test_createSUBnoNCTwrongNETFail',

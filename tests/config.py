@@ -70,6 +70,7 @@ ORIGINATOREmpty					= ''				# Originator for empty originator/self registration
 ORIGINATORNotifResp				= 'CTester'			# Originator for Notification responses
 RECONFIGURATIONENABLED			= True				# The CSE allowes for reconfigurations via Upper Tester
 UPPERTESTERENABLED				= True				# Enable or Disable Upper Tester extensions
+RESOURCETREEAPIENABLED			= True				# Enable or Disable Resource Tree API extensions
 RELEASEVERSION					= '4'				# Supported Release Version for requests & registrations
 TESTHOSTIP:Optional[str]		= None				# IP address of the host running the tests. 
 													# If None, the IP address is determined automatically
@@ -194,6 +195,11 @@ NOTIFICATIONDELAY   = 0.5	# Time to wait for some async notifications
 UTURL	= f'{CONFIGPROTOCOL}://{CSEHOST}:{CSEPORT}{HTTPROOT}__ut__'	# CSE's Upper Tester URL
 UTCMD	= 'X-M2M-UTCMD'
 UTRSP	= 'X-M2M-UTRSP'
+
+#
+#	Resource Tree API
+#
+RTAPIURL	= f'{CONFIGPROTOCOL}://{CSEHOST}:{CSEPORT}{HTTPROOT}__structure__/text'	# CSE's Resource Tree API URL
 
 
 ##############################################################################

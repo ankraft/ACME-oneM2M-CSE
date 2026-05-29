@@ -153,6 +153,9 @@ if __name__ == '__main__':
 	# Check whether upper tester is enabled
 	init.checkUpperTester()
 
+	# Check whether resource tree API is enabled
+	init.checkStructureAPI()
+
 	# Run the tearDown functions of the test cases and then exit
 	if args.runTearDown:
 		console.print('[bright_blue]Running tear-down functions for test suites: ')

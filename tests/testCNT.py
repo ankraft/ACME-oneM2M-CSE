@@ -276,6 +276,7 @@ class TestCNT(unittest.TestCase):
 		r, rsc = CREATE(cseURL, None, T.CNT, dct) # Without originator !!
 		self.assertNotEqual(rsc, RC.CREATED)
 
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTwithWrongTypeShortname(self) -> None:
 		"""	Create <CNT> with wrong typeShortname -> Fail"""
@@ -284,6 +285,36 @@ class TestCNT(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct) # Without originator !!
 		self.assertNotEqual(rsc, RC.CREATED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithLaOlResourcenameFail(self) -> None:
+		"""	Create <CNT> under <CNT> with 'la' and 'ol' resource names -> Fail"""
+
+		# Create parent CNT under CSEBase first
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct) # With Admin originator !!
+		self.assertEqual(rsc, RC.CREATED)
+
+		# Now create child CNT with 'la' resource name
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : 'la'
+				}}
+		r, rsc = CREATE(f'{cseURL}/{cntRN}', ORIGINATOR, T.CNT, dct) 
+		self.assertEqual(rsc, RC.CONFLICT, r)
+
+		# Now create child CNT with 'ol' resource name
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : 'ol'
+				}}
+		r, rsc = CREATE(f'{cseURL}/{cntRN}', ORIGINATOR, T.CNT, dct) 
+		self.assertEqual(rsc, RC.CONFLICT, r)
+
+		# Delete the parent CNT
+		_, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED)
 
 
 def run(testFailFast:bool) -> TestResult:
@@ -316,6 +347,7 @@ def run(testFailFast:bool) -> TestResult:
 
 		'test_createCNTWithoutOriginator',
 		'test_createCNTwithWrongTypeShortname',
+		'test_createCNTwithLaOlResourcenameFail',
 	
 	])
 
