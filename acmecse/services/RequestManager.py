@@ -1278,8 +1278,8 @@ class RequestManager(metaclass=Singleton):
 	#
 
 
-	def fillAndValidateCSERequest(self, cseRequest:Union[CSERequest, JSON], 
-			       						isResponse:Optional[bool]=False) -> CSERequest:
+	def fillAndValidateCSERequest(self, cseRequest: Union[CSERequest, JSON], 
+			       						isResponse: Optional[bool] = False) -> CSERequest:
 		"""	Fill a *cseRequest* object according to its request structure in the *Result.request* attribute.
 		"""
 		# ! Cannot be in RequestUtils bc to prevent circular import of CSE and validator
@@ -1592,13 +1592,14 @@ class RequestManager(metaclass=Singleton):
 					raise BAD_REQUEST(L.logDebug(f'Missing primitive content or body in request for operation: {cseRequest.op}'), data=cseRequest)
 			else:
 				cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content
-				cseRequest.topElememt = list(cseRequest.pc.keys())[0] if cseRequest.pc else None
+				cseRequest.topElement = list(cseRequest.pc.keys())[0] if cseRequest.pc else None
 				try:
-					self.validator.validatePrimitiveContent(cseRequest.pc, cseRequest.topElememt)
+					self.validator.validateResourceShortname(cseRequest)
+					self.validator.validatePrimitiveContent(cseRequest.pc, cseRequest.topElement)
 				except ResponseException as e:
 					L.isDebug and L.logDebug(e.dbg)
 					e.data = cseRequest
-					raise e
+					raise e from e
 			
 			# Check whether none or all of sqi, smf and rcn=semantic content is set, otherwise error
 			if cseRequest.sqi and cseRequest.rcn != ResultContentType.semanticContent:

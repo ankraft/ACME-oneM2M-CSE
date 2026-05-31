@@ -272,7 +272,7 @@ class GroupManager():
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
-		if not self.security.hasAccess(originator, groupResource, requestedPermission = permission, ty = request.ty):
+		if not self.security.hasAccess(originator, groupResource, requestedPermission=permission, ty=request.ty):
 			raise ORIGINATOR_HAS_NO_PRIVILEGE('insufficient privileges for originator')
 		
 

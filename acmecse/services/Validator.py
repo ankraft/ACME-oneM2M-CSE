@@ -14,7 +14,7 @@ import re, json
 import isodate
 
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType, Cardinality
-from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType
+from ..etc.Types import RequestOptionality, Announced, AttributePolicy, ResultContentType, CSERequest
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations, GeometryType, GeoSpatialFunctionType
 from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatteryStatus, IdentifierScope
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
@@ -22,10 +22,10 @@ from ..etc.JSONUtils import pureResource
 from ..etc.IDUtils import toCSERelative, toAbsolute, toSPRelative, isValidAEI, isCSERelative, isSPRelative, isAbsolute
 from ..etc.Utils import strToBool
 from ..helpers.TextTools import findXPath, soundsLike
-from ..etc.DateUtils import fromAbsRelTimestamp
 from ..helpers import TextTools
-from ..runtime.Logging import Logging as L
+from ..etc.DateUtils import fromAbsRelTimestamp
 from ..etc.Constants import RuntimeConstants as RC
+from ..runtime.Logging import Logging as L
 from ..helpers.Singleton import Singleton
 from ..runtime.PluginSupport import requires
 
@@ -110,6 +110,39 @@ class Validator(metaclass=Singleton):
 		return True
 
 	#########################################################################
+
+
+	def validateResourceShortname(self, cseRequest: CSERequest) -> None:
+		""" Validate the resource type in the request's primitive content. 
+
+			Args:
+				cseRequest: The CSERequest to validate.
+			Raises:
+				BAD_REQUEST: If the resource type is missing or invalid.
+		"""
+		_topElement = cseRequest.topElement
+		if not _topElement or cseRequest.op != Operation.CREATE: # There might be none
+			return
+		match cseRequest.ty:
+
+			case ResourceTypes.FCNT | ResourceTypes.FCNTAnnc:
+				print(_topElement)
+				if not self.hasFlexContainerSpecialization(_topElement):
+					raise BAD_REQUEST(L.logDebug(f'Unsupported flexContainer specialization: {_topElement} in primitive content'))
+				# -> Validation of cnd is done in the FlexContainer and FlexContainerAnnc activate() methods
+			
+			case ResourceTypes.MGMTOBJ | ResourceTypes.MGMTOBJAnnc:
+				# Validate that the top element is a known MgmtObj resource type and that the mgd is present and valid
+				if _topElement not in ResourceTypes.mgmtObjShortNames():
+					raise BAD_REQUEST(L.logDebug(f'Unknown MgmtObj resource type: {_topElement} in primitive content'))
+				if (_mgd := findXPath(cseRequest.pc, f'{_topElement}/mgd')) is None:
+					raise BAD_REQUEST(L.logDebug(f'Missing mgd for MgmtObj resource type: {_topElement} in primitive content'))
+				if ResourceTypes.resourceTypeNameByMgd(_mgd) != _topElement:
+					raise BAD_REQUEST(L.logDebug(f'mgd: {_mgd} doesn\'t match resource type: {_topElement} in primitive content'))
+			
+			case _:
+				if _topElement != ResourceTypes(cseRequest.ty).typeShortname():
+					raise BAD_REQUEST(L.logDebug(f'Resource type in primitive content: {_topElement} doesn\'t match request ty: {cseRequest.ty}'))
 
 
 	def validateResourceUpdate(self, resource:Resource, dct:JSON, doValidateAttributes:bool=False) -> None:
@@ -558,7 +591,7 @@ class Validator(metaclass=Singleton):
 				Boolean, indicating whether a specialization was added successfully. 
 
 		"""
-		if not typeShortname in flexContainerSpecializations:
+		if not self.hasFlexContainerSpecialization(typeShortname):
 			flexContainerSpecializations[typeShortname] = (cnd, lname)
 			return True
 		return False
@@ -573,6 +606,18 @@ class Validator(metaclass=Singleton):
 				Tuple with the flexContainer specialization data (or None if none exists). The tuple contains the containerDefinition and the long name.
 		"""
 		return flexContainerSpecializations.get(typeShortname)
+	
+
+	def hasFlexContainerSpecialization(self, typeShortname:str) -> bool:
+		"""	Test whether a flexContainer specialization with the given typeShortname exists.
+		
+			Args:
+				typeShortname: String, domain and short name of the flexContainer specialization.
+			Return:
+				Boolean, indicating existens.
+
+		"""
+		return typeShortname in flexContainerSpecializations
 
 	
 	def hasFlexContainerContainerDefinition(self, cnd:str) -> bool:

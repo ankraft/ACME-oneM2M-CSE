@@ -212,7 +212,7 @@ class Importer(metaclass=Singleton):
 						)
 						countRP += 1
 					except KeyError as e:
-						raise RuntimeError(L.logErr(f'Wrong resource type definition for resource type: {rtName} in file: {fn} - missing or wrong value for: {str(e)}'))
+						raise RuntimeError(L.logErr(f'Wrong resource type definition for resource type: {rtName} in file: {fn} - missing or wrong value for: {str(e)}')) from e
 
 
 			L.isDebug and L.logDebug(f'Imported {countRP} resource policies')

@@ -55,6 +55,48 @@ class TestMgmtObj(unittest.TestCase):
 
 	#########################################################################
 
+
+	#
+	#	Misc MgmtObj tests
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_mgmtObjResourceNameTypeMismatchFail(self) -> None:
+		""" Create a mgmtObj resource with mismatching name and type -> Fail """
+		dct = 	{ 'm2m:ae' : { 	# type:ignore [var-annotated]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.MGMTOBJ, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_mgmtObjResourceNameDefinitionMismatchFail(self) -> None:
+		""" Create a mgmtObj resource with mismatching name and definition -> Fail """
+		dct = 	{ 'm2m:stor' : { 
+					'mgd': 23,	# wrong mgd for stor
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.MGMTOBJ, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_mgmtObjMissingMgdFail(self) -> None:
+		""" Create a mgmtObj resource with missing mgd -> Fail """
+		dct = 	{ 'm2m:stor' : { # type:ignore [var-annotated]
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_mgmtObjWrongMgdFail(self) -> None:
+		""" Create a mgmtObj resource with valid but wrong mgd -> Fail """
+		dct = 	{ 'm2m:stor' : { # type:ignore [var-annotated]
+					'mgd': T.ANDI,	# wrong mgd for stor
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
 	#
 	#	FWR
 	#
@@ -1479,6 +1521,11 @@ def run(testFailFast:bool) -> TestResult:
 	# Assign tests
 	suite = unittest.TestSuite()
 	addTests(suite, TestMgmtObj, [
+
+		'test_mgmtObjResourceNameTypeMismatchFail',
+		'test_mgmtObjResourceNameDefinitionMismatchFail',
+		'test_mgmtObjMissingMgdFail',
+		'test_mgmtObjWrongMgdFail',
 
 		'test_createFWR',
 		'test_retrieveFWR',

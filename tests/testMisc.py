@@ -607,6 +607,29 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(len(r), 0, r)
 
 
+	#
+	#	Tests for resource names and types
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_resourceNameTypeMismatchFail(self) -> None:
+		""" Create a resource with mismatching name and type -> Fail """
+		dct = 	{ 'm2m:ae' : { 	# type:ignore [var-annotated]
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.CNT, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_fcntResourceNameTypeMismatchFail(self) -> None:
+		""" Create a fcnt resource with mismatching name and type -> Fail """
+		dct = 	{ 'm2m:foo' : { 	# type:ignore [var-annotated]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.FCNT, dct)	# type: ignore [arg-type]
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
 
 # TODO test for creating a resource with missing type parameter
 # TODO test json with comments
@@ -661,6 +684,10 @@ def run(testFailFast:bool) -> TestResult:
 		'test_noResponseCreate',
 		'test_noResponseUpdate',
 		'test_noResponseDelete',
+
+		# Resource Names and Types
+		'test_resourceNameTypeMismatchFail',
+		'test_fcntResourceNameTypeMismatchFail',
 
 	])
 	

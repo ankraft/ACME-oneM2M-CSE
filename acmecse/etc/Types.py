@@ -352,6 +352,26 @@ class ResourceTypes(ACMEIntEnum):
 				The FactoryCallableT for the ResourceType.
 		"""	
 		return resourceTypeDetails.get(self).factory
+	
+
+	@classmethod
+	def shortNames(cls) -> list[str]:
+		"""	Return a list of all resource type short names.
+
+			Return:
+				List of all resource type short names.
+		"""
+		return list(_resourceNamesTypes.keys())
+
+
+	@classmethod
+	def mgmtObjShortNames(cls) -> list[str]:
+		"""	Return a list of all mgmtObj specialization resource type short names.
+
+			Return:
+				List of all mgmtObj specialization resource type short names.
+		"""
+		return _resourceTypesMgmtObjSpecializationNames	
 
 
 	@classmethod
@@ -414,7 +434,7 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	@classmethod
-	def isContainerResource(cls, ty:int) -> bool:
+	def isContainerResource(cls, ty: int) -> bool:
 		"""	Test whether a resource type is a container resource type.
 
 			Args:
@@ -423,6 +443,18 @@ class ResourceTypes(ACMEIntEnum):
 				*True* if the resource type is a container resource.
 		"""
 		return ty in _resourceTypesContainerResourcesSet
+
+
+	@classmethod
+	def resourceTypeNameByMgd(cls, mgd: int) -> str:
+		"""	Return the resource type name for a mgmtObj specialization.		
+
+			Args:
+				mgd: Management DefinitionType to test.
+			Return:
+				The resource type name for the mgmtObj specialization.
+		"""
+		return resourceTypeDetails.get(mgd).typeName	# type: ignore [call-overload]
 	
 
 	@classmethod
@@ -529,8 +561,14 @@ _resourceTypesInstanceResourcesSet:list[ResourceTypes] = []
 _resourceTypesContainerResourcesSet:list[ResourceTypes] = []
 """	List of container resources. """
 
+_resourceTypesMgmtObjSpecializations:list[ResourceTypes] = []
+""" List of mgmtObj specialization resource types. """
+
 _resourceTypesVirtualResourcesNames:list[str] = []
 """	List of unique virtual resource names. """
+
+_resourceTypesMgmtObjSpecializationNames:list[str] = []
+""" List of mgmtObj specialization resource type names. """
 
 _resourceTypesNames:dict[ResourceTypes, str] = {}
 """ Mapping between oneM2M resource types to type names. """
@@ -2552,10 +2590,10 @@ class CSERequest:
 	requestType:RequestType	= RequestType.NOTSET
 	""" The struture is for a request or a response. """
 
-	topElememt: Optional[str] = None
+	topElement: Optional[str] = None
 	""" The top element of the request or response. """
 
-	selectedAttributes:list[str] = field(default_factory = list)
+	selectedAttributes:list[str] = field(default_factory=list)
 	""" Selected attributes that filter the resource attributes in the response. This list refers to the resource attributes, ie. one level below the resource. """
 
 	#

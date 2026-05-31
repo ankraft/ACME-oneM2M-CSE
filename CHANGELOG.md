@@ -21,6 +21,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Fixed
 - [CSE] Fixed AE-ID recognition to allow "/Sabc" as a valid AE-ID, but not "/Cabc". 
 - [CSE] Fixed missing RETRIEVE permission check when creating a &lt;subscription> resource. Added a test case for this.   
+- [CSE] Improved validation of MgmtObj resources (missing or wrong mgd, or wrong resource type).
 
 ### Removed
 

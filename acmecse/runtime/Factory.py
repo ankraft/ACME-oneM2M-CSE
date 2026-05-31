@@ -376,6 +376,21 @@ class Factory(metaclass=Singleton):
 		]
 		Types._resourceTypesVirtualResourcesNames = list(set(Types._resourceTypesVirtualResourcesNames))	# unique names
 
+
+		# A list of management specialization types
+		Types._resourceTypesMgmtObjSpecializationNames = [
+			d.typeName
+			for d in resourceTypeDetails.values()
+			if d.isMgmtSpecialization
+		]
+
+		# A list of management specialization resource types
+		Types._resourceTypesMgmtObjSpecializations = [
+			t
+			for t, d in resourceTypeDetails.items()
+			if d.isMgmtSpecialization
+		]
+
 		# A mapping of resource types to their type shortnames
 		Types._resourceTypesNames = {
 			t : d.typeName
@@ -498,16 +513,20 @@ class Factory(metaclass=Singleton):
 		factory:FactoryCallableT = None
 
 		match typ:
+			
 			case ResourceTypes.MGMTOBJ:
 				# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
 				factory = ResourceTypes(resDict['mgd']).resourceFactory()
+			
 			case ResourceTypes.MGMTOBJAnnc:
 				# mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
 				factory = ResourceTypes(resDict['mgd']).announced().resourceFactory()
+
 			case ResourceTypes.FCNT | ResourceTypes.FCNTAnnc:
 				if template:
 					typeShortname = 'NS:TYPE'	# Set a default type for FCNT resources
 				factory = typ.resourceFactory()
+			
 			case _:
 				factory = typ.resourceFactory()
 		

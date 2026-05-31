@@ -16,7 +16,7 @@ from ..etc.ACMEUtils import getAttributeSize
 from ..etc.DateUtils import getResourceDate
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager, EventData, eventManager	
+from ..runtime.EventManager import EventData, eventManager	
 from ..runtime.PluginSupport import requires
 from ..resources.Resource import Resource, internalAttributes, addToInternalAttributes
 from ..resources.ContainerResource import ContainerResource
@@ -41,7 +41,7 @@ class FCNT(ContainerResource):
 	validator: Validator = None
 	"""	Injected Validator instance. """
 
-	def __init__(self, dct:Optional[JSON]=None, typeShortname:Optional[str]=None, create:Optional[bool]=False) -> None:
+	def __init__(self, dct: Optional[JSON] = None, typeShortname: Optional[str] = None, create: Optional[bool] = False) -> None:
 		self.typeShortname = typeShortname
 		"""	Shortname of the flexContainer type. """
 
@@ -67,7 +67,7 @@ class FCNT(ContainerResource):
 		super().initialize(pi)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 		
 		self.setAttribute('st', 0)

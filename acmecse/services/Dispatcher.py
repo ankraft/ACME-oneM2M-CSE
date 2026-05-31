@@ -763,7 +763,7 @@ class Dispatcher(metaclass=Singleton):
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		parentResource = self.retrieveResource(id, request=request)
 
-		if not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=request.ty, parentResource = parentResource, request=request):
+		if not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=request.ty, parentResource=parentResource, request=request):
 			if request.ty == ResourceTypes.AE:
 				raise SECURITY_ASSOCIATION_REQUIRED('security association required')
 			else:
