@@ -180,6 +180,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	SIM ManagementObject specialization. """
 	MNWK			= 1031	# mobileNetwork
 	"""	MobileNetwork ManagementObject specialization. """
+	STOR			= 1032	# storage
+	""" Storage ManagementObject specialization. """
 
 	# Announced Resources
 
@@ -259,6 +261,8 @@ class ResourceTypes(ACMEIntEnum):
 	"""	Announced SIM ManagementObject specialization. """
 	MNWKAnnc		= -30031
 	"""	Announced MobileNetwork ManagementObject specialization. """
+	STORAnnc		= -30032
+	"""	Announced Storage ManagementObject specialization. """
 
 	def typeShortname(self) -> str:
 		"""	Get the resource type name.

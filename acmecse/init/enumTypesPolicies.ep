@@ -180,7 +180,8 @@
 		"1028": "wifiClient",
 		"1029": "credentials",
 		"1030": "SIM",
-		"1031": "mobileNetwork"
+		"1031": "mobileNetwork",
+		"1032": "storage"
 	},
 	"m2m:multicastCapability" : {
 		"1": "MBMS",

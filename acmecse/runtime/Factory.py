@@ -147,6 +147,8 @@ class Factory(metaclass=Singleton):
 		from ..resources.mgmtobjs.SIMAnnc import SIMAnnc
 		from ..resources.mgmtobjs.MNWK import MNWK
 		from ..resources.mgmtobjs.MNWKAnnc import MNWKAnnc
+		from ..resources.mgmtobjs.STOR import STOR
+		from ..resources.mgmtobjs.STORAnnc import STORAnnc
 
 		L.isDebug and L.logDebug('Initializing resource factory, resources and type mappings')
 
@@ -240,6 +242,8 @@ class Factory(metaclass=Singleton):
 			ResourceTypes.NYCFCAnnc		: (NYCFCAnnc,	lambda dct, tySN, create : NYCFCAnnc(dct, create=create)),
 			ResourceTypes.RBO			: (RBO,			lambda dct, tySN, create : RBO(dct, create=create)),
 			ResourceTypes.RBOAnnc		: (RBOAnnc,		lambda dct, tySN, create : RBOAnnc(dct, create=create)),
+			ResourceTypes.STOR			: (STOR,		lambda dct, tySN, create : STOR(dct, create=create)),
+			ResourceTypes.STORAnnc		: (STORAnnc,	lambda dct, tySN, create : STORAnnc(dct, create=create)),
 			ResourceTypes.SWR			: (SWR,			lambda dct, tySN, create : SWR(dct, create=create)),
 			ResourceTypes.SWRAnnc		: (SWRAnnc,		lambda dct, tySN, create : SWRAnnc(dct, create=create)),
 			ResourceTypes.WIFIC			: (WIFIC,		lambda dct, tySN, create : WIFIC(dct, create=create)),

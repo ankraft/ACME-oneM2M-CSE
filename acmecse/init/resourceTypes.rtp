@@ -3393,6 +3393,112 @@
 		]
 	},
 
+	"STOR": {
+		"typeName": "m2m:stor",
+		"fullName": "Storage",
+		"announcedType": "STORAnnc",
+		"type": 13,
+		"mgmtType": 1032,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"cstn",
+			"acpi",
+			"at",
+			"aa",
+			"ast",
+			"daci",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"uuid",
+			"stoTe",
+			"wriSd",
+			"reaSd",
+			"avaSe",
+			"totSe",
+			"stoPe",
+			"sus",
+			"nuOMs",
+			"nOFUs",
+			"filSm",
+			"stoNe",
+			"mouPt",
+			"formt",
+			"unmot",
+			"mouOs",
+			"write"
+		]
+	},
+
+	"STORAnnc" : {
+		"typeName": "dcfg:storA",
+		"fullName": "Storage Announced",
+		"type": 10013,
+		"mgmtType": 1032,
+		"isAnnouncedResource": true,
+		"isMgmtSpecialization": true,
+
+		"attributes": [
+			// Common and universal attributes
+			"rn",
+			"ty",
+			"ri",
+			"pi",
+			"ct",
+			"lt",
+			"et",
+			"lbl",
+			"acpi",
+			"daci",
+			"lnk",
+			"ast",
+
+			// MgmtObj attributes
+			"mgd",
+			"obis",
+			"obps",
+			"dc",
+			"mgs",
+			"cmlk",
+
+			// Resource attributes
+			"uuid",
+			"stoTe",
+			"wriSd",
+			"reaSd",
+			"avaSe",
+			"totSe",
+			"stoPe",
+			"sus",
+			"nuOMs",
+			"nOFUs",
+			"filSm",
+			"stoNe",
+			"mouPt",
+			"formt",
+			"unmot",
+			"mouOs",
+			"write"
+		]
+	},
+
 	"SWR": {
 		"typeName": "m2m:swr",
 		"fullName": "Software",

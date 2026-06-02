@@ -15,6 +15,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
 
 ### Experimental
+- [CSE] Added support for the [storage] ManagementObject specialization. This implementation is preliminary and may change depending on the final definition of the storage ManagementObject specialization in TS-0001 and TS-0004.
 
 ### Changed
 

@@ -1515,6 +1515,175 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	#
+	#	STOR
+	#
+
+	storRN	= 'STOR'
+	storURL	= f'{nodURL}/{storRN}'
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSTOR(self) -> None:
+		"""	CREATE [STOR] """
+		dct =  { 'm2m:stor' : {
+					'mgd' : T.STOR,
+					'rn'  : self.storRN,
+					'dc'  : 'aStor',
+
+					'uuid': 'aUUID',
+					'stoTe': 1,
+					'wriSd': 1000,
+					'reaSd': 2000,
+					'avaSe': 10000,
+					'totSe': 20000,
+					'stoPe': 1,
+					'sus': 1,
+					'nuOMs': 1,
+					'nOFUs': 1,
+					'filSm': 'aFileSystem',
+					'stoNe': 'aStorageName',
+					'mouPt': 'aMountPoint',
+					'mouOs': 'aMountOption',
+					'write': True,
+				}}
+		
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/mgd'), T.STOR, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/uuid'), 'aUUID', r)
+		self.assertEqual(findXPath(r, 'm2m:stor/stoTe'), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/wriSd'), 1000, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/reaSd'), 2000, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/avaSe'), 10000, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/totSe'), 20000, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/stoPe'), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/sus'), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/nuOMs'), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/nOFUs'), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/filSm'), 'aFileSystem', r)
+		self.assertEqual(findXPath(r, 'm2m:stor/stoNe'), 'aStorageName', r)
+		self.assertEqual(findXPath(r, 'm2m:stor/mouPt'), 'aMountPoint', r)
+		self.assertEqual(findXPath(r, 'm2m:stor/mouOs'), 'aMountOption', r)
+		self.assertEqual(findXPath(r, 'm2m:stor/write'), True, r)
+
+		# Delete the created resource
+		_, rsc = DELETE(self.storURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSTORWithWrongStoTeFail(self) -> None:
+		"""	CREATE [STOR] with wrong stoTe -> FAIL """
+		dct =  { 'm2m:stor' : {
+					'mgd' : T.STOR,
+					'rn'  : f'{self.storRN}Wrong',
+					'dc'  : 'aStor',
+
+					'stoTe': 23,
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSTORWithWrongStoPeFail(self) -> None:
+		"""	CREATE [STOR] with wrong stoPe -> FAIL """
+		dct =  { 'm2m:stor' : {
+					'mgd' : T.STOR,
+					'rn'  : f'{self.storRN}Wrong',
+					'dc'  : 'aStor',
+
+					'stoPe': 23,
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSTORWithWrongSusFail(self) -> None:
+		"""	CREATE [STOR] with wrong sus -> FAIL """
+		dct =  { 'm2m:stor' : {
+					'mgd' : T.STOR,
+					'rn'  : f'{self.storRN}Wrong',
+					'dc'  : 'aStor',
+
+					'sus': 23,
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSTORformat(self) -> None:
+		"""	Update [STOR] format attribute """
+		dct =  { 'm2m:stor' : {
+					'mgd' : T.STOR,
+					'rn'  : self.storRN,
+					'dc'  : 'aStor',
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		dct =  { 'm2m:stor' : {
+					'formt': True
+				}}
+		r, rsc = UPDATE(f'{nodURL}/{self.storRN}', ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/formt'), True, r)
+
+		# Delete the created resource
+		_, rsc = DELETE(self.storURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSTORunmount(self) -> None:
+		"""	Update [STOR] unmount attribute """
+		dct =  { 'm2m:stor' : {
+					'mgd' : T.STOR,
+					'rn'  : self.storRN,
+					'dc'  : 'aStor',
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		dct =  { 'm2m:stor' : {
+					'unmot': True
+				}}
+		r, rsc = UPDATE(f'{nodURL}/{self.storRN}', ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.UPDATED, r)
+		self.assertEqual(findXPath(r, 'm2m:stor/unmot'), True, r)
+
+		# Delete the created resource
+		_, rsc = DELETE(self.storURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSTORformatUnmountFail(self) -> None:
+		"""	Update [STOR] format and unmount attributes simultaneously -> FAIL """
+		dct =  { 'm2m:stor' : {
+					'mgd' : T.STOR,
+					'rn'  : self.storRN,
+					'dc'  : 'aStor',
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		dct =  { 'm2m:stor' : {
+					'formt': True,
+					'unmot': True,
+				}}
+		r, rsc = UPDATE(f'{nodURL}/{self.storRN}', ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Delete the created resource
+		_, rsc = DELETE(self.storURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+
+
 
 def run(testFailFast:bool) -> TestResult:
 
@@ -1634,6 +1803,13 @@ def run(testFailFast:bool) -> TestResult:
 		'test_attributesCRDS',
 		'test_deleteCRDS',
 
+		'test_createSTOR',
+		'test_createSTORWithWrongStoTeFail',
+		'test_createSTORWithWrongStoPeFail',
+		'test_createSTORWithWrongSusFail',
+		'test_updateSTORformat',
+		'test_updateSTORunmount',
+		'test_updateSTORformatUnmountFail',
 	])
 
 	# Run tests

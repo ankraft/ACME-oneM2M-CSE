@@ -657,6 +657,19 @@
 			"annc": "OA"
 		}
 	],
+	"avaSe": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "availStorage",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",	// read-only
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"awi": [
 		{
 			"rtypes": [ "ANDI" ],
@@ -959,7 +972,7 @@
 			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
 						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
 						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
-						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+						"SIM", "SIMAnnc", "STOR", "STORAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
 					 ],
 			"lname": "mgmtLink",
 			"ns": "m2m",
@@ -1469,7 +1482,7 @@
 			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
 						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
 						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
-						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+						"SIM", "SIMAnnc", "STOR", "STORAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
 					 ],
 			"lname": "description",
 			"ns": "m2m",
@@ -2031,6 +2044,32 @@
 			"type": "boolean",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"filSm": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "fileSystem",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",	// read-write
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"formt": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "format",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",	// read-write
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -3122,7 +3161,7 @@
 			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
 						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
 						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
-						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+						"SIM", "SIMAnnc", "STOR", "STORAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
 					 ],
 			"lname": "mgmtDefinition",
 			"ns": "m2m",
@@ -3140,7 +3179,7 @@
 			"rtypes": [ "ANDI", "ANDIAnnc", "ANI", "ANIAnnc", "BAT", "BATAnnc", "CRDS", "CRDSAnnc", 
 						"DATC", "DATCAnnc",   "DVC", "DVCAnnc", "DVI", "DVIAnnc", "EVL", "EVLAnnc", 
 						"FWR", "FWRAnnc", "MEM", "MEMAnnc","MNWK", "MNWKAnnc", "NYCFC", "NYCFCAnnc", "RBO", "RBOAnnc", 
-						"SIM", "SIMAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
+						"SIM", "SIMAnnc", "STOR", "STORAnnc", "SWR", "SWRAnnc", "WIFIC", "WIFICAnnc"
 					 ],
 			"lname": "mgmtSchema",
 			"ns": "m2m",
@@ -3308,6 +3347,32 @@
 			"type": "string",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],	
+	"mouOs": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "mountOptions",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",	// read-only
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"mouPt": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "mountingPoint",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",	// read-write
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -3631,10 +3696,36 @@
 			"annc": "NA"
 		}
 	],
+	"nOFUs": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "numberOfForcedUnmounts",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",	// read-only
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"nuOMs": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "numberOfMounts",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",	// read-only
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"obis": [
 		{
 			"rtypes": [ "ANDI", "ANI", "BAT","CRDS", "DATC", "DVC", "DVI", "EVL", 
-						"FWR", "MEM", "MNWK", "NYCFC", "RBO", "SIM", "SWR", "WIFIC"
+						"FWR", "MEM", "MNWK", "NYCFC", "RBO", "SIM", "STOR", "SWR", "WIFIC"
 					 ],
 			"lname": "objectIDs",
 			"ns": "m2m",
@@ -3648,7 +3739,7 @@
 		},
 		{
 			"rtypes": [ "ANDIAnnc", "ANIAnnc", "BATAnnc", "CRDSAnnc", "DATCAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc", 
-						"FWRAnnc", "MEMAnnc","MNWKAnnc", "NYCFCAnnc", "RBOAnnc", "SIMAnnc", "SWRAnnc", "WIFICAnnc"
+						"FWRAnnc", "MEMAnnc","MNWKAnnc", "NYCFCAnnc", "RBOAnnc", "SIMAnnc", "STORAnnc", "SWRAnnc", "WIFICAnnc"
 					 ],
 			"lname": "objectIDs",
 			"ns": "m2m",
@@ -3664,7 +3755,7 @@
 	"obps": [
 		{
 			"rtypes": [ "ANDI", "ANI", "BAT", "CRDS", "DATC", "DVC", "DVI", "EVL", 
-						"FWR", "MEM", "MNWK", "NYCFC", "RBO", "SIM", "SWR", "WIFIC"
+						"FWR", "MEM", "MNWK", "NYCFC", "RBO", "SIM", "STOR", "SWR", "WIFIC"
 					 ],
 			"lname": "objectPaths",
 			"ns": "m2m",
@@ -3678,7 +3769,7 @@
 		},
 		{
 			"rtypes": [ "ANDIAnnc", "ANIAnnc", "BATAnnc", "CRDSAnnc", "DATCAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc", 
-						"FWRAnnc", "MEMAnnc","MNWKAnnc", "NYCFCAnnc", "RBOAnnc", "SIMAnnc", "SWRAnnc", "WIFICAnnc"
+						"FWRAnnc", "MEMAnnc","MNWKAnnc", "NYCFCAnnc", "RBOAnnc", "SIMAnnc", "STORAnnc", "SWRAnnc", "WIFICAnnc"
 					 ],
 			"lname": "objectPaths",
 			"ns": "m2m",
@@ -3993,6 +4084,19 @@
 			"type": "boolean",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"reaSd": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "readSpeed",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",	// read-only
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -4789,6 +4893,45 @@
 		}
 		// TODO STTEAnnc
 	],
+	"stoNe": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "storageName",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",	// read-write
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"stoPe": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "storagePresence",
+			"ns": "m2m",
+			"type": "integer",
+			"car": "01",
+			"oc": "O",	// read-write
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"stoTe": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "storageType",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",	// read-only
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"sttrs": [
 		{
 			"rtypes": [ "STTE", "REQRESP" ],
@@ -4855,6 +4998,19 @@
 			"etype": "m2m:suid",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"sus": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "status",
+			"ns": "m2m",
+			"type": "integer",
+			"car": "01",
+			"oc": "O",	// read-write
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -4946,6 +5102,19 @@
 			"ou": "NP",
 			"od": "O",
 			"annc": "NA"
+		}
+	],
+	"totSe": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "totalStorage",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",	// read-only
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"tpe": [
@@ -5159,6 +5328,20 @@
 			"annc": "OA"
 		}
 	],
+	"unmot": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "unmount",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",	// read-write
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+
 	// "m2m:uri": [
 	// 	{
 	// 		"rtypes": [ "UNKNOWN" ],
@@ -5186,6 +5369,19 @@
 			"type": "anyURI",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"uuid": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "UUID",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",	// Write-Once
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -5236,6 +5432,19 @@
 			"type": "dcfg:wifiCredentials",
 			"car": "01",
 			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"wriSd": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "writeSpeed",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",	// read-only
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -5611,6 +5820,20 @@
 			"annc": "NA"
 		}
 	],
+	"write": [
+		{
+			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
+			"lname": "writable",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",	// read-only
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+
 
 	//
 	//	PrimitiveContent
