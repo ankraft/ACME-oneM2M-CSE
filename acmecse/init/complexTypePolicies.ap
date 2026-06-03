@@ -2128,44 +2128,24 @@
 	//
 	//	See also "om", "or", "fc" above
 
-	"nev": [
+	"aerp": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:notification",
-			"lname": "notificationEvent",
-			"ns": "m2m",
-			"type": "m2m:notificationEvent_type", // this struct contains only one anonymous attribute "notificationEvent", so we need to invent an inner type name for it
-			"car": "01"
-		}
-	],
-	"rep": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:notificationEvent_type",
-			"lname": "representation",
-			"ns": "m2m",
-			"type": "any",	// TODO: "rep" validation. see Table 6.3.5.62-1.
-			"car": "01"
-		}
-	],
-	"vrq": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:notification",
-			"lname": "verificationRequest",
+			"lname": "AERegistrationPointChange",
 			"ns": "m2m",
 			"type": "boolean",
 			"car": "01"
 		}
 	],
-	"sur": [
+	"aerid": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:notification",
-			"lname": "subscriptionReference",
+			"lname": "AEReferenceIDChange",
 			"ns": "m2m",
-			"type": "anyURI",
-			"car": "1"
+			"type": "boolean",
+			"car": "01"
 		}
 	],
 	"cr": [
@@ -2175,6 +2155,27 @@
 			"lname": "creator",
 			"ns": "m2m",
 			"type": "ID",
+			"car": "01"
+		}
+	],
+	"idr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "IPEDiscoveryRequest",
+			"ns": "m2m",
+			"type": "m2m:IPEDiscoveryRequest_type",
+			"car": "01"
+		}
+
+	],
+	"nev": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "notificationEvent",
+			"ns": "m2m",
+			"type": "m2m:notificationEvent_type", // this struct contains only one anonymous attribute "notificationEvent", so we need to invent an inner type name for it
 			"car": "01"
 		}
 	],
@@ -2198,54 +2199,43 @@
 			"car": "01"
 		}
 	],
-	"trr": [
+	"rep": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notificationEvent_type",
+			"lname": "representation",
+			"ns": "m2m",
+			"type": "any",	// TODO: "rep" validation. see Table 6.3.5.62-1.
+			"car": "01"
+		}
+	],
+	"sud": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:notification",
-			"lname": "targetRemovalRequest",
+			"lname": "subscriptionDeletion",
 			"ns": "m2m",
 			"type": "boolean",
 			"car": "01"
 		}
 	],
-	"tra":[
+	"sur": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:notification",
-			"lname": "targetRemovalAllowance",
+			"lname": "subscriptionReference",
 			"ns": "m2m",
-			"type": "boolean",
-			"car": "01"
+			"type": "anyURI",
+			"car": "1"
 		}
 	],
-	"idr": [
+	"sut": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:notification",
-			"lname": "IPEDiscoveryRequest",
+			"lname": "subscribedTo",
 			"ns": "m2m",
-			"type": "m2m:IPEDiscoveryRequest_type",
-			"car": "01"
-		}
-
-	],
-	"aerp": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:notification",
-			"lname": "AERegistrationPointChange",
-			"ns": "m2m",
-			"type": "boolean",
-			"car": "01"
-		}
-	],
-	"aerid": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:notification",
-			"lname": "AEReferenceIDChange",
-			"ns": "m2m",
-			"type": "boolean",
+			"type": "anyURI",
 			"car": "01"
 		}
 	],
@@ -2269,11 +2259,32 @@
 			"car": "01"
 		}
 	],
-	"sud": [
+
+	"tra":[
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:notification",
-			"lname": "subscriptionDeletion",
+			"lname": "targetRemovalAllowance",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+	"trr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "targetRemovalRequest",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+	"vrq": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:notification",
+			"lname": "verificationRequest",
 			"ns": "m2m",
 			"type": "boolean",
 			"car": "01"

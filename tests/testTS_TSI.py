@@ -592,9 +592,11 @@ class TestTS_TSI(unittest.TestCase):
 		}}
 		TestTS_TSI.sub, rsc = CREATE(tsURL, TestTS_TSI.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(TestTS_TSI.sub, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -630,11 +632,14 @@ class TestTS_TSI(unittest.TestCase):
 			dgt += timeSeriesInterval
 
 			# Check notifications
-			lastNotification = getLastNotification(True, wait = notificationDelay)
+			lastNotification = getLastNotification(True, wait=notificationDelay)
 			if i % (maxMdn-2) == maxMdn-2-1:
 				self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn'), lastNotification)
 				self.assertEqual(len(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdlt')), maxMdn-2, lastNotification)
 				self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdc'), maxMdn-2, lastNotification)
+				self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
+				self.assertEqual(findXPath(lastNotification, 'm2m:sgn/sut'), f'{CSERN}/{aeRN}/{tsRN}', lastNotification)
+
 			else:
 				self.assertIsNone(lastNotification, lastNotification)
 

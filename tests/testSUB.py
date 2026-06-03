@@ -270,6 +270,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/ty'), T.CNT)
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), cntRN)
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 
@@ -292,6 +293,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cin/ty'), T.CIN)
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cin/con'), 'aValue')
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -304,6 +306,7 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 
@@ -335,6 +338,7 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -373,6 +377,7 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -381,7 +386,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'bTag' ]
  				}}
-		_, rsc = UPDATE(cntURL, TestSUB.originator, dct)
+		r, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.UPDATED)
 
 		# Check notification
@@ -391,6 +396,8 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/lbl'), [ 'bTag'])
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/ty'))
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/sut'), f'{CSERN}/{aeRN}/{cntRN}')
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -409,6 +416,8 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/lbl'), [ 'bTag'])
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/ty'))
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/sut'), f'{CSERN}/{aeRN}/{cntRN}')
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -431,6 +440,7 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -448,6 +458,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:uri'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:uri').endswith(findXPath(cnt, 'm2m:cnt/ri')))
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -477,6 +488,7 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -516,6 +528,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(len(findXPath(lastNotification, 'm2m:agn')), 1)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{0}/nev/rep/m2m:cnt/lbl'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{0}/nev/rep/m2m:cnt/lbl/{0}'), '99')
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -545,6 +558,7 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -595,9 +609,11 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/atr'))
 		self.assertEqual(findXPath(r, 'm2m:sub/enc/atr'), [ 'lbl' ])
+		
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -614,6 +630,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/lbl'), [ 'hello'])
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -670,9 +687,11 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:sub/bn/num'), numberOfBatchNotifications)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/ln'))
 		self.assertEqual(findXPath(r, 'm2m:sub/ln'), True)
+		
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -687,9 +706,11 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn'))
 		self.assertEqual(len(findXPath(lastNotification, 'm2m:agn/m2m:sgn')), 1)	 # ... but expecting only one
+		
 		lastNotificationHeaders = getLastNotificationHeaders()
 		self.assertIsNotNone(lastNotificationHeaders[C.hfEC])
 		self.assertEqual(lastNotificationHeaders[C.hfEC], '4') # 'latest'
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -718,9 +739,11 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.CREATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/chty'))
 		self.assertEqual(findXPath(r, 'm2m:sub/enc/chty'), [ T.CNT ])
+		
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -745,10 +768,13 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.cnt, rsc = CREATE(cntURL, TestSUB.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertIsNotNone(lastNotification, lastNotification)		# this must have caused a notification
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}Sub')
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
+
 		_, rsc = DELETE(f'{cntURL}/{cntRN}Sub', TestSUB.originator)	# delete the sub-cnt
 		self.assertEqual(rsc, RC.DELETED)
 
@@ -787,8 +813,10 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
+
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -818,8 +846,10 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
+
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# Create the CNT
 		clearLastNotification()	# clear the notification first
@@ -828,8 +858,10 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.cnt, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification()
 		self.assertIsNone(lastNotification)		# this must have NOT caused a notification via the poa (because not request reachable)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -841,10 +873,12 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.cnt, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertIsNotNone(lastNotification)		# this must have caused a notification via the poa
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}')
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -869,11 +903,13 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.cnt, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification(wait = notificationDelay)
 		lastHeaders = getLastNotificationHeaders()
 		self.assertIsNotNone(lastNotification)		# this must have caused a notification via the poa
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}2')
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 		self.assertIn('Content-Type', lastHeaders)
 		self.assertIn(lastHeaders['Content-Type'], [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ])
 
@@ -910,6 +946,7 @@ class TestSUB(unittest.TestCase):
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/cr'), TestSUB.originator, lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -935,6 +972,7 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/cr'), lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -964,8 +1002,10 @@ class TestSUB(unittest.TestCase):
 				}}
 		_, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -977,11 +1017,13 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.cnt, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification(wait = notificationDelay)
 		lastHeaders = getLastNotificationHeaders()
 		self.assertIsNotNone(lastNotification)		# this must have caused a notification via the poa
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}2')
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 		self.assertIn('Content-Type', lastHeaders)
 		self.assertIn(lastHeaders['Content-Type'], [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ])
 
@@ -1009,8 +1051,10 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.excSub, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1023,10 +1067,12 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.cnt, rsc = CREATE(aeURL, TestSUB.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.CREATED)
+
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/ty'), T.CNT)
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}3')
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# Retrieve subscription
 		testSleep(1) 	# wait a moment
@@ -1092,6 +1138,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/vrq'), notification)
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/cr'), notification)
 		self.assertEqual(findXPath(notification, 'm2m:sgn/cr'), TestSUB.originator, notification)
+		self.assertIsNone(findXPath(notification, 'm2m:sgn/sut'), notification)
 
 		# Check whether creator is there in a RETRIEVE
 		r, rsc = RETRIEVE(f'{cntURL}/{findXPath(r, "m2m:sub/rn")}', TestSUB.originator)
@@ -1121,6 +1168,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/vrq'), notification)
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/cr'), notification)
 		self.assertEqual(findXPath(notification, 'm2m:sgn/cr'), TestSUB.originator, notification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# UPDATE CNT and generate notification
 		clearLastNotification()
@@ -1136,6 +1184,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/cr'), notification)
 		self.assertEqual(findXPath(notification, 'm2m:sgn/cr'), TestSUB.originator, notification)
 		self.assertEqual(findXPath(notification, 'm2m:sgn/nev/net'), NET.resourceUpdate)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1471,10 +1520,12 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(self.aePOAURL, TestSUB.originatorPoa, dct)	
 		self.assertEqual(rsc, RC.UPDATED, r)
+
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertIsNotNone(lastNotification)
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/net'), NET.blockingUpdate)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:ae/lbl'), lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1535,6 +1586,7 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()	# no delay! blocking
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1637,11 +1689,13 @@ class TestSUB(unittest.TestCase):
 					}}
 			r, rsc = UPDATE(f'{self.aePOAURL}', TestSUB.originatorPoa, dct)	
 			self.assertEqual(rsc, RC.UPDATED, r)
+
 		testSleep(1)	# Just wait a moment to give the CSE some time
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'), lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn'), lastNotification)
 		self.assertEqual(len(findXPath(lastNotification, 'm2m:agn/m2m:sgn')), numberOfBatchNotifications, lastNotification)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# retrieve <sub> to get the stats
 		r, rsc = RETRIEVE(f'{self.aePOAURL}/{subRN}', TestSUB.originatorPoa)	
@@ -1838,6 +1892,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 3, n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# delete resource
 		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
@@ -1883,6 +1938,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 3, n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# delete resource
 		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
@@ -1915,6 +1971,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 2, n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# delete resource
 		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
@@ -1987,6 +2044,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(n)
 		self.assertIsNotNone(findXPath(n, 'm2m:sgn/cr'), n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/cr'), ORIGINATOR, n)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# delete resource
 		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)
@@ -2024,6 +2082,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(n)
 		self.assertIsNotNone(findXPath(n, 'm2m:sgn/cr'), n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/cr'), TestSUB.originator, n)
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# delete resource
 		r, rsc = DELETE(f'{aeURL}/{subRN}', TestSUB.originator)

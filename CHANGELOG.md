@@ -12,6 +12,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Added
 - [CSE] Added reloading of HTTP and WebSocket authentication credentials to the management API.
+- [CSE] Added support for the notification's *subscribedTo* attribute.
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
 
 ### Experimental
