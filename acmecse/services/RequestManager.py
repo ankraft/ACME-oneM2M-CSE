@@ -1325,6 +1325,8 @@ class RequestManager(metaclass=Singleton):
 		if isinstance(cseRequest, dict):
 			cseRequest = CSERequest(originalRequest=cseRequest, pc=cseRequest.get('pc'))
 
+		# L.inspect(cseRequest, immediate=True)
+
 		try:
 
 			earlyError:str = None
@@ -1335,6 +1337,13 @@ class RequestManager(metaclass=Singleton):
 				cseRequest.requestType = RequestType.RESPONSE	# This is a response if there is an rsc
 				isResponse = True
 
+			# RQI - requestIdentifier
+			# Check as early as possible
+			if (rqi := gget(cseRequest.originalRequest, 'rqi', greedy=False)):
+				cseRequest.rqi = rqi
+			else:
+				earlyError = L.logDebug('request identifier parameter is mandatory in request')
+
 			# FR - originator 
 			# if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.ty == ResourceTypes.AE and cseRequest.op == Operation.CREATE):
 			# 	raise BAD_REQUEST(L.logDebug('from/originator parameter is mandatory in request'), data = cseRequest)
@@ -1342,13 +1351,6 @@ class RequestManager(metaclass=Singleton):
 			# 	cseRequest.originator = fr
 			cseRequest.originator = cseRequest.originalOriginator = gget(cseRequest.originalRequest, 'fr', greedy=False)
 			self._originatorAdaptToScope(cseRequest, True)	# Convert "from" to CSE-relative format if possible
-
-			# RQI - requestIdentifier
-			# Check as early as possible
-			if (rqi := gget(cseRequest.originalRequest, 'rqi', greedy=False)):
-				cseRequest.rqi = rqi
-			else:
-				earlyError = L.logDebug('request identifier parameter is mandatory in request')
 
 			# TO - target
 			if not (to := gget(cseRequest.originalRequest, 'to', greedy=False)) and not isResponse:
