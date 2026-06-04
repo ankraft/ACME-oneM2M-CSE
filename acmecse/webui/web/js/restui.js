@@ -155,7 +155,11 @@ function restSendData(method, url, headers, data) {
 		}
 	};
 
-
+	// remove leading double slash if present, because otherwise the browser would interpret
+	//  it as a protocol relative URL and prepend the current protocol, which would lead to an invalid URL
+	if (url.startsWith('//')) {
+		url = url.substring(1);
+	}
 	XHR.open(method, url);
 
 	var headerLines = headers.split("\n");

@@ -14,6 +14,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added reloading of HTTP and WebSocket authentication credentials to the management API.
 - [CSE] Added support for the notification's *subscribedTo* attribute.
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
+- [TESTS] Added hurl request files for simple (performance) testing.
 
 ### Experimental
 - [CSE] Added support for the [storage] ManagementObject specialization. This implementation is preliminary and may change depending on the final definition of the storage ManagementObject specialization in TS-0001 and TS-0004.
@@ -24,6 +25,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed AE-ID recognition to allow "/Sabc" as a valid AE-ID, but not "/Cabc". 
 - [CSE] Fixed missing RETRIEVE permission check when creating a &lt;subscription> resource. Added a test case for this.   
 - [CSE] Improved validation of MgmtObj resources (missing or wrong mgd, or wrong resource type).
+- [WEB] Fixed wrong handling of the http root path in the web UI and especially in the REST UI. Thanks to Yann Garcia for reporting this issue.
 
 ### Removed
 
