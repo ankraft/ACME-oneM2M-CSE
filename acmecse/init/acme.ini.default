@@ -190,6 +190,7 @@ _/timeSeriesManager_enable\_=${cse.service.timeSeries:enable}
 ; Default: 2.0 seonds
 delay=2.0
 ; Startup guard: If the CSE is not in the RUNNING state after this time, then a shutdown is forced.
+; A value of 0 means that no guard is used.
 ; Default: 60.0 seconds
 guardDelay=60.0
 
