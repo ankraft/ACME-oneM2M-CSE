@@ -496,11 +496,14 @@ The entries in this list are the module names of the plugins to disable. A plugi
 The default value is an empty list, which means that all plugins are enabled and loaded.
 
 
+
 # cse.operation.plugins.replace
 
 This setting specifies whether to replace existing plugins with the same name when loading. The replaced plugins will be stopped, finalized, and unloaded before the new plugin is loaded.
 
 The default value is `False`.
+
+
 
 # cse.operation.requests
 
@@ -527,6 +530,28 @@ This setting specifies the maximum number of recorded requests to be stored. Old
 Note, that a large number of requests might take a moment to be processed and displayed in the console or UIs.
 
 The default value is `250`.
+
+
+
+# cse.operation.startup
+
+This section contains settings that control the CSE's startup behavior.
+
+
+
+# cse.operation.startup.delay
+
+This setting specifies the delay in seconds before the CSE sets itself to the RUNNING state during startup.
+
+The default value is `2.0` seconds.
+
+
+
+# cse.operation.startup.guardDelay
+
+This setting specifies the guard delay in seconds. If the CSE is not in the RUNNING state after this time, a shutdown is forced.
+
+The default value is `60.0` seconds.
 
 
 # cse.registrars

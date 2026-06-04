@@ -23,7 +23,6 @@ from ..etc.Constants import Constants as C, RuntimeConstants as RC
 from ..etc.DateUtils import waitFor, utcTime
 from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, LogLevel
-from ..etc.Constants import RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import ResponseException
 
 from ..runtime.Configuration import Configuration
@@ -127,9 +126,25 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	L.queueOff()				# No queuing of log messages during startup
 	
 	# Log the Version, Python and platform version
+
 	L.log(f'ACME oneM2M CSE Version: {C.version}')
 	L.logDebug(f'Python version: {platform.python_version()}')
 	L.logDebug(f'Platform: {platform.platform()}')
+
+	# Starting a start-up guard that will check whether the CSE is still starting up after 
+	# a certain time and if so, initiates a shutdown.
+	# This guard is only started when the guard delay is set to a value greater than 0.
+
+	def _startupGuard() -> None:
+		if RC.cseStatus != CSEStatus.RUNNING:
+			L.logErr('CSE startup is taking longer than expected, forcing shutdown')
+			forceShutdown()
+	
+	if Configuration.cse_operation_startup_guardDelay > 0:
+		BackgroundWorkerPool.newActor(_startupGuard, delay=Configuration.cse_operation_startup_guardDelay, name='StartupGuard').start()
+
+
+	# Log the startup message and configuration
 
 	L.log('Starting CSE')
 	L.log(f'CSE-Type: {RC.cseType.name}')
@@ -250,7 +265,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		L.console('CSE started')
 		L.log('CSE started')
 
-	BackgroundWorkerPool.newActor(_startUpFinished, delay=C.cseStartupDelay if RC.isHeadless else C.cseStartupDelay / 2.0, name='Delayed_startup_message').start()
+	BackgroundWorkerPool.newActor(_startUpFinished, 
+							   	  delay=Configuration.cse_operation_startup_delay if RC.isHeadless else Configuration.cse_operation_startup_delay / 2.0, 
+								  name='Delayed_startup_message').start()
 	
 	return True
 
@@ -430,11 +447,11 @@ def run() -> None:
 		Raises:
 			TimeoutError: If the CSE does not start within the specified time.
 	"""
-	if waitFor(C.cseStartupDelay * 3, lambda: RC.cseStatus==CSEStatus.RUNNING):
+	if waitFor(Configuration.cse_operation_startup_delay * 3, lambda: RC.cseStatus==CSEStatus.RUNNING):
 		if console:
 			console.run()
 	else:
-		raise TimeoutError(L.logErr(f'CSE did not start within {C.cseStartupDelay * 3} seconds'))
+		raise TimeoutError(L.logErr(f'CSE did not start within {Configuration.cse_operation_startup_delay * 3} seconds'))
 
 
 @provide('acmecse.runtime.CSE.setConsole')

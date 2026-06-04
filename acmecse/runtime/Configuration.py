@@ -216,6 +216,13 @@ class Configuration(object):
 	"""	An internal dictionary of enabled plugins. The keys are the component names, the values are booleans indicating whether the corresponding plugin is enabled. """
 
 
+	cse_operation_startup_delay:float = None
+	"""	Startup delay in seconds. This is the time the CSE waits before setting itself to the RUNNING state. """
+
+	cse_operation_startup_guardDelay:float = None
+	"""	Startup guard delay in seconds. If the CSE is not in the RUNNING state after this time, then a shutdown is forced. """
+
+
 	cse_registrars:dict[str, CSERegistrar] = {}
 	"""	A dictionary of CSE or service provider CSEs registrars. The keys are the CSE IDs, the values are dictionaries with the registrar information. """
 

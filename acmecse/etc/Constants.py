@@ -186,14 +186,6 @@ class Constants(object):
 
 
 	#
-	#	Internal CSE's startup delay
-	#
-
-	cseStartupDelay:float = 2.0
-	""" Internal CSE's startup delay. """
-
-
-	#
 	#	Network Coordination supported
 	#
 	networkCoordinationSupported = False

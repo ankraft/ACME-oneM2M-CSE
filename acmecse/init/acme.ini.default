@@ -181,6 +181,20 @@ _/timeSeriesManager_enable\_=${cse.service.timeSeries:enable}
 
 
 ;
+;	Settings for CSE startup and shutdown
+;
+
+[cse.operation.startup]
+; Startup delay in seconds. This is the time the CSE waits before setting itself to the
+; RUNNING state.
+; Default: 2.0 seonds
+delay=2.0
+; Startup guard: If the CSE is not in the RUNNING state after this time, then a shutdown is forced.
+; Default: 60.0 seconds
+guardDelay=60.0
+
+
+;
 ;	Settings for the Action Processing Service
 ;
 

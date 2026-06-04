@@ -15,6 +15,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for the notification's *subscribedTo* attribute.
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
 - [TESTS] Added hurl request files for simple (performance) testing.
+- [MISC] Added a startup guard for the CSE to force a shutdown if the CSE does not start within a certain time. 
 
 ### Experimental
 - [CSE] Added support for the [storage] ManagementObject specialization. This implementation is preliminary and may change depending on the final definition of the storage ManagementObject specialization in TS-0001 and TS-0004.

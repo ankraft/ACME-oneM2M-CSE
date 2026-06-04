@@ -63,6 +63,10 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_operation_plugins_disabledPlugins = parser.getlist('cse.operation.plugins', 'disabledPlugins', fallback=[])  # type: ignore [attr-defined]
 		config.cse_operation_plugins_replace = parser.getboolean('cse.operation.plugins', 'replace', fallback=False)
 
+		#	CSE Operation : Startup
+		config.cse_operation_startup_delay = parser.getfloat('cse.operation.startup', 'delay', fallback=2.0)
+		config.cse_operation_startup_guardDelay = parser.getfloat('cse.operation.startup', 'guardDelay', fallback=60.0)
+
 		# Derive enabled components from the configuration. This is used to determine which plugins to load.
 		# Create a dictionary with names starting and ending with _/ and \_ to avoid conflicts with actual 
 		# configuration options. 
@@ -169,7 +173,6 @@ class CSEConfiguration(ModuleConfiguration):
 		RC.cseOriginators = [ RC.cseOriginator, RC.spRelativeCseOriginator, RC.absoluteCseOriginator ]
 		RC.cseIDs = [ RC.cseCsi, RC.cseSPCsi ]
 
-
 		RC.defaultSerialization = cast(ContentSerializationType, Configuration.cse_defaultSerialization)
 		RC.releaseVersion = Configuration.cse_releaseVersion
 		
@@ -191,4 +194,10 @@ class CSEConfiguration(ModuleConfiguration):
 		# Check that remoteCSEManager is enabled if AnnouncementManager is enabled
 		if config._cse_operation_plugins_enabledComponents['announcementManager_enable'] and not config._cse_operation_plugins_enabledComponents['remoteCSEManager_enable']:
 			raise ConfigurationError('AnnouncementManager plugin requires RemoteCSEManager plugin to be enabled. Either enable the RemoteCSEManager plugin or disable the AnnouncementManager plugin.')
+		
+		# Check startup delays
+		if config.cse_operation_startup_delay <= 0:
+			raise ConfigurationError(r'[i]\[cse.operation.startup]:delay[/i] must be > 0')
+		if config.cse_operation_startup_guardDelay <= 0:
+			raise ConfigurationError(r'[i]\[cse.operation.startup]:guardDelay[/i] must be > 0')
 		
