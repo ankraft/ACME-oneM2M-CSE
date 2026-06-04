@@ -125,6 +125,12 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	#
 	L.init()
 	L.queueOff()				# No queuing of log messages during startup
+	
+	# Log the Version, Python and platform version
+	L.log(f'ACME oneM2M CSE Version: {C.version}')
+	L.logDebug(f'Python version: {platform.python_version()}')
+	L.logDebug(f'Platform: {platform.platform()}')
+
 	L.log('Starting CSE')
 	L.log(f'CSE-Type: {RC.cseType.name}')
 	if args.printconfig:
