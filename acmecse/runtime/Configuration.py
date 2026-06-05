@@ -199,21 +199,24 @@ class Configuration(object):
 	"""	The target for balancing jobs. """
 
 
-	cse_operation_requests_enable:bool = None
-	"""	Enable or disable operation requests. """
-
-	cse_operation_requests_size:int = None
-	"""	The size of the operation requests. """
-
-
 	cse_operation_plugins_disabledPlugins:list[str] = None
 	"""	A list of disabled plugins. """
 
 	cse_operation_plugins_replace:bool = None
 	"""	Replace existing plugins with the same name. """
 
+	cse_operation_plugins_timeout:float = None
+	"""	Timeout for plugin methods in seconds. This is the default timeout for plugin methods if not set otherwise in the plugin decorators. """
+
 	_cse_operation_plugins_enabledComponents:dict[str, bool] = None
 	"""	An internal dictionary of enabled plugins. The keys are the component names, the values are booleans indicating whether the corresponding plugin is enabled. """
+
+
+	cse_operation_requests_enable:bool = None
+	"""	Enable or disable operation requests. """
+
+	cse_operation_requests_size:int = None
+	"""	The size of the operation requests. """
 
 
 	cse_operation_startup_delay:float = None

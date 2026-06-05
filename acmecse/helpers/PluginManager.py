@@ -12,6 +12,8 @@ from dataclasses import dataclass
 import os, importlib, importlib.util, inspect, sys, copy
 from types import ModuleType
 from enum import IntEnum, auto
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+
 
 from ..helpers.TextTools import simpleMatch
 
@@ -23,6 +25,9 @@ except ImportError:
 
 _tagType = '_pm_type'
 """ Internal tag to identify plugin classes and methods. """
+
+_tagTimeout = '_pm_timeout'
+""" Internal tag to specify a timeout for plugin methods. """
 
 _tagInstanceName = '_pm_instance_name'
 """ Internal tag to specify the attribute name under which the plugin instance should be accessible in the PluginManager. """
@@ -65,6 +70,9 @@ class PluginNotFoundError(PluginError):
 class EndpointNotFoundError(PluginError):
 	""" Raised when an endpoint is not found. """
 	pass
+
+class PluginTimeoutError(PluginError):
+	""" Raised when a plugin method times out. """
 
 class PluginState(IntEnum):
 	"""	Plugin states. """
@@ -130,6 +138,52 @@ providedFunctions: dict[str, Callable] = {}
 """ Dictionary to hold the provided functions. The keys are the function paths, 
 the values are the functions themselves.
 """
+
+_shuttingDown: bool = False
+""" Flag to indicate whether the CSE is shutting down. This is used to prevent 
+	starting new threads during shutdown, which can lead to deadlocks and other issues. """
+
+
+def _executePluginMethod(func: Callable, *args: Any, **kwargs: Any) -> Any:
+	""" Call a function with a timeout. If the function does not complete within the specified time, 
+		a PluginTimeoutError is raised. 
+
+		The timeout can be specified by setting the *_tagTimeout* attribute on the function.
+
+		If no timeout is specified, the function is called directly without the overhead of creating
+		a thread and executor.
+
+		Args:
+			func: The function to call.
+			*args: Positional arguments to pass to the function.
+			**kwargs: Keyword arguments to pass to the function.
+		
+		Returns:
+			The result of the function call.
+
+		Raises:
+			PluginTimeoutError: If the function does not complete within the specified time.
+
+	"""
+
+	# Without timeout, just call the function directly to avoid the overhead of creating a thread and executor.
+	if (timeout := getattr(func, _tagTimeout, None)) is None:
+		return func(*args, **kwargs)
+
+	if sys.is_finalizing() or _shuttingDown:
+		# If the interpreter is shutting down, we should not create new threads or executors, as this can lead to deadlocks and other issues. 
+		# Instead, we call the function directly and hope that it completes before the interpreter shuts down. If it does not, we will just exit without waiting for the function to complete.
+		return func(*args, **kwargs)
+	
+	# Otherwise execute the function in a separate thread and wait for the result with a timeout. 
+	try:
+		executor = ThreadPoolExecutor(max_workers=1)
+		future = executor.submit(func, *args, **kwargs)
+		return future.result(timeout=timeout)
+	except TimeoutError as e:
+		raise PluginTimeoutError(f"{func.__name__} timed out after {timeout}s") from e
+	finally:
+		executor.shutdown(wait=False)  # don't block waiting for the stuck thread
 
 
 @dataclass
@@ -210,14 +264,13 @@ class PluginInfo:
 		if self.state in (PluginState.INITIALIZED, ):
 			self.state = PluginState.RESOLVED
 			if self.onResolvedMethod:
-				self.onResolvedMethod(self.instance, copy.deepcopy(dependencies.get(self.pluginClass, [])))
+				_executePluginMethod(self.onResolvedMethod, self.instance, copy.deepcopy(dependencies.get(self.pluginClass, [])))
 
 	def start(self) -> None:
 		""" Start the plugin. """
 		if self.state in (PluginState.RESOLVED, PluginState.STOPPED):
-			# Start the plugin normally					
 			if self.startMethod:
-				self.startMethod(self.instance)
+				_executePluginMethod(self.startMethod, self.instance)
 			self.state = PluginState.RUNNING
 	
 
@@ -225,7 +278,7 @@ class PluginInfo:
 		""" Stop the plugin. """
 		if self.state in (PluginState.RUNNING, PluginState.PAUSED):
 			if self.stopMethod:
-				self.stopMethod(self.instance)
+				_executePluginMethod(self.stopMethod, self.instance)
 			self.state = PluginState.STOPPED
 
 
@@ -236,7 +289,7 @@ class PluginInfo:
 				return
 			case PluginState.RUNNING | PluginState.PAUSED:
 				if self.restartMethod:
-					self.restartMethod(self.instance)
+					_executePluginMethod(self.restartMethod, self.instance)
 				self.state = PluginState.RUNNING
 
 
@@ -244,7 +297,7 @@ class PluginInfo:
 		""" Pause the plugin. """
 		if self.state in (PluginState.RUNNING,):
 			if self.pauseMethod:
-				self.pauseMethod(self.instance)
+				_executePluginMethod(self.pauseMethod, self.instance)
 			self.state = PluginState.PAUSED
 
 
@@ -252,7 +305,7 @@ class PluginInfo:
 		""" Unpause the plugin. """
 		if self.state in (PluginState.PAUSED,):
 			if self.unpauseMethod:
-				self.unpauseMethod(self.instance)
+				_executePluginMethod(self.unpauseMethod, self.instance)
 			self.state = PluginState.RUNNING
 
 
@@ -260,14 +313,14 @@ class PluginInfo:
 		""" Configure the plugin. """
 		if self.state in (PluginState.INITIALIZED,):
 			if self.configureMethod:
-				self.configureMethod(self.instance, *args, **kwargs)
+				_executePluginMethod(self.configureMethod, self.instance, *args, **kwargs)
 
 
 	def validate(self, *args: Any, **kwargs: Any) -> None:
 		""" Validate the plugin configuration. """
 		if self.state in (PluginState.INITIALIZED,):
 			if self.validateMethod:
-				self.validateMethod(self.instance, *args, **kwargs)
+				_executePluginMethod(self.validateMethod, self.instance, *args, **kwargs)
 
 
 	def unresolve(self) -> None:
@@ -276,7 +329,7 @@ class PluginInfo:
 		if self.state in (PluginState.STOPPED, ):
 			self.state = PluginState.UNRESOLVED
 			if self.onUnresolvedMethod:
-				self.onUnresolvedMethod(self.instance, copy.deepcopy(dependencies.get(self.pluginClass, [])))
+				_executePluginMethod(self.onUnresolvedMethod, self.instance, copy.deepcopy(dependencies.get(self.pluginClass, [])))
 
 
 	def finalize(self) -> None:
@@ -285,7 +338,7 @@ class PluginInfo:
 		self.unresolve()
 		if self.state in (PluginState.INITIALIZED, PluginState.UNRESOLVED):
 			if self.finishMethod:
-				self.finishMethod(self.instance)
+				_executePluginMethod(self.finishMethod, self.instance)
 
 
 class PluginManager(metaclass=Singleton.Singleton):
@@ -311,8 +364,9 @@ class PluginManager(metaclass=Singleton.Singleton):
 
 	def loadPlugins(self, directory: str, 
 				 		  packagePath: str, 
-						  pluginFilter: Optional[Callable[[str], bool]]=None,
-						  replace: bool=False, 
+						  pluginFilter: Optional[Callable[[str], bool]] = None,
+						  replace: bool = False, 
+						  timeout: Optional[float] = 1.0,
 						  *args: Any, **kwargs: Any) -> None:
 		""" Load plugins from the specified directory. 
 
@@ -323,6 +377,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 				packagePath: The package path to use for the plugins.
 				pluginFilter: A callback function to filter plugins. The function should take a plugin name as input and return True if the plugin should be loaded, False otherwise.
 				replace: Whether to replace already loaded plugins.
+				timeout: Optional timeout for plugins' methods.
 				*args: Positional arguments to pass to the plugin init methods.
 				**kwargs: Keyword arguments to pass to the plugin init methods.
 			Raises:
@@ -395,6 +450,8 @@ class PluginManager(metaclass=Singleton.Singleton):
 							plugin.pluginClass = obj
 							for _, method in inspect.getmembers(obj):
 								match getattr(method, _tagType, None):
+									case None:
+										continue # not a plugin method, ignore and continue for-loop
 									case 'init':
 										plugin.initMethod = method
 									case 'finish':
@@ -417,6 +474,9 @@ class PluginManager(metaclass=Singleton.Singleton):
 										plugin.onResolvedMethod = method
 									case 'onUnresolved':
 										plugin.onUnresolvedMethod = method
+								if getattr(method, _tagTimeout, None) is None:
+									setattr(method, _tagTimeout, timeout)	# set default timeout for plugin methods if not already set
+
 
 						case 'pluginClass' if plugin.pluginClass:
 							raise PluginConfigurationError(f'Plugin "{plugin.name}" has multiple plugin classes.')
@@ -846,6 +906,19 @@ class PluginManager(metaclass=Singleton.Singleton):
 					raise DependencyError(f'Class "{cls}" requires the provided instance "{dep.pluginName}" which could not be resolved. Is it missing?')
 
 
+	def shutdownStarted(self) -> bool:
+		"""	Indicating that the system is shutting down. This can be used to perform any necessary cleanup.
+			
+			However, this does not stop or unload the plugins, since we might want to perform some other cleanup.
+
+			Returns:
+				Always returns True.
+		"""
+		global _shuttingDown
+		_shuttingDown = True
+		return True
+
+
 	def __getattr__(self, name:str) -> Any:
 		""" Get the instance or plugin by name.
 
@@ -1092,76 +1165,236 @@ class PluginManager(metaclass=Singleton.Singleton):
 #	Decorators for plugin methods and classes
 #
 
-def _wrap(func: Callable, tagValue: str) -> Callable:
+def _wrap(func: Callable, tagValue: str, timeout: Optional[float] = None) -> Callable:
 	""" Helper function to wrap a function and set a tag attribute to the wrapper function.
 
 		Args:
 			func: The function to wrap.
 			tagValue: The tag value to set to the wrapper function.
+			timeout: Optional timeout value for the function.
+	
 		Returns:
 			The wrapped function.
 	"""
 
-	def wrapper(self :Any, *args :Any, **kwargs: Any) -> Callable:
+	def wrapper(self: Any, *args: Any, **kwargs: Any) -> Callable:
 		return func(self, *args, **kwargs)
 
 	setattr(wrapper, _tagType, tagValue)
-	return wrapper
+	setattr(wrapper, _tagTimeout, timeout)
+	return wrapper 
 
 
-def init(func: Callable) -> Callable: # type: ignore
-	""" Decorator to mark initialization functions in plugins. """
-	return _wrap(func, 'init')
+def init(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
+	""" Decorator to mark initialization functions in plugins. 
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @init without parentheses
+		return _wrap(func, 'init')
+
+	# called as @init(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'init', timeout=timeout)
+	return decorator
 
 
-def finish(func: Callable) -> Callable: # type: ignore
-	""" Decorator to mark finalization functions in plugins. """
-	return _wrap(func, 'finish')
+def finish(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
+	""" Decorator to mark finalization functions in plugins. 
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @finish without parentheses
+		return _wrap(func, 'finish')
+
+	# called as @init(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'finish', timeout=timeout)
+	return decorator
 
 
-def start(func: Callable) -> Callable: # type: ignore
+def start(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
 	""" Decorator to mark start functions in plugins. """
-	return _wrap(func, 'start')
+	if func is not None:
+		# called as @start without parentheses
+		return _wrap(func, 'start')
+
+	# called as @start(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'start', timeout=timeout)
+	return decorator
 
 
-def stop(func: Callable) -> Callable: # type: ignore
-	""" Decorator to mark stop functions in plugins. """
-	return _wrap(func, 'stop')
+def stop(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
+	""" Decorator to mark stop functions in plugins.
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @stop without parentheses
+		return _wrap(func, 'stop')
+	
+	# called as @stop(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'stop', timeout=timeout)
+	return decorator
 
 
-def restart(func: Callable) -> Callable: # type: ignore
-	""" Decorator to mark restart functions in plugins. """
-	return _wrap(func, 'restart')
+def restart(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
+	""" Decorator to mark restart functions in plugins.
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @restart without parentheses
+		return _wrap(func, 'restart')
+
+	# called as @restart(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'restart', timeout=timeout)
+	return decorator
 
 
-def pause(func: Callable) -> Callable: # type: ignore
-	""" Decorator to mark pause functions in plugins. """
-	return _wrap(func, 'pause')
+def pause(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
+	""" Decorator to mark pause functions in plugins.
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @pause without parentheses
+		return _wrap(func, 'pause')
+
+	# called as @pause(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'pause', timeout=timeout)
+	return decorator
 
 
-def unpause(func: Callable) -> Callable: # type: ignore
-	""" Decorator to mark unpause functions in plugins. """
-	return _wrap(func, 'unpause')
+def unpause(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
+	""" Decorator to mark unpause functions in plugins.
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @unpause without parentheses
+		return _wrap(func, 'unpause')
+
+	# called as @unpause(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'unpause', timeout=timeout)
+	return decorator
 
 
-def configure(func: Callable) -> Callable: # type: ignore
-	""" Decorator to mark configuration functions in plugins. """
-	return _wrap(func, 'configure')
+def configure(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
+	""" Decorator to mark configuration functions in plugins.
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @configure without parentheses
+		return _wrap(func, 'configure')
+
+	# called as @configure(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'configure', timeout=timeout)
+	return decorator
 
 
-def validate(func: Callable) -> Callable: # type: ignore
-	""" Decorator to mark validation functions in plugins. """
-	return _wrap(func, 'validate')
+def validate(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable: # type: ignore
+	""" Decorator to mark validation functions in plugins.
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @validate without parentheses
+		return _wrap(func, 'validate')
+
+	# called as @validate(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'validate', timeout=timeout)
+	return decorator
 
 
-def onResolved(func: Callable) -> Callable:
-	""" Decorator to mark a method as a callback to be called when the plugin or class becomes resolved. """
-	return _wrap(func, 'onResolved')
+def onResolved(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable:
+	""" Decorator to mark a method as a callback to be called when the plugin or class becomes resolved.
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @onResolved without parentheses
+		return _wrap(func, 'onResolved')
+
+	# called as @onResolved(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'onResolved', timeout=timeout)
+	return decorator
 
 
-def onUnresolved(func: Callable) -> Callable:
-	""" Decorator to mark a method as a callback to be called when the plugin or class becomes unresolved. """
-	return _wrap(func, 'onUnresolved')
+def onUnresolved(func: Optional[Callable] = None, timeout: Optional[float] = None) -> Callable:
+	""" Decorator to mark a method as a callback to be called when the plugin or class becomes unresolved.
+
+		Args:
+			func: The function to decorate. 
+			timeout: Optional timeout value for the function. 
+		
+		Returns:
+			The decorated function.
+	"""
+	if func is not None:
+		# called as @onUnresolved without parentheses
+		return _wrap(func, 'onUnresolved')
+
+	# called as @onUnresolved(timeout=5.0), return a decorator
+	def decorator(f: Callable) -> Callable:
+		return _wrap(f, 'onUnresolved', timeout=timeout)
+	return decorator
 
 
 def plugin(property: str|ClassVar = None,						 # type: ignore

@@ -31,7 +31,7 @@ from ..runtime.Factory import Factory
 from ..runtime.Importer import Importer
 from ..runtime.Logging import Logging as L
 from ..runtime.Management import ManagementSupport
-from ..runtime.PluginSupport import pluginManager, DependencyError, provide
+from ..runtime.PluginSupport import pluginManager, DependencyError, provide, PluginTimeoutError
 from ..runtime.ScriptManager import ScriptManager
 from ..runtime.Storage import Storage
 from ..runtime.EventManager import eventManager
@@ -242,6 +242,10 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		L.logErr(f'Error during startup: {e}')
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
+	except PluginTimeoutError as e:
+		L.logErr(f'Plugin timeout error during startup: {e}')
+		RC.cseStatus = CSEStatus.STOPPED
+		forceShutdown()	
 	except Exception as e:
 		L.logErr(f'Error during startup: {e}', exc=e)
 		RC.cseStatus = CSEStatus.STOPPED
@@ -311,8 +315,11 @@ def _shutdown() -> None:
 	if eventManager:	# send shutdown event
 		eventManager.cseShutdown() 	# type: ignore
 	
-	# Shutdown any non-ACME plugins 
-	pluginManager.stop(excludedTags=['acme'])
+	# Indicate the pluginManager that we are now shutting down
+	pluginManager and pluginManager.shutdownStarted()	
+	
+	# Shutdown any non-ACME plugins
+	pluginManager and pluginManager.stop(excludedTags=['acme'])
 
 	# shutdown the services
 	# Stop all the plugins, except the database plugins, which are needed during shutdown 
@@ -373,7 +380,8 @@ def forceShutdown() -> None:
 			_shutdown()
 			os.kill(os.getpid(), signal.SIGINT)
 		case _:
-			signal.raise_signal(signal.SIGINT)	# raise SIGINT to shutdown the CSE
+			os._exit(1)		# In case the above does not work, we exit with a non-zero code to indicate failure. This is especially important when running in a containerized environment, where the process might be automatically restarted.
+			# signal.raise_signal(signal.SIGINT)	# raise SIGINT to shutdown the CSE
 
 
 @provide('acmecse.runtime.CSE.resetCSE')

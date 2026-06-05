@@ -89,7 +89,8 @@ class PluginManager(PM):
 				self.loadPlugins(directory=directory, 
 								 packagePath=packagePath, 
 								 pluginFilter=_allowPlugin,
-								 replace=Configuration.cse_operation_plugins_replace)
+								 replace=Configuration.cse_operation_plugins_replace,
+								 timeout=Configuration.cse_operation_plugins_timeout)
 			except NotADirectoryError:
 				# Ignore if the directory does not exist
 				L.isDebug and L.logDebug(f'Plugin directory not found: {directory}')

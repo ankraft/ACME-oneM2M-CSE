@@ -60,8 +60,10 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_operation_requests_size = parser.getint('cse.operation.requests', 'size', fallback=1000)
 
 		#	CSE Operation : Plugins
+		
 		config.cse_operation_plugins_disabledPlugins = parser.getlist('cse.operation.plugins', 'disabledPlugins', fallback=[])  # type: ignore [attr-defined]
 		config.cse_operation_plugins_replace = parser.getboolean('cse.operation.plugins', 'replace', fallback=False)
+		config.cse_operation_plugins_timeout = parser.getfloat('cse.operation.plugins', 'timeout', fallback=1.0)
 
 		#	CSE Operation : Startup
 		config.cse_operation_startup_delay = parser.getfloat('cse.operation.startup', 'delay', fallback=2.0)
@@ -136,6 +138,7 @@ class CSEConfiguration(ModuleConfiguration):
 			raise ConfigurationError(r'[i]\[cse]:releaseVersion[/i] must not be empty')
 		if config.cse_releaseVersion not in config.cse_supportedReleaseVersions:
 			raise ConfigurationError(fr'[i]\[cse]:releaseVersion[/i]: {config.cse_releaseVersion} not in [i]\[cse].supportedReleaseVersions[/i]: {config.cse_supportedReleaseVersions}')
+		
 		# Check various intervals
 		if config.cse_checkExpirationsInterval <= 0:
 			raise ConfigurationError(r'[i]\[cse]:checkExpirationsInterval[/i] must be > 0')
@@ -201,3 +204,6 @@ class CSEConfiguration(ModuleConfiguration):
 		if config.cse_operation_startup_guardDelay <= 0:
 			raise ConfigurationError(r'[i]\[cse.operation.startup]:guardDelay[/i] must be > 0')
 		
+		# Check plugin values
+		if config.cse_operation_plugins_timeout < 0:
+			raise ConfigurationError(r'[i]\[cse.operation.plugins]:timeout[/i] must be >= 0')		

@@ -9,5 +9,6 @@
 from ..runtime.PluginManager import PluginManager, pluginManager
 from ..helpers.PluginManager import plugin, init, finish, start, stop, restart, pause, unpause, onResolved, onUnresolved
 from ..helpers.PluginManager import configure, validate, plugin, requires, provide
-from ..helpers.PluginManager import Service, endpoint, serviceClasses, DependencyError, Dependency
+from ..helpers.PluginManager import Service, endpoint, serviceClasses, Dependency
+from ..helpers.PluginManager import PluginConfigurationError, DependencyError, PluginNotFoundError, EndpointNotFoundError, PluginTimeoutError
 from ..runtime.EventManager import eventHandler, eventManager

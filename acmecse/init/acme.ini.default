@@ -150,6 +150,9 @@ disabledPlugins=
 ; Replace existing plugins with the same name.
 ; Default: False
 replace=false
+; Timeout for plugin methods in seconds. 
+; This is the default timeout for plugin methods if not set otherwise in the plugin decorators.
+timeout=1.0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                                                                  ;
