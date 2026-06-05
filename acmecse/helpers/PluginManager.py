@@ -58,6 +58,14 @@ class PluginConfigurationError(PluginError):
 	""" Raised when a plugin is not configured correctly. """
 	pass
 
+class PluginNotFoundError(PluginError):
+	""" Raised when a plugin is not found. """
+	pass
+
+class EndpointNotFoundError(PluginError):
+	""" Raised when an endpoint is not found. """
+	pass
+
 class PluginState(IntEnum):
 	"""	Plugin states. """
 
@@ -983,9 +991,72 @@ class PluginManager(metaclass=Singleton.Singleton):
 		return name in providedFunctions
 	
 
-	def callService(self, endpoint: str, tag: str|list[str], *args: Any, **kwargs: Any) -> list[tuple[Any, str]]:
-		"""	Call a service plugin endpoint. 
+	def services(self, tag: str | list[str] = None) -> list[tuple[str, list[str], dict[str, Any]]]:
+		""" Get a list of all available services provided by the plugins. This is used to discover the available services and their endpoints.
 
+			Args:
+				tag: The tag of the plugin to get the services for. This is used to identify the plugin to get the services for. If multiple plugins with the same tag are found, all of them are returned in order of their priority. If None, all plugins are returned.
+			Returns:
+				A list of tuples of the form (pluginName, tags, serviceMetadata) where pluginName is the name of the plugin that provides the service, tags is a list of tags associated with the plugin, and serviceMetadata is a dictionary of metadata about the service (e.g. description, parameters, etc.).
+		"""
+		# Get the plugin instance for the given tag and endpoint
+		plugins = self.getPluginsByTag(tag, byPriority=True)
+		return [ (p, self.plugins[p].tags, i._service_metadata_) for p, i in plugins if hasattr(i, _tagEndpointMap) and i._pm_endpointMap ]
+
+
+	def endpoints(self, pluginName: str) -> list[tuple[str, inspect.Signature]]:
+		""" Get a list of all available endpoints provided by the plugin. 
+			This is used to discover the available endpoints and their metadata for a given plugin.
+
+			Args:
+				pluginName: The name of the plugin to get the endpoints for.
+			Returns:
+				A list of tuples of the form (endpoint, signature) where endpoint is the name of the endpoint and signature a Signature object from the inspect module.
+			Raises:
+				PluginNotFoundError: If no plugin with the given name is found.
+		"""
+		try:
+			_i = self.plugins[pluginName].instance
+			if hasattr(_i, _tagEndpointMap) and _i._pm_endpointMap:
+				return [ (endpoint, inspect.signature(getattr(_i, func))) for endpoint, func in _i._pm_endpointMap.items() ]
+			else:
+				return []
+		except KeyError:
+			raise PluginNotFoundError(f'No plugin found with name: {pluginName}')
+
+
+	def callEndpoint(self, pluginName: str, endpoint: str, *args: Any, **kwargs: Any) -> Any:
+		""" Call a service plugin endpoint. 
+
+			Args:
+				pluginName: The name of the plugin to call. This is used to identify the plugin instance.
+				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `endpoint` decorator.
+				*args: Positional arguments to pass to the endpoint method.
+				**kwargs: Keyword arguments to pass to the endpoint method.
+
+			Returns:
+				The result of the endpoint method call.
+
+			Raises:
+				PluginNotFoundError: If no plugin with the given name is found.
+				EndpointNotFoundError: If no plugin with the given endpoint is found.
+		"""
+		try:
+			_i = self.plugins[pluginName].instance
+			if hasattr(_i, _tagEndpointMap) and endpoint in _i._pm_endpointMap:
+				# The actual endpoint method name is looked up in the plugin's endpoint map internally
+				# (see the @endpoint decorator and the ServicePlugin class) 
+				return getattr(_i, endpoint)(*args, **kwargs)
+			else:
+				raise EndpointNotFoundError(f'No plugin found with name: {pluginName} and endpoint: {endpoint}')
+		except KeyError:
+			raise PluginNotFoundError(f'No plugin found with name: {pluginName}')
+
+
+	def callEndpoints(self, endpoint: str, tag: str|list[str], *args: Any, **kwargs: Any) -> list[tuple[Any, str, dict[str, Any]]]:
+		"""	Call multiple service plugin endpoints. This is used to call the same endpoint on
+		 	multiple plugins that match the given tag(s). 
+			 
 			Args:
 				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `endpoint` decorator.
 				tag: The tag of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, all of them are called in order of their priority.
@@ -996,21 +1067,21 @@ class PluginManager(metaclass=Singleton.Singleton):
 				The result of the endpoint method call. This is returned as a list of tuples of the form (result, pluginName) where result is the return value of the endpoint method and pluginName is the name of the plugin that was called.
 
 			Raises:
-				ValueError: If no plugin with the given tag and endpoint is found.
+				PluginNotFoundError: If no plugin with the given tag and endpoint is found.
 		"""
 
 		# Get the plugin instance for the given tag and endpoint
 		plugins = self.getPluginsByTag(tag, byPriority=True)
 		plugins = [ (p, i) for p, i in plugins if hasattr(i, _tagEndpointMap) and endpoint in i._pm_endpointMap ]
 		if not plugins:
-			raise ValueError(f'No plugin found with tag: {tag}')
+			raise PluginNotFoundError(f'No plugin found with tag: {tag}')
 		
-		result: list[tuple[Any, str]] = []
+		result: list[tuple[Any, str, dict[str, Any]]] = []
 		for pluginName, pluginInstance in plugins:
 			# Call the endpoint method on the plugin instance
 			# The actual endpoint method name is looked up in the plugin's endpoint map internally
 			# (see the @endpoint decorator and the ServicePlugin class) 
-			result.append((getattr(pluginInstance, endpoint)(*args, **kwargs), pluginName))
+			result.append((getattr(pluginInstance, endpoint)(*args, **kwargs), pluginName, pluginInstance._service_metadata_))
 
 			#return getattr(pluginInstance, endpoint)(*args, **kwargs)
 		return result
@@ -1238,6 +1309,14 @@ class Service:
 
 	_pm_endpointMap: dict[str, str]
 	""" Mapping of endpoint names to method names """
+
+	_service_metadata_: dict[str, Any] = {}
+	""" A dictionary to store any metadata of the service that can be used by the plugins.
+		The metadata are not used by the service itself, but can be used to store any 
+		information that is relevant to the service.
+		They are passed in the result of the service endpoint calls, so that callers 
+		can use them to determine how to handle the endpoint calls.
+	"""
 
 	def __init_subclass__(cls, **kwargs: Any) -> None:
 		"""	Initialize the service sub class, creating the service endpoint map by checking
