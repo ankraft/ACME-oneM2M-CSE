@@ -47,6 +47,9 @@ _tagEnpoints = '_pm_endpoints'
 _tagEndpointMap = '_pm_endpointMap'
 """ Internal tag to specify the endpoint map of the plugin. """
 
+_tagTimeoutMap = '_pm_endpointTimeoutMap'
+""" Internal tag to specify the endpoint timeout map of the plugin. """
+
 #
 #	Exceptions
 #
@@ -67,12 +70,17 @@ class PluginNotFoundError(PluginError):
 	""" Raised when a plugin is not found. """
 	pass
 
+class PluginTimeoutError(PluginError):
+	""" Raised when a plugin method times out. """
+
 class EndpointNotFoundError(PluginError):
 	""" Raised when an endpoint is not found. """
 	pass
 
-class PluginTimeoutError(PluginError):
-	""" Raised when a plugin method times out. """
+class EndpointTimeoutError(PluginTimeoutError):
+	""" Raised when an endpoint method times out. """
+	pass
+
 
 class PluginState(IntEnum):
 	"""	Plugin states. """
@@ -144,7 +152,7 @@ _shuttingDown: bool = False
 	starting new threads during shutdown, which can lead to deadlocks and other issues. """
 
 
-def _executePluginMethod(func: Callable, *args: Any, **kwargs: Any) -> Any:
+def _executePluginMethod(_func_: Callable, *args: Any, _timeout_: Optional[float] = None,  **kwargs: Any) -> Any:
 	""" Call a function with a timeout. If the function does not complete within the specified time, 
 		a PluginTimeoutError is raised. 
 
@@ -154,7 +162,8 @@ def _executePluginMethod(func: Callable, *args: Any, **kwargs: Any) -> Any:
 		a thread and executor.
 
 		Args:
-			func: The function to call.
+			_func_: The function to call.
+			_timeout_: The timeout for the function call.
 			*args: Positional arguments to pass to the function.
 			**kwargs: Keyword arguments to pass to the function.
 		
@@ -166,22 +175,24 @@ def _executePluginMethod(func: Callable, *args: Any, **kwargs: Any) -> Any:
 
 	"""
 
+	timeout = _timeout_
 	# Without timeout, just call the function directly to avoid the overhead of creating a thread and executor.
-	if (timeout := getattr(func, _tagTimeout, None)) is None:
-		return func(*args, **kwargs)
+	if timeout is None and (timeout := getattr(_func_, _tagTimeout, None)) is None :
+		# Both the explicit timeout argument and the function's _tagTimeout attribute are None, so no timeout is set.
+		return _func_(*args, **kwargs)
 
 	if sys.is_finalizing() or _shuttingDown:
 		# If the interpreter is shutting down, we should not create new threads or executors, as this can lead to deadlocks and other issues. 
 		# Instead, we call the function directly and hope that it completes before the interpreter shuts down. If it does not, we will just exit without waiting for the function to complete.
-		return func(*args, **kwargs)
+		return _func_(*args, **kwargs)
 	
 	# Otherwise execute the function in a separate thread and wait for the result with a timeout. 
 	try:
 		executor = ThreadPoolExecutor(max_workers=1)
-		future = executor.submit(func, *args, **kwargs)
+		future = executor.submit(_func_, *args, **kwargs)
 		return future.result(timeout=timeout)
 	except TimeoutError as e:
-		raise PluginTimeoutError(f"{func.__name__} timed out after {timeout}s") from e
+		raise PluginTimeoutError(f"{_func_.__name__} timed out after {timeout}s") from e
 	finally:
 		executor.shutdown(wait=False)  # don't block waiting for the stuck thread
 
@@ -1098,12 +1109,13 @@ class PluginManager(metaclass=Singleton.Singleton):
 			raise PluginNotFoundError(f'No plugin found with name: {pluginName}')
 
 
-	def callEndpoint(self, pluginName: str, endpoint: str, *args: Any, **kwargs: Any) -> Any:
+	def callEndpoint(self, pluginName: str, endpoint: str, *args: Any, timeout:Optional[float] = None, **kwargs: Any) -> Any:
 		""" Call a service plugin endpoint. 
 
 			Args:
 				pluginName: The name of the plugin to call. This is used to identify the plugin instance.
 				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `endpoint` decorator.
+				timeout: Optional timeout value for the endpoint method call. If None, the default timeout value defined in the plugin class or method is used.
 				*args: Positional arguments to pass to the endpoint method.
 				**kwargs: Keyword arguments to pass to the endpoint method.
 
@@ -1113,26 +1125,33 @@ class PluginManager(metaclass=Singleton.Singleton):
 			Raises:
 				PluginNotFoundError: If no plugin with the given name is found.
 				EndpointNotFoundError: If no plugin with the given endpoint is found.
+				EndpointTimeoutError: If the endpoint method call times out.
 		"""
 		try:
 			_i = self.plugins[pluginName].instance
 			if hasattr(_i, _tagEndpointMap) and endpoint in _i._pm_endpointMap:
 				# The actual endpoint method name is looked up in the plugin's endpoint map internally
-				# (see the @endpoint decorator and the ServicePlugin class) 
-				return getattr(_i, endpoint)(*args, **kwargs)
+				# (see the @endpoint decorator and the ServicePlugin class and its __getattr__ method) 
+				func = getattr(_i, endpoint)
+				timeout = timeout if timeout is not None else func._pm_endpointTimeoutMap.get(endpoint, None)
+				try:
+					return _executePluginMethod(func, *args, _timeout_=timeout, **kwargs)
+				except PluginTimeoutError as e:
+					raise EndpointTimeoutError(f'Endpoint "{endpoint}" of plugin "{pluginName}" timed out after {timeout} seconds.') from e
 			else:
 				raise EndpointNotFoundError(f'No plugin found with name: {pluginName} and endpoint: {endpoint}')
 		except KeyError:
 			raise PluginNotFoundError(f'No plugin found with name: {pluginName}')
 
 
-	def callEndpoints(self, endpoint: str, tag: str|list[str], *args: Any, **kwargs: Any) -> list[tuple[Any, str, dict[str, Any]]]:
+	def callEndpoints(self, endpoint: str, *args: Any, tag: Optional[str]|list[str] = None, timeout: Optional[float] = None, **kwargs: Any) -> list[tuple[Any, str, dict[str, Any]]]:
 		"""	Call multiple service plugin endpoints. This is used to call the same endpoint on
 		 	multiple plugins that match the given tag(s). 
 			 
 			Args:
 				endpoint: The endpoint of the plugin to call. This is used to identify the method to call on the plugin instance. The endpoint must be defined in the plugin class using the `endpoint` decorator.
-				tag: The tag of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, all of them are called in order of their priority.
+				tag: The optional tag or tags of the plugin to call. This is used to identify the plugin to call. If multiple plugins with the same tag are found, all of them are called in order of their priority.
+				timeout: Optional timeout value for the endpoint method call. If None, the default timeout value defined in the plugin class or method is used.
 				*args: Positional arguments to pass to the endpoint method.
 				**kwargs: Keyword arguments to pass to the endpoint method.
 
@@ -1154,7 +1173,14 @@ class PluginManager(metaclass=Singleton.Singleton):
 			# Call the endpoint method on the plugin instance
 			# The actual endpoint method name is looked up in the plugin's endpoint map internally
 			# (see the @endpoint decorator and the ServicePlugin class) 
-			result.append((getattr(pluginInstance, endpoint)(*args, **kwargs), pluginName, pluginInstance._service_metadata_))
+			func = getattr(pluginInstance, endpoint)
+			timeout = timeout if timeout is not None else func._pm_endpointTimeoutMap.get(endpoint, None)
+			try:
+				result.append((_executePluginMethod(func, *args, _timeout_=timeout, **kwargs), 
+				   			   pluginName, 
+							   pluginInstance._service_metadata_))
+			except PluginTimeoutError as e:
+				raise EndpointTimeoutError(f'Endpoint "{endpoint}" of plugin "{pluginName}" timed out after {timeout} seconds.') from e
 
 			#return getattr(pluginInstance, endpoint)(*args, **kwargs)
 		return result
@@ -1584,15 +1610,18 @@ class Service:
 #	Decorators for Service Plugins
 #
 
-def endpoint(name: str) -> Callable:
+def endpoint(name: str, timeout: Optional[float] = None) -> Callable:
 	"""	Decorator to mark a method as an endpoint for a Service. 
 		The service name of the endpoint is given as an argument.
 	"""
 
 	def decorator(func: type) -> type:
 		if not hasattr(func, _tagEnpoints):
-			func._pm_endpoints = []		# type: ignore[attr-defined]
-		func._pm_endpoints.append(name)	# type: ignore[attr-defined]
+			setattr(func, _tagEnpoints, [])						# type: ignore[attr-defined]
+		if not hasattr(func, _tagTimeoutMap):
+			setattr(func, _tagTimeoutMap, {})			# type: ignore[attr-defined]
+		func._pm_endpoints.append(name)					# type: ignore[attr-defined]
+		func._pm_endpointTimeoutMap[name] = timeout		# type: ignore[attr-defined]
 		return func
 	
 	return decorator
