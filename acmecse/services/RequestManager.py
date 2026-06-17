@@ -27,7 +27,7 @@ from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, REQUEST_TIMEOUT, TA
 from ..etc.DateUtils import getResourceDate, fromAbsRelTimestamp, utcTime, waitFor, toISO8601Date, fromDuration
 from ..etc.RequestUtils import determineSerialization, deserializeContent, filterAttributes, serializeData
 from ..etc.IDUtils import isCSERelative, toCSERelative, toSPRelative, isValidCSI, isValidAEI, uniqueRI, isAbsolute, isSPRelative
-from ..etc.IDUtils import localResourceID, getIdFromOriginator, getSPFromID, toAbsolute
+from ..etc.IDUtils import localResourceID, getIdFromOriginator, toAbsolute
 from ..etc.ACMEUtils import compareIDs, getIDFromPath
 from ..etc.ACMEUtils import isStructured, structuredPathFromRI
 from ..etc.Utils import isAcmeUrl, isCoAPUrl, isHttpUrl, isMQTTUrl, isWSUrl
@@ -337,14 +337,37 @@ class RequestManager(metaclass=Singleton):
 				return Result(rsc = ResponseStatusCode.BAD_REQUEST,
 							  dbg = L.logWarn(f'Partial retrieve is only valid for rcn=1 or rcn=7 (was: {request.rcn})'))
 
-		# Call the appropriate request function
 		try:
-			res = self.requestHandlers[request.op].ownRequest(request)
-		except ResponseException as e:
-			res = Result(rsc = e.rsc, dbg = e.dbg, request = e.data)
+			# Call request pre-processing interceptors
+			interceptorManager.interceptRequestPreProcessing(request)
 
-		# Add to requests database
-		self.recordRequest(request, res)
+			# Call the appropriate request function
+			res = self.requestHandlers[request.op].ownRequest(request)
+
+		except ResponseException as e:
+
+			res = Result(rsc=e.rsc, dbg=L.logWarn(e.dbg), request=e.data)
+
+			# Call error response interceptors
+			interceptorManager.interceptErrorResponse(request, res)	
+
+		except Exception as e:
+			res = Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg=L.logErr(f'Error handling request', exc=e), request=request)
+
+		try:
+
+			# Call request post-processing interceptors
+			interceptorManager.interceptRequestPostProcessing(request, res)
+
+		except ResponseException as e:
+
+			res = Result(rsc=e.rsc, dbg=L.logWarn(e.dbg), request=e.data)
+
+			# Call error response interceptors
+			interceptorManager.interceptErrorResponse(request, res)	
+			
+		except Exception as e:
+			res = Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg=L.logErr(f'Error handling request', exc=e), request=request)
 
 		return res
 
@@ -2046,7 +2069,7 @@ class RequestManager(metaclass=Singleton):
 #	Requests recording
 #
 
-	def recordRequest(self, request:Optional[CSERequest], result:Result) -> None:
+	def  recordRequest(self, request:Optional[CSERequest], result:Result) -> None:
 		""" Record a request and its response in the database.
 		
 			Args:

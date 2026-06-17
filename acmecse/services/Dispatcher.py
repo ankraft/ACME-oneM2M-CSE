@@ -26,19 +26,18 @@ from ..etc.Types import FilterOperation, DesiredIdentifierResultType, Permission
 from ..etc.Types import Result, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BAD_REQUEST
-from ..etc.ResponseStatusCodes import REQUEST_TIMEOUT, OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, TARGET_NOT_SUBSCRIBABLE, INVALID_CHILD_RESOURCE_TYPE
 from ..etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, SECURITY_ASSOCIATION_REQUIRED, CONFLICT
-from ..etc.ResponseStatusCodes import TARGET_NOT_REACHABLE, NOT_IMPLEMENTED
+from ..etc.ResponseStatusCodes import NOT_IMPLEMENTED
 from ..etc.ACMEUtils import riFromID, srnFromHybrid, riFromStructuredPath, structuredPathFromRI
 from ..etc.JSONUtils import resourceModifiedAttributes
 from ..etc.IDUtils import localResourceID, isSPRelative, isAbsolute, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
 from ..helpers.Singleton import Singleton
-from ..etc.DateUtils import waitFor, timeUntilTimestamp, timeUntilAbsRelTimestamp, getResourceDate
-from ..etc.DateUtils import cronMatchesTimestamp
+from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager, EventData, eventManager
+from ..runtime.EventManager import EventData, eventManager
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import requires
 from ..resources.Resource import Resource
@@ -50,7 +49,6 @@ if TYPE_CHECKING:
 	from ..plugins.services.LocationManager import LocationManager
 	from ..plugins.services.RemoteCSEManager import RemoteCSEManager
 	from ..plugins.services.SemanticManager import SemanticManager
-	from ..plugins.services.TimeManager import TimeManager
 	from ..runtime.Factory import Factory
 	from ..runtime.ScriptManager import ScriptManager
 	from ..runtime.Storage import Storage
@@ -65,7 +63,6 @@ if TYPE_CHECKING:
 # TODO handle config update
 @requires(locationManager='acmecse.plugins.services.LocationManager', required=False)
 @requires(semanticManager='acmecse.plugins.services.SemanticManager', required=False)
-@requires(timeManager='acmecse.plugins.services.TimeManager', required=False)
 @requires(remoteCSEManager='acmecse.plugins.services.RemoteCSEManager', required=False)
 @requires(registrationManager='acmecse.services.RegistrationManager')
 @requires(storage='acmecse.runtime.Storage')
@@ -106,9 +103,6 @@ class Dispatcher(metaclass=Singleton):
 
 	semanticManager: Optional[SemanticManager] = None	# type: ignore
 	""" Injected SemanticManager instance. """
-	
-	timeManager: Optional[TimeManager] = None		# type: ignore
-	""" Injected TimeManager instance. """
 	
 	remoteCSEManager: Optional[RemoteCSEManager] = None	# type: ignore
 	""" Injected RemoteCSEManager instance. """
@@ -185,12 +179,6 @@ class Dispatcher(metaclass=Singleton):
 			self.validator.validateAttribute('atrl', attributeList)
 			request._attributeList = attributeList
 		
-		# Handle operation execution time , and check CSE schedule and request expiration
-		self.handleOperationExecutionTime(request)
-		self._checkActiveCSESchedule()
-		self.checkRequestExpiration(request)
-		self.checkResultExpiration(request)
-
 		#
 		#	Handle virtual resources
 		#
@@ -740,12 +728,6 @@ class Dispatcher(metaclass=Singleton):
 			# 	return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
 			raise NOT_FOUND(L.logDebug('resource not found'))
 
-		# Handle operation execution time, and check CSE schedule and request expiration
-		self.handleOperationExecutionTime(request)
-		self._checkActiveCSESchedule()
-		self.checkRequestExpiration(request)
-		self.checkResultExpiration(request)
-
 		#
 		# 	Handle virtual resources
 		#
@@ -1072,12 +1054,6 @@ class Dispatcher(metaclass=Singleton):
 		if request.rcn not in [ None, ResultContentType.attributes, ResultContentType.modifiedAttributes, ResultContentType.nothing ]:
 			raise BAD_REQUEST('wrong rcn for UPDATE')
 
-		# Handle operation execution time , and check CSE schedule and request expiration
-		self.handleOperationExecutionTime(request)
-		self._checkActiveCSESchedule()
-		self.checkRequestExpiration(request)
-		self.checkResultExpiration(request)
-
 		# handle fanout point requests
 		if (fanoutPointResource := self._getFanoutPointResource(fopsrn)) and fanoutPointResource.ty == ResourceTypes.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.getSrn()}')
@@ -1267,12 +1243,6 @@ class Dispatcher(metaclass=Singleton):
 		# Unknown resource ?
 		if not id and not fopsrn:
 			raise NOT_FOUND(L.logDebug('resource not found'))
-
-		# Handle operation execution time , and check CSE schedule and request expiration
-		self.handleOperationExecutionTime(request)
-		self._checkActiveCSESchedule()
-		self.checkRequestExpiration(request)
-		self.checkResultExpiration(request)
 
 		# handle fanout point requests
 		if (fanoutPointRsrc := self._getFanoutPointResource(fopsrn)) and fanoutPointRsrc.ty == ResourceTypes.GRP_FOPT:
@@ -1478,12 +1448,6 @@ class Dispatcher(metaclass=Singleton):
 			return self.requestManager.handleTransitNotifyRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
-
-		# Handle operation execution time, and check CSE schedule and request expiration
-		self.handleOperationExecutionTime(request)
-		self._checkActiveCSESchedule()
-		self.checkRequestExpiration(request)
-		self.checkResultExpiration(request)
 
 		# get resource to be notified and check permissions
 		targetResource = self.retrieveResource(id)
@@ -1766,76 +1730,6 @@ class Dispatcher(metaclass=Singleton):
 			if ty is None or r.ty == ty:	# ty is an int
 				#parentResource.childRemoved(r, originator)	# recursion here
 				self.deleteLocalResource(r, originator, parentResource = parentResource, doDeleteCheck = doDeleteCheck)
-
-	#########################################################################
-	#
-	#	Request execution utilities
-	#
-
-	def handleOperationExecutionTime(self, request:CSERequest) -> None:
-		"""	Handle operation execution time and request expiration. If the OET is set then
-			wait until the provided timestamp is reached.
-
-			Args:
-				request: The request to check.
-		"""
-		if request.oet:
-			# Calculate the dealy
-			delay = timeUntilAbsRelTimestamp(request.oet)
-			L.isDebug and L.logDebug(f'Waiting: {delay:.4f} seconds until delayed execution')
-			# Just wait some time
-			waitFor(delay)	
-
-
-	def checkRequestExpiration(self, request:CSERequest) -> None:
-		"""	Check request expiration timeout if a request timeout is give.
-
-			Args:
-				request: The request to check.
-
-			Raises:
-				`REQUEST_TIMEOUT`: In case the request is expired 
-		"""
-		if request._rqetUTCts is not None and timeUntilTimestamp(request._rqetUTCts) <= 0.0:
-			raise REQUEST_TIMEOUT(L.logDebug('request timed out reached'))
-
-
-	def checkResultExpiration(self, request:CSERequest) -> None:
-		""" Check result expiration timeout if a result timeout is given.
-
-			Args:
-				request: The request to check.
-
-			Raises:
-				`REQUEST_TIMEOUT`: In case the result is expired 
-				`BAD_REQUEST`: In case the request expiration timestamp is greater than the result expiration timestamp.
-		"""
-		if not request.rset:
-			return
-		if timeUntilTimestamp(request._rsetUTCts) <= 0.0:
-			raise REQUEST_TIMEOUT(L.logDebug('result timed out reached'))
-		if request.rqet is not None and request._rsetUTCts < request._rqetUTCts:
-			raise BAD_REQUEST(L.logDebug('result expiration timestamp must be greater than request expiration timestamp'), data = request)
-
-
-	def _checkActiveCSESchedule(self) -> None:
-		"""	Check if the CSE is currently active according to its schedule.
-
-			Raises:
-				`TARGET_NOT_REACHABLE`: In case the CSE is not active.
-		"""
-		if not self.timeManager:
-			L.isDebug and L.logDebug('TimeManager plugin is disabled, cannot check CSE schedule. Defaulting to active.')
-			return
-		if self.timeManager.cseActiveSchedule:
-			# Only check if the CSE has at least one schedule
-			# Otherwise the CSE is always active
-			for s in self.timeManager.cseActiveSchedule:
-				if cronMatchesTimestamp(s):
-					return
-			# TODO not sure if this is the right error code
-			raise TARGET_NOT_REACHABLE(L.logDebug('request exection time outside of CSE\'s allowed schedule'))
-
 
 
 	#########################################################################

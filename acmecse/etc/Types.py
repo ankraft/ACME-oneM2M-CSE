@@ -991,6 +991,8 @@ class Operation(ACMEIntEnum):
 	"""	DISCOVERY operation (special form of a RETRIEVE operation) """
 	NA 					= -1
 	"""	Not applicable """
+	ALL					= -3
+	"""	ALL operations. """
 
 
 	def permission(self) -> Permission:

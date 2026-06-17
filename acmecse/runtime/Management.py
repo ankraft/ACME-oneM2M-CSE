@@ -33,7 +33,8 @@ from ..resources.CSEBase import getCSE
 
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
-from ..runtime.PluginSupport import pluginManager, requires, serviceClasses
+from ..runtime.PluginSupport import pluginManager, requires, serviceClasses, Interceptor
+from ..runtime.InterceptorManager import Interceptor, interceptorManager, interceptorPluginMapping
 from ..helpers.Singleton import Singleton
 
 if TYPE_CHECKING:
@@ -1274,7 +1275,7 @@ skinparam linetype ortho
 
 	#########################################################################
 	#
-	#	Plugin and service related functions
+	#	Plugin, Interceptors and service related functions
 	#	
 
 	def getPlugins(self) -> str:
@@ -1332,6 +1333,7 @@ skinparam linetype ortho
 								if hasattr(method.__func__, '_onEvents') and method.__func__._onEvents
 								for event in method.__func__._onEvents
 						]),
+						'isInterceptor': isinstance(p.instance, Interceptor),
 						'noRestartWhilePaused': p.noRestartWhilePaused,
 						'state': p.state.name,
 						'doc': p.doc,
@@ -1357,6 +1359,26 @@ skinparam linetype ortho
 			import traceback
 			traceback.print_exc()
 			return None
+
+
+	def getInterceptors(self) -> str:
+		"""Get the current registered interceptors of the CSE.
+
+			Returns:
+				The registered interceptors of the CSE in JSON format.
+		"""
+		return json.dumps([
+			{	'plugin': interceptorPluginMapping.get(i.func),
+				'function': i.func.__name__,
+				'doc': i.func.__doc__.splitlines()[0].strip() if i.func.__doc__ else '',
+				'phase': [p.name for p in i.phase],
+				'operation': [o.name for o in i.operation],
+				'resourceTypes': [r.name if r else 'ALL' for r in i.resource],
+				'priority': i.priority,
+			}
+			for i in interceptorManager._registry
+
+		])
 
 
 	def getServices(self) -> str:

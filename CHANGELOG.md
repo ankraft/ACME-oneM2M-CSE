@@ -13,6 +13,10 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Added
 - [CSE] Added reloading of HTTP and WebSocket authentication credentials to the management API.
 - [CSE] Added support for the notification's *subscribedTo* attribute.
+- [CSE] Added timeout support for plugin methods. The timeout can be configured globally in the configuration file or set individually for each plugin method via the plugin decorators.
+- [CSE] Added first support for intercepting requests and responses in the CSE. This allows to hook into the CSE's request processing and to modify requests and responses before they are processed by the CSE or sent to the client. This is an ESTIMED project contribution.
+- [CSE] Moved common pre-processing logic to an interceptor plugin.
+- [CSE] Moved request recording to an interceptor plugin.
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
 - [TESTS] Added hurl request files for simple (performance) testing.
 - [MISC] Added a startup guard for the CSE to force a shutdown if the CSE does not start within a certain time. 

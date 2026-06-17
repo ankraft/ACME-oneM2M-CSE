@@ -1,5 +1,5 @@
 #
-# PluginManager.py
+#	PluginManager.py
 #
 #	(c) 2025 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
@@ -378,7 +378,7 @@ class PluginManager(metaclass=Singleton.Singleton):
 						  pluginFilter: Optional[Callable[[str], bool]] = None,
 						  replace: bool = False, 
 						  timeout: Optional[float] = 1.0,
-						  *args: Any, **kwargs: Any) -> None:
+						  *args: Any, **kwargs: Any) -> dict[str, PluginInfo]:
 		""" Load plugins from the specified directory. 
 
 			Plugins are initialized after loading according to their priority.
@@ -391,6 +391,10 @@ class PluginManager(metaclass=Singleton.Singleton):
 				timeout: Optional timeout for plugins' methods.
 				*args: Positional arguments to pass to the plugin init methods.
 				**kwargs: Keyword arguments to pass to the plugin init methods.
+			
+			Returns:
+				A dictionary of the newly loaded plugins.
+				
 			Raises:
 				NotADirectoryError: If the directory does not exist.
 				KeyError: If a plugin is already loaded.
@@ -543,6 +547,10 @@ class PluginManager(metaclass=Singleton.Singleton):
 
 		# Add new plugins to the main plugin list
 		self.plugins.update(newPlugins)
+		
+		# Return the newly loaded plugins
+		return newPlugins
+
 
 
 	def unloadPlugins(self, pluginNames: Optional[list[str]|str]=None) -> None:

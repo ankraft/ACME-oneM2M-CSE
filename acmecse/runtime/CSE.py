@@ -205,6 +205,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		# Start the remaining plugins
 		pluginManager.start(tags=['acme', 'binding'])
 		pluginManager.start(tags=['acme', 'core'])	
+		pluginManager.start(tags=['acme', 'interceptor'])
 		pluginManager.start(tags=['acme', 'remote'])
 		pluginManager.start(tags=['acme', 'ui'])
 
@@ -317,7 +318,7 @@ def _shutdown() -> None:
 	
 	# Indicate the pluginManager that we are now shutting down
 	pluginManager and pluginManager.shutdownStarted()	
-	
+
 	# Shutdown any non-ACME plugins
 	pluginManager and pluginManager.stop(excludedTags=['acme'])
 
@@ -326,6 +327,7 @@ def _shutdown() -> None:
 	# This leaves only the database plugins running
 	pluginManager and pluginManager.stop(tags=['acme', 'ui'])
 	pluginManager and pluginManager.stop(tags=['acme', 'remote'])
+	pluginManager and pluginManager.stop(tags=['acme', 'interceptor'])
 	pluginManager and pluginManager.stop(tags=['acme', 'core'])
 
 	script and script.shutdown()

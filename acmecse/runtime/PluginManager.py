@@ -10,9 +10,12 @@
 from __future__ import annotations
 import sys
 from typing import Callable, Optional
-from ..helpers.PluginManager import PluginManager as PM, PluginState, DependencyError
+
+from acmecse.runtime.InterceptorManager import InterceptorManager
+from ..helpers.PluginManager import PluginManager as PM, PluginState, DependencyError, plugin
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
+from ..runtime.InterceptorManager import Interceptor, interceptorManager
 from ..helpers.TextTools import simpleMatch
 
 
@@ -86,11 +89,11 @@ class PluginManager(PM):
 					packagePath (str): The package path for the plugins.
 			"""
 			try:
-				self.loadPlugins(directory=directory, 
-								 packagePath=packagePath, 
-								 pluginFilter=_allowPlugin,
-								 replace=Configuration.cse_operation_plugins_replace,
-								 timeout=Configuration.cse_operation_plugins_timeout)
+				plugins = self.loadPlugins(directory=directory, 
+										   packagePath=packagePath, 
+										   pluginFilter=_allowPlugin,
+										   replace=Configuration.cse_operation_plugins_replace,
+										   timeout=Configuration.cse_operation_plugins_timeout)
 			except NotADirectoryError:
 				# Ignore if the directory does not exist
 				L.isDebug and L.logDebug(f'Plugin directory not found: {directory}')
@@ -98,12 +101,18 @@ class PluginManager(PM):
 				L.logErr(f'Error loading plugin : "{sys.exc_info()[2].tb_frame.f_code.co_filename}": {e}')
 				raise
 
+			# Register the loaded plugins with the InterceptorManager
+			for plugin in plugins.values():
+				if isinstance(plugin.instance, Interceptor):
+					interceptorManager.register(plugin.instance, plugin.name)
+
 		# Load system plugins
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/database', 'acmecse.plugins.database')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/runtime', 'acmecse.plugins.runtime')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/services', 'acmecse.plugins.services')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/bindings', 'acmecse.plugins.bindings')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/bindings/http', 'acmecse.plugins.bindings.http')
+		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/interceptors', 'acmecse.plugins.interceptors')
 
 		# Load user plugins from the plugins directory. This is done after loading the system plugins.
 		# The list of disabled plugins is also applied to the user plugins. 
@@ -165,7 +174,7 @@ class PluginManager(PM):
 		L.isInfo and L.log('Shutting down and unloading plugins')
 		self.stopPlugins(tags=tags, excludedTags=excludedTags)
 		self.unresolvePlugins()	# Unresolve plugins after stopping them to clean up injected dependencies and set plugin instances to None
-		self.unloadPlugins()	# This implicitly stops the plugins as well
+		self.unloadPlugins(tags)	# This implicitly stops the plugins as well
 		L.isInfo and L.log('Plugins stopped and unloaded')
 		return True
 

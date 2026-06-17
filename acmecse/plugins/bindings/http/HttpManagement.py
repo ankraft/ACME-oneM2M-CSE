@@ -215,6 +215,10 @@ help            Show this help message
 							return Response(response=self.managementSupport.getCSEStatus(), 
 					   mimetype='application/json', headers=self.httpServer._responseHeaders)
 						match param.lower():
+							case 'interceptors':
+								return Response(response=self.managementSupport.getInterceptors(), 
+												mimetype='application/json', 
+												headers=self.httpServer._responseHeaders)
 							case 'modules':
 								return Response(response=json.dumps(sorted([ { 'name': k, 'file': getattr(m, '__file__', 'built-in') } for k, m in sys.modules.items() ], 
 																		   key=lambda d: d['name']), 
@@ -233,6 +237,7 @@ help            Show this help message
 								return Response(response='''ACME oneM2M CSE Management Status Commands
 						
 (no command)    General status information about the CSE
+interceptors    Information about the registered interceptors
 modules         Information about the loaded Python modules
 plugins         Information about the loaded plugins
 services        Information about the registered services and endpoints
