@@ -151,7 +151,7 @@
 	],
 	"st": [
 		{
-			"rtypes": [ "CNT", "CIN", "FCNT", "FCI" ], 
+			"rtypes": [ "CNT", "CIN", "FCNT", "FCI", "REQRESP"], 
 			"lname": "stateTag",
 			"ns": "m2m",
 			"type": "nonNegInteger",
@@ -2940,6 +2940,19 @@
 			"lname": "manufacturer",
 			"ns": "m2m",
 			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"mbis": [
+		{
+			"rtypes": [ "CNT", "CNTAnnc", "REQRESP" ],
+			"lname": "maxByteSizePerInstance",
+			"ns": "m2m",
+			"type": "nonNegInteger",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",

@@ -6,6 +6,6 @@
 
 		::
 
-			python -m acme
+			python -m acmecse
 """
-__all__ = ['acme', 'plugins']
+__all__ = ['acmecse', 'plugins']

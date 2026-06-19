@@ -578,6 +578,90 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(cbs - len(testValue), findXPath(r, 'm2m:cnt/cbs'))
 
 
+	#
+	#	Test mbis attribute
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithMBISAndSmallSize(self) -> None:
+		""" Create <CIN> with mbis and content smaller than mbs """
+		dct:JSON = 	{ 'm2m:cnt' : { 
+					'mbis' : 10
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED)
+
+		dct = 	{ 'm2m:cin' : {
+					'cnf' : 'text/plain:0',
+					'con' : testValue
+				}}
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		self.assertIsNotNone(r)
+		self.assertIsNotNone(findXPath(r, 'm2m:cin/ri'))
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), testValue)
+		self.assertEqual(findXPath(r, 'm2m:cin/cnf'), 'text/plain:0')
+
+		dct = 	{ 'm2m:cnt' : { 
+					'mbis' : None
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED)
+		self.assertIsNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/mbis'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithMBISAndExactSize(self) -> None:
+		""" Create <CIN> with mbis and content with exact size of mbs """
+		dct:JSON = 	{ 'm2m:cnt' : { 
+					'mbis' : maxBS
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED)
+
+		dct = 	{ 'm2m:cin' : {
+					'cnf' : 'text/plain:0',
+					'con' : 'x' * maxBS
+				}}
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED)
+		self.assertIsNotNone(r)
+		self.assertIsNotNone(findXPath(r, 'm2m:cin/ri'))
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'x' * maxBS)
+		self.assertEqual(findXPath(r, 'm2m:cin/cnf'), 'text/plain:0')
+
+		dct = 	{ 'm2m:cnt' : { 
+					'mbis' : None
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED)
+		self.assertIsNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/mbis'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithMBISAndTooBig(self) -> None:
+		""" Create <CIN> with mbis and content bigger than mbs -> Fail """
+		dct:JSON = 	{ 'm2m:cnt' : { 
+					'mbis' : maxBS
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED)
+
+		dct = 	{ 'm2m:cin' : {
+					'cnf' : 'text/plain:0',
+					'con' : 'x' * (maxBS + 1)
+				}}
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.NOT_ACCEPTABLE)
+
+		dct = 	{ 'm2m:cnt' : { 
+					'mbis' : None
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.UPDATED)
+		self.assertIsNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/mbis'))
+
+
 def run(testFailFast:bool) -> TestResult:
 
 	# Assign tests
@@ -622,6 +706,14 @@ def run(testFailFast:bool) -> TestResult:
 		'test_deleteCNTOl',
 		'test_deleteCNTLA',
 		'test_deleteCNT',
+
+
+		# Test mbis attribute
+		'test_createCNTwithMBS',
+		'test_createCINWithMBISAndSmallSize',
+		'test_createCINWithMBISAndExactSize',
+		'test_createCINWithMBISAndTooBig',
+
 	])
 
 	# Run the tests

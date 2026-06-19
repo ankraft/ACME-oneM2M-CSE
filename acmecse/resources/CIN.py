@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 from ..etc.Types import  JSON, CSERequest
-from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
+from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE
 from ..resources.Resource import Resource
 from ..etc.ACMEUtils import getAttributeSize
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -46,8 +46,12 @@ class CIN(AnnounceableResource):
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
-		# increment parent container's state tag
 		parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
+		mbis = parentResource.mbis
+		if mbis is not None and self.cs > mbis:
+			raise NOT_ACCEPTABLE(L.logDebug(f'Content size {self.cs} exceeds maxByteSizePerInstance {mbis} of the parent <container>'))
+
+		# Increment the state tag of the parent container. 
 		st = parentResource.st + 1
 		parentResource.setAttribute('st',st)
 		parentResource.dbUpdate(True)

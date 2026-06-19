@@ -317,6 +317,94 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+	#
+	#	Test mbis attribute
+	#
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTWithMBISGreaterThanMBSFail(self) -> None:
+		"""	Create <CNT> with mbis greater than mbs -> Fail"""
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN,
+					'mbs' : 100,
+					'mbis': 101
+				}}
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTWithMBISGreaterThanMBSinOneUpdateFail(self) -> None:
+		"""	Update <CNT> with mbis greater than mbs (in one single UPDATE) -> Fail"""
+		# Create a CNT first
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN,
+					'mbs' : 100,
+					'mbis': 50
+				}}
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Now update the CNT with mbis greater than mbs
+		dct = 	{ 'm2m:cnt' : { 
+					'mbs' : 100,
+					'mbis': 101
+				}}
+		r, rsc = UPDATE(f'{aeURL}/{cntRN}', TestCNT.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Clean up by deleting the CNT
+		_, rsc = DELETE(f'{aeURL}/{cntRN}', TestCNT.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTWithMBISGreaterThanMBSinWithoutMBSFail(self) -> None:
+		"""	Update <CNT> with mbis greater than mbs without updating mbs (only mbis) -> Fail"""
+		# Create a CNT first
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN,
+					'mbs' : 100,
+					'mbis': 50
+				}}
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Now update the CNT with mbis greater than mbs without updating mbs
+		dct = 	{ 'm2m:cnt' : { 
+					'mbis': 101
+				}}
+		r, rsc = UPDATE(f'{aeURL}/{cntRN}', TestCNT.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Clean up by deleting the CNT
+		_, rsc = DELETE(f'{aeURL}/{cntRN}', TestCNT.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTWithMBISGreaterThanMBSinWithoutMBISFail(self) -> None:
+		"""	Update <CNT> with mbis greater than mbs without updating mbis (only mbs) -> Fail"""
+		# Create a CNT first
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN,
+					'mbs' : 100,
+					'mbis': 50
+				}}
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Now update the CNT with mbis greater than mbs without updating mbis,
+		dct = 	{ 'm2m:cnt' : { 
+					'mbs': 25
+				}}
+		r, rsc = UPDATE(f'{aeURL}/{cntRN}', TestCNT.originator, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Clean up by deleting the CNT
+		_, rsc = DELETE(f'{aeURL}/{cntRN}', TestCNT.originator)
+		self.assertEqual(rsc, RC.DELETED)
+
+
 def run(testFailFast:bool) -> TestResult:
 
 	# Assign tests
@@ -348,6 +436,12 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createCNTWithoutOriginator',
 		'test_createCNTwithWrongTypeShortname',
 		'test_createCNTwithLaOlResourcenameFail',
+
+		# Test mbis attribute
+		'test_createCNTWithMBISGreaterThanMBSFail',
+		'test_updateCNTWithMBISGreaterThanMBSinOneUpdateFail',
+		'test_updateCNTWithMBISGreaterThanMBSinWithoutMBSFail',
+		'test_updateCNTWithMBISGreaterThanMBSinWithoutMBISFail',
 	
 	])
 

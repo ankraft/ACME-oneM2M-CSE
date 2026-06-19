@@ -17,6 +17,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added first support for intercepting requests and responses in the CSE. This allows to hook into the CSE's request processing and to modify requests and responses before they are processed by the CSE or sent to the client. This is an ESTIMED project contribution.
 - [CSE] Moved common pre-processing logic to an interceptor plugin.
 - [CSE] Moved request recording to an interceptor plugin.
+- [CSE] Added support for the &lt;container> *maxByteSizePerInstance* (mbis) attribute.
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
 - [TESTS] Added hurl request files for simple (performance) testing.
 - [MISC] Added a startup guard for the CSE to force a shutdown if the CSE does not start within a certain time. 

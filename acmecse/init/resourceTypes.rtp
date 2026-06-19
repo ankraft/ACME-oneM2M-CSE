@@ -434,6 +434,7 @@
 
 			// Resource attributes
 			"mni",
+			"mbis",
 			"mbs",
 			"mia",
 			"cni",
@@ -483,6 +484,7 @@
 
 			// Resource attributes
 			"mni",
+			"mbis",
 			"mbs",
 			"mia",
 			"li",

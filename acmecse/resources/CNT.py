@@ -13,14 +13,14 @@ from __future__ import annotations
 from typing import Optional, cast, TYPE_CHECKING
 
 from ..etc.Types import ResourceTypes, JSON, JSONLIST
-from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE
+from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE, BAD_REQUEST
 from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
 from ..resources.Resource import Resource
 from ..resources.ContainerResource import ContainerResource
 from ..runtime.Logging import Logging as L
 from ..runtime.Configuration import Configuration
-from ..runtime.EventManager import EventManager, EventData, eventManager
+from ..runtime.EventManager import EventData, eventManager
 from ..runtime.PluginSupport import requires
 
 if TYPE_CHECKING:
@@ -67,13 +67,22 @@ class CNT(ContainerResource):
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		super().activate(parentResource, originator)
 
+
 		# Set the limits for this container if enabled
 		# TODO optimize this
 		if Configuration.resource_cnt_enableLimits:	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.resource_cnt_mni, overwrite=False)
 			self.setAttribute('mbs', Configuration.resource_cnt_mbs, overwrite=False)
 			self.setAttribute('mia', Configuration.resource_cnt_mia, overwrite=False)
+			if Configuration.resource_cnt_mbis is not None:
+				self.setAttribute('mbis', Configuration.resource_cnt_mbis, overwrite=False)
 
+		# Check whether mbis ist set. If it is, then we need to check that it does not exceed mbs.
+		# If it does we need to raise a BAD_REQUEST error. 
+		mbis = self.mbis
+		if mbis is not None and self.mbs is not None and mbis > self.mbs:
+			raise BAD_REQUEST(L.logDebug('maxByteSizePerInstance cannot be greater than maxByteSize'))
+		
 		# register latest and oldest virtual resources
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
@@ -94,6 +103,13 @@ class CNT(ContainerResource):
 					 originator: Optional[str]=None, 
 					 doValidateAttributes: Optional[bool]=True) -> None:
 
+
+		# Checks for mbis update
+		mbsFinal = self.getFinalResourceAttribute('mbs', dct)
+		mbisFinal = self.getFinalResourceAttribute('mbis', dct)
+		if mbisFinal is not None and mbsFinal is not None and mbisFinal > mbsFinal:
+			raise BAD_REQUEST(L.logDebug('maxByteSizePerInstance cannot be greater than maxByteSize'))		
+			
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr
 		disrNew = findXPath(dct, 'm2m:cnt/disr')	# TODO or pureResource?

@@ -498,13 +498,16 @@ class Configuration(object):
 	"""	Enable or disable limits for CNT. """
 
 	resource_cnt_mni:int = None
-	"""	The MNI for CNT. """
+	"""	The MNI for CNT. This is the maximum number of instances in the container. """
 
 	resource_cnt_mbs:int = None
-	"""	The MBS for CNT. """
+	"""	The MBS for CNT. This is the maximum byte size for the whole container. """
 
 	resource_cnt_mia:int = None
-	"""	The MIA for CNT. """
+	"""	The MIA for CNT. This is the maximum instance age in seconds. """
+
+	resource_cnt_mbis:int = None
+	"""	The MBIS for CNT. This is the maximum byte size per instance. """
 
 
 	resource_fcnt_enableLimits:bool = None

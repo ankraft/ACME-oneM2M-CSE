@@ -1827,6 +1827,16 @@ The default value is `False`.
 
 
 
+# resource.cnt.mbis
+
+This setting specifies the CSE's default for the CNT's *mbis* (maxByteSizePerInstance) attribute.
+
+A negative value means no limit.
+
+The default value is `-1` = unlimited.
+
+
+
 # resource.cnt.mbs
 
 This setting specifies the CSE's default for the CNT's *mbs* (maxByteSize) attribute.
