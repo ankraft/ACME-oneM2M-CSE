@@ -29,7 +29,18 @@ a different version, and suggest checking the site for the latest.
 
 ---
 
-## Site Navigation Map
+## Accuracy Policy
+
+Always fetch the relevant documentation page(s) before answering. Do not rely on
+memory or background knowledge about oneM2M, Python, or the ACME CSE — even for
+questions that seem simple or familiar.
+
+If the answer is not found in the fetched documentation, say so explicitly. Do not
+infer, guess, or fill gaps from general knowledge. It is better to tell the user
+that a topic is not covered in the documentation than to provide an answer that
+may be incorrect or outdated.
+
+---
 
 Use these URLs directly — do not guess or construct URLs.
 
@@ -95,7 +106,17 @@ Use these URLs directly — do not guess or construct URLs.
 | Architecture Overview | https://acmecse.net/development/Overview/ |
 | API Docs (pointer to api.acmecse.net) | https://acmecse.net/development/APIDocs/ |
 | Event System | https://acmecse.net/development/EventSystem/ |
-| Unit Tests | https://acmecse.net/development/UnitTests/ |
+| Unit Tests (config, how to run) | https://acmecse.net/development/UnitTests/ |
+| Test Reference — Core CSE & Registration | https://acmecse.net/development/unit-tests/core-cse/ |
+| Test Reference — Containers & Data | https://acmecse.net/development/unit-tests/containers-data/ |
+| Test Reference — Access Control & Security | https://acmecse.net/development/unit-tests/access-control/ |
+| Test Reference — Subscriptions & Notifications | https://acmecse.net/development/unit-tests/subscriptions/ |
+| Test Reference — Groups & Actions | https://acmecse.net/development/unit-tests/groups-actions/ |
+| Test Reference — Discovery, Requests & Expiration | https://acmecse.net/development/unit-tests/discovery-requests/ |
+| Test Reference — Management, Location, Scheduling & Policies | https://acmecse.net/development/unit-tests/management-location/ |
+| Test Reference — Polling Channels | https://acmecse.net/development/unit-tests/polling-channels/ |
+| Test Reference — Remote CSE / Inter-CSE | https://acmecse.net/development/unit-tests/remote-cse/ |
+| Test Reference — Load & Miscellaneous | https://acmecse.net/development/unit-tests/load-misc/ |
 | Start-Up Resources | https://acmecse.net/development/StartupResources/ |
 | Attribute Policies | https://acmecse.net/development/AttributePolicies/ |
 | FlexContainer Policies | https://acmecse.net/development/FlexContainerPolicies/ |
@@ -175,6 +196,8 @@ Always use `web_fetch` to retrieve the relevant page before answering. Pick the
 | Event system, event handlers, custom events | Event System |
 | Internal Python API, class/module reference | development/APIDocs + fetch specific page from api.acmecse.net |
 | Architecture, internals, embedding | development/Overview + Embedding_ACME |
+| Running the test suite, test config | development/UnitTests |
+| Which test covers feature X / does ACME CSE test X | UnitTests + the matching Test Reference area page (see table above) |
 | oneM2M concepts, terminology | home/oneM2M-introduction/ + home/Supported/ |
 | Docker | HowTos (search for Docker howto) |
 | Zookeeper config | Configuration-introduction + tools/ZookeeperTool |
@@ -201,6 +224,32 @@ Every `Configuration-*` page follows a consistent pattern. When parsing:
 - A `.env` file in the base directory (or parents) is auto-loaded.
 - Zookeeper is an alternative to file-based config for distributed setups.
 - Dot notation (`section.key`) is used for runtime access from ACMEScript.
+
+---
+
+---
+
+## Unit Test Reference — Area Guide
+
+42 test modules, 1077 individual test cases, grouped into 10 functional areas. Use this
+to pick the right Test Reference page without fetching all of them.
+
+| Area | Covers | Modules | Tests |
+|---|---|---|---|
+| Core CSE & Registration | CSE bootstrap, AE/CSEBase registration | 5 | 81 |
+| Containers & Data | Container, ContentInstance, FlexContainer, data resources | 8 | 190 |
+| Access Control & Security | ACP, access control policies, auth | 2 | 72 |
+| Subscriptions & Notifications | Subscription resource, notification delivery | 5 | 202 |
+| Groups & Actions | Group resource, fanOutPoint, Action resource | 3 | 80 |
+| Discovery, Requests & Expiration | Filter criteria, discovery, request expiration | 4 | 100 |
+| Management, Location, Scheduling & Policies | mgmtObj, Location, Schedule, policies | 6 | 221 |
+| Polling Channels | PollingChannel resource, long polling | 2 | 26 |
+| Remote CSE / Inter-CSE | CSE-to-CSE registration, remote resource access | 4 | 54 |
+| Load & Miscellaneous | Load/stress tests, misc edge cases | 3 | 51 |
+
+Each Test Reference page lists, per test module: the test file name, individual test
+methods, and the actual CRUD/NOTIFY operations + expected response codes exercised
+(derived from test source, not just docstrings).
 
 ---
 
