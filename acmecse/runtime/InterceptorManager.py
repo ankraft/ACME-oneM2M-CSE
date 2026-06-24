@@ -25,8 +25,13 @@ class Phase(ACMEIntEnum):
 	""" Intercept the request pre-processing phase. """
 	REQUEST_POST_PROCESSING = 2
 	""" Intercept the request post-processing phase. """
-	REQUEST_ERROR_RESPONSE = 3
+	REQUEST_PRE_SENDING = 3
+	""" Intercept the request pre-sending phase. This intercepts a request from the CSE before it is sent to another entity. """
+	REQUEST_POST_SENDING = 4
+	""" Intercept the request post-sending phase. This intercepts the response to a request from another entity after it has been sent by the CSE. """
+	REQUEST_ERROR_RESPONSE = 5
 	""" Intercept the request error response phase. """
+
 
 @dataclass
 class InterceptorHandlerInfo:
@@ -118,6 +123,27 @@ class InterceptorManager(metaclass=Singleton):
 				result: The Result object that is the response to the request, which can be modified by the interceptor handlers.
 		"""
 		for handler in self._findHandlers( (Phase.REQUEST_POST_PROCESSING, request.op, request.ty) ):
+			handler.func(request, result)
+
+
+	def interceptRequestPreSending(self, request: CSERequest) -> None:
+		"""	Call the interceptor handlers for the REQUEST_PRE_SENDING phase.
+
+			Args:
+				request: The outgoing CSERequest object that is being sent to another entity.
+		"""
+		for handler in self._findHandlers( (Phase.REQUEST_PRE_SENDING, request.op, request.ty) ):
+			handler.func(request)
+
+
+	def interceptRequestPostSending(self, request: CSERequest, result: Result) -> None:
+		"""	Call the interceptor handlers for the REQUEST_POST_SENDING phase.
+
+			Args:
+				request: The outgoing CSERequest object that is being sent to another entity.
+				result: The Result object that is the response to the request, which can be modified by the interceptor handlers.
+		"""
+		for handler in self._findHandlers( (Phase.REQUEST_POST_SENDING, request.op, request.ty) ):
 			handler.func(request, result)
 
 

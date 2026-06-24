@@ -47,12 +47,13 @@ from ..resources.REQ import REQ
 from ..resources.PCH import PCH
 
 if TYPE_CHECKING:
-	from ..runtime.Storage import Storage
 	from ..services.Dispatcher import Dispatcher
-	from ..services.RegistrationManager import RegistrationManager
+	from ..runtime.InterceptorManager import InterceptorManager
 	from ..services.NotificationManager import NotificationManager
-	from ..services.Validator import Validator
+	from ..services.RegistrationManager import RegistrationManager
 	from ..services.SecurityManager import SecurityManager
+	from ..runtime.Storage import Storage
+	from ..services.Validator import Validator
 
 
 # Type definition
@@ -72,39 +73,42 @@ expirationCheckFactor = 2.0
 """ This factor determines how often the monitor looks for expired request resources. """
 
 @eventHandler
-@requires(httpServer='acmecse.plugins.bindings.HttpServer', required=False)
 @requires(coapServer='acmecse.plugins.bindings.CoAPServer', required=False)
-@requires(mqttClient='acmecse.plugins.bindings.MQTTClient', required=False)
-@requires(websocketServer='acmecse.plugins.bindings.WebSocketServer', required=False)
-@requires(remoteCSEManager='acmecse.plugins.services.RemoteCSEManager', required=False)
-@requires(storage='acmecse.runtime.Storage')
 @requires(dispatcher='acmecse.services.Dispatcher')
-@requires(registration='acmecse.services.RegistrationManager')
+@requires(httpServer='acmecse.plugins.bindings.HttpServer', required=False)
+@requires(interceptorManager='acmecse.runtime.InterceptorManager')
+@requires(mqttClient='acmecse.plugins.bindings.MQTTClient', required=False)
 @requires(notificationManager='acmecse.services.NotificationManager')
-@requires(validator='acmecse.services.Validator')
+@requires(registration='acmecse.services.RegistrationManager')
+@requires(remoteCSEManager='acmecse.plugins.services.RemoteCSEManager', required=False)
 @requires(securityManager='acmecse.services.SecurityManager')
+@requires(storage='acmecse.runtime.Storage')
+@requires(validator='acmecse.services.Validator')
+@requires(websocketServer='acmecse.plugins.bindings.WebSocketServer', required=False)
 class RequestManager(metaclass=Singleton):
 	"""	RequestManager class.
 	"""
 
-	storage:Storage = None
-	"""	Injected Storage instance. """
-
 	dispatcher: Dispatcher = None
 	""" Injected Dispatcher instance. """
 
-	registration: RegistrationManager = None
-	""" Injected RegistrationManager instance. """
+	interceptorManager: InterceptorManager = None
+	""" Injected InterceptorManager instance. """
 
 	notificationManager: NotificationManager = None
 	""" Injected NotificationManager instance. """
 
-	validator: Validator = None
-	""" Injected Validator instance. """
+	registration: RegistrationManager = None
+	""" Injected RegistrationManager instance. """
 
 	securityManager: SecurityManager = None
 	""" Injected SecurityManager instance. """
 
+	storage:Storage = None
+	"""	Injected Storage instance. """
+
+	validator: Validator = None
+	""" Injected Validator instance. """
 
 	__slots__ = (
 		'_requestLock',
@@ -338,9 +342,6 @@ class RequestManager(metaclass=Singleton):
 							  dbg = L.logWarn(f'Partial retrieve is only valid for rcn=1 or rcn=7 (was: {request.rcn})'))
 
 		try:
-			# Call request pre-processing interceptors
-			interceptorManager.interceptRequestPreProcessing(request)
-
 			# Call the appropriate request function
 			res = self.requestHandlers[request.op].ownRequest(request)
 
@@ -349,7 +350,7 @@ class RequestManager(metaclass=Singleton):
 			res = Result(rsc=e.rsc, dbg=L.logWarn(e.dbg), request=e.data)
 
 			# Call error response interceptors
-			interceptorManager.interceptErrorResponse(request, res)	
+			self.interceptorManager.interceptErrorResponse(request, res)	
 
 		except Exception as e:
 			res = Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg=L.logErr(f'Error handling request', exc=e), request=request)
@@ -357,14 +358,14 @@ class RequestManager(metaclass=Singleton):
 		try:
 
 			# Call request post-processing interceptors
-			interceptorManager.interceptRequestPostProcessing(request, res)
+			self.interceptorManager.interceptRequestPostProcessing(request, res)
 
 		except ResponseException as e:
 
 			res = Result(rsc=e.rsc, dbg=L.logWarn(e.dbg), request=e.data)
 
 			# Call error response interceptors
-			interceptorManager.interceptErrorResponse(request, res)	
+			self.interceptorManager.interceptErrorResponse(request, res)	
 			
 		except Exception as e:
 			res = Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg=L.logErr(f'Error handling request', exc=e), request=request)
@@ -1212,6 +1213,10 @@ class RequestManager(metaclass=Singleton):
 			if _request.id is None:
 				_request.id = to
 			_request.id = urllib.parse.unquote(_request.id)	# unquote URL
+			_request._targetURL = url	# store the target URL in the request for later use, e.g. in the interceptors
+
+			# Call the pre-send interceptor. This might adjust the request.
+			self.interceptorManager.interceptRequestPreSending(_request)
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -1223,6 +1228,10 @@ class RequestManager(metaclass=Singleton):
 																			rvi=_request.rvi,
 																			request=request))
 				results.append( RequestResponse(_request, _result) )
+
+				# Call the post-send interceptor. This might adjust the result.
+				self.interceptorManager.interceptRequestPostSending(_request, _result)
+
 				continue
 
 			# Small optimization: if the target is a local resource and is NOT a normal notification receiving resource, then handle the request directly
@@ -1231,7 +1240,11 @@ class RequestManager(metaclass=Singleton):
 				not ResourceTypes.isNotificationEntity(targetType) and \
 				targetType != ResourceTypes.UNKNOWN:
 					_result = self.dispatcher.notifyLocalResource(_id, requestOriginator, request.pc)
+
 					results.append( RequestResponse(request, _result) )
+
+					# Call the post-send interceptor. This might adjust the result.
+					self.interceptorManager.interceptRequestPostSending(_request, _result)
 					continue
 
 			ct = request.ct
@@ -1248,21 +1261,33 @@ class RequestManager(metaclass=Singleton):
 						if not self.httpServer:
 							raise NotImplementedError(f'HTTP server not activated. Cannot send HTTP request to url: {url}')
 						self.requestHandlers[_request.op].httpEvent()	# send event
-						results.append( RequestResponse(_request, self.httpServer.sendHttpRequest(_request, url, isDirectURL)) )
+						_result = self.httpServer.sendHttpRequest(_request, url, isDirectURL)
+						results.append( RequestResponse(_request, _result) )
+
+						# Call the post-send interceptor. This might adjust the result.
+						self.interceptorManager.interceptRequestPostSending(_request, _result)
 						continue
 				
 					case _ if isMQTTUrl(url):
 						if not self.mqttClient:
 							raise NotImplementedError(f'MQTT client not activated. Cannot send MQTT request to url: {url}')
 						self.requestHandlers[_request.op].mqttEvent()	# send event
-						results.append( RequestResponse(_request, self.mqttClient.sendMqttRequest(_request, url, isDirectURL)) )
+						_result = self.mqttClient.sendMqttRequest(_request, url, isDirectURL)
+						results.append( RequestResponse(_request, _result) )
+
+						# Call the post-send interceptor. This might adjust the result.
+						self.interceptorManager.interceptRequestPostSending(_request, _result)
 						continue
 
 					case _ if isCoAPUrl(url):
 						if not self.coapServer:
 							raise NotImplementedError(f'CoAP server not activated. Cannot send CoAP request to url: {url}')
 						self.requestHandlers[_request.op].coapEvent()	# send event
-						results.append( RequestResponse(_request, self.coapServer.sendCoAPRequest(_request, url, isDirectURL)) )
+						_result = self.coapServer.sendCoAPRequest(_request, url, isDirectURL)
+						results.append( RequestResponse(_request, _result) )
+
+						# Call the post-send interceptor. This might adjust the result.
+						self.interceptorManager.interceptRequestPostSending(_request, _result)
 						continue
 
 					case _ if isWSUrl(url):
@@ -1270,21 +1295,45 @@ class RequestManager(metaclass=Singleton):
 							raise NotImplementedError(f'WebSocket server not activated. Cannot send WS request to url: {url}')
 						self.requestHandlers[_request.op].wsEvent()	# send event
 						try:
-							results.append( RequestResponse(_request, self.websocketServer.sendWSRequest(_request, url, isDirectURL)) )
+							_result = self.websocketServer.sendWSRequest(_request, url, isDirectURL)
+							results.append( RequestResponse(_request, _result) )
+
+							# Call the post-send interceptor. This might adjust the result.
+							self.interceptorManager.interceptRequestPostSending(_request, _result)
 						except TARGET_NOT_REACHABLE as e:
 							L.logWarn(f'WS request to unreachable target with url: {url}. Looking for next poa.')
+
+							# Call the interceptor for error responses. This might adjust the result.
+							self.interceptorManager.interceptErrorResponse(_request, Result(rsc=e.rsc, dbg=e.dbg, request=e.data))	
 						continue
 
 					# Special handling for ACME internal events.
 					# This might be more generalize when other opeations are supported as well
 					case _ if isAcmeUrl(url) and request.op == Operation.NOTIFY:
 						eventManager.acmeNotification(EventData(payload=(url, _request)))	# Don't wait for any real result
-						results.append( RequestResponse(_request, Result(rsc = ResponseStatusCode.OK)) )
+						_result = Result(rsc=ResponseStatusCode.OK)
+						results.append( RequestResponse(_request, _result) )
+
+						# Call the post-send interceptor. This might adjust the result.
+						self.interceptorManager.interceptRequestPostSending(_request, _result)
 						continue
 
 			except NotImplementedError as e:
-				results.append(RequestResponse(_request, 
-								   			   Result(rsc=ResponseStatusCode.TARGET_NOT_REACHABLE, dbg=L.logWarn(str(e)))))
+				_result = Result(rsc=ResponseStatusCode.TARGET_NOT_REACHABLE, dbg=L.logWarn(str(e)))
+				results.append(RequestResponse(_request, _result))
+
+				# Call the interceptor for error responses. This might adjust the result.
+				self.interceptorManager.interceptErrorResponse(_request, _result)	
+
+				return results
+
+			except ResponseException as e:
+				_result = Result(rsc=e.rsc, dbg=e.dbg, request=e.data)
+				results.append(RequestResponse(_request, _result))
+
+				# Call the interceptor for error responses. This might adjust the result.
+				self.interceptorManager.interceptErrorResponse(_request, _result)	
+
 				return results
 
 			# Fall-through if no case matched

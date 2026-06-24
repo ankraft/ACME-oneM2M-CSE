@@ -27,14 +27,15 @@ from ..etc.ResponseStatusCodes import ResponseException
 
 from ..runtime.Configuration import Configuration
 from ..runtime.ConsoleBase import ConsoleBase
+from ..runtime.EventManager import eventManager
 from ..runtime.Factory import Factory
 from ..runtime.Importer import Importer
+from ..runtime.InterceptorManager import interceptorManager
 from ..runtime.Logging import Logging as L
 from ..runtime.Management import ManagementSupport
 from ..runtime.PluginSupport import pluginManager, DependencyError, provide, PluginTimeoutError
 from ..runtime.ScriptManager import ScriptManager
 from ..runtime.Storage import Storage
-from ..runtime.EventManager import eventManager
 
 from ..services.Dispatcher import Dispatcher
 from ..services.RequestManager import RequestManager
@@ -165,7 +166,8 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		# plugins and other components. 
 		pluginManager.provide('acmecse.runtime.Factory', factory)
 		pluginManager.provide('acmecse.runtime.Importer', importer)
-		pluginManager.provide('acmecse.runtime.Storage', storage)		
+		pluginManager.provide('acmecse.runtime.Storage', storage)
+		pluginManager.provide('acmecse.runtime.InterceptorManager', interceptorManager)		
 		pluginManager.provide('acmecse.services.Dispatcher', dispatcher)	
 		pluginManager.provide('acmecse.services.NotificationManager', notification)
 		pluginManager.provide('acmecse.services.RegistrationManager', registration)
