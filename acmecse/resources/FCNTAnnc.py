@@ -32,5 +32,5 @@ class FCNTAnnc(AnnouncedResource):
 
 		# Validate containerDefinition
 		if (t := self.validator.getFlexContainerSpecialization(self.typeShortname)):
-			if t[0] != self.cnd:
+			if t[0] and t[0] != self.cnd:
 				raise BAD_REQUEST(L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.typeShortname}. Must be: {t[0]}'))

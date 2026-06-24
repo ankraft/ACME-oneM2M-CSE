@@ -74,7 +74,8 @@ class FCNT(ContainerResource):
 
 		# Validate containerDefinition
 		if (t := self.validator.getFlexContainerSpecialization(self.typeShortname)):
-			if t[0] != self.cnd:
+			# Allow empty cnd for backward compatibility, but if present, it must match the specialization
+			if t[0] and t[0] != self.cnd:
 				raise BAD_REQUEST(L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.typeShortname}. Must be: {t[0]}'))
 
 		# Calculate contentSize. Only the custom attribute
