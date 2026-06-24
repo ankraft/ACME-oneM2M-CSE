@@ -2624,6 +2624,9 @@ class CSERequest:
 	_outgoing:bool = False
 	""" Whether this is a request sent by the CSE. """
 
+	_targetURL:Optional[str] = None
+	""" The URL of the request, if available. """
+
 	_directURL:Optional[str] = None
 	""" The direct URL of the request. """
 

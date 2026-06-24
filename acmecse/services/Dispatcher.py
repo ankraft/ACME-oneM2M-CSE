@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 	from ..plugins.services.LocationManager import LocationManager
 	from ..plugins.services.RemoteCSEManager import RemoteCSEManager
 	from ..plugins.services.SemanticManager import SemanticManager
+	from ..runtime.InterceptorManager import InterceptorManager
 	from ..runtime.Factory import Factory
 	from ..runtime.ScriptManager import ScriptManager
 	from ..runtime.Storage import Storage
@@ -61,22 +62,26 @@ if TYPE_CHECKING:
 
 # TODO NOTIFY optimize local resource notifications
 # TODO handle config update
-@requires(locationManager='acmecse.plugins.services.LocationManager', required=False)
-@requires(semanticManager='acmecse.plugins.services.SemanticManager', required=False)
-@requires(remoteCSEManager='acmecse.plugins.services.RemoteCSEManager', required=False)
-@requires(registrationManager='acmecse.services.RegistrationManager')
-@requires(storage='acmecse.runtime.Storage')
 @requires(factory='acmecse.runtime.Factory')
-@requires(security='acmecse.services.SecurityManager')
+@requires(interceptorManager='acmecse.runtime.InterceptorManager')
+@requires(locationManager='acmecse.plugins.services.LocationManager', required=False)
+@requires(registrationManager='acmecse.services.RegistrationManager')
+@requires(remoteCSEManager='acmecse.plugins.services.RemoteCSEManager', required=False)
 @requires(requestManager='acmecse.services.RequestManager')
-@requires(validator='acmecse.services.Validator')
 @requires(scriptManager='acmecse.runtime.ScriptManager')
+@requires(security='acmecse.services.SecurityManager')
+@requires(semanticManager='acmecse.plugins.services.SemanticManager', required=False)
+@requires(storage='acmecse.runtime.Storage')
+@requires(validator='acmecse.services.Validator')
 class Dispatcher(metaclass=Singleton):
 	""" Dispatcher class. Handles all requests and dispatches them to the
 		appropriate handlers. This includes requests for resources, requests
 		for resource creation, and requests for resource deletion.
 	"""
 
+	interceptorManager: InterceptorManager = None
+	""" Injected InterceptorManager instance. """
+	
 	registrationManager: RegistrationManager = None
 	""" Injected RegistrationManager instance. """
 
@@ -167,10 +172,12 @@ class Dispatcher(metaclass=Singleton):
 		if localResourceID(request.id) is None and localResourceID(request.srn) is None:  # type: ignore[reportArgumentType]
 			return self.requestManager.handleTransitRetrieveRequest(request)
 
+		# Check for hybrid ID
 		srn, id = self._checkHybridID(request, id) 	# type: ignore[reportArgumentType] # overwrite id if another is given
 
 
 		# Check attributeList in Content
+		# TODO Move to intterceptor?
 
 		if request.pc is not None:
 			L.isDebug and L.logDebug(f'Found Content for RETRIEVE: {request.pc}')
@@ -178,7 +185,11 @@ class Dispatcher(metaclass=Singleton):
 				raise BAD_REQUEST(L.logWarn(f'Only "m2m:atrl" is allowed in Content for RETRIEVE.'))
 			self.validator.validateAttribute('atrl', attributeList)
 			request._attributeList = attributeList
-		
+
+		# Call request pre-processing interceptors
+		self.interceptorManager.interceptRequestPreProcessing(request)
+
+
 		#
 		#	Handle virtual resources
 		#
@@ -728,6 +739,10 @@ class Dispatcher(metaclass=Singleton):
 			# 	return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
 			raise NOT_FOUND(L.logDebug('resource not found'))
 
+		# Call request pre-processing interceptors
+		self.interceptorManager.interceptRequestPreProcessing(request)
+
+
 		#
 		# 	Handle virtual resources
 		#
@@ -1046,6 +1061,10 @@ class Dispatcher(metaclass=Singleton):
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
+		# Call request pre-processing interceptors
+		self.interceptorManager.interceptRequestPreProcessing(request)
+
+
 		# Unknown resource ?
 		if not id and not fopsrn:
 			raise NOT_FOUND(L.logDebug('resource not found'))
@@ -1239,6 +1258,9 @@ class Dispatcher(metaclass=Singleton):
 			return self.requestManager.handleTransitDeleteRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
+
+		# Call request pre-processing interceptors
+		self.interceptorManager.interceptRequestPreProcessing(request)
 
 		# Unknown resource ?
 		if not id and not fopsrn:
@@ -1448,6 +1470,9 @@ class Dispatcher(metaclass=Singleton):
 			return self.requestManager.handleTransitNotifyRequest(request)
 
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
+
+		# Call request pre-processing interceptors
+		self.interceptorManager.interceptRequestPreProcessing(request)
 
 		# get resource to be notified and check permissions
 		targetResource = self.retrieveResource(id)

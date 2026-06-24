@@ -125,8 +125,7 @@ class Validator(metaclass=Singleton):
 			return
 		match cseRequest.ty:
 
-			case ResourceTypes.FCNT | ResourceTypes.FCNTAnnc:
-				print(_topElement)
+			case ResourceTypes.FCNT | ResourceTypes.FCNTAnnc | ResourceTypes.FCI:
 				if not self.hasFlexContainerSpecialization(_topElement):
 					raise BAD_REQUEST(L.logDebug(f'Unsupported flexContainer specialization: {_topElement} in primitive content'))
 				# -> Validation of cnd is done in the FlexContainer and FlexContainerAnnc activate() methods
@@ -677,22 +676,11 @@ class Validator(metaclass=Singleton):
 		if specific:
 			return None
 		
-		# Try Request or Response parameters
-		if (ap := attributePolicies.get((ResourceTypes.REQUEST, attr))):
-			return ap
-		if (ap := attributePolicies.get((ResourceTypes.RESPONSE, attr))):
-			return ap
-		if (ap := attributePolicies.get((ResourceTypes.NOTIFICATION, attr))):
-			return ap
+		# Try Request or Response parameters, notifications, aLL, or REQRESP
+		for rtype in (ResourceTypes.REQUEST, ResourceTypes.RESPONSE, ResourceTypes.NOTIFICATION, ResourceTypes.ALL, ResourceTypes.REQRESP):
+			if (ap := attributePolicies.get((rtype, attr))):
+				return ap
 
-		# If it couldn't be found, look whether it has been defined for ALL
-		if (ap := attributePolicies.get((ResourceTypes.ALL, attr))):
-			return ap
-
-		# Request or Reponse Attribute?
-		if (ap := attributePolicies.get((ResourceTypes.REQRESP, attr))):
-			return ap
-		
 		# TODO look for other types, requests, filter...
 		return None
 	

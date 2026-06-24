@@ -509,16 +509,18 @@ class Importer(metaclass=Singleton):
 					except Exception as e:
 						L.logErr(str(e))
 						return False
-				
-				# Add the available specialization information
+
+				# Check whether the containerDefinition is already defined.
+				# If it is, then the specialization is already defined and we cannot add it again.
 				if cnd:
 					if self.validator.hasFlexContainerContainerDefinition(cnd):
 						L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
 						return False
 
-					if not self.validator.addFlexContainerSpecialization(typeShortname, cnd, lname):
-						L.logErr(f'Cannot add flexContainer specialization for type: {typeShortname}')
-						return False
+				# Add the available specialization information
+				if not self.validator.addFlexContainerSpecialization(typeShortname, cnd, lname):
+					L.logErr(f'Cannot add flexContainer specialization for type: {typeShortname}')
+					return False
 
 		L.isDebug and L.logDebug(f'Imported {countFCP} flexContainer policies')
 		return True

@@ -220,8 +220,8 @@ def createPositiveResponseResult() -> Result:
 		Return:
 			A `Result` object with a positive response.
 	"""
-	return Result(rsc = ResponseStatusCode.OK, request = CSERequest(requestType=RequestType.RESPONSE,
-																 	rsc=ResponseStatusCode.OK))
+	return Result(rsc=ResponseStatusCode.OK, request=CSERequest(requestType=RequestType.RESPONSE,
+															 	rsc=ResponseStatusCode.OK))
 			   
 
 def createRequestResultFromURI(request:CSERequest, url:str) -> Tuple[Result, str, ParseResult]:
