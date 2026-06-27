@@ -433,7 +433,7 @@ class Factory(metaclass=Singleton):
 		Types._resourceTypesIsNotificationEntity = [ 
 			t
 			for t, d in resourceTypeDetails.items()
-			if d.isNotificationEntity
+			if d.isNotifiable
 		]
 
 		# A list of resource types that either latest or oldest resources

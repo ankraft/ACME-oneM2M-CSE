@@ -961,6 +961,7 @@
 		"isRequestCreatable": false,
 		"isRequestUpdatable": false,
 		"inheritACP": true,
+		"isSpecializationBaseResource": true,
 
 		"attributes": [
 			// Common and universal attributes

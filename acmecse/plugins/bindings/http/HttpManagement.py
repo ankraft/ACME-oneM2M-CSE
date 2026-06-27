@@ -49,6 +49,7 @@ class HttpManagement:
 			path = self.httpServer.addEndpoint('__mgmt__', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
 			self.httpServer.addEndpoint('__mgmt__/<command>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
 			self.httpServer.addEndpoint('__mgmt__/<command>/<param>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
+			self.httpServer.addEndpoint('__mgmt__/<command>/<param>/<subparam>', handler=self.handleManagement, methods=['GET'], strictSlashes=False)
 			L.isInfo and L.log(f'Registered management endpoint at: {path}')
 
 
@@ -63,12 +64,13 @@ class HttpManagement:
 		config.http_enableManagementEndpoint = parser.getboolean('http', 'enableManagementEndpoint', fallback=False)
 
 
-	def handleManagement(self, command: Optional[str]=None, param: Optional[str] = None) -> Response: # type: ignore
+	def handleManagement(self, command: Optional[str] = None, param: Optional[str] = None, subparam: Optional[str] = None) -> Response: # type: ignore
 		"""	Handle a management request. This is used to control the CSE.
 
 			Args:
 				command: The management command to execute. If None, the request is rejected.
 				param: An optional parameter for the management command.
+				subparam: An optional sub-parameter for the management command.
 			
 
 			Return:
@@ -94,7 +96,7 @@ class HttpManagement:
 				
 					case 'creds':
 						if param is None:
-							return Response(response=f'Use "help" for a list of credential management commands.', 
+							return Response(response=f'Use "creds/help" for a list of credential management commands.', 
 											status=422, 
 											headers=self.httpServer._responseHeaders)
 						match param.lower():
@@ -125,7 +127,7 @@ help            Show this help message
 								case 'help':
 									return Response(response='''ACME oneM2M CSE Management Log Commands
 							
-(no parameter)  Stream the live log output
+(no parameter)  Return the current log level
 debug           Set log level to DEBUG
 info            Set log level to INFO
 warning         Set log level to WARNING
@@ -139,6 +141,40 @@ help            Show this help message
 									return Response(response=f'Unknown log level: {param}.\nValid log levels are: {list(LogLevel.__members__.keys())}', 
 													status=422, 
 													headers=self.httpServer._responseHeaders)
+
+					case 'policies':
+						if param is None:
+							return Response(response=f'Use "policies/help" for a list of policy management commands.', 
+											status=422, 
+											headers=self.httpServer._responseHeaders)
+						match param.lower():
+							case 'attributes':
+								return Response(response=self.managementSupport.getAttributePolicies(subparam),
+												mimetype='application/json',
+												headers=self.httpServer._responseHeaders)
+
+							case 'flexcontainers':
+								return Response(response=self.managementSupport.getFlexContainerPolicies(subparam),
+												mimetype='application/json',
+												headers=self.httpServer._responseHeaders)
+							
+							case 'resourcetypes':
+								return Response(response=self.managementSupport.getResourceTypePolicies(subparam),
+												mimetype='application/json',
+												headers=self.httpServer._responseHeaders)
+							case 'help':
+								return Response(response='''ACME oneM2M CSE Management Policy Commands
+attributes      Get the attribute policies (filter: .../attributes{/<attribute>})
+flexcontainers  Get the flexcontainer policies (filter: .../flexcontainers{/<type or name>})
+resourcetypes   Get the resource type policies (filter: .../resourcetypes{/<type or name>})
+help            Show this help message
+''',
+										status=200,
+										headers=self.httpServer._responseHeaders)
+							case _:
+								return Response(response=f'Unknown policy management command: {param}.\nUse "policies/help" for a list of commands.', 
+												status=422, 
+												headers=self.httpServer._responseHeaders)
 
 					case 'registrations':
 						if param is None:
@@ -201,7 +237,7 @@ help            Show this help message
 					case 'reset':
 						self.managementSupport.resetCSE()
 						return Response(response='CSE resetting', headers=self.httpServer._responseHeaders)
-					
+
 					case 'restart':
 						self.managementSupport.restartCSE()	# This might not return (e.g. under Windows)
 						return Response(response='CSE is shutting down to restart', headers=self.httpServer._responseHeaders)
@@ -252,13 +288,14 @@ help            Show this help message
 config          Get the current configuration
 creds           Credential management					  
 log             Stream the live log output
-loglevel        Get or set the log level (.../{info|debug|warning|error|off})
-registrations   Get or refresh the registrations (.../refresh)
-requests        Get or set the request recording (.../{on|off|status})
+loglevel        Get or set the log level (s. .../loglevel/help)
+policies        Get the current policies (s. .../policies/help)
+registrations   Get or refresh the registrations (s. .../registrations/help)
+requests        Get or set the request recording (s. .../requests/help)
 reset           Reset the CSE
 restart         Shutdown the CSE with exit code 82 (indicating a restart)
 shutdown        Shutdown the CSE normally (with exit code 0)
-status          Get the current CSE status
+status          Get the current CSE status (s. .../status/help)
 help            Show this help message
 ''',
 										status=200,

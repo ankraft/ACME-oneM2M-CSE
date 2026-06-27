@@ -21,7 +21,8 @@ from rich.tree import Tree
 from rich import box
 
 from ..etc.Constants import RuntimeConstants as RC, Constants as C
-from ..etc.Types import CSEStatus, JSON, ResourceTypes, LogLevel, CSEType, Operation, TreeMode, RequestOptionality
+from ..etc.Types import CSEStatus, JSON, JSONLIST, ResourceTypes, resourceTypeDetails, AttributePolicy
+from ..etc.Types import LogLevel, CSEType, Operation, TreeMode, RequestOptionality, BasicType
 from ..etc.DateUtils import fromISO8601Date, utcTime, utcDatetime, toISO8601Date, getResourceDate
 from ..etc.IDUtils import isAbsolute, getSPFromID
 from ..etc.ResponseStatusCodes import ResponseException
@@ -514,6 +515,209 @@ skinparam BoxPadding 60
 		uml += '@enduml\n'
 
 		return (table, uml)
+
+
+	#########################################################################
+	#
+	#	Policies related functions
+	#	
+
+	def _handleAttributePolicy(self, rt: ResourceTypes|str|None, policy: AttributePolicy) -> JSON:
+		"""	Handle an attribute policy and return a JSON representation of it.
+
+			Args:
+
+				policy: The attribute policy to handle.
+
+			Returns:
+				A JSON representation of the attribute policy.
+		"""
+		if isinstance(rt, ResourceTypes):
+			_rtname = rt.typeShortname()
+			if _rtname is None:
+				_rtname = rt.name
+		else:
+			_rtname = str(rt)
+
+		# Leave out the memberOf field if the resource type is None
+		_p: JSON
+		if rt is None:
+			_p = {	'longName': policy.lname }
+		else:
+			_p = {	'memberOf': _rtname,
+					'longName': policy.lname,
+					}
+			
+		match policy.type:
+			case BasicType.list | BasicType.listNE:
+				match policy.ltype:
+					case BasicType.complex:
+						_p['type'] = f'list of {policy.lTypeName if policy.lTypeName else "N/A"}'
+					case BasicType.enum:
+						_p['type'] = f'list of enum of {policy.etype if policy.etype else "N/A"}'
+					case _:
+						_p['type'] = f'list of {policy.ltype.name if policy.ltype else "N/A"}'
+				if policy.lSize is not None:
+					_p['listSize'] = policy.lSize
+			case BasicType.enum:
+				_p['type'] = f'enum of {policy.etype if policy.etype else "N/A"}'
+				_p['enumValues'] = policy.evalues if policy.evalues else None
+			case BasicType.complex:
+				_p['type'] = policy.typeName if policy.typeName else None
+			case _:
+				_p['type'] = policy.type.name
+
+		_p.update({
+				'cardinality': policy.cardinality.name,
+				'optionalCreate': policy.optionalCreate.name,
+				'optionalUpdate': policy.optionalUpdate.name,
+				'optionalDiscovery': policy.optionalDiscovery.name,
+				'announcement': policy.announcement.name,
+				})
+		return _p
+
+
+	def getAttributePolicies(self, filter: Optional[str] = None) -> str:
+		"""Get the current attribute type policies of the CSE.
+
+			Args:
+				filter: An optional filter for the management command.
+
+			Returns:
+				The attribute type policies of the CSE in JSON format.
+		"""
+		result: JSON = {}
+		_attributePolicies = self.validator.getAllAttributePolicies()
+		_attrRTMap: JSON = {}
+		_filter = filter.casefold() if filter else None
+
+		# First we create a map of attribute names to their policies, grouped by resource type.
+		for rt, attr in sorted(_attributePolicies.keys(), key=lambda x: x[1]):
+			if attr not in _attrRTMap:
+				_attrRTMap[attr] = []
+			_attrRTMap[attr].append((rt, self.validator.getAttributePolicy(rt, attr)))
+
+		# Itterate over the attribute names and their policies, and create a JSON object for each attribute.
+		for attr, policies in _attrRTMap.items():
+			_a: JSONLIST = []
+
+			# Check for filter. If present, then attributes matching the filter are included,
+			# and all others are skipped.
+
+			for rt, policy in policies:
+
+				if	_filter and \
+					_filter not in attr.casefold() and \
+					policy.lname and _filter not in policy.lname.casefold():
+					continue
+
+				_a.append(self._handleAttributePolicy(rt, policy))
+
+			# Add only if there are policies for this attribute, otherwise skip it.
+			if _a:
+				result[attr] = _a
+			
+		return json.dumps(result, indent=4)
+
+
+	def getFlexContainerPolicies(self, filter: Optional[str] = None) -> str:
+		"""Get the current flexcontainer type policies of the CSE.
+
+			Args:
+				filter: An optional filter for the management command.
+
+			Returns:
+				The flexcontainer type policies of the CSE in JSON format.
+		"""
+		result: JSON = {}
+		_fcntPolicies = self.validator.getAllFlexContainerSpecializations()
+		_filter = filter.casefold() if filter else None
+
+		for n in sorted(_fcntPolicies.keys()):
+			_policy = _fcntPolicies[n]
+
+			# Check for filter. If present, then resources matching the filter are included,
+			# and all others are skipped.
+			if	_filter and \
+				_filter not in n.casefold() and \
+				_filter not in _policy[0].casefold() and \
+				_filter not in _policy[1].casefold():
+					continue
+
+			_f = {	'type': n,
+					'longName': _policy[1],
+					'containerDefinition': _policy[0],
+					'attributes': { k: self._handleAttributePolicy(None, a) 
+									for k, a in self.validator.getFlexContainerAttributesFor(n).items()
+					},
+					'childSpecializations': _policy[2]
+			}
+			
+			result[n] = _f
+		return json.dumps(result, indent=4)
+
+
+	def getResourceTypePolicies(self, filter: Optional[str] = None) -> str:
+		"""Get the current resource type policies of the CSE.
+
+			Args:
+				filter: An optional filter for the management command.
+
+			Returns:
+				The resource type policies of the CSE in JSON format.
+		"""
+		result: JSON = {}
+		_types = sorted(resourceTypeDetails.keys())
+		_filter = filter.casefold() if filter else None
+
+		for t in _types:
+			details = resourceTypeDetails[t]
+			# inlcude only normal resource types, not internal ones
+			if int(t) < 1 or int(t) >= 20001: # or details.isSpecializationBaseResource:
+				continue
+
+			# Check for filter. If present, then resources matching the filter are included,
+			# and all others are skipped.
+			if	_filter and \
+				details.typeName and _filter not in details.typeName.casefold() and \
+				details.fullName and _filter not in details.fullName.casefold() and \
+				_filter != str(details.type):
+				continue
+
+			_t: JSON = {
+				'name': details.typeName,
+				'resourceType': details.type,
+				'fullName': details.fullName,
+			}
+			if details.announcedType is not None:
+				_t['announcedType'] =  f'{resourceTypeDetails[details.announcedType].typeName} ({details.announcedType if not details.isMgmtSpecialization else "10013"})'
+
+			_t.update({	'isAnnouncedResource': details.isAnnouncedResource,
+				'isSpecializationBaseResource': details.isSpecializationBaseResource,
+				'isMgmtSpecialization': details.isMgmtSpecialization,
+			})
+			if details.isMgmtSpecialization:
+				_t['mgmtType'] = details.mgmtType
+
+			_t.update({
+				'isInstanceResource': details.isInstanceResource,
+				'isContainer': details.isContainer,
+				'isRequestCreatable': details.isRequestCreatable,
+				'isRequestUpdatable': details.isRequestUpdatable,
+				'isRequestDeletable': details.isRequestDeletable,
+				'isNotifiable': details.isNotifiable,
+				'inheritACP': details.inheritACP,
+				'attributes': [ { 'shortName': attr, 
+								  'longName': self.validator.getAttributePoliciesByName(attr)[0].lname } 
+				   				for attr in details.attributes ],
+				'childResourceTypes': [ { 'resourceType': crt if crt > 0 else f'N/A', 
+							 			   'name': resourceTypeDetails[crt].fullName }
+										 for crt in sorted(details.childResourceTypes) ] 
+										 if details.childResourceTypes else [],
+			})
+
+			result[details.typeName] = _t
+		return json.dumps(result, indent=4)
 
 
 	#########################################################################
@@ -1378,7 +1582,7 @@ skinparam linetype ortho
 			}
 			for i in interceptorManager._registry
 
-		])
+		], indent=4)
 
 
 	def getServices(self) -> str:
