@@ -200,7 +200,7 @@ class Importer(metaclass=Singleton):
 							isInstanceResource=rtDef.get('isInstanceResource', False),
 							isInternalType=rtDef.get('isInternalType', False),
 							isMgmtSpecialization=rtDef.get('isMgmtSpecialization', False),
-							isNotificationEntity=rtDef.get('isNotificationEntity', False),
+							isNotifiable=rtDef.get('isNotificationEntity', False),
 							isRequestCreatable=rtDef.get('isRequestCreatable', True),
 							isRequestUpdatable=rtDef.get('isRequestUpdatable', True),
 							isRequestDeletable=rtDef.get('isRequestDeletable', True),
@@ -517,8 +517,21 @@ class Importer(metaclass=Singleton):
 						L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
 						return False
 
+				# Add child specialization information.
+				# !!! They are not used at the moment, just stored
+				if not (children := findXPath(eachDefinition, 'children')):
+					children = []
+				else:
+					if not isinstance(children, list):
+						L.logErr(f'Wrong type for children definition for type: {typeShortname} in file: {fn}')
+						return False
+					for child in children:
+						if not isinstance(child, str):
+							L.logErr(f'Wrong type for child definition for type: {typeShortname} in file: {fn}')
+							return False
+
 				# Add the available specialization information
-				if not self.validator.addFlexContainerSpecialization(typeShortname, cnd, lname):
+				if not self.validator.addFlexContainerSpecialization(typeShortname, cnd, lname, children):
 					L.logErr(f'Cannot add flexContainer specialization for type: {typeShortname}')
 					return False
 

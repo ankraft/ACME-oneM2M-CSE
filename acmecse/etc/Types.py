@@ -630,7 +630,7 @@ class ResourceDescription():
 	"""	Whether the resource type can be updated by a request. """
 	isRequestDeletable: bool = True	# Can be deleted by a request
 	"""	Whether the resource type can be deleted by a request. """
-	isNotificationEntity: bool = False	# Is a direct notification target
+	isNotifiable: bool = False	# Is a direct notification target
 	"""	Whether the resource type is a direct notification target. """
 	isSpecializationBaseResource: bool = False
 	""" Whether the resource type is a specialization resource, i.e. a mgmtObj or Fcnt specialization or an announced resource. """
@@ -2980,8 +2980,10 @@ ResourceAttributePolicyDict:TypeAlias = Dict[Tuple[Union[ResourceTypes, str], st
 FlexContainerAttributes:TypeAlias = Dict[str, Dict[str, AttributePolicy]]
 """ Type definition for a dictionary of attribute policies for a flexContainer. """
 
-FlexContainerSpecializations:TypeAlias = Dict[str, Tuple[str, str]]
-""" Type definition for a dictionary of specializations for a flexContainer. """
+FlexContainerSpecializations:TypeAlias = Dict[str, Tuple[str, str, list[str]]]
+""" Type definition for a dictionary of specializations for a flexContainer. 
+	The tuple contains the containerDefinition, the long name, and the allowed child specializations.
+"""
 
 
 ##############################################################################

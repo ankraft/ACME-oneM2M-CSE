@@ -40,7 +40,7 @@ if TYPE_CHECKING:	# only import for type checking to avoid circular imports
 attributePolicies:ResourceAttributePolicyDict = {}
 """ General attribute Policies.
 
-	{ ResourceType : AttributePolicy }
+	{ (ResourceType|str, attributeName) : AttributePolicy }
 """
 
 # Will be filled by further specialization definitions.
@@ -579,32 +579,43 @@ class Validator(metaclass=Singleton):
 		flexContainerAttributes.clear()
 
 
-	def addFlexContainerSpecialization(self, typeShortname:str, cnd:str, lname:str) -> bool:
+	def addFlexContainerSpecialization(self, typeShortname:str, cnd:str, lname:str, children:list[str]) -> bool:
 		"""	Add flexContainer specialization information to the internal dictionary.
 		
 			Args:
 				typeShortname: String, domain and short name of the flexContainer specialization.
 				cnd: String, the containerDefinition of the flexContainer specialization.
 				lname: String, the long name of the flexContainer specialization.
+				children: List of strings, the allowed child specializations of the flexContainer specialization.
 			Return:
 				Boolean, indicating whether a specialization was added successfully. 
 
 		"""
 		if not self.hasFlexContainerSpecialization(typeShortname):
-			flexContainerSpecializations[typeShortname] = (cnd, lname)
+			flexContainerSpecializations[typeShortname] = (cnd, lname, children)
 			return True
 		return False
 
 
-	def getFlexContainerSpecialization(self, typeShortname:str) -> Tuple[str, str]:
+	def getFlexContainerSpecialization(self, typeShortname:str) -> Tuple[str, str, list[str]]:
 		"""	Return the availale data for a flexContainer specialization.
 		
 			Args:
 				typeShortname: String, domain and short name of the flexContainer specialization.
 			Return:
-				Tuple with the flexContainer specialization data (or None if none exists). The tuple contains the containerDefinition and the long name.
+				Tuple with the flexContainer specialization data (or None if none exists). 
+				The tuple contains the containerDefinition, the long name, and the allowed child specializations.
 		"""
 		return flexContainerSpecializations.get(typeShortname)
+
+
+	def getAllFlexContainerSpecializations(self) -> FlexContainerSpecializations:
+		"""	Return all available flexContainer specializations.
+		
+			Return:
+				FlexContainerSpecializations, a dictionary with all flexContainer specialization data.
+		"""
+		return flexContainerSpecializations
 	
 
 	def hasFlexContainerSpecialization(self, typeShortname:str) -> bool:
@@ -696,12 +707,12 @@ class Validator(metaclass=Singleton):
 		"""
 		result = { }
 		keys = attributePolicies.keys()
-		_attrlower = attr.lower()
+		_attrFold = attr.casefold()
 
 		# First search for the specific attribute name
 		for each in keys:
 			s = each[1]
-			if s == _attrlower:
+			if s.casefold() == _attrFold:
 				result[s] = attributePolicies[each]
 				break
 
@@ -710,7 +721,7 @@ class Validator(metaclass=Singleton):
 			for each in keys:
 				s = each[1]
 				v = attributePolicies[each]
-				if soundsLike(_attrlower, v.lname, 99):
+				if soundsLike(_attrFold, v.lname, 99):
 					if s not in result:
 						result[s] = v
 		
@@ -718,7 +729,7 @@ class Validator(metaclass=Singleton):
 			for each in keys:
 				s = each[1]
 				v = attributePolicies[each]
-				if _attrlower in v.lname.lower():
+				if _attrFold in v.lname.casefold():
 					if s not in result:
 						result[s] = v
 
