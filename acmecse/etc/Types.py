@@ -3154,7 +3154,7 @@ Parameters:TypeAlias = Dict[str, str]
 """	Type definition for a dictionary of parameters. """
 JSON:TypeAlias = Dict[str, Any]
 """	Type definition for a JSON type, which is just a dictionary. """
-JSONLIST:TypeAlias = List[JSON]
+JSONLIST:TypeAlias = List[JSON|str|int|float|bool|None]
 """	Type definition for a list of JSON types. """
 ReqResp:TypeAlias = Dict[str, Union[int, str, List[str], JSON]]
 """	Type definition for a dictionary of request/response parameters. """

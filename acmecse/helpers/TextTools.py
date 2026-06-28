@@ -470,6 +470,22 @@ def limitLines(text:str, maxLines:int, cont:str = '...') -> str:
 		return '\n'.join(lines)
 	return text
 
+
+def truncateMiddle(s: str, n: int = 4) -> str:
+	"""	Truncate a string in the middle and replace the truncated part with an ellipsis.
+
+		Args:
+			s: The string to truncate.
+			n: The number of characters to keep at the beginning and end of the string.
+
+		Return:
+			The truncated string.
+	"""
+	if len(s) <= 2 * n:
+		return s
+	return f'{s[:n]}...{s[-n:]}'
+
+
 def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool = False) -> bool:
 	r"""	Simple string match function. 
 

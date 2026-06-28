@@ -18,6 +18,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Moved request recording to an interceptor plugin.
 - [CSE] Added support for the &lt;container> *maxByteSizePerInstance* (mbis) attribute.
 - [MGMT] Added reloading of HTTP and WebSocket authentication credentials to the management API.
+- [MGMT] Added support for retrieving basic and auth token information via the management API.
 - [MGMT] Added return of attribute, resource type, and flexcontainer policies to the management API.
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
 - [TESTS] Added hurl request files for simple (performance) testing.

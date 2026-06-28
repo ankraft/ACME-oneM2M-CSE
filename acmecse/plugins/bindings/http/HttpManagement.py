@@ -100,11 +100,31 @@ class HttpManagement:
 											status=422, 
 											headers=self.httpServer._responseHeaders)
 						match param.lower():
+							case 'httpbasic':
+								return Response(response=self.managementSupport.getHttpBasicCredentials(),
+												mimetype='application/json',
+												headers=self.httpServer._responseHeaders)
+							case 'httptoken':
+								return Response(response=self.managementSupport.getHttpTokenCredentials(),
+												mimetype='application/json',
+												headers=self.httpServer._responseHeaders)
+							case 'wsbasic':
+								return Response(response=self.managementSupport.getWSBasicCredentials(),
+												mimetype='application/json',
+												headers=self.httpServer._responseHeaders)
+							case 'wstoken':
+								return Response(response=self.managementSupport.getWSTokenCredentials(),
+												mimetype='application/json',
+												headers=self.httpServer._responseHeaders)
 							case 'reload':
 								return Response(response=self.managementSupport.reloadCredentials(), headers=self.httpServer._responseHeaders)
 							case 'help':
 								return Response(response='''ACME oneM2M CSE Management Credential Commands
 						
+httpbasic       Get the HTTP basic authentication credentials
+httptoken       Get the HTTP token authentication credentials
+wsbasic         Get the WebSocket basic authentication credentials
+wstoken         Get the WebSocket token authentication credentials
 reload          Reload the HTTP and WebSocket credentials
 help            Show this help message
 ''',

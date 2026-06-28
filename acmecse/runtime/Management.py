@@ -26,7 +26,7 @@ from ..etc.Types import LogLevel, CSEType, Operation, TreeMode, RequestOptionali
 from ..etc.DateUtils import fromISO8601Date, utcTime, utcDatetime, toISO8601Date, getResourceDate
 from ..etc.IDUtils import isAbsolute, getSPFromID
 from ..etc.ResponseStatusCodes import ResponseException
-from ..helpers.TextTools import simpleMatch
+from ..helpers.TextTools import simpleMatch, truncateMiddle
 from ..helpers.OrderedSet import OrderedSet
 from ..helpers.NetworkTools import getIPAddress
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -1814,11 +1814,77 @@ function createResource() {{
 		"""
 		try:
 			self.securityManager.initAuthInformation()
-			return 'Credentials reloaded successfully'
+			return '{ "message": "Credentials reloaded successfully" }'
 		except Exception as e:
-			return f'Error reloading credentials: {str(e)}'
+			return '{ "error": "Error reloading credentials: ' + str(e) + '" }'
 
 
+	def getHttpBasicCredentials(self) -> str:
+		"""Get the current HTTP Basic credentials of the CSE.
+
+			Returns:
+				The HTTP Basic credentials of the CSE in JSON format, 
+				or an error message if the HTTP server plugin is not enabled.
+		"""
+		result:JSON = {}
+		if not pluginManager.httpServer:
+			result = { 'error': 'HTTP server plugin is not enabled'}
+		else:
+			result = { u: truncateMiddle(p)
+					  	for u, p in self.securityManager.httpBasicAuthData.items() 
+					 }
+		return json.dumps(result, indent=4)
+
+
+	def getHttpTokenCredentials(self) -> str:
+		"""Get the current HTTP Bearer credentials of the CSE.
+
+			Returns:
+				The HTTP Bearer credentials of the CSE in JSON format, 
+				or an error message if the HTTP server plugin is not enabled.
+		"""
+		result:JSON|JSONLIST = {}
+		if not pluginManager.httpServer:
+			result = { 'error': 'HTTP server plugin is not enabled'}
+		else:
+			result = [	truncateMiddle(t)
+					 	for t in self.securityManager.httpTokenAuthData 
+					 ]
+		return json.dumps(result, indent=4)
+
+
+	def getWSBasicCredentials(self) -> str:
+		"""Get the current WebSocket Basic credentials of the CSE.
+
+			Returns:
+				The WebSocket Basic credentials of the CSE in JSON format, 
+				or an error message if the WebSocket server plugin is not enabled.
+		"""
+		result:JSON = {}
+		if not pluginManager.webSocketServer:
+			result = { 'error': 'WebSocket server plugin is not enabled'}
+		else:
+			result = {	u: truncateMiddle(p)
+					  	for u, p in self.securityManager.wsBasicAuthData.items() 
+					 }
+		return json.dumps(result, indent=4)
+
+
+	def getWSTokenCredentials(self) -> str:
+		"""Get the current WebSocket Bearer credentials of the CSE.
+
+			Returns:
+				The WebSocket Bearer credentials of the CSE in JSON format, 
+				or an error message if the WebSocket server plugin is not enabled.
+		"""
+		result:JSON|JSONLIST = {}
+		if not pluginManager.webSocketServer:
+			result = { 'error': 'WebSocket server plugin is not enabled'}
+		else:
+			result = [	truncateMiddle(t)
+					 	for t in self.securityManager.wsTokenAuthData 
+					 ]
+		return json.dumps(result, indent=4)
 
 
 

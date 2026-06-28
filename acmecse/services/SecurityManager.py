@@ -21,7 +21,7 @@ from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator, isAb
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
-from ..helpers.TextTools import findXPath, simpleMatch
+from ..helpers.TextTools import findXPath, simpleMatch, truncateMiddle
 from ..runtime.PluginSupport import *
 from ..runtime.EventManager import *
 from ..runtime.Configuration import Configuration
@@ -153,7 +153,11 @@ class SecurityManager(object):
 		# TODO further optimization: only reload the changed files
 		key:Optional[str] = eventData[0]
 		value:Any = eventData[1]
-		self.initAuthInformation()
+		if key in ('http.security.basicAuthFile', 
+			 	   'http.security.tokenAuthFile', 
+				   'websocket.security.basicAuthFile', 
+				   'websocket.security.tokenAuthFile'):
+			self.initAuthInformation()
 
 
 	###############################################################################################
@@ -1016,6 +1020,7 @@ class SecurityManager(object):
 			Raises:
 				ValueError: If there is an error reading any of the authentication files.
 		"""
+		L.configUpdate and L.log('reading and initializing authentication information.')
 		if self.httpServer:
 			L.isDebug and L.logDebug('Initializing HTTP authentication information.')
 			self._readHttpBasicAuthFile()
@@ -1036,22 +1041,32 @@ class SecurityManager(object):
 			Raises:
 				ValueError: If there is an error reading the basic authentication file.
 		"""
-		self.httpBasicAuthData = {}
+		_newAuthData: dict[str, str] = {}
 		# We need to access the configuration directly, since the http server is not yet initialized
-		# if CSE.pluginManager.httpServer:
 		if self.httpServer:
-			if Configuration.http_security_enableBasicAuth and Configuration.http_security_basicAuthFile:
+			if Configuration.http_security_basicAuthFile:
 				try:
 					with open(Configuration.http_security_basicAuthFile, 'r') as f:
 						for line in f:
-							if line.startswith('#'):
+							if line.startswith('#') or len(_l := line.strip()) == 0:
 								continue
-							if len(line.strip()) == 0:
-								continue
-							(username, password) = line.strip().split(':')
-							self.httpBasicAuthData[username] = password.strip()
+							(username, password) = _l.split(':')
+
+							# Do not allow duplicate usernames in the basic authentication file
+							if username in _newAuthData:
+								raise ValueError(f'Duplicate username "{username}" in http basic authentication file.')
+
+							_newAuthData[username] = password.strip()
+				except FileNotFoundError as e:
+					if Configuration.http_security_enableBasicAuth:
+						raise ValueError(L.logErr(f'HTTP basic authentication file not found: {e}')) from e
+					else:
+						L.isDebug and L.logDebug(f'HTTP basic authentication file not found, but basic authentication is disabled: {e}')
 				except Exception as e:
 					raise ValueError(L.logErr(f'Error reading basic authentication file: {e}')) from e
+
+		# only update the httpBasicAuthData if the file was read successfully
+		self.httpBasicAuthData = _newAuthData
 
 
 	def _readHttpTokenAuthFile(self) -> None:
@@ -1063,21 +1078,30 @@ class SecurityManager(object):
 			Raises:
 				ValueError: If there is an error reading the token authentication file.
 		"""
-		self.httpTokenAuthData = []
-		# We need to access the configuration directly, since the http server is not yet initialized
-		# if CSE.pluginManager.httpServer:
+		_newAuthData: list[str] = []
 		if self.httpServer:
-			if Configuration.http_security_enableTokenAuth and Configuration.http_security_tokenAuthFile:
+			if Configuration.http_security_tokenAuthFile:
 				try:
 					with open(Configuration.http_security_tokenAuthFile, 'r') as f:
 						for line in f:
-							if line.startswith('#'):
+							if line.startswith('#') or len(_l := line.strip()) == 0:
 								continue
-							if len(line.strip()) == 0:
-								continue
-							self.httpTokenAuthData.append(line.strip())
+
+							# Do not allow duplicate tokens in the token authentication file
+							if _l in _newAuthData:
+								raise ValueError(f'Duplicate token "{truncateMiddle(_l)}" in http token authentication file.')
+
+							_newAuthData.append(_l)
+				except FileNotFoundError as e:
+					if Configuration.http_security_enableTokenAuth:
+						raise ValueError(L.logErr(f'HTTP token authentication file not found: {e}')) from e
+					else:
+						L.isDebug and L.logDebug(f'HTTP token authentication file not found, but token authentication is disabled: {e}')
 				except Exception as e:
 					raise ValueError(L.logErr(f'Error reading token authentication file: {e}')) from e
+
+		# only update the httpTokenAuthData if the file was read successfully
+		self.httpTokenAuthData = _newAuthData
 
 
 	def _readWSBasicAuthFile(self) -> None:
@@ -1089,20 +1113,31 @@ class SecurityManager(object):
 			Raises:
 				ValueError: If there is an error reading the basic authentication file.
 		"""
-		self.wsBasicAuthData = {}
+		_newAuthData: dict[str, str] = {}
 		# We need to access the configuration directly, since the http server is not yet initialized
-		if Configuration.websocket_security_enableBasicAuth and Configuration.websocket_security_basicAuthFile:
+		if Configuration.websocket_security_basicAuthFile:
 			try:
 				with open(Configuration.websocket_security_basicAuthFile, 'r') as f:
 					for line in f:
-						if line.startswith('#'):
+						if line.startswith('#') or len(_l := line.strip()) == 0:
 							continue
-						if len(line.strip()) == 0:
-							continue
-						(username, password) = line.strip().split(':')
-						self.wsBasicAuthData[username] = password.strip()
+						(username, password) = _l.split(':')
+
+						# Do not allow duplicate usernames in the basic authentication file
+						if username in _newAuthData:
+							raise ValueError(f'Duplicate username "{username}" in ws basic authentication file.')
+
+						_newAuthData[username] = password.strip()
+			except FileNotFoundError as e:
+				if Configuration.websocket_security_enableBasicAuth:
+					raise ValueError(L.logErr(f'WebSocket basic authentication file not found: {e}')) from e
+				else:
+					L.isDebug and L.logDebug(f'WebSocket basic authentication file not found, but basic authentication is disabled: {e}')
 			except Exception as e:
-				raise ValueError(L.logErr(f'Error reading basic authentication file: {e}')) from e
+				raise ValueError(L.logErr(f'Error reading ws basic authentication file: {e}')) from e
+
+		# only update the wsBasicAuthData if the file was read successfully
+		self.wsBasicAuthData = _newAuthData
 
 
 	def _readWSTokenAuthFile(self) -> None:
@@ -1114,20 +1149,32 @@ class SecurityManager(object):
 			Raises:
 				ValueError: If there is an error reading the token authentication file.
 		"""
-		self.wsTokenAuthData = []
+		_newAuthData: list[str] = []
 		# We need to access the configuration directly, since the http server is not yet initialized
-		if Configuration.websocket_security_enableTokenAuth and Configuration.websocket_security_tokenAuthFile:
+		if Configuration.websocket_security_tokenAuthFile:
 			try:
 				with open(Configuration.websocket_security_tokenAuthFile, 'r') as f:
 					for line in f:
-						if line.startswith('#'):
+						if line.startswith('#') or len(_l := line.strip()) == 0:
 							continue
-						if len(line.strip()) == 0:
-							continue
-						self.wsTokenAuthData.append(line.strip())
+
+						# Do not allow duplicate tokens in the token authentication file
+						if _l in _newAuthData:
+							raise ValueError(f'Duplicate token "{truncateMiddle(_l)}" in ws token authentication file.')
+
+						_newAuthData.append(_l)
+
+			except FileNotFoundError as e:
+				if Configuration.websocket_security_enableTokenAuth:
+					raise ValueError(L.logErr(f'WebSocket token authentication file not found: {e}')) from e
+				else:
+					L.isDebug and L.logDebug(f'WebSocket token authentication file not found, but token authentication is disabled: {e}')
 			except Exception as e:
-				raise ValueError(L.logErr(f'Error reading token authentication file: {e}')) from e
-	
+				raise ValueError(L.logErr(f'Error reading ws token authentication file: {e}')) from e
+
+		# only update the wsTokenAuthData if the file was read successfully
+		self.wsTokenAuthData = _newAuthData
+
 
 	def getPOACredentialsForCSEID(self, registrarConfig:CSERegistrar, cseID:Optional[str]=None, binding:Optional[BindingType]=BindingType.HTTP) -> Optional[Tuple[str, str]]:
 		"""	Return the credentials for the Point of Access (POA) for the given CSE-ID.

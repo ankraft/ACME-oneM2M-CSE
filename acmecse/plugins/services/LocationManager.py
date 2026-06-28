@@ -379,6 +379,8 @@ class LocationManager(object):
 		"""
 		if (rGeom := r.getLocationCoordinates()) is None:
 			return False
+
+		# Getting rGeom ensures that the resource has a location attribute
 		rTyp = r.loc.get('typ')
 		
 		try:
