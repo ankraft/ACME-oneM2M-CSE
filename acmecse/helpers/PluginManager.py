@@ -976,6 +976,17 @@ class PluginManager(metaclass=Singleton.Singleton):
 		return hasattr(self, instanceName)
 	
 
+	def getPluginByName(self, name: str) -> Optional[PluginInfo]:
+		""" Get the plugin by name.
+
+			Args:
+				name: The name of the plugin to get.
+			Returns:
+				The PluginInfo object for the plugin, or None if not found.
+		"""
+		return self.plugins.get(name, None)
+	
+
 	def provide(self, moduleName: str, instance: Any) -> None:
 		""" Provide a instance of any non-plugin class to be injected as a dependency.
 			This can be used to provide instances of classes that are not plugins, 
