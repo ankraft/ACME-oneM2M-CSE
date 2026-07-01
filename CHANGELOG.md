@@ -13,7 +13,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Added
 - [CSE] Added support for the notification's *subscribedTo* attribute.
 - [CSE] Added timeout support for plugin methods. The timeout can be configured globally in the configuration file or set individually for each plugin method via the plugin decorators.
-- [CSE] Added first support for intercepting requests and responses in the CSE. This allows to hook into the CSE's request processing and to modify requests and responses before they are processed by the CSE or sent to the client. This is an ESTIMED project contribution.
+- [CSE] Added first support for intercepting requests and responses in the CSE. This allows to hook into the CSE's request processing and to modify requests and responses before they are processed by the CSE or sent to a target. This is an ESTIMED project contribution.
 - [CSE] Moved common pre-processing logic to an interceptor plugin.
 - [CSE] Moved request recording to an interceptor plugin.
 - [CSE] Added support for the &lt;container> *maxByteSizePerInstance* (mbis) attribute.
@@ -32,6 +32,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed AE-ID recognition to allow "/Sabc" as a valid AE-ID, but not "/Cabc". 
 - [CSE] Fixed missing RETRIEVE permission check when creating a &lt;subscription> resource. Added a test case for this.   
 - [CSE] Improved validation of MgmtObj resources (missing or wrong mgd, or wrong resource type).
+- [CSE] Fixed a rare race conditions when running jobs with a background worker, which could lead to an unpredictable premature running of a job before its time.
 - [WEB] Fixed wrong handling of the http root path in the web UI and especially in the REST UI. Thanks to Yann Garcia for reporting this issue.
 
 ### Removed
