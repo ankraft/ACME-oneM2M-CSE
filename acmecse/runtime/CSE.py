@@ -132,18 +132,6 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	L.logDebug(f'Python version: {platform.python_version()}')
 	L.logDebug(f'Platform: {platform.platform()}')
 
-	# Starting a start-up guard that will check whether the CSE is still starting up after 
-	# a certain time and if so, initiates a shutdown.
-	# This guard is only started when the guard delay is set to a value greater than 0.
-
-	def _startupGuard() -> None:
-		if RC.cseStatus != CSEStatus.RUNNING:
-			L.logErr('CSE startup is taking longer than expected, forcing shutdown')
-			forceShutdown()
-	
-	if Configuration.cse_operation_startup_guardDelay > 0:
-		BackgroundWorkerPool.newActor(_startupGuard, delay=Configuration.cse_operation_startup_guardDelay, name='StartupGuard').start()
-
 
 	# Log the startup message and configuration
 
@@ -160,6 +148,19 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	BackgroundWorkerPool.setJobBalance(	balanceTarget=Configuration.cse_operation_jobs_balanceTarget,
 										balanceLatency=Configuration.cse_operation_jobs_balanceLatency,
 										balanceReduceFactor=Configuration.cse_operation_jobs_balanceReduceFactor)
+
+	# Starting a start-up guard that will check whether the CSE is still starting up after 
+	# a certain time and if so, initiates a shutdown.
+	# This guard is only started when the guard delay is set to a value greater than 0.
+
+	def _startupGuard() -> None:
+		if RC.cseStatus != CSEStatus.RUNNING:
+			L.logErr('CSE startup is taking longer than expected, forcing shutdown')
+			forceShutdown()
+
+	if Configuration.cse_operation_startup_guardDelay > 0:
+		BackgroundWorkerPool.newActor(_startupGuard, delay=Configuration.cse_operation_startup_guardDelay, name='StartupGuard').start()
+
 
 	try:
 		# Provide the main components to the plugin manager, so that they can be injected into 
@@ -371,7 +372,6 @@ def forceShutdown() -> None:
 	_platform = platform.system()
 	L.isDebug and L.logDebug(f'Forcing CSE shutdown (Platform: {_platform})')
 
-	
 	if pluginManager.textUI and pluginManager.textUI.tuiApp:	# Shutdown the TextUI first
 		pluginManager.textUI.shutdown()	
 		import time as _time

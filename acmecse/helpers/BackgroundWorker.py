@@ -537,16 +537,18 @@ class WorkerEntry(object):
 		'timestamp',
 		'workerID',
 		'workerName',
+		'interval',
 	)
 	"""	Slots for the class. """
 
-	def __init__(self, timestamp:float, workerID:int, workerName:str) -> None:
+	def __init__(self, timestamp:float, workerID:int, workerName:str, interval:float) -> None:
 		"""	Initialize a WorkerEntry.
 		
 			Args:
 				timestamp: Timestamp of the next execution.
 				workerID: ID of the worker.
 				workerName: Name of the worker.
+				interval: Interval for the worker's execution.
 		"""
 		self.timestamp = timestamp
 		""" Timestamp of the next execution. """
@@ -554,6 +556,8 @@ class WorkerEntry(object):
 		""" ID of the worker. """
 		self.workerName = workerName
 		""" Name of the worker. """
+		self.interval = interval
+		""" Interval for the worker's execution. """
 
 
 	def __lt__(self, other:WorkerEntry) -> bool:
@@ -574,7 +578,7 @@ class WorkerEntry(object):
 			Return:
 				A string representation of the WorkerEntry.
 		"""
-		return f'(ts: {self.timestamp} id: {self.workerID} name: {self.workerName})'
+		return f'(ts: {self.timestamp} id: {self.workerID} name: {self.workerName} interval: {self.interval})'
 	
 
 	def __repr__(self) -> str:
@@ -601,6 +605,11 @@ class BackgroundWorkerPool(object):
 	"""	Lock for the *workerQueue*. """
 	timerLock:Lock					 				= Lock()
 	"""	Lock for the *workerTimer*. """
+
+	timerGeneration:int = 0
+	"""	Generation of the timer. Incremented each time the timer is reset. """
+
+
 
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:
@@ -844,7 +853,7 @@ class BackgroundWorkerPool(object):
 		# top = cls.workerQueue[0] if cls.workerQueue else None
 		with cls.queueLock:
 			cls._stopTimer()
-			heapq.heappush(cls.workerQueue, WorkerEntry(ts, worker.id, worker.name))
+			heapq.heappush(cls.workerQueue, WorkerEntry(ts, worker.id, worker.name, worker.interval))
 			cls._startTimer()
 
 
@@ -871,11 +880,16 @@ class BackgroundWorkerPool(object):
 		"""
 		if not sys.is_finalizing() and cls.workerQueue:
 			with cls.timerLock:
-				if cls.workerTimer is not None:	# don't start another timer!
-					return
+				# Always cancel an existing timer first — never leak one
+				if cls.workerTimer is not None:
+					cls.workerTimer.cancel()
+					# cls.workerTimer = None
+				cls.timerGeneration += 1
+  
 				try:
-					cls.workerTimer = Timer(cls.workerQueue[0].timestamp - _utcTime(), cls._execQueue)
-					cls.workerTimer.setDaemon(True)	# Make the Timer thread a daemon of the main thread
+					# print(f'{cls.workerQueue[0].workerID} Scheduling timer in {t:.6f}s, queue {cls.workerQueue}, now={_utcTime():.6f}')
+					cls.workerTimer = Timer(interval=max(0.0, cls.workerQueue[0].timestamp - _utcTime()), function=lambda: cls._execQueue(cls.timerGeneration))
+					cls.workerTimer.daemon = True	# Make the Timer thread a daemon of the main thread
 					cls.workerTimer.start()
 				except RuntimeError:
 					# not allowed to start a new thread when the interpreter is shutting down.
@@ -895,14 +909,18 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def _execQueue(cls) -> None:
-		"""	Execute the actual BackgroundWorker's callback in a thread.
-		"""
+	def _execQueue(cls, gen:int) -> None:
 		with cls.queueLock:
+			# Test whether the timer generation is still the same as when the timer was started.
+			# If not, then the timer is stale and we ignore it.
+			# Don't worry about a canceled task, it will be picked up by the next timer.
+			if gen != cls.timerGeneration:
+				return
 			cls._stopTimer()
-			if cls.workerQueue:
+			if cls.workerQueue and cls.workerQueue[0].timestamp <= _utcTime():
+			# if cls.workerQueue:
 				w = heapq.heappop(cls.workerQueue)
 				if worker := cls.backgroundWorkers.get(w.workerID):
 					cls.runJob(worker._work, w.workerName)
-			cls._startTimer()	# start timer again
+			cls._startTimer()
 
