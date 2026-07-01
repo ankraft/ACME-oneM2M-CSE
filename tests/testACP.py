@@ -1621,7 +1621,7 @@ class TestACP(unittest.TestCase):
 		
 		# Retrieve full resource -> Fail or OK, depending on authentication status
 		r, rsc = RETRIEVE(cntURL, 'Cae1')
-		self.assertEqual(rsc, expectedStatus, str(r) + '\n\n[red]Is the CSE configured to use authentication?[/red]')
+		self.assertEqual(rsc, expectedStatus, str(r) + '\n\n[red]Is the CSE configured to use authentication?\nIf not, then switch off authentication for the tests in the config file.[/red]')
 
 		# Delete the AE+ACP+CNT again
 		_, rsc = DELETE(f'{aeURL}', TestACP.originator)
