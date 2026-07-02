@@ -25,7 +25,7 @@ import isodate
 from acmecse.etc.Constants import Constants
 from acmecse.etc.Types import ReqResp, RequestType, Result, ResponseStatusCode, JSON, LogLevel, RequestCredentials, AuthorizationResult
 from acmecse.etc.Types import Operation, CSERequest, ContentSerializationType, DesiredIdentifierResultType, ResponseType, ResultContentType
-from acmecse.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException
+from acmecse.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR, BAD_REQUEST, REQUEST_TIMEOUT, TARGET_NOT_REACHABLE, ResponseException, UNSUPPORTED_MEDIA_TYPE
 from acmecse.etc.IDUtils import uniqueRI, toSPRelative, isCSERelative
 from acmecse.etc.Utils import renameThread, getThreadName, isURL, getAuthFromUrl, normalizeURL
 from acmecse.etc.Constants import RuntimeConstants as RC
@@ -808,7 +808,7 @@ class HttpServer(object):
 		# parse and extract content-type header
 		if contentType := request.content_type:
 			if not contentType.startswith(tuple(ContentSerializationType.supportedContentSerializations())):
-				contentType = None
+				raise UNSUPPORTED_MEDIA_TYPE(L.logWarn(f'Content-Type "{contentType}" is not supported by the CSE'), data = cseRequest)
 			else:
 				p  = contentType.partition(';')		# always returns a 3-tuple
 				contentType = p[0] 					# only the content-type without the resource type
@@ -816,16 +816,21 @@ class HttpServer(object):
 				if len(t) > 0:
 					try:
 						req['ty'] = int(t)			# Here we found the type for CREATE requests
-					except:
-						raise BAD_REQUEST(L.logWarn(f'resource type must be an integer: {t}'), data = cseRequest)
+					except Exception as e:
+						raise BAD_REQUEST(L.logWarn(f'resource type must be an integer: {t}'), data=cseRequest) from e
 
 		# Get the media type from the content-type header
 		cseRequest.ct = ContentSerializationType.getType(contentType, default = RC.defaultSerialization)
 
 		# parse accept header. Ignore */* and variants thereof
 		cseRequest.httpAccept = []
-		for h in _headers.getlist('accept'):
-			cseRequest.httpAccept.extend([ a.strip() for a in h.split(',') if not a.startswith('*/*')])
+		for h in (_al := _headers.getlist('accept')):
+			cseRequest.httpAccept.extend([	_x 
+								 			for x in h.split(',') 
+											if (_x := x.strip()) in ContentSerializationType.supportedContentSerializations() ])
+		# any accept header found, but none of the supported content types
+		if _al and '*/*' not in _al and not cseRequest.httpAccept: 
+			raise UNSUPPORTED_MEDIA_TYPE(L.logWarn(f'Accept header "{_al}" does not contain any supported content type'), data=cseRequest)
 
 		# Copy the request arguments into an own multi-dict
 		_args = MultiDict()	
@@ -840,10 +845,10 @@ class HttpServer(object):
 		try:
 			self.requestManager.fillAndValidateCSERequest(cseRequest)
 		except REQUEST_TIMEOUT as e:
-			raise e
+			raise
 		except ResponseException as e:
 			e.dbg = f'invalid arguments/attributes: {e.dbg}'
-			raise e
+			raise
 
 		# Here, if everything went okay so far, we have a request to the CSE
 		return Result(request = cseRequest)

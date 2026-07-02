@@ -285,7 +285,7 @@ class TestMisc(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipIf(BINDING not in [ 'http', 'https' ], 'only for http')
 	def test_createAEContentTypeWithSpacesHeader(self) -> None:
-		""" Create <AE> with a content header with spaces (http only)"""
+		""" Create <AE> with a content-type header with spaces (http only)"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN,
 					'api': 'Nacme',
@@ -294,11 +294,75 @@ class TestMisc(unittest.TestCase):
 				}}
 		# Space in Content-Type header field
 		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct, headers={'Content-Type' : 'application/json;       ty=2'})
-		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(rsc, RC.CREATED, ae)
 
 		# delete it again
 		r, rsc = DELETE(f'{CSEURL}{CSERN}/{aeRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING not in [ 'http', 'https' ], 'only for http')
+	def test_createAEContentTypeUnknownFail(self) -> None:
+		""" Create <AE> with a content-type header with unknown type (http only)"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ]
+				}}
+		# Unknown type in Content-Type header field
+		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct, headers={'Content-Type' : 'application/vnd.onem2m-res+;ty=2'})
+		self.assertNotEqual(rsc, RC.CREATED, ae)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING not in [ 'http', 'https' ], 'only for http')
+	def test_createAEContentTypeNoneFail(self) -> None:
+		""" Create <AE> with a content-type header with no type (http only)"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ]
+				}}
+		# No type in Content-Type header field
+		ae, rsc = CREATE(cseURL, ORIGINATOR, T.AE, dct, headers={'Content-Type' : ''})
+		self.assertNotEqual(rsc, RC.CREATED, ae)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING not in [ 'http', 'https' ], 'only for http')
+	def test_createAEAcceptGeneric(self) -> None:
+		""" Create <AE> with an Accept header with generic */* type (http only)"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ]
+				}}
+		# Unknown type in Content-Type header field
+		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct, headers={'Accept' : '*/*'})
+		self.assertEqual(rsc, RC.CREATED, ae)
+
+		# delete it again
+		r, rsc = DELETE(f'{CSEURL}{CSERN}/{aeRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING not in [ 'http', 'https' ], 'only for http')
+	def test_createAEAcceptWrongFail(self) -> None:
+		""" Create <AE> with an Accept header with wrong type (http only)"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ]
+				}}
+		# Unknown type in Content-Type header field
+		ae, rsc = CREATE(cseURL, ORIGINATOREmpty, T.AE, dct, headers={'Accept' : 'application/vnd.onem2m-res+'})
+		self.assertNotEqual(rsc, RC.CREATED, ae)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -641,6 +705,13 @@ def run(testFailFast:bool) -> TestResult:
 	suite = unittest.TestSuite()
 	addTests(suite, TestMisc, [
 
+		# HTTP header tests
+		'test_createAEContentTypeWithSpacesHeader',
+		'test_createAEContentTypeUnknownFail',
+		'test_createAEContentTypeNoneFail',
+		'test_createAEAcceptGeneric',
+		'test_createAEAcceptWrongFail',
+
 		'test_checkHTTPRVI',
 		'test_checkHTTPRET',
 		'test_checkHTTPVSI',
@@ -648,6 +719,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_checkHTTPRETWrong',
 		'test_checkHTTPRETRelativeWrong',
 		'test_checkHTTPRVIWrongInRequest',
+
 		'test_createUnknownResourceTypeFail',
 		'test_createNoResourceTypeFail',
 		'test_sendNotificationToOwnCSEFail',
@@ -661,7 +733,6 @@ def run(testFailFast:bool) -> TestResult:
 		'test_validateListFail',
 		'test_resourceWithoutRN',
 		'test_subWithoutRN',
-		'test_createAEContentTypeWithSpacesHeader',
 		'test_retrieveCSEwithResourceTypeFail',
 		'test_tokenValidationFail',
 		'test_wrongRCNinUpdateFail',
