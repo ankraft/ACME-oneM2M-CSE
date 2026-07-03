@@ -12,7 +12,7 @@ import sys
 from typing import Callable, Optional
 
 from acmecse.runtime.InterceptorManager import InterceptorManager
-from ..helpers.PluginManager import PluginManager as PM, PluginState, DependencyError, plugin
+from ..helpers.PluginManager import PluginManager as PM, PluginState, DependencyError, PluginInfo
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
 from ..runtime.InterceptorManager import Interceptor, interceptorManager
@@ -88,6 +88,7 @@ class PluginManager(PM):
 					directory (str): The directory to load plugins from.
 					packagePath (str): The package path for the plugins.
 			"""
+			plugins: dict[str, PluginInfo] = {}
 			try:
 				plugins = self.loadPlugins(directory=directory, 
 										   packagePath=packagePath, 
