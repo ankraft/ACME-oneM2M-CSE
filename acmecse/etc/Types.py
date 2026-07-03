@@ -1270,6 +1270,19 @@ class EventCategory(ACMEIntEnum):
 #	Content Serializations
 #
 
+# A bit of optimization: We store the supported content serializations in a tuple. 
+_supportedContentSerializations = (	'application/json',
+									'application/vnd.onem2m-res+json', 
+									'application/cbor',
+									'application/vnd.onem2m-res+cbor' 
+								  )
+"""	A list of supported media types for content serialization for http communication."""
+
+_supportedContentSerializationsWS = (	'oneM2M.json', 
+										'oneM2M.cbor' 
+									)
+"""	A list of supported media types for content serialization for WebSocket communication."""
+
 class ContentSerializationType(ACMEIntEnum):
 	"""	Content Serialization Types 
 	"""
@@ -1364,16 +1377,13 @@ class ContentSerializationType(ACMEIntEnum):
 	
 
 	@classmethod
-	def supportedContentSerializations(cls) -> list[str]:
+	def supportedContentSerializations(cls) -> Sequence[str]:
 		"""	Return a list of supported media types for content serialization.
 
 			Return:
 				A list of supported media types for content serialization.
 		"""
-		return [ 'application/json',
-				 'application/vnd.onem2m-res+json', 
-				 'application/cbor',
-				 'application/vnd.onem2m-res+cbor' ]
+		return _supportedContentSerializations
 
 
 	@classmethod
@@ -1384,7 +1394,7 @@ class ContentSerializationType(ACMEIntEnum):
 			Return:
 				A list of supported media types for content serialization.
 		"""
-		return [ 'oneM2M.json', 'oneM2M.cbor' ]
+		return _supportedContentSerializationsWS
 
 
 	@classmethod
