@@ -370,7 +370,8 @@ help            Show this help message
 
 			# Get the json with a meanuningful error message if the json is invalid
 			try:
-				jsn = json.loads(request.data)
+				if command and command.lower() not in ['help'] and param and param.lower() not in ['help']:
+					jsn = json.loads(request.data)
 			except json.JSONDecodeError as e:
 				return self._response(f'{{ "error": "Invalid JSON", "detail": "{str(e)}" }}', status=400)
 
