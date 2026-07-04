@@ -245,10 +245,10 @@
 	"loc": [
 		{
 			"rtypes": [ "AE", "AEAnnc", "CSEBase", "CSEBaseAnnc", "CSR", "CSRAnnc", 
-						"CIN", "CINAnnc",
+						"CINAnnc",
 					    "CNT", "CNTAnnc", "CNT_LA", "CNT_OL",
 						"FCI", "FCIAnnc", "FCNT", "FCNTAnnc", "FCNT_LA", "FCNT_OL",
-						"TS", "TSAnnc", "TS_LA", "TS_OL", "TSI", "TSIAnnc", 
+						"TS", "TSAnnc", "TS_LA", "TS_OL", "TSIAnnc", 
 						"REQRESP" ],	
 			"lname": "location",
 			"ns": "m2m",
@@ -257,6 +257,17 @@
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
+			"annc": "OA"
+		},
+		{
+			"rtypes": [ "CIN", "TSI" ],	
+			"lname": "location",
+			"ns": "m2m",
+			"type": "m2m:geoCoordinates",
+			"car": "01L",
+			"oc": "O",
+			"ou": "NP",
+			"od": "NP",
 			"annc": "OA"
 		},
 		{
