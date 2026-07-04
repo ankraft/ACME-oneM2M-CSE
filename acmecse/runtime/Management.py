@@ -22,7 +22,7 @@ from rich import box
 
 from ..etc.Constants import RuntimeConstants as RC, Constants as C
 from ..etc.Types import CSEStatus, JSON, JSONLIST, ResourceTypes, resourceTypeDetails, AttributePolicy
-from ..etc.Types import LogLevel, CSEType, Operation, TreeMode, RequestOptionality, BasicType
+from ..etc.Types import LogLevel, CSEType, Operation, TreeMode, RequestOptionality, BasicType, BindingType
 from ..etc.DateUtils import fromISO8601Date, utcTime, utcDatetime, toISO8601Date, getResourceDate
 from ..etc.IDUtils import isAbsolute, getSPFromID
 from ..etc.ResponseStatusCodes import ResponseException
@@ -40,6 +40,7 @@ from ..helpers.Singleton import Singleton
 
 if TYPE_CHECKING:
 	from ..resources.Resource import Resource
+	from ..runtime.CredentialsManager import CredentialsManager
 	from ..runtime.Storage import Storage
 	from ..services.Dispatcher import Dispatcher
 	from ..services.RequestManager import RequestManager
@@ -50,6 +51,7 @@ if TYPE_CHECKING:
 # Used in many "rich" functions
 _markupText = Text.from_markup
 
+@requires(credentialsManager='acmecse.runtime.CredentialsManager')
 @requires(storage='acmecse.runtime.Storage')
 @requires(dispatcher='acmecse.services.Dispatcher')
 @requires(requestManager='acmecse.services.RequestManager')
@@ -62,8 +64,8 @@ class ManagementSupport(metaclass=Singleton):
 		Also provides functions for retrieving and formatting CSE status, statistics, and runtime information.
 	"""
 
-	storage: Storage = None
-	"""	Injected Storage instance. """
+	credentialsManager: CredentialsManager = None
+	""" Injected CredentialsManager instance. """
 
 	dispatcher: Dispatcher = None
 	""" Injected Dispatcher instance. """
@@ -73,6 +75,9 @@ class ManagementSupport(metaclass=Singleton):
 
 	securityManager: SecurityManager = None
 	""" Injected SecurityManager instance. """
+
+	storage: Storage = None
+	"""	Injected Storage instance. """
 
 	validator: Validator = None
 	""" Injected Validator instance. """
@@ -1814,77 +1819,199 @@ function createResource() {{
 		"""
 		try:
 			self.securityManager.initAuthInformation()
-			return '{ "message": "Credentials reloaded successfully" }'
+			return 'Credentials reloaded successfully'
 		except Exception as e:
-			return '{ "error": "Error reloading credentials: ' + str(e) + '" }'
+			return 'Error reloading credentials: ' + str(e)
 
 
-	def getHttpBasicCredentials(self) -> str:
-		"""Get the current HTTP Basic credentials of the CSE.
+	def  _checkBindingPlugins(self, ty: BindingType) -> Optional[str]:
+		"""Check if the required binding plugins are enabled.
 
+			Args:
+				ty: The type of binding to check.
 			Returns:
-				The HTTP Basic credentials of the CSE in JSON format, 
+				None if the required binding plugins are enabled, or an error message if not.
+		"""
+		match ty:
+			case BindingType.HTTP if not pluginManager.httpServer:
+				return '{ "error": "HTTP server plugin is not enabled" }'
+			case BindingType.WS if not pluginManager.webSocketServer:
+				return '{ "error": "WebSocket server plugin is not enabled" }'
+		return None
+
+	
+	def getBasicCredentials(self, ty: BindingType) -> str:
+		"""Get the current HTTP or WS credentials of the CSE.
+
+			Args:
+				ty: The type of credentials to retrieve.
+			Returns:
+				The HTTP or WScredentials of the CSE in JSON format, 
 				or an error message if the HTTP server plugin is not enabled.
 		"""
-		result:JSON = {}
-		if not pluginManager.httpServer:
-			result = { 'error': 'HTTP server plugin is not enabled'}
-		else:
-			result = { u: truncateMiddle(p)
-					  	for u, p in self.securityManager.httpBasicAuthData.items() 
-					 }
-		return json.dumps(result, indent=4)
+		if (error := self._checkBindingPlugins(ty)) is not None:
+			return error
+		match ty:
+			case BindingType.HTTP:
+				creds = self.credentialsManager.httpBasicAuthData.items()
+			case BindingType.WS:
+				creds = self.credentialsManager.wsBasicAuthData.items()
+			case _:
+				return '{ "error": "Invalid binding type" }'
+		return json.dumps({ u: truncateMiddle(p) for u, p in creds }, indent=4)
 
 
-	def getHttpTokenCredentials(self) -> str:
-		"""Get the current HTTP Bearer credentials of the CSE.
+	def addBasicCredentials(self, jsn: JSON, ty: BindingType) -> str:
+		"""Add new HTTP or WebSocket Basic credentials to the CSE.
 
-			Returns:
-				The HTTP Bearer credentials of the CSE in JSON format, 
-				or an error message if the HTTP server plugin is not enabled.
-		"""
-		result:JSON|JSONLIST = {}
-		if not pluginManager.httpServer:
-			result = { 'error': 'HTTP server plugin is not enabled'}
-		else:
-			result = [	truncateMiddle(t)
-					 	for t in self.securityManager.httpTokenAuthData 
-					 ]
-		return json.dumps(result, indent=4)
-
-
-	def getWSBasicCredentials(self) -> str:
-		"""Get the current WebSocket Basic credentials of the CSE.
+			Args:
+				jsn: A JSON object containing the new credentials in the format { "username": "password" }.
+				ty: The type of credentials to add.
 
 			Returns:
-				The WebSocket Basic credentials of the CSE in JSON format, 
-				or an error message if the WebSocket server plugin is not enabled.
+				A JSON object with a message indicating success or failure.
 		"""
-		result:JSON = {}
-		if not pluginManager.webSocketServer:
-			result = { 'error': 'WebSocket server plugin is not enabled'}
-		else:
-			result = {	u: truncateMiddle(p)
-					  	for u, p in self.securityManager.wsBasicAuthData.items() 
-					 }
-		return json.dumps(result, indent=4)
+		if (error := self._checkBindingPlugins(ty)) is not None:
+			return error
+		try:
+			# content check: must be a dict with exactly 2 keys: "username" and "password"
+			if not isinstance(jsn, dict) or len\
+				(jsn) != 2 or \
+				(u := jsn.get("username")) is None or (p := jsn.get("password")) is None:
+					return '{ "error": "Invalid JSON format. Expected a JSON object with {\"username\": \"<username>\", \"password\": \"<password>\"}." }'
+			self.credentialsManager.addBasicAuthEntry(u, p, ty)
+		except Exception as e:
+			return '{ "error": "Error adding credentials: ' + str(e) + '" }'
+
+		return '{ "message": "Credentials added successfully" }'
 
 
-	def getWSTokenCredentials(self) -> str:
-		"""Get the current WebSocket Bearer credentials of the CSE.
+	def updateBasicCredentials(self, jsn: JSON, ty: BindingType) -> str:
+		"""Update existing HTTP or WebSocket Basic credentials in the CSE.
+
+			Args:
+				jsn: A JSON object containing the updated credentials in the format { "username": "password" }.
+				ty: The type of credentials to update.
 
 			Returns:
-				The WebSocket Bearer credentials of the CSE in JSON format, 
-				or an error message if the WebSocket server plugin is not enabled.
+				A JSON object with a message indicating success or failure.
 		"""
-		result:JSON|JSONLIST = {}
-		if not pluginManager.webSocketServer:
-			result = { 'error': 'WebSocket server plugin is not enabled'}
-		else:
-			result = [	truncateMiddle(t)
-					 	for t in self.securityManager.wsTokenAuthData 
-					 ]
-		return json.dumps(result, indent=4)
+		if (error := self._checkBindingPlugins(ty)) is not None:
+			return error
+		try:
+			# content check: must be a dict with exactly 2 keys: "username" and "password"
+			if not isinstance(jsn, dict) or len(jsn) != 2 or (u := jsn.get("username")) is None or (p := jsn.get("password")) is None:
+				return '{ "error": "Invalid JSON format. Expected a JSON object with {\"username\": \"<username>\", \"password\": \"<password>\"} pairs." }'
+			self.credentialsManager.updateBasicAuthEntry(u, p, ty)
+		except Exception as e:
+			return '{ "error": "Error updating credentials: ' + str(e) + '" }'
+
+		return '{ "message": "Credentials updated successfully" }'
 
 
+	def deleteBasicCredentials(self, username: str, ty: BindingType) -> str:
+		"""Delete HTTP or WebSocket Basic credentials from the CSE.
+
+			Args:
+				username: The username of the credentials to delete.
+				ty: The type of credentials to delete.
+				
+			Returns:
+				A JSON object with a message indicating success or failure.
+		"""
+		if (error := self._checkBindingPlugins(ty)) is not None:
+			return error
+		try:
+			self.credentialsManager.deleteBasicAuthEntry(username, ty)
+		except Exception as e:
+			return '{ "error": "Error deleting credentials: ' + str(e) + '" }'
+
+		return '{ "message": "Credentials deleted successfully" }'
+
+
+	def getTokenCredentials(self, ty: BindingType) -> str:
+		"""Get the current HTTP or WebSocket Bearer credentials of the CSE.
+
+			Args:
+				ty: The type of credentials to retrieve.
+
+			Returns:
+				The HTTP or WebSocket Bearer credentials of the CSE in JSON format, 
+				or an error message if the corresponding server plugin is not enabled.
+		"""
+		if (error := self._checkBindingPlugins(ty)) is not None:
+			return error
+		match ty:
+			case BindingType.HTTP:
+				creds = self.credentialsManager.httpTokenAuthData 
+			case BindingType.WS:
+				creds = self.credentialsManager.wsTokenAuthData 
+			case _:
+				return '{ "error": "Invalid binding type" }'
+		return json.dumps([	truncateMiddle(t) for t in creds ], indent=4)
+
+
+	def addTokenCredentials(self, jsn: JSON, ty: BindingType) -> str:
+		"""Add new HTTP or WebSocket Token credentials to the CSE.
+
+			Args:
+				jsn: A JSON object containing the new credentials in the format { "username": "password" }.
+				ty: The type of credentials to add.
+
+			Returns:
+				A JSON object with a message indicating success or failure.
+		"""
+		if (error := self._checkBindingPlugins(ty)) is not None:
+			return error
+		try:
+			# content check: must be a dict with exactly 1 key: "token"
+			if not isinstance(jsn, dict) or len(jsn) != 1 or (t := jsn.get("token")) is None:
+				return '{ "error": "Invalid JSON format. Expected a JSON object with {\"token\": \"<token>\"}." }'
+			self.credentialsManager.addTokenEntry(t, ty)
+		except Exception as e:
+			return '{ "error": "Error adding credentials: ' + str(e) + '" }'
+		return '{ "message": "Credentials added successfully" }'
+
+
+	def updateTokenCredentials(self, jsn: JSON, ty: BindingType) -> str:
+		"""Update existing HTTP or WebSocket Token credentials in the CSE.
+
+			Args:
+				jsn: A JSON object containing the updated credentials in the format { "token": "<token>" }.
+				ty: The type of credentials to update.
+
+			Returns:
+				A JSON object with a message indicating success or failure.
+		"""
+		if (error := self._checkBindingPlugins(ty)) is not None:
+			return error
+		try:
+			# content check: must be a dict with exactly 2 keys: "token" and "new"
+			if not isinstance(jsn, dict) or len(jsn) != 2 or (t := jsn.get("token")) is None or (nt := jsn.get("new")) is None:
+				return '{ "error": "Invalid JSON format. Expected a JSON object with {\"token\": \"<token>\", \"new\": \"<new token>\"}." }'
+			self.credentialsManager.updateTokenEntry(t, nt, ty)
+		except Exception as e:
+			return '{ "error": "Error updating credentials: ' + str(e) + '" }'
+
+		return '{ "message": "Credentials updated successfully" }'
+
+
+	def deleteTokenCredentials(self, token: str, ty: BindingType) -> str:
+		"""Delete HTTP or WebSocket Token credentials from the CSE.
+
+			Args:
+				token: The token of the credentials to delete.
+				ty: The type of credentials to delete.
+				
+			Returns:
+				A JSON object with a message indicating success or failure.
+		"""
+		if (error := self._checkBindingPlugins(ty)) is not None:
+			return error
+		try:
+			self.credentialsManager.deleteTokenEntry(token, ty)
+		except Exception as e:
+			return '{ "error": "Error deleting credentials: ' + str(e) + '" }'
+
+		return '{ "message": "Credentials deleted successfully" }'
 

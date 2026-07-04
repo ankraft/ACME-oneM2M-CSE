@@ -25,6 +25,7 @@ from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
 
+from .CredentialsManager import CredentialsManager
 from ..runtime.Configuration import Configuration
 from ..runtime.ConsoleBase import ConsoleBase
 from ..runtime.EventManager import eventManager
@@ -51,6 +52,9 @@ from ..services.Validator import Validator
 
 console:ConsoleBase = None
 """ Runtime instance of the `acmecse.plugins.runtime.Console.Console` or `acmecse.plugins.runtime.MinimalConsole.MinimalConsole`. """
+
+credentialsManager:CredentialsManager = CredentialsManager()
+"""	Runtime instance of the `CredentialsManager`. """
 
 dispatcher:Dispatcher = Dispatcher()
 """	Runtime instance of the `Dispatcher`. """
@@ -168,6 +172,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		pluginManager.provide('acmecse.runtime.Factory', factory)
 		pluginManager.provide('acmecse.runtime.Importer', importer)
 		pluginManager.provide('acmecse.runtime.Storage', storage)
+		pluginManager.provide('acmecse.runtime.CredentialsManager', credentialsManager)
 		pluginManager.provide('acmecse.runtime.InterceptorManager', interceptorManager)		
 		pluginManager.provide('acmecse.services.Dispatcher', dispatcher)	
 		pluginManager.provide('acmecse.services.NotificationManager', notification)
@@ -197,6 +202,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
 
 		# Initialize other components
+		credentialsManager.initialize()
 		registration.initialize()
 		validator.initialize()
 		dispatcher.initialize()	
