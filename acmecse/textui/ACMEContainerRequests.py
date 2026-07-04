@@ -8,7 +8,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, List, cast, Any, TYPE_CHECKING
+from typing import Optional, cast, Any, TYPE_CHECKING
 
 import json
 
@@ -19,7 +19,7 @@ from textual.binding import Binding
 from textual.widgets import Static, Label, ListView, ListItem
 from textual.widget import Widget
 from rich.syntax import Syntax
-from ..etc.Types import JSONLIST, JSON, Operation
+from ..etc.Types import JSONLIST, JSON, JSONLIST, Operation
 from ..etc.ResponseStatusCodes import ResponseStatusCode, isSuccessRSC
 from ..etc.DateUtils import toISO8601Date
 from ..etc.Utils import reverseEnumerate
@@ -128,7 +128,7 @@ class ACMEViewRequests(Vertical):
 		"""
 		super().__init__(id = id)
 
-		self._currentRequests:List[JSON] = None
+		self._currentRequests:JSONLIST = None
 		"""	The current requests. """
 
 		self._currentRI:str = None
@@ -408,7 +408,7 @@ class ACMEViewRequests(Vertical):
 		self.requestListRequest.update()
 		self.requestListResponse.update()
 
-		self._currentRequests = cast(JSONLIST, self.storage.getRequests(self._currentRI, sortedByOt = True))
+		self._currentRequests = cast(JSONLIST, self.storage.getRequests(self._currentRI, sortedByOt=True))
 
 		# Add the requests to the list in reverse order
 		for i, r in reverseEnumerate(self._currentRequests):

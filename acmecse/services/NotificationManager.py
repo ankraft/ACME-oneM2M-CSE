@@ -224,7 +224,7 @@ class NotificationManager(object):
 		
 		# filter by chty if set
 		if chty:
-			result = [ each for each in result if (_chty := each['chty']) is None or chty in _chty]
+			result = [ each for each in result if (_chty := each['chty']) is None or chty in _chty]	# type:ignore[index]
 
 		return result
 
@@ -448,15 +448,15 @@ class NotificationManager(object):
 					'nev' : {
 						'net' : NotificationEventType.blockingUpdate.value
 					},
-					'sur' : toSPRelative(eachSub['ri'])
+					'sur' : toSPRelative(eachSub['ri'])	# type:ignore[index]
 				}
 			}
 
 			# Check attributes in enc
-			if atr := eachSub['atr']:
+			if atr := eachSub['atr']:	# type:ignore[index]
 				jsn, _, _ = pureResource(updatedAttributes)
 				if len(set(jsn.keys()).intersection(atr)) == 0:	# if the intersection between updatedAttributes and the enc/atr contains is empty, then continue
-					L.isDebug and L.logDebug(f'skipping <SUB>: {eachSub["ri"]} because configured enc/attribute condition doesn\'t match')
+					L.isDebug and L.logDebug(f'skipping <SUB>: {eachSub["ri"]} because configured enc/attribute condition doesn\'t match')	# type:ignore[index]
 					continue
 
 			# Don't include virtual resources
@@ -468,7 +468,7 @@ class NotificationManager(object):
 			# Send notification and handle possible negative response status codes
 			try:
 				res = self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
-																to=eachSub['nus'][0],
+																to=eachSub['nus'][0],	# type:ignore[index]
 																originator=originator,
 																pc=notification)
 												   )[0].result	# there should be at least one result
@@ -482,9 +482,9 @@ class NotificationManager(object):
 				
 			# Modify the result status code for some failure response status codes
 			except TARGET_NOT_REACHABLE:
-				raise REMOTE_ENTITY_NOT_REACHABLE(L.logDebug(f'remote entity not reachable: {eachSub["nus"][0]}'))
+				raise REMOTE_ENTITY_NOT_REACHABLE(L.logDebug(f'remote entity not reachable: {eachSub["nus"][0]}'))	# type:ignore[index]
 			except OPERATION_NOT_ALLOWED:
-				raise OPERATION_DENIED_BY_REMOTE_ENTITY(L.logDebug(f'operation denied by remote entity: {eachSub["nus"][0]}'))
+				raise OPERATION_DENIED_BY_REMOTE_ENTITY(L.logDebug(f'operation denied by remote entity: {eachSub["nus"][0]}'))	# type:ignore[index]
 			except:
 					# General negative response status code
 				raise
@@ -535,7 +535,8 @@ class NotificationManager(object):
 			maxAgeRequest = request._ma
 
 			# Check for maxAge attribute provided in the subscription
-			maxAgeSubscription = eachSub['ma']	# EXPERIMENTAL blocking retrieve
+			# EXPERIMENTAL blocking retrieve
+			maxAgeSubscription = eachSub['ma']		# type:ignore[index, assignment] 
 				
 			# Return if neither the request nor the subscription have a maxAge set
 			if maxAgeRequest is None and maxAgeSubscription is None:
@@ -556,13 +557,14 @@ class NotificationManager(object):
 			notification = {
 				'm2m:sgn' : {
 					'nev' : {
-						'net' : eachSub['net'][0],	# Add the first and hopefully only NET to the notification
+						'net' : eachSub['net'][0],	# type:ignore[index] # Add the first and hopefully only NET to the notification
 					},
-					'sur' : toSPRelative(eachSub['ri'])
+					'sur' : toSPRelative(eachSub['ri'])	# type:ignore[index]
 				}
 			}
 			# Add creator of the subscription!
-			(subOriginator := eachSub['org']) is not None and setXPath(notification, 'm2m:sgn/cr', subOriginator)	# Set creator in notification if it was present in subscription
+			# Set creator in notification if it was present in subscription
+			(subOriginator := eachSub['org']) is not None and setXPath(notification, 'm2m:sgn/cr', subOriginator)	# type:ignore[index]
 
 			# Add representation, but don't include virtual resources
 			if not resource.isVirtual():
@@ -570,7 +572,7 @@ class NotificationManager(object):
 
 			countNotifications += 1
 			self.request.handleSendRequest(CSERequest(op=Operation.NOTIFY,
-													  to=eachSub['nus'][0], 
+													  to=eachSub['nus'][0], # type:ignore[index]
 													  originator=subOriginator,
 										  			  pc=notification))
 			# TODO: correct RSC according to 7.3.2.9 - see above!

@@ -476,16 +476,16 @@ class Importer(metaclass=Singleton):
 			if (definitions := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
 				return False
 			for eachDefinition in definitions:
-				if not (typeShortname := findXPath(eachDefinition, 'type')):
+				if not (typeShortname := findXPath(eachDefinition, 'type')):	# type:ignore[arg-type]
 					L.logErr(f'Missing or empty resource type in file: {fn}')
 					return False
-				if (cnd := findXPath(eachDefinition, 'cnd')) is None:
+				if (cnd := findXPath(eachDefinition, 'cnd')) is None:		# type:ignore[arg-type]
 					L.logDebug(f'Missing containerDefinition (cnd) for type: {typeShortname} in file: {fn}')
-				if (lname := findXPath(eachDefinition, 'lname')) is None:
+				if (lname := findXPath(eachDefinition, 'lname')) is None:		# type:ignore[arg-type]
 					L.logDebug(f'Missing long name (lname) for type: {typeShortname} in file: {fn}')
 				
 				# Attributes are optional. However, add a dummy entry
-				if not (attrs := findXPath(eachDefinition, 'attributes')):
+				if not (attrs := findXPath(eachDefinition, 'attributes')):		# type:ignore[arg-type]
 					attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
 					
 				definedAttrs:list[str] = []
@@ -519,7 +519,7 @@ class Importer(metaclass=Singleton):
 
 				# Add child specialization information.
 				# !!! They are not used at the moment, just stored
-				if not (children := findXPath(eachDefinition, 'children')):
+				if not (children := findXPath(eachDefinition, 'children')):	# type:ignore[arg-type]
 					children = []
 				else:
 					if not isinstance(children, list):

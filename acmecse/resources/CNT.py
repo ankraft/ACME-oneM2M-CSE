@@ -226,7 +226,7 @@ class CNT(ContainerResource):
 		if mni is not None:
 			while cni > mni and cni > 0:
 				# Only instantiate the <cin> when needed here for deletion
-				cin = self.factory.resourceFromDict(cinsRaw[0])
+				cin = self.factory.resourceFromDict(cinsRaw[0])	# type: ignore [arg-type]
 				L.isDebug and L.logDebug(f'cni > mni: Removing <cin>: {cin.ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
@@ -236,13 +236,13 @@ class CNT(ContainerResource):
 				cni -= 1	# decrement cni when deleting a <cin>
 
 		# Calculate cbs of remaining cins
-		cbs = sum([ each['cs'] for each in cinsRaw])
+		cbs = sum([ each['cs'] for each in cinsRaw])	# type: ignore [index, misc]
 
 		# check size
 		if mbs is not None:
 			while cbs > mbs and cbs > 0:
 				# Only instantiate the <cin> when needed here for deletion
-				cin = self.factory.resourceFromDict(cinsRaw[0])
+				cin = self.factory.resourceFromDict(cinsRaw[0])	# type: ignore [arg-type]
 				L.isDebug and L.logDebug(f'cbs > mbs: Removing <cin>: {cin.ri}')
 				# remove oldest
 				cbs -= cin.cs
@@ -262,7 +262,7 @@ class CNT(ContainerResource):
 		# oldest resource is the first in the list of cinsRaw.
 		# This means that we need to send an "update" event for the oldest resource.
 		if cin is not None and len(cinsRaw):
-			eventManager.changeResource(EventData(payload=(self.factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())))	 # type: ignore [attr-defined]
+			eventManager.changeResource(EventData(payload=(self.factory.resourceFromDict(cinsRaw[0]), self.getOldestRI())))	 # type: ignore [arg-type]
 	
 		# End validating
 		self.__validating = False
