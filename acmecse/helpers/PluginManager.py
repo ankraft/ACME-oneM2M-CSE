@@ -123,6 +123,31 @@ class Dependency:
 	isFunction: bool = False	
 	""" Whether the dependency is a function (provided by @provide) """
 
+
+@dataclass
+class ServiceDefinition:
+	""" Dataclass to hold information about a service. """
+	pluginName: str
+	""" Name of the plugin that provides the service. """
+	tags: list[str]
+	""" List of tags associated with the service. """
+	metadata: dict[str, Any]
+	""" Metadata associated with the service. """
+	priority: int
+	""" Priority of the service. Lower values mean higher priority. """
+
+
+@dataclass
+class EndpointDefinition:
+	""" Dataclass to hold information about an endpoint. """
+	pluginName: str
+	""" Name of the plugin that provides the endpoint. """
+	endpointName: str
+	""" Name of the endpoint. """
+	signature: inspect.Signature
+	""" The signature of the endpoint method. """
+
+
 DependencyGraph = dict[type|str, list[Dependency]]
 """ Type alias for a dependency graph. The keys are (plugin) classes or names, and the values are lists of dependencies. """
 
@@ -1094,34 +1119,36 @@ class PluginManager(metaclass=Singleton.Singleton):
 		return name in providedFunctions
 	
 
-	def services(self, tag: str | list[str] = None) -> list[tuple[str, list[str], dict[str, Any]]]:
+	def services(self, tag: str | list[str] = None) -> list[ServiceDefinition]:
 		""" Get a list of all available services provided by the plugins. This is used to discover the available services and their endpoints.
 
 			Args:
 				tag: The tag of the plugin to get the services for. This is used to identify the plugin to get the services for. If multiple plugins with the same tag are found, all of them are returned in order of their priority. If None, all plugins are returned.
 			Returns:
-				A list of tuples of the form (pluginName, tags, serviceMetadata) where pluginName is the name of the plugin that provides the service, tags is a list of tags associated with the plugin, and serviceMetadata is a dictionary of metadata about the service (e.g. description, parameters, etc.).
+				A list of `ServiceDefinition` instances where each instance contains the pluginName, tags, and serviceMetadata.
 		"""
 		# Get the plugin instance for the given tag and endpoint
 		plugins = self.getPluginsByTag(tag, byPriority=True)
-		return [ (p, self.plugins[p].tags, i._service_metadata_) for p, i in plugins if hasattr(i, _tagEndpointMap) and i._pm_endpointMap ]
+		return [ ServiceDefinition(pluginName=p, tags=self.plugins[p].tags, metadata=i._service_metadata_, priority=self.plugins[p].priority) 
+		  		 for p, i in plugins 
+				 if hasattr(i, _tagEndpointMap) and i._pm_endpointMap ]
 
 
-	def endpoints(self, pluginName: str) -> list[tuple[str, inspect.Signature]]:
+	def endpoints(self, pluginName: str) -> list[EndpointDefinition]:
 		""" Get a list of all available endpoints provided by the plugin. 
 			This is used to discover the available endpoints and their metadata for a given plugin.
 
 			Args:
 				pluginName: The name of the plugin to get the endpoints for.
 			Returns:
-				A list of tuples of the form (endpoint, signature) where endpoint is the name of the endpoint and signature a Signature object from the inspect module.
+				A list of `EndpointDefinition` instances where each instance contains the pluginName, endpointName, and signature.
 			Raises:
 				PluginNotFoundError: If no plugin with the given name is found.
 		"""
 		try:
 			_i = self.plugins[pluginName].instance
 			if hasattr(_i, _tagEndpointMap) and _i._pm_endpointMap:
-				return [ (endpoint, inspect.signature(getattr(_i, func))) for endpoint, func in _i._pm_endpointMap.items() ]
+				return [ EndpointDefinition(pluginName=pluginName, endpointName=endpoint, signature=inspect.signature(getattr(_i, func))) for endpoint, func in _i._pm_endpointMap.items() ]
 			else:
 				return []
 		except KeyError:
