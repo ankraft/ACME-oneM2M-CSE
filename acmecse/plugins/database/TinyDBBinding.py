@@ -177,7 +177,7 @@ class TinyDBBinding(DBBinding):
 		self.path = None if Configuration.database_type == 'memory' else Configuration.database_tinydb_path
 		""" Path to the database directory. """
 
-		self.postfix = f'{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}', # add SP-ID + CSE CSI as postfix
+		self.postfix = f'{RC.cseSPIDSlashLess}-{RC.cseCsiSlashLess}' # add SP-ID + CSE CSI as postfix
 		""" Postfix for the database file names. """
 
 		self.cacheSize = Configuration.database_tinydb_cacheSize

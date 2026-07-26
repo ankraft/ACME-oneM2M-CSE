@@ -37,6 +37,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed a rare race conditions when running jobs with a background worker, which could lead to an unpredictable premature running of a job before its time.
 - [CSE] Improved detection of invalid HTTP Content-Type and Accept headers. Now returning an appropriate error response. Thanks to Yann Garcia for reporting this issue.
 - [CSE] Fixed a potential crash of an IN-CSE instance when a child CSE is unregistering.
+- [CSE] Fixed wrong file names for TinyDB database files. This was introduced in the last release. THIS IS A BREAKING CHANGE. Old database files must be renamed to the correct format which is `resources-<SP-ID>-<CSE-ID>.json`. 
 - [WEB] Fixed wrong handling of the http root path in the web UI and especially in the REST UI. Thanks to Yann Garcia for reporting this issue.
 
 ### Removed
