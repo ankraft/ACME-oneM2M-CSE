@@ -36,6 +36,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Improved validation of MgmtObj resources (missing or wrong mgd, or wrong resource type).
 - [CSE] Fixed a rare race conditions when running jobs with a background worker, which could lead to an unpredictable premature running of a job before its time.
 - [CSE] Improved detection of invalid HTTP Content-Type and Accept headers. Now returning an appropriate error response. Thanks to Yann Garcia for reporting this issue.
+- [CSE] Fixed a potential crash of an IN-CSE instance when a child CSE is unregistering.
 - [WEB] Fixed wrong handling of the http root path in the web UI and especially in the REST UI. Thanks to Yann Garcia for reporting this issue.
 
 ### Removed
@@ -894,4 +895,4 @@ Thanks to KyeongHo!
 ## [0.1.0] - 2020-02-09
 - First release
 
-[← README](README.md) 
+[← README](README.md)

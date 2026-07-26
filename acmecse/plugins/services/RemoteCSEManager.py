@@ -417,7 +417,7 @@ class RemoteCSEManager(object):
 
 		# If this is the registrar CSR that has been updated, then update own CSEBase, and perhaps descendant CSRs
 		csrCsi = csr.csi
-		if csrCsi == self.registrarConfig.cseID:
+		if self.registrarConfig and csrCsi == self.registrarConfig.cseID:
 			L.isDebug and L.logDebug('Update of registrar CSR detected')
 
 			# add authentication information to the CSR's POA if necessary and available
@@ -437,6 +437,9 @@ class RemoteCSEManager(object):
 			# The registrar obviously has changed something.
 			self.registrarConfig._registrarCSEBaseResource = self._retrieveRegistrarCB(self.registrarConfig) # retrieve the remote CSEBase
 
+		elif csrCsi not in self.descendantCSR:
+			L.isWarn and L.logWarn(f'Update of unknown CSR detected: {csrCsi}. Ignoring update.')
+			
 		else:
 			# This is any registree CSR that has been updated
 
