@@ -99,6 +99,7 @@ const shortTypes = {
     28 : "FCNT",
 	29 : "TS",
 	30 : "TSI",
+	43 : "ALST",
 	48 : "CRS",
     58 : "FCI",
 	60 : "TSB",
