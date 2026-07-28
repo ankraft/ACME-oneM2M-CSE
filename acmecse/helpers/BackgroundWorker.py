@@ -662,7 +662,7 @@ class BackgroundWorkerPool(object):
 				interval: Interval in seconds to run the worker callback
 				workerCallback: Callback to run as a worker
 				name: Name of the worker
-				startWithDelay: If True then start the worker after a `interval` delay 
+				startWithDelay: If True then start the worker after a *interval* delay
 				maxCount: Maximum number runs
 				dispose: If True then dispose the worker after finish.
 				runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution.

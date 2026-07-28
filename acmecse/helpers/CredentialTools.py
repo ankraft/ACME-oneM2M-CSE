@@ -249,7 +249,7 @@ def readTokenFile(filePath: str | Path) -> list[str]:
 		Args:
 			filePath: Path to the token file.
 
-					Returns:
+		Returns:
 			A list of tokens. If the file does not exist, returns an empty list.
 
 		Raises:

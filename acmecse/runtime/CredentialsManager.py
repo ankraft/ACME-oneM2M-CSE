@@ -4,7 +4,7 @@
 #	(c) 2026 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-""" This module implements the `CertificateManager` class, which is responsible for managing 
+""" This module implements the `CredentialsManager` class, which is responsible for managing 
 	certificates and authentication data for the CSE. It reads and stores HTTP and WebSocket 
 	authentication data from specified files, providing a centralized way to handle security credentials.
 """
