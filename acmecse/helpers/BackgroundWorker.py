@@ -910,6 +910,12 @@ class BackgroundWorkerPool(object):
 
 	@classmethod
 	def _execQueue(cls, gen:int) -> None:
+		"""	Execute the next worker in the queue.
+
+			Args:
+				gen: Generation of the timer. 
+					If it is not the same as the current generation then the timer is stale and we ignore it.
+		"""
 		with cls.queueLock:
 			# Test whether the timer generation is still the same as when the timer was started.
 			# If not, then the timer is stale and we ignore it.
