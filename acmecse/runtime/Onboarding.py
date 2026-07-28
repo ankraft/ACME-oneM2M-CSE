@@ -1860,7 +1860,7 @@ def buildUserConfigFile(configFile:Optional[str],
 
 		# Add Registration originators
 		onboardingConfig['cse.registration'] = {
-			'allowedCSROriginators': '/id-in,/id-mn,/id-asn'
+			'allowedCSROriginators': '/*'
 		}
 
 
