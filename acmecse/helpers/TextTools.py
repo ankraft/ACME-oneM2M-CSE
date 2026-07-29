@@ -486,7 +486,7 @@ def truncateMiddle(s: str, n: int = 4) -> str:
 	return f'{s[:n]}...{s[-n:]}'
 
 
-def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool = False) -> bool:
+def simpleMatch(st: str, pattern: str|list[str], star: Optional[str] = '*', ignoreCase: bool = False) -> bool:
 	r"""	Simple string match function. 
 
 		This class supports the following expression operators:
@@ -502,21 +502,21 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool =
 		pattern is implicit "^<pattern>$".
 
 		Examples:
-			"hello" - "h?llo" -> True
-			
-			"hello" - "h?lo" -> False
 
-			"hello" - "h\*lo" -> True
+			| "hello" - "h?llo" -> True
+			| "hello" - "h?lo" -> False
+			| "hello" - "h\*lo" -> True
+			| "hello" - "h\*" -> True
+			| "hello" - "\*lo" -> True
+			| "hello" - "\*l?" -> True
 
-			"hello" - "h\*" -> True  
-
-			"hello" - "\*lo" -> True  
-
-			"hello" - "\*l?" -> True  
-
+		
+		A pattern can also be a list of patterns. In this case, the string is tested against 
+		all patterns and if one matches then the function returns True.
+		
 		Args:
 			st: string to test
-			pattern: the pattern string
+			pattern: the pattern string or a list of pattern strings
 			star: optionally specify a different character as the star character
 			ignoreCase: ignore case in the comparison
 		
@@ -524,7 +524,7 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool =
 			Boolean indicating a match.
 	"""
 
-	def _simpleMatchStar(st:str, pattern:str) -> bool:
+	def _simpleMatchStar(st: str, pattern: str) -> bool:
 		""" Recursively eat up a string when the pattern is a star at the beginning
 			or middle of a pattern.
 
@@ -544,7 +544,7 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool =
 		return True
 	
 
-	def _simpleMatchPlus(st:str, pattern:str) -> bool:
+	def _simpleMatchPlus(st: str, pattern: str) -> bool:
 		""" Recursively eat up a string when the pattern is a plus at the beginning
 			or middle of a pattern.
 
@@ -566,7 +566,7 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool =
 		return True
 
 
-	def _simpleMatch(st:str, pattern:str) -> bool:
+	def _simpleMatch(st: str, pattern: str) -> bool:
 		""" Recursively eat up a string for a match pattern.
 
 			Args:
@@ -673,5 +673,11 @@ def simpleMatch(st:str, pattern:str, star:Optional[str] = '*', ignoreCase:bool =
 
 		# End of matches
 		return stIndex == stLen-1
-	
-	return _simpleMatch(st, pattern)
+
+	# Main function body of simpleMatch
+	if isinstance(pattern, str):
+		pattern = [ pattern ]
+	for p in pattern:
+		if _simpleMatch(st, p):
+			return True	
+	return False
