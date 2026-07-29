@@ -21,6 +21,7 @@ from rich.style import Style
 from rich.progress import track
 import init
 from acmecse.etc.Constants import Constants as C
+from acmecse.helpers.TextTools import simpleMatch
 
 
 # TODO testTransferRequests.py
@@ -75,7 +76,7 @@ if __name__ == '__main__':
 	parser.add_argument('--exclude-tests', '-et', action='store', dest='excludeTests', nargs='+', type=str, default=[], help='exclude the specified test cases from running')
 	parser.add_argument('--run-teardown', '-runtd', action='store_true', dest='runTearDown', default=False, help='run the specified test cases\' tear-down functions and exit')
 	parser.add_argument('--run-count', action='store', dest='numberOfRuns', type=checkPositive, default=1, help='run each test suite n times (default: 1). Disables upper tester interface if n > 1.')
-	parser.add_argument('--run-tests', '-run', action='store', dest='testCaseName', nargs='+', type=str, default=None, help='run only the specified test cases from the set of test suites')
+	parser.add_argument('--run-tests', '-run', action='store', dest='testCaseName', nargs='+', type=str, default=None, help='run only the specified test cases from the set of test suites. Test case names may contain wildcards to run all matching test cases.')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped test cases in summary')
 	parser.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='continue running test cases after a failure')
 	parser.add_argument('--local-notification-server', '-lns', action='store_true', dest='localNotificationServer', default=False, help='use a local notification server address')
@@ -131,7 +132,7 @@ if __name__ == '__main__':
 		for m in modules:
 			if isRunTest(m):
 				for f in getTestFunctionsFromModule(m):
-					if f[0] in args.testCaseName:
+					if simpleMatch(f[0], args.testCaseName):
 						_modules.append(m)
 						break
 		modules = _modules

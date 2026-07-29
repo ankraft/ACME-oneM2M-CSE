@@ -46,6 +46,7 @@ from acmecse.etc.Types import ContentSerializationType, Parameters, JSON, Operat
 import acmecse.helpers.OAuth as OAuth
 from acmecse.helpers import CoAPthonTools
 from acmecse.helpers.MQTTConnection import MQTTConnection, MQTTHandler
+from acmecse.helpers.TextTools import simpleMatch
 from acmecse.etc.Constants import Constants as C
 from acmecse.etc.ResponseStatusCodes import INTERNAL_SERVER_ERROR
 from config import *
@@ -1643,8 +1644,8 @@ def addTest(suite:unittest.TestSuite, case:unittest.TestCase) -> None:
 	if testCaseNames is None:
 		suite.addTest(case)
 
-	elif testCaseNames and case._testMethodName in testCaseNames:
-		testCaseNames.remove(case._testMethodName)
+	elif testCaseNames and simpleMatch(case._testMethodName, testCaseNames):
+		# testCaseNames.remove(case._testMethodName)
 		suite.addTest(case)
 
 
@@ -1665,11 +1666,8 @@ def addTests(suite:unittest.TestSuite, cls:Type[unittest.TestCase], cases:list[s
 			except ValueError as e:
 				console.print(f'[red]Test case "{case}" not found - skipping[/red]')
 
-	if testCaseNames is None:
-		for case in cases:
-			_addTest(case)
-	else:
-		for case in testCaseNames:
+	for case in cases:
+		if testCaseNames is None or simpleMatch(case, testCaseNames):
 			_addTest(case)
 
 

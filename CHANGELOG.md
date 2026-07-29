@@ -23,12 +23,15 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [MGMT] Added support for setting HTTP and WS credentials (basic and auth token) via the management API.
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
 - [TESTS] Added hurl request files for simple (performance) testing.
+- [TESTS] Added support for wildcards in test case names for the `--run-tests` command line argument. This allows to run all test cases that match a certain pattern.
 - [MISC] Added a startup guard for the CSE to force a shutdown if the CSE does not start within a certain time. 
 
 ### Experimental
 - [CSE] Added support for the [storage] ManagementObject specialization. This implementation is preliminary and may change depending on the final definition of the storage ManagementObject specialization in TS-0001 and TS-0004.
 
 ### Changed
+- [CSE] Fixed wrong file names for TinyDB database files. This was introduced in the last release. THIS IS A BREAKING CHANGE. Old database files must be renamed to the correct format which is `<db>-<SP-ID>-<CSE-ID>.json`. 
+- [CSE] The onboarding process now gives every CSE access for registering to a CSE. The value for the [cse.registration].allowedCSROriginators setting is now `/*`.
 
 ### Fixed
 - [CSE] Fixed AE-ID recognition to allow "/Sabc" as a valid AE-ID, but not "/Cabc". 
@@ -37,7 +40,6 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Fixed a rare race conditions when running jobs with a background worker, which could lead to an unpredictable premature running of a job before its time.
 - [CSE] Improved detection of invalid HTTP Content-Type and Accept headers. Now returning an appropriate error response. Thanks to Yann Garcia for reporting this issue.
 - [CSE] Fixed a potential crash of an IN-CSE instance when a child CSE is unregistering.
-- [CSE] Fixed wrong file names for TinyDB database files. This was introduced in the last release. THIS IS A BREAKING CHANGE. Old database files must be renamed to the correct format which is `resources-<SP-ID>-<CSE-ID>.json`. 
 - [WEB] Fixed wrong handling of the http root path in the web UI and especially in the REST UI. Thanks to Yann Garcia for reporting this issue.
 
 ### Removed
