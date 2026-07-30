@@ -1628,6 +1628,7 @@ class RequestManager(metaclass=Singleton):
 				for h in ( 'lim', 'lvl', 'ofst', 'arp',
 						   'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr',
 						   'smf', 
+						   'cfs', 'cfq',
 						   'aq'):
 					if (v := gget(fcAttrs, h)) is not None:	# may be int
 						cseRequest.fc.set(h, v)
@@ -1653,7 +1654,11 @@ class RequestManager(metaclass=Singleton):
 							cseRequest.fc._geom = v
 						if (v := gget(fcAttrs, 'gsf')) is not None:
 							cseRequest.fc.gsf = v
-				
+
+				# Check content-based query attributes validation
+				if cseRequest.fc.cfs is not None and cseRequest.fc.cfq is None:
+					raise BAD_REQUEST(L.logDebug('cfq must be provided if cfs is provided for a content-based query'), data=cseRequest)
+
 				# Copy all remaining attributes as filter criteria!
 
 				for h in list(fcAttrs.keys()): 

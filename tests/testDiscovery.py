@@ -926,6 +926,348 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, RC.DELETED)
 
 
+#
+#	ContentFilterQuery tests
+#
+
+	# A helper function to create <CIN> under <CNT> with different JSON as content for the 
+	# following ContentFilterQuery tests
+	def _createCINsForCFQ(self) -> None:
+		""" Create <CIN> under <CNT> with different JSON as content """
+
+		# create <CNT>
+		dct:JSON = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}cfq'
+				}}
+		r, rsc = CREATE(aeURL, TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# create <CIN> resources with different JSON as content
+
+		dct = 	{ 'm2m:cin' : { 
+					'rn'  : f'{cinRN}cfq-1',
+					'cnf' : 'application/json:0',
+					'con' : { 'temperature' : 22, 'humidity' : 50 }
+				}}
+		r, rsc = CREATE(f'{cntURL}cfq', TestDiscovery.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		dct = 	{ 'm2m:cin' : { 
+					'rn'  : f'{cinRN}cfq-2',
+					'cnf' : 'application/json:0',
+					'con' : { 'temperature' : 25, 'humidity' : 60 }
+				}}
+		r, rsc = CREATE(f'{cntURL}cfq', TestDiscovery.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# one CIN without cnf attribute
+		dct = 	{ 'm2m:cin' : { 
+					'rn'  : f'{cinRN}cfq-99',
+					'con' : { 'temperature' : 25, 'humidity' : 60 }
+				}}
+		r, rsc = CREATE(f'{cntURL}cfq', TestDiscovery.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# one CIN without complex cnf attribute
+		dct = 	{ 'm2m:cin' : { 
+					'rn'  : f'{cinRN}cfq-200',
+					'cnf' : 'application/json:0',
+					'con' : {
+						'sensorType': 'temperature',
+						'value': 21.5,
+						'unit': 'C',
+						'tags': ['outdoor', 'balcony'],
+						'readings': [
+							{'ts': '20260101T000000', 'v': 21.0},
+							{'ts': '20260101T000100', 'v': 21.5},
+							{'ts': '20260101T000200', 'v': 22.0},
+						],
+						'meta': {
+							'id': 12345,
+							'device.id': 'esp32-01',   	# name containing a dot - requires quoting
+							'battery%': 87,            	# name containing a special char per spec list? '%' not listed, no quoting needed
+						},
+						'status': 'OK',
+						'warnings': 'no warnings',
+						'message': 'hello "world"',  	# string containing quotes - requires quoting
+						'sym': '\u00b0C', 				# string containing a unicode character - requires quoting
+						'note': 'AND',					# string containing a reserved word - requires quoting
+					}
+				}}
+		r, rsc = CREATE(f'{cntURL}cfq', TestDiscovery.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+
+	def _cleanupCINsForCFQ(self) -> None:
+		""" Cleanup <CIN> under <CNT> with different JSON as content """
+
+		# cleanup
+		_, rsc = DELETE(f'{cntURL}cfq', TestDiscovery.originator) # cleanup
+		self.assertEqual(rsc, RC.DELETED)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithCFQWrongCFSFail(self) -> None:
+		""" Retrieve <CIN> under <CNT> with ContentFilterQuery and wrong CFS-> Fail """
+
+		self._createCINsForCFQ()
+
+		# Retrieve <CNT> with ContentFilterQuery
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.temperature GT 23&cfs=2', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value EQ', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value EQ 1 AND', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value FOO 1', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=notapath EQ 1', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Cleanup
+		self._cleanupCINsForCFQ()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithCFQOnlyCFSFail(self) -> None:
+		""" Retrieve <CIN> under <CNT> with ContentFilterQuery with only CFS -> Fail """
+
+		self._createCINsForCFQ()
+
+		# Retrieve <CNT> with ContentFilterQuery
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfs=1', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Cleanup
+		self._cleanupCINsForCFQ()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithCFQWrongCFQFail(self) -> None:
+		""" Retrieve <CIN> under <CNT> with wrong ContentFilterQuery -> Fail """
+
+		self._createCINsForCFQ()
+
+		# Retrieve <CNT> with ContentFilterQuery
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=wrong query', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Cleanup
+		self._cleanupCINsForCFQ()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithCFQUnknownKeyFail(self) -> None:
+		""" Retrieve <CIN> under <CNT> with ContentFilterQuery with unknown key -> Fail """
+
+		self._createCINsForCFQ()
+
+		# Retrieve <CNT> with ContentFilterQuery
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.unknownKey GT 23', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNone(findXPath(r, 'm2m:cnt/m2m:cin'), r)
+
+		# Cleanup
+		self._cleanupCINsForCFQ()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithCFQsimple(self) -> None:
+		""" Retrieve <CIN> under <CNT> with ContentFilterQuery """
+
+		self._createCINsForCFQ()
+
+		# Retrieve <CNT> with ContentFilterQuery
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.temperature GT 23', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/m2m:cin'), r)
+		self.assertEqual(len(findXPath(r, 'm2m:cnt/m2m:cin')), 1, r)
+		self.assertEqual(findXPath(r, 'm2m:cnt/m2m:cin/{0}/rn'), f'{cinRN}cfq-2', r)
+
+		# Cleanup
+		self._cleanupCINsForCFQ()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithCFQsingleClauseKeyword(self) -> None:
+		""" Retrieve <CIN> under <CNT> with ContentFilterQuery - single clause with keyword """
+
+		def _assert(r:JSON, rsc:int, ln:int = 1) -> None:
+			self.assertEqual(rsc, RC.OK, r)
+			if ln == 0:
+				self.assertIsNone(findXPath(r, 'm2m:cnt/m2m:cin'), r)
+				return
+			self.assertIsNotNone(findXPath(r, 'm2m:cnt/m2m:cin'), r)
+			self.assertEqual(len(findXPath(r, 'm2m:cnt/m2m:cin')), 1, r)
+			self.assertEqual(findXPath(r, 'm2m:cnt/m2m:cin/{0}/rn'), f'{cinRN}cfq-200', r)
+
+
+		self._createCINsForCFQ()
+
+		# Retrieve <CNT> with various ContentFilterQuery
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status EQ "OK"', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status EQ "FAIL"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value EQ 21.5', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value EQ "21.5"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status NE "FAIL"', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status NE "OK"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value GT 20', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value GT 21.5', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value LT 22', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value LT 21.5', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value GE 21.5', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value GE 21.6', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value LE 21.5', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value LE 21.4', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.sensorType MATCH "temp"', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.sensorType MATCH "humidity"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.sensorType MATCH "TEMP"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# case sensitive -> no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status GT 5', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# comparing a string field numerically -> no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.readings[1].v EQ 21.5', TestDiscovery.originator)
+		_assert(r, rsc)	# nested path clause
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.meta.\'device.id\' EQ "esp32-01"', TestDiscovery.originator)
+		_assert(r, rsc)	# path NAME uses single quotes, string VALUE uses double quotes
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.warnings EQ "no warnings"', TestDiscovery.originator)
+		_assert(r, rsc) # string containing a space - requires quoting
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.warnings MATCH "no warnings"', TestDiscovery.originator)
+		_assert(r, rsc) # string containing a space - requires quoting
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.message EQ "hello \\"world\\""', TestDiscovery.originator)
+		_assert(r, rsc) # string containing quotes - requires quoting
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.sym EQ "\\u00b0C"', TestDiscovery.originator)
+		_assert(r, rsc) # string containing a unicode character - requires quoting
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.note EQ "AND"', TestDiscovery.originator)
+		_assert(r, rsc) # string containing a reserved word - requires quoting
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.x EQ "bad\\escape"', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r) # string containing a bad escape 
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.x EQ "unterminated', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r) # string containing an unterminated quote 
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.nope EQ "x"', TestDiscovery.originator)
+		_assert(r, rsc, 0) # absent field - no match, but no error
+
+		# Cleanup
+		self._cleanupCINsForCFQ()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithCFQpathClause(self) -> None:
+		""" Retrieve <CIN> under <CNT> with ContentFilterQuery - single clause with path """
+
+		def _assert(r:JSON, rsc:int, ln:int = 1) -> None:
+			self.assertEqual(rsc, RC.OK, r)
+			if ln == 0:
+				self.assertIsNone(findXPath(r, 'm2m:cnt/m2m:cin'), r)
+				return
+			self.assertIsNotNone(findXPath(r, 'm2m:cnt/m2m:cin'), r)
+			self.assertEqual(len(findXPath(r, 'm2m:cnt/m2m:cin')), 1, r)
+			self.assertEqual(findXPath(r, 'm2m:cnt/m2m:cin/{0}/rn'), f'{cinRN}cfq-200', r)
+
+		self._createCINsForCFQ()
+
+		# Retrieve <CNT> with various ContentFilterQuery
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.meta.id EQ 12345', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.tags[0] EQ "outdoor"', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.meta.\'device.id\' EQ "esp32-01"', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.tags[99] EQ "indoor"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match for tags[99]
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.value[0] EQ "indoor"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match for non-list
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.tags.foo EQ "indoor"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match for non-existing path
+
+		# Cleanup
+		self._cleanupCINsForCFQ()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithCFQcombinedClause(self) -> None:
+		""" Retrieve <CIN> under <CNT> with ContentFilterQuery - combined clause """
+
+		def _assert(r:JSON, rsc:int, ln:int = 1) -> None:
+			self.assertEqual(rsc, RC.OK, r)
+			if ln == 0:
+				self.assertIsNone(findXPath(r, 'm2m:cnt/m2m:cin'), r)
+				return
+			self.assertIsNotNone(findXPath(r, 'm2m:cnt/m2m:cin'), r)
+			self.assertEqual(len(findXPath(r, 'm2m:cnt/m2m:cin')), 1, r)
+			self.assertEqual(findXPath(r, 'm2m:cnt/m2m:cin/{0}/rn'), f'{cinRN}cfq-200', r)
+
+		self._createCINsForCFQ()
+
+		# Retrieve <CNT> with various ContentFilterQuery
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status EQ "OK" AND $.value GT 20', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status EQ "OK" AND $.value GT 100', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status EQ "FAIL" OR $.value GT 20', TestDiscovery.originator)
+		_assert(r, rsc)
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status EQ "FAIL" OR $.value GT 100', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		r, rsc = RETRIEVE(f'{cntURL}cfq?rcn={int(RCN.childResources)}&cfq=$.status EQ "FAIL" OR $.value GT 20 AND $.sensorType MATCH "humidity"', TestDiscovery.originator)
+		_assert(r, rsc, 0)	# no match
+
+		# Cleanup
+		self._cleanupCINsForCFQ()
 
 
 def run(testFailFast:bool) -> TestResult:
@@ -997,6 +1339,16 @@ def run(testFailFast:bool) -> TestResult:
 		# Retrieve Permissions
 		'test_updateCNTwithRCN12Fail',
 		# TODO 'test_retrieveCNTwithRCN12'
+
+		# ContentFilterQuery tests
+		'test_retrieveCINwithCFQWrongCFSFail',
+		'test_retrieveCINwithCFQOnlyCFSFail',
+		'test_retrieveCINwithCFQWrongCFQFail',
+		'test_retrieveCINwithCFQUnknownKeyFail',
+		'test_retrieveCINwithCFQsimple',
+		'test_retrieveCINwithCFQsingleClauseKeyword',
+		'test_retrieveCINwithCFQpathClause',
+		'test_retrieveCINwithCFQcombinedClause',
 
 	])
 

@@ -22,7 +22,7 @@ from copy import deepcopy
 from ..helpers import TextTools
 from ..etc.Constants import Constants
 from ..etc.Types import FilterCriteria, FilterUsage, CSERequest, ResourceTypes, Operation
-from ..etc.Types import FilterOperation, DesiredIdentifierResultType, Permission, ResultContentType
+from ..etc.Types import FilterOperation, ContentFilterSyntax, DesiredIdentifierResultType, Permission, ResultContentType
 from ..etc.Types import Result, JSON
 from ..etc.ResponseStatusCodes import ResponseStatusCode, ResponseException, exceptionFromRSC
 from ..etc.ResponseStatusCodes import ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND, BAD_REQUEST
@@ -34,6 +34,7 @@ from ..etc.JSONUtils import resourceModifiedAttributes
 from ..etc.IDUtils import localResourceID, isSPRelative, isAbsolute, uniqueRI, noNamespace, csiFromSPRelative, toSPRelative, isStructured
 from ..helpers.TextTools import findXPath
 from ..helpers.Singleton import Singleton
+from ..helpers.JsonpathFilterQuery import FilterExpression, parseFilterQuery, evaluateFilterExpression, FilterQuerySyntaxError
 from ..etc.DateUtils import getResourceDate
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Configuration import Configuration
@@ -330,7 +331,7 @@ class Dispatcher(metaclass=Singleton):
 		#
 		#	Discovery request
 		#
-		resources = self.discoverResources(id, originator, request.fc, permission = permission)
+		resources = self.discoverResources(id, originator, request.fc, permission=permission)
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
@@ -495,7 +496,7 @@ class Dispatcher(metaclass=Singleton):
 		if not filterCriteria:
 			filterCriteria = FilterCriteria()
 
-		# Apply defaults. This is not done in the FilterCriteria class bc there we only store he provided values
+		# Apply defaults. This is not done in the FilterCriteria class bc there we only store the provided values
 		lvl:int = filterCriteria.lvl if filterCriteria.lvl is not None else sys.maxsize
 		fo:FilterOperation = filterCriteria.fo if filterCriteria.fo is not None else FilterOperation.AND
 		ofst:int = filterCriteria.ofst if filterCriteria.ofst is not None else 1
@@ -513,15 +514,25 @@ class Dispatcher(metaclass=Singleton):
 			  (len(_v)-1 if (_v := criteriaAttributes.get('lbl')) is not None else 0) 		# -1 : compensate for len(conditions) in line 1 
 			)
 
+		# Optimization: If there is a contentFilterQuery, then we compile it only once
+		cfq:FilterExpression = None
+		if filterCriteria.cfq:
+			if filterCriteria.cfs is None or filterCriteria.cfs == ContentFilterSyntax.JSON_PATH_SYNTAX:
+				try:
+					cfq = parseFilterQuery(filterCriteria.cfq)
+				except FilterQuerySyntaxError as e:
+					raise BAD_REQUEST(L.logDebug(f'Invalid content filter query: {e}'))
+
 		# Discover the resources
 		discoveredResources = self._discoverResources(rootResource, 
 													  originator, 
-													  level = lvl, 
-													  fo = fo, 
-													  allLen = allLen, 
-													  dcrs = dcrs, 
-													  filterCriteria = filterCriteria,
-													  permission = permission)
+													  level=lvl, 
+													  fo=fo, 
+													  allLen=allLen, 
+													  dcrs=dcrs,
+													  filterCriteria=filterCriteria,
+													  cfq=cfq,
+													  permission=permission)
 
 		# NOTE: this list contains all results in the order they could be found while
 		#		walking the resource tree.
@@ -549,6 +560,7 @@ class Dispatcher(metaclass=Singleton):
 								 allLen:int, 
 								 dcrs:Optional[list[Resource]] = None, 
 								 filterCriteria:Optional[FilterCriteria] = None,
+								 cfq:Optional[FilterExpression] = None,
 								 permission:Optional[Permission] = Permission.DISCOVERY) -> list[Resource]:
 		"""	Discover resources recursively. This is a helper function for discoverResources().
 
@@ -560,6 +572,7 @@ class Dispatcher(metaclass=Singleton):
 				allLen: The length of all filter criteria.
 				dcrs: The direct child resources of the root resource.
 				filterCriteria: The filter criteria.
+				cfq: The compiled content filter query.
 				permission: The permission to use.
 
 			Return:
@@ -587,7 +600,8 @@ class Dispatcher(metaclass=Singleton):
 			if self._matchResource(resource, 
 								   fo, 
 								   allLen, 
-								   filterCriteria) and self.security.hasAccess(originator, resource, permission, resultResource = resource):
+								   filterCriteria,
+								   cfq) and self.security.hasAccess(originator, resource, permission, resultResource=resource):
 				discoveredResources.append(resource)
 
 			# Iterate recursively over all (not only the filtered!) direct child resources
@@ -596,13 +610,19 @@ class Dispatcher(metaclass=Singleton):
 															   level-1, 
 															   fo, 
 															   allLen, 
-															   filterCriteria = filterCriteria,
-															   permission = permission))
+															   filterCriteria=filterCriteria,
+															   cfq=cfq,
+															   permission=permission))
 
 		return discoveredResources
 
 
-	def _matchResource(self, r:Resource, fo:int, allLen:int, filterCriteria:FilterCriteria) -> bool:	
+	def _matchResource(self, 
+					   r: Resource, 
+					   fo: int, 
+					   allLen: int, 
+					   filterCriteria: FilterCriteria, 
+					   cfq: Optional[FilterExpression] = None) -> bool:
 		""" Match a filter to a resource. """
 
 		# TODO: Implement a couple of optimizations. Can we determine earlier that a match will fail?
@@ -663,6 +683,13 @@ class Dispatcher(metaclass=Singleton):
 			if ty in [ ResourceTypes.CIN ]:	# special handling for CIN
 				if filterCriteria.cty:
 					found += len(filterCriteria.cty) if r.cnf in filterCriteria.cty else 0
+
+			# ContentQuery 
+			if ty in [ ResourceTypes.CIN ]:	# TODO support TSI as well?
+				if cfq:
+					match filterCriteria.cfs:
+						case ContentFilterSyntax.JSON_PATH_SYNTAX | None if r.cnf and r.cnf.lower().startswith('application/json'):
+							found += 1 if evaluateFilterExpression(cfq, r.con) else 0
 
 		# TODO childLabels
 		# TODO parentLabels

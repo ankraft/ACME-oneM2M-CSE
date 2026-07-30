@@ -2203,6 +2203,11 @@ class RequestType(ACMEIntEnum):
 	""" Undetermined. """
 
 
+class ContentFilterSyntax(ACMEIntEnum):
+	"""	Content filter syntax enumeration. """
+	JSON_PATH_SYNTAX = 1
+	"""	JSON Path syntax, as defined in TS-0001 Annex J.2"""
+
 @dataclass
 class FilterCriteria:
 	"""	Sub-structure for CSERequest.
@@ -2211,87 +2216,93 @@ class FilterCriteria:
 	"""
 
 	# Result handling
-	fu:FilterUsage = None
+	fu: FilterUsage = None
 	""" Filter usage. Default: conditional retrieval. """
 
-	fo:FilterOperation = None
+	fo: FilterOperation = None
 	""" Filter Operation. Default is *AND*. """
 
-	lim:int = None
+	lim: int = None
 	""" Limit filter criterion. Default is *sys.maxsize*. """
 
-	lvl:int = None
+	lvl: int = None
 	""" Level filter criterion. Default is *sys.maxsize*. """
 
-	ofst:int = None
+	ofst: int = None
 	"""	Offset filter criterion. Default is *1*. """
 
-	arp:str = None
+	arp: str = None
 	""" applyRelativePath. Default is *None*. """
 
 	# Conditions
-	crb:str = None
+	crb: str = None
 	""" Created before. Default is *None*. """
 
-	cra:str = None
+	cra: str = None
 	""" Created after. Default is *None*. """
 
-	ms:str = None
+	ms: str = None
 	""" Modified since. Default is *None*. """
 
-	us:str = None
+	us: str = None
 	""" Unmodified since. Default is *us*. """
 
-	sts:int = None
+	sts: int = None
 	""" State tag smaller. Default is *None*. """
 	
-	stb:int = None
+	stb: int = None
 	""" State tag bigger. Default is *None*. """
 
-	exb:str = None
+	exb: str = None
 	""" Expire before. Default is *None*. """
 	
-	exa:str = None
+	exa: str = None
 	""" Expire after. Default is *None*. """
 
-	lbq:str = None
+	lbq: str = None
 	""" Labels query. Default is *None*. """	
 
-	sza:int = None
+	sza: int = None
 	""" Size above. Default is *None*. """
 
-	szb:int = None
+	szb: int = None
 	""" Size before. Default is *None*. """
 
-	catr:str = None
+	catr: str = None
 	""" Child attribute. Default is *None*. """
 
-	patr:str = None
+	patr: str = None
 	""" Parent attribute. Dfault is *None*. """
 
-	cty:list = None
+	cty: list = None
 	""" List of content types. Default is *None*. """
 
-	smf:str = None
+	smf: str = None
 	""" Semantic filter. Default is *None*. """
 
-	ty:list = None
+	ty: list = None
 	""" List of resource types. Default is *None*. """
 
-	lbl:list = None
+	lbl: list = None
 	""" List of labels. Default is *None*. """
 
-	gmty:GeometryType = None
+	gmty: GeometryType = None
 	""" geometryType for geo-query. Default is *None*. """
 
-	geom:str = None
+	geom: str = None
 	""" geometry for geo-query. Default is *None*. """
 
-	_geom:list = None
+	_geom: list = None
 	""" Internal attribute to hold a parsed geometry. Default is *None*."""
 
-	gsf:GeoSpatialFunctionType = None
+	gsf: GeoSpatialFunctionType = None
 	""" geoSpatialFunction for geo-query. Default is *None*. """
+
+	cfs: ContentFilterSyntax = None
+	""" contentFilterSyntax for content-query. """
+
+	cfq: str = None
+	""" contentFilterQuery for content-query. Default is *None*. """
 
 
 	aq:str = None	# EXPERIMENTAL

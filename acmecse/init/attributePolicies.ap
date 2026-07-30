@@ -956,6 +956,25 @@
 			"annc": "OA"
 		}
 	],
+	"cfs": [
+		{
+			"rtypes": [ "REQUEST" ],
+			"lname": "contentFilterSyntax",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:contentFilterSyntax",
+			"car": "01"
+		}
+	],
+	"cfq": [
+		{
+			"rtypes": [ "REQUEST" ],
+			"lname": "contentFilterQuery",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
 	"ch": [
 		{
 			"rtypes": [ "ALL" ],
