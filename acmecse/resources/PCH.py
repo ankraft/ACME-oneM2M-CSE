@@ -12,8 +12,8 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, JSON
-from ..etc.Constants import Constants
+from ..etc.Types import ResourceTypes, JSON, CSERequest
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..helpers.TextTools import findXPath
 from ..resources.Resource import Resource, addToInternalAttributes
@@ -40,12 +40,6 @@ class PCH(Resource):
 	dispatcher: Dispatcher = None
 	""" Injected Dispatcher instance. """
 
-	def initialize(self, pi: str) -> None:
-		# Set optional default for requestAggregation
-		self.setAttribute('rqag', False, overwrite=False)	
-		super().initialize(pi)
-
-
 	def activate(self, parentResource: Resource, originator: str) -> None:
 		"""	Activate the PCH resource. Create the PCU resource and set the parent's originator.
 
@@ -68,8 +62,9 @@ class PCH(Resource):
 		self.setAttribute(Constants.attrPCURI, pcuRi)	# store own PCU ri
 
 		# Set the aggregation state in the own PCU
-		pcuResource.setAggregate(self.rqag)
-		pcuResource.dbUpdate(True)
+		if RC.releaseVersion >= '4':
+			pcuResource.setAggregate(self.rqag)
+			pcuResource.dbUpdate(True)
 
 
 		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
@@ -80,13 +75,22 @@ class PCH(Resource):
 					 doValidateAttributes: Optional[bool]=True) -> None:
 		
 		# Set the aggregation state in the own PCU if rqag is updated
+
 		if dct is not None:
-			rqagNew = findXPath(dct, '{*}/rqag')
-			if rqagNew is not None:
+			_dct = dct[self.typeShortname]
+			rqagNew = _dct.get('rqag')
+			if rqagNew is not None and RC.releaseVersion >= '4':
 				# Update the aggregation state in the own PCU
 				pcuResource = self.dispatcher.retrieveLocalResource(self.attribute(Constants.attrPCURI))
 				pcuResource.setAggregate(rqagNew)
 				pcuResource.dbUpdate(True)
+
+			else: 
+				if rqagNew is None and 'rqag' in _dct:
+					# If the rqag attribute is removed, then set the aggregation state in the own PCU to False
+					pcuResource = self.dispatcher.retrieveLocalResource(self.attribute(Constants.attrPCURI))
+					pcuResource.setAggregate(None)
+					pcuResource.dbUpdate(True)
 
 		super().update(dct, originator, doValidateAttributes)
 
@@ -98,3 +102,15 @@ class PCH(Resource):
 				The <PCU>'s parent originator.
 		"""
 		return self.attribute(Constants.attrParentOriginator)
+
+
+	def willBeRetrieved(self, originator: str, 
+							  request: Optional[CSERequest] = None, 
+							  subCheck: Optional[bool] = True) -> None:
+		super().willBeRetrieved(originator, request, subCheck=subCheck)
+
+		# remove the aggregate attribute from the response if the CSE is not Release 4 or higher, or if the request's rvi is lower than 4
+		if RC.releaseVersion < '4' or request.rvi < '4':
+			self.delAttribute('rqag', setNone=False)	# really remove the attribute from the resource instance
+
+

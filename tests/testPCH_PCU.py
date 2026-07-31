@@ -145,8 +145,12 @@ class TestPCH_PCU(unittest.TestCase):
 						isDelete:bool = False, 
 						emptyAnswer:bool = False, 
 						wrongAnswer:bool = False,
-						aggregated:bool = False) -> None:
-		r, rsc = RETRIEVE(pcu2URL, originator)	# polling request
+						aggregated:bool = False,
+						release:Optional[str] = None) -> None:
+
+		# Retrieve the <PCU> resource and wait for a request to arrive
+		_headers = None if release is None else { C.hfRVI : release }
+		r, rsc = RETRIEVE(pcu2URL, originator, headers=_headers)	# polling request
 		self.assertEqual(rsc, rcs, r)
 		if rcs in [ RC.ORIGINATOR_HAS_NO_PRIVILEGE, RC.REQUEST_TIMEOUT ]:
 			return
@@ -424,6 +428,30 @@ class TestPCH_PCU(unittest.TestCase):
 		self._pollForRequest(TestPCH_PCU.originator2, RC.OK, aggregated = True)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(BINDING=='ws', 'Skip parallel requests for Websockets binding')
+	def test_aggregationR3(self) -> None:
+		"""	Test response aggregation for RVI<4"""
+
+		# Keep most of the previous test
+		# The PCH is still aggregating requests
+	
+		# Add CIN
+		def _createCin() -> None:
+			dct = 	{ 'm2m:cin' : {
+				'con' : 'test'
+			}}
+			r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.CREATED, r)
+
+		for _ in range(5):
+			t = Thread(target = _createCin)
+			t.start()
+		testSleep(waitBetweenPollingRequests)	# Wait for delete notification
+
+		# get and answer non-aggregated polling request for a R3 request
+		self._pollForRequest(TestPCH_PCU.originator2, RC.OK, aggregated=False, release='3')
+
 
 # TODO continue the following
 
@@ -474,6 +502,7 @@ def run(testFailFast:bool) -> TestResult:
 
 		# Aggregation
 		'test_aggregation',
+		'test_aggregationR3'
 
 		#TODO  'test_createNotificationDoPolling',
 	])

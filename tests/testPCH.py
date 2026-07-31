@@ -199,6 +199,13 @@ class TestPCH(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:pch/rqag'), True)
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrievePCHforR3(self) -> None:
+		""" Retrieve <PCH> with a RVI<4 - rqag attribute should not be present """
+		r, rsc = RETRIEVE(pchURL, self.originator, headers={C.hfRVI : '3'})
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNone(findXPath(r, 'm2m:pch/rqag'))
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deletePCHwrongOriginatorFail(self) -> None:
@@ -222,6 +229,8 @@ class TestPCH(unittest.TestCase):
 
 
 
+
+
 def run(testFailFast:bool) -> TestResult:
 
 	# Assign tests
@@ -240,6 +249,8 @@ def run(testFailFast:bool) -> TestResult:
 
 		'test_setAggreagstionState',
 		'test_getAggreagstionState',
+		'test_retrievePCHforR3',
+
 
 		# delete tests
 		'test_deletePCHwrongOriginatorFail',

@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import cast, Optional, TYPE_CHECKING
 
 from ..etc.Types import Operation, RequestType, JSON, CSERequest, Result
-from ..etc.Constants import Constants
+from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, INTERNAL_SERVER_ERROR, REQUEST_TIMEOUT
 from ..etc.DateUtils import timeUntilTimestamp
 from ..etc.ResponseStatusCodes import ResponseStatusCode
@@ -76,7 +76,12 @@ class PCH_PCU(VirtualResource):
 
 		# Return the response or time out
 		try:
-			res = self.requestManager.waitForPollingRequest(originator, None, timeout=ret, aggregate=self.getAggregate())
+			# aggregate is only supported for oneM2M Release 4 and up, 
+			# and only if the request's rvi is 4 or higher. Otherwise, the default is False.
+			_aggregate = False
+			if RC.releaseVersion >= '4' and request.rvi >= '4':
+				_aggregate = self.getAggregate()
+			res = self.requestManager.waitForPollingRequest(originator, None, timeout=ret, aggregate=_aggregate)
 		except REQUEST_TIMEOUT:
 			raise REQUEST_TIMEOUT(L.logWarn(f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}'))
 		
@@ -138,16 +143,22 @@ class PCH_PCU(VirtualResource):
 		raise OPERATION_NOT_ALLOWED('DELETE operation not allowed for <pollingChanelURI> resource type')
 
 
-	def setAggregate(self, aggregate: bool) -> None:
+	def setAggregate(self, aggregate: Optional[bool]) -> None:
 		"""	Set the aggregated state for a polling channel. This usually reflects the state of the PCU's parent resource, and
 			is maintained by it.
-			This attribute is handled as an internal attribute.
+
+			This attribute is handled as an internal attribute and is only set for oneM2M Release
+			4 and up.
 
 			Args:
 				aggregate: Boolean indicating whether requests shall be aggregated in a response.
 		"""
-		self.setAttribute(Constants.attrPCUAggregate, aggregate)
-		
+		if aggregate is None:
+			self.delAttribute(Constants.attrPCUAggregate)
+		else:
+			self.setAttribute(Constants.attrPCUAggregate, aggregate)
+		L.logErr(self.dict)
+
 
 	def getAggregate(self) -> bool:
 		"""	Return the aggregated state internal attribute.
