@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 from typing import cast, Optional, Any, Callable, Tuple, TYPE_CHECKING
-
+import os
 import webbrowser
 
 from rich.live import Live
@@ -232,10 +232,10 @@ class Console(ConsoleBase):
 		#	The CSE's shutdown happens in one of the key handlers below
 		if not RC.isHeadless:
 			L.console('Press "?" for help, or "#" for the Text UI.')
-		
+
 		loop(commands, 
 			 catchKeyboardInterrupt=True, 
-			 headless=RC.isHeadless,
+			 headless=RC.isHeadless or RC.isDebugMode,
 			 catchAll=lambda ch: eventManager.keyboard(EventData(payload=ch)), # type: ignore [attr-defined]
 			 nextKey='#' if self.doStartWithTextUI() else None,
 			 ignoreException=False,

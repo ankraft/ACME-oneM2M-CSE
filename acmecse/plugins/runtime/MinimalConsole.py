@@ -17,6 +17,7 @@
 """
 
 from __future__ import annotations
+import os
 from typing import Callable
 
 from acmecse.helpers.KeyHandler import loop, Commands, FunctionKey
@@ -58,7 +59,7 @@ class MinimalConsole(ConsoleBase):
 
 		loop(commands, 
 			 catchKeyboardInterrupt=True, 
-			 headless=RC.isHeadless,
+			 headless=RC.isHeadless or RC.isDebugMode,
 			 catchAll=lambda ch: eventManager.keyboard(EventData(payload=ch)), # type: ignore [attr-defined]
 			 nextKey='#' if self.doStartWithTextUI() else None,
 			 ignoreException=False,
