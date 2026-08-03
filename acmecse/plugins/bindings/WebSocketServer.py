@@ -812,12 +812,12 @@ class WebSocketServer(object):
 
 		if config.websocket_security_useTLS:
 			if (val := config.websocket_address).startswith('ws:'):
-				Configuration._warning(r'Changing "ws" to "wss" in [i]\[websocket]:address[/i]')
+				Configuration._warning(r'Changing "ws" to "wss" in [b u]\[websocket]:address[/b u]')
 				config.websocket_address = val.replace('ws:', 'wss:')
 			# registrar might still be accessible via another protocol
 		else: 
 			if (val := config.websocket_address).startswith('wss:'):
-				Configuration._warning(r'Changing "wss" to "ws" in [i]\[websocket]:address[/i]')
+				Configuration._warning(r'Changing "wss" to "ws" in [b u]\[websocket]:address[/b u]')
 				config.websocket_address = val.replace('wss:', 'ws:')
 			# registrar might still be accessible via another protocol
 

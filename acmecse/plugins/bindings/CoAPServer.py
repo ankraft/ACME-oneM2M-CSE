@@ -1030,12 +1030,12 @@ class CoAPServer():
 		"""
 		if config.coap_security_useDTLS:
 			if (val := config.coap_address).startswith('coap:'):
-				Configuration._warning(r'Changing "coap" to "coaps" in [i]\[coap]:address[/i]')
+				Configuration._warning(r'Changing "coap" to "coaps" in [b u]\[coap]:address[/b u]')
 				config.coap_address = val.replace('coap:', 'coaps:')
 			# registrar might still be accessible via another protocol
 		else: 
 			if (val := config.coap_address).startswith('coaps:'):
-				Configuration._warning(r'Changing "coaps" to "coap" in [i]\[coap]:address[/i]')
+				Configuration._warning(r'Changing "coaps" to "coap" in [b u]\[coap]:address[/b u]')
 				config.coap_address = val.replace('coaps:', 'coap:')
 			# registrar might still be accessible via another protocol
 

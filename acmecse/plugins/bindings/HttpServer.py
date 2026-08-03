@@ -942,12 +942,12 @@ class HttpServer(object):
 		# Just in case: check the URL's (http, ws)
 		if config.http_security_useTLS:
 			if config.http_address.startswith('http:'):
-				Configuration._warning(r'Changing "http" to "https" in [i]\[http]:address[/i]')
+				Configuration._warning(r'Changing "http" to "https" in [b u]\[http]:address[/b u]')
 				config.http_address = config.http_address.replace('http:', 'https:')
 			# registrar might still be accessible via another protocol
 		else: 
 			if config.http_address.startswith('https:'):
-				Configuration._warning(r'Changing "https" to "http" in [i]\[http]:address[/i]')
+				Configuration._warning(r'Changing "https" to "http" in [b u]\[http]:address[/b u]')
 				config.http_address = config.http_address.replace('https:', 'http:')
 			# registrar might still be accessible via another protocol
 
@@ -981,7 +981,7 @@ class HttpServer(object):
 
 		# HTTP CORS
 		if config.http_cors_enable and not config.http_security_useTLS:
-			Configuration._warning(r'[i]\[http.security].useTLS[/i] (https) should be enabled when [i]\[http.cors].enable[/i] is enabled.')
+			Configuration._warning(r'[b u]\[http.security].useTLS[/b u] (https) should be enabled when [b u]\[http.cors].enable[/b u] is enabled.')
 
 		# HTTP authentication
 		if config.http_security_enableBasicAuth and not config.http_security_basicAuthFile:

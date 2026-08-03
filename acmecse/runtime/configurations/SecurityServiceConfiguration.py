@@ -33,4 +33,4 @@ class SecurityServiceConfiguration(ModuleConfiguration):
 		if not config.cse_security_secret:
 			raise ConfigurationError(r'Missing or empty [i]\[cse.security]:secret[/i] configuration')
 		if config.cse_security_secret == 'acme':
-			Configuration._warning(r'Using default [i]secret[/i] key. Consider changing this value for security reasons in \[cse.security].secret or \[basic.config].secret')
+			Configuration._warning('Using default [i]secret[/i] key\n[dim]Consider changing this value for security reasons in [b u]\\[cse.security].secret[/b u] or [b u]\\[basic.config].secret[/b u][/dim]')

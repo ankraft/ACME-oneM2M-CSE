@@ -21,7 +21,7 @@ from queue import Queue
 from logging import LogRecord
 
 
-from rich import inspect as richInspect
+from rich import inspect as richInspect, box
 from rich.logging import RichHandler
 from rich.style import Style
 from rich.console import Console
@@ -34,6 +34,8 @@ from rich.tree import Tree
 from rich.table import Table
 from rich.prompt import Prompt
 from rich.syntax import Syntax
+from rich.panel import Panel
+from rich.align import Align
 
 from ..etc.Types import JSON, LogLevel, Result, ContentSerializationType
 from ..etc.Constants import RuntimeConstants as RC
@@ -83,6 +85,20 @@ tableRowColorLight		= 'grey89'
 fontLight				= '#1C1C1C'
 """ Font color in light mode. """
 
+# Add own styles to the default styles and create a new theme for the console
+ACMEStyles = { 
+	'repr.dim' 				: Style(color = 'grey70', dim = True),
+	'repr.request'			: Style(color = 'spring_green2'),
+	'repr.response'			: Style(color = 'magenta2'),
+	'repr.id'				: Style(color = 'light_sky_blue1'),
+	'repr.url'				: Style(color = 'sandy_brown', underline = True),
+	'repr.start'			: Style(color = 'orange1'),
+	'DEBUG'					: Style(color = 'grey50'),
+	'WARNING'				: Style(color = 'orange3'),
+	'ERROR'					: Style(color = 'red', reverse = True),
+	'INFO'					: Style(color = 'blue'),
+	'logging.console'		: Style(color = 'spring_green2'),
+}
 
 class LogFilter(logging.Filter):
 	"""	Filter for the logging system. It removes all log messages that
@@ -660,6 +676,46 @@ class Logging:
 		"""
 		return Logging._console.width
 
+	@staticmethod
+	def consoleBanner(message: str, title: Optional[str] = None, type: Optional[LogLevel] = None) -> None:
+		"""	Print a banner to the console.
+
+			Args:
+				message: The message to display in the banner.
+				title: The title of the banner.
+				type: The type of the banner. This can be used to change the style of the banner. 
+					If None, the default *console* style is used.
+			"""
+		match type:
+			case LogLevel.DEBUG:
+				_style = ACMEStyles['DEBUG']
+				_border = box.ROUNDED
+				_title = f'[ Debug - {title} ]'
+			case LogLevel.INFO:
+				_style = ACMEStyles['INFO']
+				_border = box.ROUNDED
+				_title = f'[ Info - {title} ]'
+			case LogLevel.WARNING:
+				_style = ACMEStyles['WARNING']
+				_border = box.ROUNDED
+				_title = f'[ Warning - {title} ]'
+			case LogLevel.ERROR:
+				_style = ACMEStyles['ERROR']
+				_border = box.DOUBLE
+				_title = f'[ Error - {title} ]'
+			case _:
+				_style = ACMEStyles['logging.console']
+				_border = box.ROUNDED
+				_title = f'[ {title} ]'
+
+		Logging._console.print()
+		Logging._console.print(Panel(Text.from_markup(f'\n{message}\n', justify='center'), 
+							   border_style=_style, 
+							   box=_border,
+							   title=_title if title else None))
+		Logging._console.print()
+
+
 	
 	@staticmethod
 	def inspect(obj: Any, immediate: bool=False) -> None:
@@ -771,24 +827,10 @@ class ACMERichLogHandler(RichHandler):
 	def __init__(self, level: int = logging.NOTSET) -> None:
 		""" Initialize the ACMERichLogHandler with the given log level. This also adds custom styles for the console output.
 		"""
-
-		# Add own styles to the default styles and create a new theme for the console
-		ACMEStyles = { 
-			'repr.dim' 				: Style(color = 'grey70', dim = True),
-			'repr.request'			: Style(color = 'spring_green2'),
-			'repr.response'			: Style(color = 'magenta2'),
-			'repr.id'				: Style(color = 'light_sky_blue1'),
-			'repr.url'				: Style(color = 'sandy_brown', underline = True),
-			'repr.start'			: Style(color = 'orange1'),
-			'DEBUG'					: Style(color = 'grey50'),
-			'WARNING'				: Style(color = 'orange3'),
-			'ERROR'					: Style(color = 'red', reverse = True),
-			'INFO'					: Style(color = 'blue'),
-			'logging.console'		: Style(color = 'spring_green2'),
-		}
 		_styles = DEFAULT_STYLES.copy()
 		_styles.update(ACMEStyles)
 
+		# Add own styles to the default styles and create a new theme for the console
 		super().__init__(level = level, console = Console(theme = Theme(_styles)))
 
 

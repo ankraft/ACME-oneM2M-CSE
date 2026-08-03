@@ -20,6 +20,8 @@ from inspect import getmembers
 from dotenv import load_dotenv
 
 from rich.console import Console as RichConsole
+from rich.panel import Panel
+from rich.text import Text
 
 
 from ..etc.Constants import Constants as C
@@ -730,7 +732,7 @@ class Configuration(object):
 
 	# Internal print function that takes the headless setting into account
 	@staticmethod
-	def _print(msg:str, markup:Optional[bool]=True) -> None:
+	def _print(msg:str|Panel, markup:Optional[bool]=True) -> None:
 		"""	Print a message to the console. If the CSE is running in headless mode, then the message is not printed.
 		
 			Args:
@@ -748,7 +750,8 @@ class Configuration(object):
 			Args:
 				msg: The warning message to print.
 		"""
-		Configuration._print(f'[orange3][b u]Configuration Warning[/b u]\n{msg}[/orange3]\n')
+		# Configuration._print(f'[orange3][b u]Configuration Warning[/b u]\n{msg}[/orange3]\n')
+		Configuration._print(Panel(Text.from_markup(f'\n{msg}\n', justify='center'), border_style='orange3', title='Configuration Warning'))
 
 
 	@staticmethod
@@ -758,7 +761,7 @@ class Configuration(object):
 			Args:
 				msg: The error message to print.
 		"""
-		Configuration._print(f'[red][b u]Configuration Error[/b u]\n{msg}[/red]\n')
+		Configuration._print(Panel(Text.from_markup(f'\n{msg}\n', justify='center'), border_style='red', title='Configuration Error'))
 
 
 
@@ -955,7 +958,7 @@ class Configuration(object):
 		# Check wether none of the environment variables has the same name as any of the default values in "basic.config"
 		for k in _defaults['basic.config'].keys():
 			if k in os.environ:
-				Configuration._warning(fr'The environment variable "{k}" conflicts with an option with the same name in the section \[[i]basic.config[/i]].\nPlease consider renaming the environment variable otherwise it cannot be used for interpolation in that section.')
+				Configuration._warning(fr'The environment variable "{k}" conflicts with an option with the same name in the section [b u]\[[i]basic.config[/i][/b u].\nPlease consider renaming the environment variable otherwise it cannot be used for interpolation in that section.')
 
 		# Add (empty) default for supported environment variables to the defaults dictionary for the interpolation during reading the configuration file
 		_envVariables = { e: os.getenv(e, '') if e not in _defaults else _defaults[e]

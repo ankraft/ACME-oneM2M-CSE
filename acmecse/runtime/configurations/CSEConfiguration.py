@@ -105,7 +105,7 @@ class CSEConfiguration(ModuleConfiguration):
 				case 'in':
 					config.cse_type = CSEType.IN
 				case _:
-					raise ConfigurationError(fr'Unsupported \[cse]:type: {RC.cseType}')
+					raise ConfigurationError(fr'Unsupported \[cse]:type: {config.cse_type}')
 
 		# CSE Serialization
 		if isinstance(config.cse_defaultSerialization, str):
