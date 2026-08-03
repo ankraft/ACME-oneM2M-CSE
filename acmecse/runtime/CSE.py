@@ -129,13 +129,15 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 	#
 	L.init()
 	L.queueOff()				# No queuing of log messages during startup
-	
+
+	if RC.isDebugMode:
+		L.consoleBanner('Console input is disabled', 'ACME CSE is running in Debug mode', type=LogLevel.WARNING)
+
 	# Log the Version, Python and platform version
 
 	L.log(f'ACME oneM2M CSE Version: {C.version}')
 	L.logDebug(f'Python version: {platform.python_version()}')
 	L.logDebug(f'Platform: {platform.platform()}')
-
 
 	# Log the startup message and configuration
 

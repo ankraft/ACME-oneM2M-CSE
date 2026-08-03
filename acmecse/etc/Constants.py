@@ -279,3 +279,5 @@ class RuntimeConstants(object):
 	startupTime:float = None
 	"""	The time when the CSE was started. This is set during the startup process. """
 
+	isDebugMode:bool = False
+	"""	Indicator whether the CSE is running in debug mode. This is set during the startup process. """

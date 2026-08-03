@@ -19,9 +19,10 @@ import argparse
 # parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
 # # sys.path.append(f'{parent}/acme')
 try:
-	from .etc.Constants import Constants as C
+	from .etc.Constants import Constants as C, RuntimeConstants as RC
 	from .runtime import CSE
 	from rich.console import Console
+	RC.isDebugMode = 'ACME_DEBUG' in os.environ	# Set debug mode if the environment variable is set
 except ImportError as e:
 	# Raise the exception when in debug mode
 	if 'ACME_DEBUG' in os.environ:
