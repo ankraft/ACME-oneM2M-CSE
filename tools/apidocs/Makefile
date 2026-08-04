@@ -1,5 +1,4 @@
 #
-
 #	Makefile
 #
 #	To build the API documentation
@@ -30,13 +29,13 @@ pydoctor:				## Build API documentation (default)
 open:					## Open API documentation in the default web browser
 	open ${APIDOCS}/index.html
 
-open-missing:				## Open a list of undocumented items in the default web browser
+open-missing:			## Open a list of undocumented items in the default web browser
 	open ${APIDOCS}/undoccedSummary.html
 
 dash:					## Generate a docset for Dash documentation
 	doc2dash "${APIDOCS}" -f -n "${TITLE}" -d "${DASHDOCSET}" -I index.html
 
-dash-install:				## Install and open the generated docset in Dash
+dash-install:			## Install and open the generated docset in Dash
 	open "${DASHDOCSET}/${TITLE}.docset"
 
 
@@ -45,8 +44,14 @@ publish: 				## Publish the API docs to the documentation website
 	git checkout gh-pages && \
 	git pull 
 	cp -r ${APIDOCS}/* ${APIGITDIR}
+	# pydoctor creates "acmecse.html" as a symlink to "index.html".
+	# Symlinks don't survive deployment (broken on GitHub Pages), so
+	# we replace it here with a real copy.
+	rm -f ${APIGITDIR}/acmecse.html
+	cp ${APIGITDIR}/index.html ${APIGITDIR}/acmecse.html
+	touch ${APIGITDIR}/.nojekyll
 	-cd ${APIGITDIR} && \
-	git add * && \
+	git add -A && \
 	git commit -uno -m "adding api docs" && \
 	git push 
 
