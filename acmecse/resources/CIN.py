@@ -43,8 +43,8 @@ class CIN(AnnounceableResource):
 		super().initialize(pi)
 
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 		mbis = parentResource.mbis
@@ -79,7 +79,8 @@ class CIN(AnnounceableResource):
 	# Forbid updating
 	def update(self, dct: Optional[JSON]=None, 
 					 originator: Optional[str]=None, 
-					 doValidateAttributes: Optional[bool]=True) -> None:
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		raise OPERATION_NOT_ALLOWED('updating CIN is forbidden')
 
 

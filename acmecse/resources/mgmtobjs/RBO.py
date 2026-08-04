@@ -13,7 +13,7 @@ from typing import Optional
 
 from ..MgmtObj import MgmtObj
 from ..Resource import Resource
-from ...etc.Types import JSON
+from ...etc.Types import JSON, CSERequest
 from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ...helpers.TextTools import findXPath
 
@@ -31,21 +31,22 @@ class RBO(MgmtObj):
 	#	validate() and update()
 	#
 
-	def validate(self, originator: Optional[str]=None, 
+	def validate(self, originator: Optional[str] = None, 
 					   dct: Optional[JSON]=None, 
-					   parentResource: Optional[Resource]=None) -> None:
+					   parentResource: Optional[Resource] = None) -> None:
 		super().validate(originator, dct, parentResource)
 		self.setAttribute('rbo', False, overwrite=True)	# always set (back) to False
 		self.setAttribute('far', False, overwrite=True)	# always set (back) to False
 
 
-	def update(self, dct: Optional[JSON]=None, 
-					 originator: Optional[str]=None, 
-					 doValidateAttributes: Optional[bool]=True) -> None:
+	def update(self, dct: Optional[JSON] = None, 
+					 originator: Optional[str] = None, 
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		# Check for rbo & far updates 
 		rbo = findXPath(dct, '{*}/rbo')
 		far = findXPath(dct, '{*}/far')
 		if rbo and far:
 			raise BAD_REQUEST('update both rbo and far to True is not allowed')
 
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)

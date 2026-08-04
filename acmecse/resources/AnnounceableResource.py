@@ -12,7 +12,7 @@ from typing import Optional, Tuple, Any, TYPE_CHECKING
 
 from copy import deepcopy
 from ..etc.Types import ResourceTypes, JSON, AttributePolicyDict
-from ..etc.Types import Announced, IdentifierScope
+from ..etc.Types import Announced, IdentifierScope, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.IDUtils import isAbsolute, toAbsolute, toSPRelative
@@ -48,9 +48,9 @@ class AnnounceableResource(Resource):
 		self.setAttribute(Constants.attrAnnouncedTo, [], overwrite=False)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource:Resource, originator:str, request: Optional[CSERequest] = None) -> None:
 		# L.isDebug and L.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
-		super().activate(parentResource, originator)
+		super().activate(parentResource, originator, request)
 
 		# Check announcements
 		if self.at:
@@ -70,8 +70,9 @@ class AnnounceableResource(Resource):
 
 
 	def update(self, dct:JSON=None, 
-					 originator:Optional[str]=None, 
-					 doValidateAttributes:Optional[bool]=True) -> None:
+					 originator:Optional[str] = None, 
+					 doValidateAttributes:Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		""" Store the original announceableAttributes for later use in the update
@@ -83,7 +84,7 @@ class AnnounceableResource(Resource):
 			so that we can check whether it is removed.
 		"""
 		
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)
 
 		# TODO handle update from announced resource. Check originator???
 

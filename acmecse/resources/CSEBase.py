@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import CSERequest, ResourceTypes, ContentSerializationType, JSON, CSEType
+from ..etc.Types import CSERequest, ResourceTypes, ContentSerializationType, JSON, CSEType, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.IDUtils import isValidCSI
 from ..etc.ACMEUtils import resourceFromCSI
@@ -54,8 +54,8 @@ class CSEBase(AnnounceableResource):
 		super().initialize(pi)
 
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 		if not isValidCSI(self.csi):
 			raise BAD_REQUEST(f'Wrong format for CSEBase.csi: {self.csi}')
 

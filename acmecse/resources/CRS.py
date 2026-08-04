@@ -58,8 +58,8 @@ class CRS(Resource):
 		super().initialize(pi)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource:Resource, originator:str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 		self.dbUpdate()	# Update in DB because we need some changes in other functions executed below
 		L.isDebug and L.logDebug(f'Activating crossResourceSubscription: {self.ri}')
 
@@ -103,7 +103,8 @@ class CRS(Resource):
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+					 doValidateAttributes:Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		L.isDebug and L.logDebug(f'Updating crossResourceSubscription: {self.ri}')
 		
 		# We are validating the attributes already here because the actual update of the resource
@@ -145,7 +146,7 @@ class CRS(Resource):
 			   (newTwt is None     and oldTwt == TimeWindowType.PERIODICWINDOW):
 				self.notification.startCRSPeriodicWindow(self.ri, self.tws if newTws is None else newTws, self._countSubscriptions())
 		
-		super().update(dct, originator, doValidateAttributes=False)	# Was vaildated before
+		super().update(dct, originator, doValidateAttributes=False, request=request)	# Was vaildated before
 	
 
 	@criticalResourceSection(state = 'deactivate')

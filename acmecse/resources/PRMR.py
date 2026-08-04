@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, JSON, ProcessState, ProcessControl, Permission
+from ..etc.Types import ResourceTypes, JSON, ProcessState, ProcessControl, Permission, CSERequest
 from ..etc.ResponseStatusCodes import ResponseException, OPERATION_NOT_ALLOWED, NOT_FOUND, INVALID_PROCESS_CONFIGURATION, NOT_IMPLEMENTED	
 from ..helpers.TextTools import findXPath
 from ..helpers.PluginManager import requires
@@ -45,8 +45,8 @@ class PRMR(AnnounceableResource):
 	""" Injected SecurityManager instance. """
 
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# Set the initial processStatus to Disabled
 		self.setAttribute('prst', ProcessState.Disabled.value)
@@ -58,7 +58,10 @@ class PRMR(AnnounceableResource):
 		# cust cannot be null. So, it must be "not present" initially. This must be changed in TS-0001 (to 0..1)
 
 	
-	def update(self, dct: JSON = None, originator: str | None = None, doValidateAttributes: bool | None = True) -> None:
+	def update(self, dct: JSON = None, 
+					 originator: Optional[str] = None, 
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 
 		# current processState
 		prst = self.prst
@@ -195,7 +198,7 @@ class PRMR(AnnounceableResource):
 
 
 
-		super().update(dct, originator, doValidateAttributes)	
+		super().update(dct, originator, doValidateAttributes, request)	
 
 
 	# EXPERIMENTAL Don't define a deactivate() method. This would cause problems with deregistering of AEs

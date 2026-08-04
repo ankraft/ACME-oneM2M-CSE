@@ -4273,7 +4273,8 @@
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
-			"annc": "NA"
+			"annc": "NA",
+			"releases": [ "4" ]
 		}
 	],
 	"rr": [

@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ...etc.Types import JSON, Status
+from ...etc.Types import JSON, Status, CSERequest
 from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ..MgmtObj import MgmtObj
 from ..Resource import Resource
@@ -18,8 +18,8 @@ from ..Resource import Resource
 
 class WIFIC(MgmtObj):
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 		self.setAttribute('ssi', '', overwrite=False)
 		self.setAttribute('scan', False)
 		self.setAttribute('scanr', [])

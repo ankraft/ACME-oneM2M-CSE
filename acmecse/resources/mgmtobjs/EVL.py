@@ -10,7 +10,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ...etc.Types import JSON
+from ...etc.Types import JSON, CSERequest
 from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ..MgmtObj import MgmtObj
 from ...helpers.TextTools import findXPath
@@ -26,7 +26,8 @@ class EVL(MgmtObj):
 
 	def update(self, dct: Optional[JSON]=None, 
 					 originator: Optional[str]=None, 
-					 doValidateAttributes: Optional[bool]=True) -> None:
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		# Check for rbo & far updates 
 		if findXPath(dct, '{*}/lga') and findXPath(dct, '{*}/lgo'):
 			raise BAD_REQUEST('update both lga and lgo to True at the same time is not allowed')
@@ -34,4 +35,4 @@ class EVL(MgmtObj):
 		# Always overwrite with True
 		self.setAttribute('lga', True)
 		self.setAttribute('lgo', True)
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)

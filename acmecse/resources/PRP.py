@@ -10,8 +10,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-from ..etc.Types import AttributePolicyDict, AttributePolicyDictList, ResourceTypes, BasicType
+from typing import TYPE_CHECKING, Optional
+from ..etc.Types import AttributePolicyDict, AttributePolicyDictList, ResourceTypes, BasicType, CSERequest, JSON
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..runtime.PluginSupport import requires
@@ -36,8 +36,8 @@ class PRP(AnnounceableResource):
 	validator: Validator = None
 	""" Injected Validator instance. """
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# TODO resourceIDs are not supported yet. Perhaps we should remove this attribute? Problem: How to handle resourceIDs with wildcards.
 

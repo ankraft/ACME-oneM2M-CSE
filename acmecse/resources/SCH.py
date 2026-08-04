@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes, JSON
+from ..etc.Types import ResourceTypes, JSON, CSERequest
 from ..runtime.Logging import Logging as L
 from ..runtime.PluginSupport import requires
 from ..etc.ResponseStatusCodes import CONTENTS_UNACCEPTABLE, NOT_IMPLEMENTED
@@ -37,8 +37,8 @@ class SCH(AnnounceableResource):
 	"""	Injected Storage singleton instance. """
 
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# Check if the parent is not a <node> resource then the "nco" attribute is not set
 		_nco = self.nco
@@ -59,7 +59,10 @@ class SCH(AnnounceableResource):
 		# is a <softwareCampaign> resource that has a campaignEnabled attribute with a value of true.
 
 	
-	def update(self, dct: JSON = None, originator: str | None = None, doValidateAttributes: bool | None = True) -> None:
+	def update(self, dct: Optional[JSON] = None, 
+					 originator: Optional[str] = None, 
+					 doValidateAttributes: Optional[bool] = True, 
+					 request: Optional[CSERequest] = None) -> None:
 		
 		_nco = self.getFinalResourceAttribute('nco', dct)
 		_parentResource = self.retrieveParentResource()
@@ -77,7 +80,7 @@ class SCH(AnnounceableResource):
 		# c)The request shall be rejected with the "OPERATION_NOT_ALLOWED" Response Status Code 
 		# if thetarget resource is a <softwareCampaign> resource that has a campaignEnabled attribute with a value of true.
 		
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)
 
 		# Update the schedule in the schedules DB
 		self.storage.upsertSchedule(self)

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, JSON, LocationSource
+from ..etc.Types import ResourceTypes, JSON, LocationSource, CSERequest
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires
@@ -41,8 +41,10 @@ class LCP(AnnounceableResource):
 	locationManager: Optional[LocationManager] = None
 	""" Injected LocationManager instance. """
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, 
+			  		   originator: str, 
+					   request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# Creating extra <container> resource under the parent
 		# Set the li attribute to the LCP's ri afterwards
@@ -83,7 +85,7 @@ class LCP(AnnounceableResource):
 		# the Hosting CSE shall start periodical positioning procedure.
 
 
-	def updated(self, dct: JSON | None = None, originator: str | None = None) -> None:
+	def updated(self, dct: Optional[JSON] = None, originator: Optional[str] = None) -> None:
 		super().updated(dct, originator)
 
 		# update the location policy handling

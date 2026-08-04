@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, JSON, LogicalOperator
+from ..etc.Types import ResourceTypes, JSON, LogicalOperator, CSERequest
 from ..etc.Constants import RuntimeConstants as RC
 from ..resources.Resource import Resource
 from ..etc.ResponseStatusCodes import BAD_REQUEST
@@ -31,8 +31,8 @@ class NTP(Resource):
 	"""	Injected Storage instance. """
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource:Resource, originator:str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 		
 		# Check that the creator attribute is not set when the resource is created by the CSE admin
 		if self.cr is not None and originator == RC.cseOriginator:

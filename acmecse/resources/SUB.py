@@ -15,7 +15,7 @@ from copy import deepcopy
 from ..etc.JSONUtils import pureResource
 from ..helpers.TextTools import findXPath
 from ..etc.Types import ResourceTypes, NotificationContentType
-from ..etc.Types import NotificationEventType, JSON
+from ..etc.Types import NotificationEventType, JSON, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..runtime.Configuration import Configuration
 from ..runtime.Logging import Logging as L
@@ -56,8 +56,8 @@ class SUB(Resource):
 	"""
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource:Resource, originator:str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# set batchNotify default attributes
 		if self.bn:		
@@ -112,7 +112,8 @@ class SUB(Resource):
 
 	def update(self, dct: Optional[JSON] = None, 
 					 originator: Optional[str] = None, 
-					 doValidateAttributes: Optional[bool] = True) -> None:
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		previousNus = deepcopy(self.nu)
 
 		# We are validating the attributes here already because this actual update of the resource
@@ -144,7 +145,7 @@ class SUB(Resource):
 				self.notificationManager.sendDeletionNotification(crsRI, self.ri, self.cr)	# TODO ignore result?
 
 		# Do actual update
-		super().update(dct, originator, doValidateAttributes = False)
+		super().update(dct, originator, doValidateAttributes = False, request=request)
 		
 
 		# check whether an observed child resource type is actually allowed by the parent

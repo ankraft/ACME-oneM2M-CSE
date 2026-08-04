@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Optional, Any
 
-from ..etc.Types import BeaconCriteria, JSON
+from ..etc.Types import BeaconCriteria, JSON, CSERequest
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.DateUtils import fromDuration
@@ -50,8 +50,8 @@ class TSB(AnnounceableResource):
 # TODO update:
 # TODO deactivate
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource:Resource, originator:str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 		if not self.timeManager:
 			raise NOT_IMPLEMENTED(L.logWarn('TimeManager plugin is disabled, cannot add time sync beacon to TimeManager'))
 		self.timeManager.addTimeSyncBeacon(self)
@@ -59,9 +59,10 @@ class TSB(AnnounceableResource):
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+					 doValidateAttributes:Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		originalBcnc = self.bcnc
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)
 		if not self.timeManager:
 			raise NOT_IMPLEMENTED(L.logWarn('TimeManager plugin is disabled, cannot update time sync beacon in TimeManager'))
 		self.timeManager.updateTimeSyncBeacon(self, originalBcnc)

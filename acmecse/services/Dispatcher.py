@@ -825,7 +825,7 @@ class Dispatcher(metaclass=Singleton):
 
 		# Create the resource. If this fails we de-register everything
 		try:
-			_resource = self.createLocalResource(newResource, parentResource, originator, rvi=request.rvi)
+			_resource = self.createLocalResource(newResource, parentResource, originator, request)
 		except ResponseException as e:
 			self.registrationManager.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			raise e
@@ -980,15 +980,15 @@ class Dispatcher(metaclass=Singleton):
 	def createLocalResource(self,
 							resource: Resource,
 							parentResource: Resource,
-							originator: Optional[str]=None,
-							rvi: Optional[str]=None) -> Resource:
+							originator: Optional[str] = None,
+							request: Optional[CSERequest] = None) -> Resource:
 		"""	Create a resource locally.
 
 			Args:
 				resource: The resource to create.
 				parentResource: The parent resource.
 				originator: The originator of the request.
-				rvi: The release version identifier. This is only be present in a real CREATE request.
+				request: The request object. This is only be present in a real CREATE request.
 
 			Return:
 				The created resource.
@@ -1020,14 +1020,14 @@ class Dispatcher(metaclass=Singleton):
 		resource.dbCreate(overwrite = False)
 		
 		# Set release version to the resource, if available, ie. passed in a CREATE request.
-		if rvi:
-			resource.setRVI(rvi)
+		if request:
+			resource.setRVI(request.rvi)
 
 		# Activate the resource
 		# This is done *after* writing it to the DB, because in activate the resource might create or access other
 		# resources that will try to read the resource from the DB.
 		try:
-			resource.activate(parentResource, originator) 	# activate the new resource
+			resource.activate(parentResource, originator, request) 	# activate the new resourcee
 		except:
 			resource.dbDelete()
 			raise
@@ -1133,7 +1133,10 @@ class Dispatcher(metaclass=Singleton):
 			return resource.handleUpdateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		dictOrg = deepcopy(resource.dict)	# Save for later
-		resource = self.updateLocalResource(resource, deepcopy(request.pc), originator = originator)
+		resource = self.updateLocalResource(resource, 
+									  		deepcopy(request.pc), 
+											originator=originator, 
+											request=request)
 
 		# Check resource update with registration
 		# 	registration.checkResourceUpdate(resource, deepcopy(request.pc))
@@ -1170,7 +1173,8 @@ class Dispatcher(metaclass=Singleton):
 	def updateLocalResource(self, resource: Resource, 
 								  dct: Optional[JSON] = None, 
 								  doUpdateCheck: Optional[bool] = True, 
-								  originator: Optional[str] = None) -> Resource:
+								  originator: Optional[str] = None,
+								  request: Optional[CSERequest] = None) -> Resource:
 		"""	Update a resource in the CSE. Call update() and updated() callbacks on the resource.
 		
 			Args:
@@ -1178,6 +1182,7 @@ class Dispatcher(metaclass=Singleton):
 				dct: JSON dictionary with the updated attributes.
 				doUpdateCheck: Enable/disable a call to update().
 				originator: The request's originator.
+				request: The CSERequest object. This is only be present in a real UPDATE request.
 
 			Return:
 				Updated resource.
@@ -1185,7 +1190,7 @@ class Dispatcher(metaclass=Singleton):
 		L.isDebug and L.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty}')
 		if doUpdateCheck:
 			resource.willBeUpdated(dct, originator)
-			resource.update(dct, originator) # TODO TRY
+			resource.update(dct, originator, request=request)
 		else:
 			L.isDebug and L.logDebug('No check, skipping resource update')
 
@@ -1231,7 +1236,7 @@ class Dispatcher(metaclass=Singleton):
 				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
 
 			# Update it locally
-			updatedResource = self.updateLocalResource(resource, dct, originator = originator)
+			updatedResource = self.updateLocalResource(resource, dct, originator=originator)
 
 		# Update remotely
 		else:

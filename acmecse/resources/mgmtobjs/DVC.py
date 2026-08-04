@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from ...etc.Types import JSON
+from ...etc.Types import JSON, CSERequest
 from ...etc.ResponseStatusCodes import BAD_REQUEST
 from ...helpers.TextTools import findXPath
 from ..MgmtObj import MgmtObj
@@ -37,7 +37,7 @@ class DVC(MgmtObj):
 
 	def validate(self, originator: Optional[str]=None, 
 					   dct: Optional[JSON]=None, 
-					   parentResource: Optional[Resource]=None) -> None:
+					   parentResource: Optional[Resource] = None) -> None:
 		super().validate(originator, dct, parentResource)
 		self.setAttribute('ena', True, overwrite=True)	# always set (back) to True
 		self.setAttribute('dis', True, overwrite=True)	# always set (back) to True
@@ -45,13 +45,14 @@ class DVC(MgmtObj):
 
 	def update(self, dct: Optional[JSON]=None, 
 					 originator: Optional[str]=None, 
-					 doValidateAttributes: Optional[bool]=True) -> None:
+					 doValidateAttributes: Optional[bool]=True,
+					 request: Optional[CSERequest] = None) -> None:
 		# Check for ena & dis updates 
 		ena = findXPath(dct, '{*}/ena')
 		dis = findXPath(dct, '{*}/dis')
 		if ena and dis:
 			raise BAD_REQUEST('updating both ena and dis to True is not allowed')
 
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)
 
 

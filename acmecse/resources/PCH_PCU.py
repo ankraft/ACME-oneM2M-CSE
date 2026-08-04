@@ -157,7 +157,6 @@ class PCH_PCU(VirtualResource):
 			self.delAttribute(Constants.attrPCUAggregate)
 		else:
 			self.setAttribute(Constants.attrPCUAggregate, aggregate)
-		L.logErr(self.dict)
 
 
 	def getAggregate(self) -> bool:

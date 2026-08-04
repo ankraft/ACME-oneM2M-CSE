@@ -2649,7 +2649,7 @@ class CSERequest:
 	""" The URL of the request, if available. """
 
 	_directURL:Optional[str] = None
-	""" The direct URL of the request. """
+	""" The direct URL of the request. Used by the `RequestManager.determineTargetDetails` method partly as a fallback."""
 
 	_ot:Optional[float] = None
 	""" The timestamp when this request object was created. """
@@ -2948,9 +2948,9 @@ class AttributePolicy:
 	""" Long name of the attribute. """
 	namespace:str				= None	# namespace
 	""" Namespace of the attribute. """
-	typeShortname:str   					= None	# namespace:type name
+	typeShortname:str   		= None	# namespace:type name
 	""" Type name of the attribute. """
-	rtypes:List[ResourceTypes]	= None	# Optional list of multiple resourceTypes
+	rtypes:set[ResourceTypes]	= None	# Optional list of multiple resourceTypes
 	""" List of resource types that this attribute is valid for. """
 	ctype:str					= None	# Definition for a complex type attribute
 	""" Definition name for a complex type attribute. """
@@ -2972,6 +2972,12 @@ class AttributePolicy:
 	""" Mandatory size of a list. """
 	choice:bool					= False	# whether this is a choice attribute
 	""" Whether this attribute is part of a choice. """
+	releases:tuple[str]			= None	#  Tuple of releases that this attribute is valid for
+	""" Tuple of releases that this attribute is valid for. 
+		If this attribute is None, then it is valid for all releases.
+		If only one release is specified, then it is valid from that release onwards.
+		If two releases are specified, then it is valid from the first release until the second release.
+		"""
 
 	# TODO support annnouncedSyncType
 

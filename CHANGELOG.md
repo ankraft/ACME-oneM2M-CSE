@@ -18,6 +18,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Moved request recording to an interceptor plugin.
 - [CSE] Added support for the &lt;container> *maxByteSizePerInstance* (mbis) attribute.
 - [CSE] Added support for the JSON-path content filter query in discovery requests. This allows to filter &lt;CIN> resources based on their content attribute.
+- [CSE] Added initial support for validating attributes based on the release version indicator (rvi) in requests. This allows to validate whether an attribute is allowed for a specific release version of the oneM2M standard.
 - [MGMT] Added reloading of HTTP and WebSocket authentication credentials to the management API.
 - [MGMT] Added support for retrieving basic and auth token information via the management API.
 - [MGMT] Added return of attribute, resource type, and flexcontainer policies to the management API.

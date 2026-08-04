@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 from typing import Optional
-from ..etc.Types import JSON
+from ..etc.Types import JSON, CSERequest
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED
 
@@ -22,6 +22,7 @@ class FCIAnnc(AnnouncedResource):
 	# Forbidd updating
 	def update(self, dct: Optional[JSON]=None, 
 					 originator: Optional[str]=None,
-					 doValidateAttributes: Optional[bool]=True) -> None:
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		raise OPERATION_NOT_ALLOWED('updating FCIAnnc is forbidden')
 

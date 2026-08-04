@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, ContentSerializationType, JSON
+from ..etc.Types import ResourceTypes, ContentSerializationType, JSON, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE
 from ..etc.IDUtils import uniqueAEI
 from ..etc.Constants import Constants
@@ -28,13 +28,13 @@ class AE(AnnounceableResource):
 	dispatcher: Dispatcher = None
 	"""	Injected Dispatcher instance. """
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
 
 		# Initialize default values
 		self.setAttribute('aei', uniqueAEI(), overwrite=False)
 		self.setAttribute('rr', False, overwrite=False)
 
-		super().activate(parentResource, originator)
+		super().activate(parentResource, originator, request)
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> None:

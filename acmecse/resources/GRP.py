@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, ConsistencyStrategy, JSON
+from ..etc.Types import ResourceTypes, ConsistencyStrategy, JSON, CSERequest
 from ..etc.ResponseStatusCodes import NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
@@ -39,8 +39,8 @@ class GRP(AnnounceableResource):
 		# optional set: spty, gn, nar
 
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 		
 		# add fanOutPoint
 		L.isDebug and L.logDebug(f'Registering fanOutPoint resource for: {self.ri}')

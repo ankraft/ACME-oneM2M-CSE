@@ -48,8 +48,8 @@ class SMD(AnnounceableResource):
 		super().initialize(pi)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource:Resource, originator:str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 		
 		# Validation of CREATE is done in self.validate()
 		
@@ -63,7 +63,8 @@ class SMD(AnnounceableResource):
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None,
-					 doValidateAttributes:Optional[bool] = True) -> None:
+					 doValidateAttributes:Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 
 		# Some checks before the general validation that are necessary only in an UPDATE
 		soeNew = findXPath(dct, '{*}/soe')
@@ -82,7 +83,7 @@ class SMD(AnnounceableResource):
 			self.semanticManager.validateSPARQL(soeNew)
 
 		# Generic update and validation (with semantic procdures)
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request=request)
 
 		# Test whether vlde changed in the request from True to False, then set svd to False as well.
 		if vldeOrg == True and vldeNew == False:

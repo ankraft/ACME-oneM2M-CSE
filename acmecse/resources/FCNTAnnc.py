@@ -15,7 +15,7 @@ from ..runtime.Logging import Logging as L
 
 if TYPE_CHECKING:
 	from ..resources.Resource import Resource
-	from ..etc.Types import JSON
+	from ..etc.Types import JSON, CSERequest
 
 class FCNTAnnc(AnnouncedResource):
 	""" FlexContainerAnnounced resource class """
@@ -27,8 +27,8 @@ class FCNTAnnc(AnnouncedResource):
 		super().__init__(dct, create=create)
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource:Resource, originator:str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# Validate containerDefinition
 		if (t := self.validator.getFlexContainerSpecialization(self.typeShortname)):

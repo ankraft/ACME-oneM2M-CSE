@@ -12,7 +12,8 @@
 from __future__ import annotations
 from typing import Optional, cast, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, JSON, JSONLIST
+
+from ..etc.Types import ResourceTypes, JSON, JSONLIST, CSERequest
 from ..etc.ResponseStatusCodes import NOT_ACCEPTABLE, BAD_REQUEST
 from ..etc.DateUtils import getResourceDate
 from ..helpers.TextTools import findXPath
@@ -64,8 +65,8 @@ class CNT(ContainerResource):
 		self.setAttribute('st', 0, overwrite=False)
 		super().initialize(pi)
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 
 		# Set the limits for this container if enabled
@@ -101,7 +102,8 @@ class CNT(ContainerResource):
 
 	def update(self, dct: JSON=None, 
 					 originator: Optional[str]=None, 
-					 doValidateAttributes: Optional[bool]=True) -> None:
+					 doValidateAttributes: Optional[bool]=True,
+					 request: Optional[CSERequest] = None) -> None:
 
 
 		# Checks for mbis update
@@ -115,7 +117,7 @@ class CNT(ContainerResource):
 		disrNew = findXPath(dct, 'm2m:cnt/disr')	# TODO or pureResource?
 
 		# Generic update
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)
 		
 		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
 		if disrOrg and disrNew == False:

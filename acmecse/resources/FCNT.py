@@ -9,7 +9,7 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, JSON
+from ..etc.Types import ResourceTypes, JSON, CSERequest
 from ..etc.Constants import Constants
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, BAD_REQUEST
 from ..etc.ACMEUtils import getAttributeSize
@@ -67,8 +67,8 @@ class FCNT(ContainerResource):
 		super().initialize(pi)
 
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 		
 		self.setAttribute('st', 0)
 
@@ -123,7 +123,8 @@ class FCNT(ContainerResource):
 	@criticalResourceSection('FCNT', 'update')	# Set an indicator that this resource is in update
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+					 doValidateAttributes:Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 
 		# Increment stateTag
 		self.setAttribute('st', self.st + 1)
@@ -155,7 +156,7 @@ class FCNT(ContainerResource):
 				# Remove the virtual resources and FCINs
 				self.cleanUpInstances()
 
-				super().update(dct, originator, doValidateAttributes)
+				super().update(dct, originator, doValidateAttributes, request)
 				return
 		
 		# fcied present in the final resource?
@@ -168,7 +169,7 @@ class FCNT(ContainerResource):
 				raise BAD_REQUEST('mni, mbs, or mia must not be present with values when fcied is not present')
 			
 			# We are done here
-			super().update(dct, originator, doValidateAttributes)
+			super().update(dct, originator, doValidateAttributes, request)
 			return
 		
 		# else: fcied IS present in the final resource

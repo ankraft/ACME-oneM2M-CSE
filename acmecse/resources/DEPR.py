@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import JSON
+from ..etc.Types import JSON, CSERequest
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires
 from ..runtime.Logging import Logging as L
@@ -29,9 +29,9 @@ class DEPR(AnnounceableResource):
 	actionManager: ActionManager = None
 	"""	Injected ActionManager instance. """
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
 
-		super().activate(parentResource, originator)
+		super().activate(parentResource, originator, request)
 
 		# Check that the evalCriteria and target resources are correct and accessible
 		if not self.actionManager:
@@ -44,7 +44,8 @@ class DEPR(AnnounceableResource):
 
 	def update(self, dct: JSON=None, 
 					 originator: Optional[str]=None,
-					 doValidateAttributes: Optional[bool]=True) -> None:
+					 doValidateAttributes: Optional[bool]=True,
+					 request: Optional[CSERequest] = None) -> None:
 
 		# get new or old rri and evc
 		rri = self.getFinalResourceAttribute('rri', dct)
@@ -59,4 +60,4 @@ class DEPR(AnnounceableResource):
 		except ResponseException as e:
 			raise BAD_REQUEST(e.dbg)
 
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)

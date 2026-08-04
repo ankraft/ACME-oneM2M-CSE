@@ -171,13 +171,14 @@ class Validator(metaclass=Singleton):
 									isAnnounced=resource.isAnnounced())
 
 
-	def	validateAttributes(self, resource:JSON, 
-								 typeShortname:str, 
-								 ty:Optional[ResourceTypes]=ResourceTypes.UNKNOWN, 
-								 attributes:Optional[AttributePolicyDict]=None, 
-								 create:Optional[bool]=True, 
-								 createdInternally:Optional[bool]=False, 
-								 isAnnounced:Optional[bool]=False) -> None:
+	def	validateAttributes(self, resource: JSON, 
+								 typeShortname: str, 
+								 ty: Optional[ResourceTypes] = ResourceTypes.UNKNOWN, 
+								 attributes: Optional[AttributePolicyDict] = None, 
+								 create: Optional[bool] = True, 
+								 createdInternally: Optional[bool] = False, 
+								 isAnnounced: Optional[bool] = False,
+								 rvi: Optional[str] = None) -> None:
 		""" Validate a resources' attributes for types etc.
 
 			Args:
@@ -188,8 +189,9 @@ class Validator(metaclass=Singleton):
 				create: Boolean indicating whether this a CREATE request
 				createdInternally: Boolean indicating that a resource is created internally
 				isAnnounced: Boolean indicating that a resource is announced
+				rvi: The release version indicator
 			Return:
-				Result object
+				None
 		"""
 		L.isDebug and L.logDebug('validating attributes')
 
@@ -242,6 +244,16 @@ class Validator(metaclass=Singleton):
 			if not create and attributeName not in pureResDict:
 				continue
 
+			# Check whether the attribute is allowed for the release version
+			if (_releases := policy.releases) and rvi:
+				match len(_releases):
+					case 1:
+						if rvi < _releases[0]:
+							raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is not allowed for release: {rvi}'))
+					case 2:
+						if not (_releases[0] <= rvi <= _releases[1]):
+							raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is not allowed for release: {rvi}'))
+						
 			# Get the correct tuple for a resource when there are more definitions
 			# Used a couple of times below
 			policyOptional = policy.select(optionalIndex)
@@ -301,10 +313,10 @@ class Validator(metaclass=Singleton):
 				raise BAD_REQUEST(L.logWarn(f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({e.dbg})'))
 
 
-	def validateAttribute(self, attribute:str, 
-								value:Any, 
-								attributeType:Optional[BasicType]=None, 
-								rtype:Optional[ResourceTypes]=ResourceTypes.ALL) -> Tuple[BasicType, Any]:
+	def validateAttribute(self, attribute: str, 
+								value: Any, 
+								attributeType: Optional[BasicType] = None, 
+								rtype: Optional[ResourceTypes] = ResourceTypes.ALL) -> Tuple[BasicType, Any]:
 		""" Validate a single attribute. 
 		
 			Args:
@@ -348,14 +360,12 @@ class Validator(metaclass=Singleton):
 		# Only support some types for now, but this can be easily extended later
 		ap = self.getAttributePolicy(None, attr=elementName)
 		if ap:
-			match ap.rtypes[0]:	
-				case ResourceTypes.NOTIFICATION | ResourceTypes.RESPONSE:
-					L.isDebug and L.logDebug(f'validating primitive content: {elementName}')
-					self._validateType(ap.type, pc.get(elementName), convert=True, policy=ap)
-				
-				case _:
-					L.logErr(f'Ignoring validation for primitive content element: {elementName} - No policy found for this element')
-					pass
+			if ap.rtypes & {ResourceTypes.NOTIFICATION, ResourceTypes.RESPONSE}:
+				L.isDebug and L.logDebug(f'validating primitive content: {elementName}')
+				self._validateType(ap.type, pc.get(elementName), convert=True, policy=ap)
+			else:
+				L.logErr(f'Ignoring validation for primitive content element: {elementName} - No policy found for this element')
+				pass
 		
 
 	#

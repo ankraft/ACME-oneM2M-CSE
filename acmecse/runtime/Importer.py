@@ -727,10 +727,16 @@ class Importer(metaclass=Singleton):
 			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
 
-		#	Ge the announcement optionality
+		#	Get the announcement optionality
 		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := Announced.to(tmp, insensitive=True)):	# default OA
 			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
 			return None
+
+		#	Get the releases range
+		if (releases := findXPath(attr, 'releases')):
+			if not isinstance(releases, list) or 1 < len(releases) > 2 or not all(isinstance(e, str) for e in releases):
+				L.logErr(f'Wrong releases range or format (releases): {releases} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				return None
 				
 		#	Check and determine the list type
 		lTypeName:str = None
@@ -812,7 +818,7 @@ class Importer(metaclass=Singleton):
 								lname=lname,
 								sname=sname,
 								typeShortname=typeShortname,
-								rtypes=_rtypes,
+								rtypes=set(_rtypes) if _rtypes else None,
 								ctype=ctype,
 								fname=fn,
 								ltype=ltype,
@@ -821,6 +827,7 @@ class Importer(metaclass=Singleton):
 								evalues=evalues,
 								lSize=lSize,
 								choice=choice,
+								releases=tuple(releases) if releases else None
 							)
 		return ap
 

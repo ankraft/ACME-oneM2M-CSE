@@ -132,7 +132,7 @@ class TestPCH(unittest.TestCase):
 		dct = 	{ 'm2m:pch' : { 
 					'rn' : f'{pchRN}2',
 				}}
-		_, rsc = CREATE(aeURL, TestPCH.originator, T.PCH, dct)
+		r, rsc = CREATE(aeURL, TestPCH.originator, T.PCH, dct)
 		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
@@ -205,6 +205,16 @@ class TestPCH(unittest.TestCase):
 		r, rsc = RETRIEVE(pchURL, self.originator, headers={C.hfRVI : '3'})
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNone(findXPath(r, 'm2m:pch/rqag'))
+	
+
+	def test_createPCHforR3WithRQAGFail(self) -> None:
+		""" Create <PCH> with a RVI<4 and rqag attribute -> Fail """
+		dct = 	{ 'm2m:pch' : { 
+					'rn' : f'{pchRN}',
+					'rqag' : True,
+				}}
+		r, rsc = CREATE(ae2URL, self.originator2, T.PCH, dct, headers={C.hfRVI : '3'})
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -250,6 +260,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_setAggreagstionState',
 		'test_getAggreagstionState',
 		'test_retrievePCHforR3',
+		'test_createPCHforR3WithRQAGFail',
 
 
 		# delete tests

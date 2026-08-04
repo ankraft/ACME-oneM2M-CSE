@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import Optional, Tuple, TYPE_CHECKING
 
-from ..etc.Types import  EvalMode, JSON, Permission, Operation
+from ..etc.Types import  EvalMode, JSON, Permission, Operation, CSERequest
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, NOT_IMPLEMENTED
 from ..etc.ACMEUtils import riFromID, compareIDs
 from ..helpers.TextTools import findXPath
@@ -41,8 +41,8 @@ class ACTR(AnnounceableResource):
 	validator: Validator = None
 	"""	Injected Validator instance. """
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# Check referenced resources
 		sriResource, orcResource = self._checkReferencedResources(originator, 
@@ -81,9 +81,8 @@ class ACTR(AnnounceableResource):
 
 	def update(self, dct:JSON = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
-		
-		# Preliminary update check before working with the update dictionary
+					 doValidateAttributes:Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		self.validator.validateResourceUpdate(self, dct, doValidateAttributes)
 
 		# Check referenced resources
@@ -154,7 +153,7 @@ class ACTR(AnnounceableResource):
 		origEvm = self.evm
 
 		# Now, apply all changes
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)
 
 		# Restart the monitoring (unschedule and restart later) when new evm is given
 		doScheduleAction = False

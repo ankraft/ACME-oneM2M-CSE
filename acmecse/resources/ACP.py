@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import List, Optional, TYPE_CHECKING
 
 from ..helpers.TextTools import findXPath
-from ..etc.Types import ResourceTypes, Permission, JSON
+from ..etc.Types import ResourceTypes, Permission, JSON, CSERequest
 from ..etc.ResponseStatusCodes import BAD_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..runtime.Logging import Logging as L
@@ -37,13 +37,15 @@ class ACP(AnnounceableResource):
 	"""	Injected Storage instance. """
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource:Resource, 
+			  		   originator:str, 
+					   request: Optional[CSERequest] = None) -> None:
 
 		# Set default permissions
 		self.setAttribute('pv/acr', [], overwrite = False)
 		self.setAttribute('pvs/acr', [], overwrite = False)
 
-		super().activate(parentResource, originator)
+		super().activate(parentResource, originator, request)
 
 
 	def validate(self, originator:Optional[str] = None, 

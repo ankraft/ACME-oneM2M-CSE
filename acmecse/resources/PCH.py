@@ -40,21 +40,22 @@ class PCH(Resource):
 	dispatcher: Dispatcher = None
 	""" Injected Dispatcher instance. """
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
 		"""	Activate the PCH resource. Create the PCU resource and set the parent's originator.
 
 			Args:
 				parentResource:	The parent resource.
 				originator:		The originator of the request.
 		"""
-		super().activate(parentResource, originator)
+		super().activate(parentResource, originator, request)
 
 		# Store the parent's orginator/AE-ID/CSE-ID
-		if parentResource.ty in [ ResourceTypes.CSEBase, ResourceTypes.AE]:
+		if parentResource.ty in (ResourceTypes.CSEBase, ResourceTypes.AE):
 			self.setAttribute(Constants.attrParentOriginator, parentResource.getOriginator())
 		else:
 			raise BAD_REQUEST(L.logWarn(f'PCH must be registered under CSE or AE, not {str(ResourceTypes(parentResource.ty))}'))
 
+		# Create the <PCU> child resource and store its ri in the <PCH> resource
 		L.isDebug and L.logDebug(f'Registering <PCU> for: {self.ri}')
 		(pcuResource, pcuRi) = self.createChildResourceFromDict({ 'rn' : 'pcu'}, 
 											  					ty=ResourceTypes.PCH_PCU, 
@@ -70,9 +71,10 @@ class PCH(Resource):
 		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
 		
 	
-	def update(self, dct: JSON=None, 
-					 originator: Optional[str]=None,
-					 doValidateAttributes: Optional[bool]=True) -> None:
+	def update(self, dct: Optional[JSON] = None, 
+					 originator: Optional[str] = None,
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		
 		# Set the aggregation state in the own PCU if rqag is updated
 
@@ -92,7 +94,7 @@ class PCH(Resource):
 					pcuResource.setAggregate(None)
 					pcuResource.dbUpdate(True)
 
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)
 
 	
 	def getParentOriginator(self) -> str:

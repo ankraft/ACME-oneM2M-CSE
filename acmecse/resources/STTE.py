@@ -11,7 +11,7 @@
 from __future__ import annotations
 from typing import Optional, Any, TYPE_CHECKING
 
-from ..etc.Types import JSON, ProcessState
+from ..etc.Types import JSON, ProcessState, CSERequest
 from ..etc.ResponseStatusCodes import OPERATION_NOT_ALLOWED, INVALID_PROCESS_CONFIGURATION, NOT_FOUND, NOT_IMPLEMENTED
 from ..helpers.PluginManager import requires	
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -38,8 +38,8 @@ class STTE(AnnounceableResource):
 	dispatcher: Dispatcher = None
 	""" Injected Dispatcher instance. """
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# step 1: Check parent resource is disabled
 		if parentResource.prst != ProcessState.Disabled:
@@ -71,7 +71,8 @@ class STTE(AnnounceableResource):
 
 	def update(self, dct: JSON = None, 
 					 originator: Optional[str] = None,
-					 doValidateAttributes: Optional[bool] = True) -> None:
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		
 		# Get parent resource
 		parentResource = self.dispatcher.retrieveResource(self.pi)
@@ -80,7 +81,7 @@ class STTE(AnnounceableResource):
 		if parentResource.prst != ProcessState.Disabled:
 			raise OPERATION_NOT_ALLOWED('Parent <processManagement> resource must be in state "Disabled"')
 		
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request)
 
 
 

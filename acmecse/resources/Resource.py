@@ -177,7 +177,7 @@ class Resource(object):
 		self.dict = removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
 
-	def activate(self, parentResource:Resource, originator:str) -> None:
+	def activate(self, parentResource:Resource, originator:str, request: Optional[CSERequest] = None) -> None:
 		"""	This method is called to activate a resource, usually in a CREATE request.
 
 			This is not always the case, e.g. when a resource object is just used temporarly.
@@ -188,6 +188,7 @@ class Resource(object):
 			Args:
 				parentResource: The resource's parent resource.
 				originator: The request's originator.
+				request: The CSERequest object. This is only be present in a real CREATE request.
 
 			Raises:
 				`BAD_REQUEST`: In case of an invalid attribute.
@@ -213,7 +214,8 @@ class Resource(object):
 											  self.ty, 
 											  self._attributes, 
 											  createdInternally=self.isCreatedInternally(), 
-											  isAnnounced=self.isAnnounced())
+											  isAnnounced=self.isAnnounced(),
+											  rvi=request.rvi)
 
 		# validate the resource logic
 		self.validate(originator, parentResource=parentResource)
@@ -284,7 +286,8 @@ class Resource(object):
 
 	def update(self, dct: Optional[JSON] = None, 
 					 originator: Optional[str] = None, 
-					 doValidateAttributes: Optional[bool] = True) -> None:
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 		"""	Update, add or remove resource attributes.
 
 			A subscription check for update is performed.
@@ -298,6 +301,7 @@ class Resource(object):
 				dct: An optional JSON dictionary with the attributes to be updated.
 				originator: The optional requests originator that let to the update of the resource.
 				doValidateAttributes: If *True* optionally call the resource's `validate()` method.
+				request: The CSERequest object. This is only be present in a real UPDATE request.
 
 			Raises:
 				`CONTENTS_UNACCEPTABLE`: In case of a resource mismatch.

@@ -8,14 +8,15 @@
 #
 
 from __future__ import annotations
+from typing import Optional
 
-from ...etc.Types import Status
+from ...etc.Types import Status, CSERequest
 from ..MgmtObj import MgmtObj
 from ..Resource import Resource
 
 
 class FWR(MgmtObj):
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
 		self.setAttribute('uds', { 'acn' : '', 'sus' : Status.UNINITIALIZED })
-		super().activate(parentResource, originator)
+		super().activate(parentResource, originator, request)

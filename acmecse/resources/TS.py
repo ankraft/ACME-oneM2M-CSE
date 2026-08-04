@@ -12,7 +12,7 @@
 from __future__ import annotations
 from typing import Optional, Any, TYPE_CHECKING
 
-from ..etc.Types import ResourceTypes, JSON
+from ..etc.Types import CSERequest, ResourceTypes, JSON
 from ..etc.ResponseStatusCodes import BAD_REQUEST, OPERATION_NOT_ALLOWED, NOT_ACCEPTABLE, CONFLICT, NOT_IMPLEMENTED
 from ..etc.DateUtils import getResourceDate, toISO8601Date
 from ..helpers.TextTools import findXPath
@@ -75,8 +75,8 @@ class TS(ContainerResource):
 		super().initialize(pi)
 
 
-	def activate(self, parentResource: Resource, originator: str) -> None:
-		super().activate(parentResource, originator)
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request=request)
 
 		# Validation of CREATE is done in self.validate()
 
@@ -109,7 +109,8 @@ class TS(ContainerResource):
 
 	def update(self, dct:Optional[JSON] = None, 
 					 originator:Optional[str] = None, 
-					 doValidateAttributes:Optional[bool] = True) -> None:
+					 doValidateAttributes:Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
 
 		# Extra checks if mdd is present in an update
 		updatedAttributes = findXPath(dct, 'm2m:ts')
@@ -175,7 +176,7 @@ class TS(ContainerResource):
 		# 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 		# Do real update last
-		super().update(dct, originator, doValidateAttributes)
+		super().update(dct, originator, doValidateAttributes, request=request)
 		
 		self._validateChildren()	# Check consequences from the update
 		self._validateDataDetect(updatedAttributes)
