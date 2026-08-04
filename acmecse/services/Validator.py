@@ -144,13 +144,18 @@ class Validator(metaclass=Singleton):
 					raise BAD_REQUEST(L.logDebug(f'Resource type in primitive content: {_topElement} doesn\'t match request ty: {cseRequest.ty}'))
 
 
-	def validateResourceUpdate(self, resource:Resource, dct:JSON, doValidateAttributes:bool=False) -> None:
+	def validateResourceUpdate(self, 
+							   resource: Resource, 
+							   dct: JSON, 
+							   doValidateAttributes: Optional[bool] = False, 
+							   request: Optional[CSERequest] = None) -> None:
 		"""	Validate a resource update dictionary. Besides of the attributes it also validates the resource type.
 
 			Args:
 				resource: The resource to validate the update request for.
 				dct: The JSON dictionary of the update request.
 				doValidateAttributes: Boolean indicating whether to validate the attributes.
+				request: The CSERequest used for the update.
 
 			See Also:
 				`validateAttributes`
@@ -168,7 +173,8 @@ class Validator(metaclass=Singleton):
 									resource._attributes, 
 									create=False, 
 									createdInternally=resource.isCreatedInternally(), 
-									isAnnounced=resource.isAnnounced())
+									isAnnounced=resource.isAnnounced(),
+									rvi=request.rvi if request else None)
 
 
 	def	validateAttributes(self, resource: JSON, 
@@ -243,16 +249,6 @@ class Validator(metaclass=Singleton):
 			# Only for UPDATE checks attribute not in request so we can skip it
 			if not create and attributeName not in pureResDict:
 				continue
-
-			# Check whether the attribute is allowed for the release version
-			if (_releases := policy.releases) and rvi:
-				match len(_releases):
-					case 1:
-						if rvi < _releases[0]:
-							raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is not allowed for release: {rvi}'))
-					case 2:
-						if not (_releases[0] <= rvi <= _releases[1]):
-							raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is not allowed for release: {rvi}'))
 						
 			# Get the correct tuple for a resource when there are more definitions
 			# Used a couple of times below
@@ -291,6 +287,16 @@ class Validator(metaclass=Singleton):
 					if policy.announcement == Announced.NA:	# Not okay, attribute is not announced
 						raise BAD_REQUEST(L.logWarn(f'found non-announced attribute: {attributeName}'))
 					continue
+
+				# Check whether the attribute is allowed for the release version
+				if (_releases := policy.releases) and rvi:
+					match len(_releases):
+						case 1:
+							if rvi < _releases[0]:
+								raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is not allowed for release: {rvi}'))
+						case 2:
+							if not (_releases[0] <= rvi <= _releases[1]):
+								raise BAD_REQUEST(L.logWarn(f'attribute: {attributeName} is not allowed for release: {rvi}'))
 
 				# Special handling for the ACP's pvs attribute
 				if attributeName == 'pvs':

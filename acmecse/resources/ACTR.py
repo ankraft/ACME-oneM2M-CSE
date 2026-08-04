@@ -83,7 +83,7 @@ class ACTR(AnnounceableResource):
 					 originator:Optional[str] = None, 
 					 doValidateAttributes:Optional[bool] = True,
 					 request: Optional[CSERequest] = None) -> None:
-		self.validator.validateResourceUpdate(self, dct, doValidateAttributes)
+		self.validator.validateResourceUpdate(self, dct, doValidateAttributes, request)
 
 		# Check referenced resources
 		sri = riFromID(findXPath(dct, 'm2m:actr/sri'))

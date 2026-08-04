@@ -215,7 +215,7 @@ class Resource(object):
 											  self._attributes, 
 											  createdInternally=self.isCreatedInternally(), 
 											  isAnnounced=self.isAnnounced(),
-											  rvi=request.rvi)
+											  rvi=request.rvi if request else None)	# type:ignore[arg-type]
 
 		# validate the resource logic
 		self.validate(originator, parentResource=parentResource)
@@ -312,7 +312,7 @@ class Resource(object):
 
 		updatedAttributes:dict[str, Any] = None
 		if dct:
-			self.validator.validateResourceUpdate(self, dct, doValidateAttributes)
+			self.validator.validateResourceUpdate(self, dct, doValidateAttributes, request)
 			# if self.typeShortname not in dct and self.ty not in [ResourceTypes.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 			# 	L.isWarn and L.logWarn("Update type doesn't match target")
 			# 	raise CONTENTS_UNACCEPTABLE('resource types mismatch')

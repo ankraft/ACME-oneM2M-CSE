@@ -218,6 +218,29 @@ class TestPCH(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updatePCHforR3WithRQAGFail(self) -> None:
+		""" Update <PCH> with a RVI<4 and rqag attribute -> Fail """
+		
+		# Create a new <PCH> for the second AE first
+		dct:JSON = 	{ 'm2m:pch' : { 
+					'rn' : f'{pchRN}',
+				}}
+		r, rsc = CREATE(ae2URL, self.originator2, T.PCH, dct, headers={C.hfRVI : '3'})
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Update the <PCH> with a RVI<4 and rqag attribute -> Fail
+		dct = 	{ 'm2m:pch' : { 
+					'rqag' : True,
+				}}
+		r, rsc = UPDATE(f'{ae2URL}/{pchRN}', self.originator2, dct, headers={C.hfRVI : '3'})
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Delete the PCH again
+		r, rsc = DELETE(f'{ae2URL}/{pchRN}', self.originator2)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deletePCHwrongOriginatorFail(self) -> None:
 		""" Delete <PCH> with wrong originator -> Fail """
 		_, rsc = DELETE(pchURL, 'wrong')
@@ -261,6 +284,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_getAggreagstionState',
 		'test_retrievePCHforR3',
 		'test_createPCHforR3WithRQAGFail',
+		'test_updatePCHforR3WithRQAGFail',
 
 
 		# delete tests

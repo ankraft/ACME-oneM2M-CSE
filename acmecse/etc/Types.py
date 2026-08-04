@@ -2972,7 +2972,7 @@ class AttributePolicy:
 	""" Mandatory size of a list. """
 	choice:bool					= False	# whether this is a choice attribute
 	""" Whether this attribute is part of a choice. """
-	releases:tuple[str]			= None	#  Tuple of releases that this attribute is valid for
+	releases:tuple[str, Optional[str]] = None	#  Tuple of releases that this attribute is valid for
 	""" Tuple of releases that this attribute is valid for. 
 		If this attribute is None, then it is valid for all releases.
 		If only one release is specified, then it is valid from that release onwards.

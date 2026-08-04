@@ -75,7 +75,9 @@ class PCH(Resource):
 					 originator: Optional[str] = None,
 					 doValidateAttributes: Optional[bool] = True,
 					 request: Optional[CSERequest] = None) -> None:
-		
+
+		super().update(dct, originator, doValidateAttributes, request)
+
 		# Set the aggregation state in the own PCU if rqag is updated
 
 		if dct is not None:
@@ -93,8 +95,6 @@ class PCH(Resource):
 					pcuResource = self.dispatcher.retrieveLocalResource(self.attribute(Constants.attrPCURI))
 					pcuResource.setAggregate(None)
 					pcuResource.dbUpdate(True)
-
-		super().update(dct, originator, doValidateAttributes, request)
 
 	
 	def getParentOriginator(self) -> str:
