@@ -1193,6 +1193,11 @@ class Validator(metaclass=Singleton):
 					raise BAD_REQUEST(f'invalid externalID: {value} must be in the format "<ID>@<domain.name>"')
 				return (dataType, value)
 
+			case BasicType.triggerRecipientID if isinstance(value, int):
+				if not (0 <= value <= 65535):
+					raise BAD_REQUEST(f'invalid triggerRecipientID: {value} must be in the range 0-65535')
+				return (dataType, value)
+
 			case BasicType.any:
 				return (dataType, value)
 

@@ -726,6 +726,9 @@ class BasicType(ACMEIntEnum):
 	"""	XML token. """
 	externalID			= auto()	# m2m:externalID
 	"""	oneM2M external ID. """
+	triggerRecipientID	= auto()	# m2m:triggerRecipientID
+	"""	oneM2M triggerRecipientID. """
+
 
 	# aliases. Always put at the end! Seems cause confusion with python < 3.11
 	time				= timestamp	# alias type for time
