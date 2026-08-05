@@ -724,6 +724,8 @@ class BasicType(ACMEIntEnum):
 	"""	IPv6 address. """
 	token				= auto()	# xs:token
 	"""	XML token. """
+	externalID			= auto()	# m2m:externalID
+	"""	oneM2M external ID. """
 
 	# aliases. Always put at the end! Seems cause confusion with python < 3.11
 	time				= timestamp	# alias type for time

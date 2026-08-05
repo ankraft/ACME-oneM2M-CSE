@@ -3121,10 +3121,10 @@
 	],
 	"mei": [
 		{
-			"rtypes": [ "CSR", "REQRESP" ],
+			"rtypes": [ "AE", "AEAnnc", "CSR", "REQRESP" ],
 			"lname": "M2M-Ext-ID",
 			"ns": "m2m",
-			"type": "string",
+			"type": "externalID",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",

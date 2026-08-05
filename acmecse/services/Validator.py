@@ -401,6 +401,9 @@ class Validator(metaclass=Singleton):
 	)
 	"""	Compiled regular expression that matches a valid contentInfo string. """
 
+	idDomainRegex = re.compile(r'^[^@]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+	"""	Compiled regular expression that matches a valid ID@domain.name format. """
+
 	def validateCNF(self, value:str) -> None:
 		"""	Validate the contents of the *contentInfo* attribute. 
 
@@ -1183,6 +1186,11 @@ class Validator(metaclass=Singleton):
 				return (dataType, value)
 			
 			case BasicType.jsonLike if isinstance(value, (str, int, float, bool, dict, list)):
+				return (dataType, value)
+
+			case BasicType.externalID if isinstance(value, str):
+				if not re.match(self.idDomainRegex, value):
+					raise BAD_REQUEST(f'invalid externalID: {value} must be in the format "<ID>@<domain.name>"')
 				return (dataType, value)
 
 			case BasicType.any:
