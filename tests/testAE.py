@@ -413,7 +413,7 @@ class TestAE(unittest.TestCase):
 
 
 #
-# Creator attribute tests
+# Create attribute tests
 #
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -428,6 +428,41 @@ class TestAE(unittest.TestCase):
 		r, rsc = CREATE(cseURL, TestAE.originator, T.AE, dct) 
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
+
+#
+# M2M-EXT-ID attribute tests
+#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEwithWrongM2MExtIDFail(self) -> None:
+		""" Create <AE> with wrong m2m-ext-id attribute set -> Fail"""
+		dct = 	{ 'm2m:ae' : { 
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ],
+					'mei' : 'wrong',
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct) 
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEwithM2MExtID(self) -> None:
+		""" Create <AE> with m2m-ext-id attribute set"""
+		dct = 	{ 'm2m:ae' : { 
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ],
+					'mei' : 'id@example.com',
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct) 
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/aei'))
+		self.assertEqual(findXPath(r, 'm2m:ae/mei'), 'id@example.com')
+
+		# Delete the AE again
+		r, rsc = DELETE(f'{cseURL}/{findXPath(r, "m2m:ae/rn")}', findXPath(r, 'm2m:ae/aei'))
+		self.assertEqual(rsc, RC.DELETED, r)
 
 
 # TODO register multiple AEs
@@ -466,7 +501,11 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createAEInvalidRNFail',
 
 		# Creator attribute tests
-		'test_createAEWithCreatorFail'
+		'test_createAEWithCreatorFail',
+
+		# M2M-EXT-ID attribute tests
+		'test_createAEwithWrongM2MExtIDFail',
+		'test_createAEwithM2MExtID',
 	])
 
 	# Run tests
