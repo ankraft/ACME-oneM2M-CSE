@@ -84,15 +84,26 @@ _valueNameMappings = {
 #'net': lambda v: NotificationEventType(int(v)).name,
 
 
+_scheduleRegex = re.compile(r'(^((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?((2[0-3]|1[0-9]|[0-9]|00))((\,|\-|\/)(2[0-3]|1[0-9]|[0-9]|00))*|\*)\s+((\*\/)?([1-9]|[12][0-9]|3[01])((\,|\-|\/)([1-9]|[12][0-9]|3[01]))*|\*)\s+((\*\/)?([1-9]|1[0-2])((\,|\-|\/)([1-9]|1[0-2]))*|\*)\s+((\*\/)?[0-6]((\,|\-|\/)[0-6])*|\*|00)\s+((\*\/)?(([2-9][0-9][0-9][0-9]))((\,|\-|\/)([2-9][0-9][0-9][0-9]))*|\*)\s*$)')
+"""	Compiled regular expression that matches a valid cron-like schedule: "second minute hour day month weekday year" """
+
+
+_idDomainRegex = re.compile(r'^[^@]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+"""	Compiled regular expression that matches a valid ID@domain.name format. """
+
+# TODO allowed media type chars
+_cnfRegex = re.compile(
+	r'^[^:/]+/[^:/]+:[0-2]$'
+	+ r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
+)
+"""	Compiled regular expression that matches a valid contentInfo string. """
+
 @requires(importer='acmecse.runtime.Importer')
 class Validator(metaclass=Singleton):
 	"""	Validator class. """
 
 	importer: Importer = None
 	""" Injected Importer instance. """
-
-	_scheduleRegex = re.compile(r'(^((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?([0-5]?[0-9])((\,|\-|\/)([0-5]?[0-9]))*|\*)\s+((\*\/)?((2[0-3]|1[0-9]|[0-9]|00))((\,|\-|\/)(2[0-3]|1[0-9]|[0-9]|00))*|\*)\s+((\*\/)?([1-9]|[12][0-9]|3[01])((\,|\-|\/)([1-9]|[12][0-9]|3[01]))*|\*)\s+((\*\/)?([1-9]|1[0-2])((\,|\-|\/)([1-9]|1[0-2]))*|\*)\s+((\*\/)?[0-6]((\,|\-|\/)[0-6])*|\*|00)\s+((\*\/)?(([2-9][0-9][0-9][0-9]))((\,|\-|\/)([2-9][0-9][0-9][0-9]))*|\*)\s*$)')
-	"""	Compiled regular expression that matches a valid cron-like schedule: "second minute hour day month weekday year" """
 
 
 	def initialize(self) -> None:
@@ -394,23 +405,13 @@ class Validator(metaclass=Singleton):
 			raise BAD_REQUEST(L.logWarn('Attribute pvs/acr must not be an empty list'))
 
 
-	# TODO allowed media type chars
-	cnfRegex = re.compile(
-		r'^[^:/]+/[^:/]+:[0-2]$'
-		+ r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
-	)
-	"""	Compiled regular expression that matches a valid contentInfo string. """
-
-	idDomainRegex = re.compile(r'^[^@]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-	"""	Compiled regular expression that matches a valid ID@domain.name format. """
-
 	def validateCNF(self, value:str) -> None:
 		"""	Validate the contents of the *contentInfo* attribute. 
 
 			Args:
 				value: The value to validate.
 		"""
-		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
+		if isinstance(value, str) and re.match(_cnfRegex, value) is not None:
 			return
 		raise BAD_REQUEST(f'validation of cnf attribute failed: {value}')
 		# fall-through
@@ -1165,7 +1166,7 @@ class Validator(metaclass=Singleton):
 				return (dataType, value)
 
 			case BasicType.schedule:
-				if isinstance(value, str) and re.match(self._scheduleRegex, value):
+				if isinstance(value, str) and re.match(_scheduleRegex, value):
 					return (dataType, value)
 				raise BAD_REQUEST(f'invalid type: {type(value).__name__} or pattern {value}. Expected: cron-like schedule')
 
@@ -1189,7 +1190,7 @@ class Validator(metaclass=Singleton):
 				return (dataType, value)
 
 			case BasicType.externalID if isinstance(value, str):
-				if not re.match(self.idDomainRegex, value):
+				if not re.match(_idDomainRegex, value):
 					raise BAD_REQUEST(f'invalid externalID: {value} must be in the format "<ID>@<domain.name>"')
 				return (dataType, value)
 
