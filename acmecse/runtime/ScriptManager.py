@@ -21,7 +21,7 @@ from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes,
 	BasicType, AttributePolicy, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.DateUtils import cronMatchesTimestamp, getResourceDate, utcDatetime
-from ..etc.IDUtils import uniqueRI, uniqueID
+from ..etc.IDUtils import uniqueRI, uniqueID, isStructured
 from ..etc.JSONUtils import pureResource
 from ..etc.Utils import runsInIPython, isURL
 from ..etc.Constants import RuntimeConstants as RC
@@ -205,6 +205,7 @@ class ACMEPContext(PContext):
 							'tui-notify':				self.doTuiNotify,
 							'tui-refresh-resources':	self.doTuiRefreshResources,
 							'tui-visual-bell':			self.doTuiVisualBell,
+							'update-raw':				self.doUpdateRaw,
 							'update-resource':			self.doUpdateResource,
 						},
 						 logFunc = self.log, 
@@ -789,6 +790,52 @@ class ACMEPContext(PContext):
 		except ResponseException as e:
 			raise PRuntimeError(self.setError(PError.runtime, L.logErr(f'Error during import: {e.dbg}', showStackTrace = False)))
 		# return self._pcontextFromRequestResult(pcontext, result)
+		return pcontext.setResult(SJsonSymbol(jsn=resource.asDict()))
+
+
+	def doUpdateRaw(self, pcontext:PContext, symbol:SSymbol) -> PContext:
+		"""	Update a raw resource. Not much verification is done, and a full resource
+			representation, including, for example, the resource ID, must be provided.
+		
+			Example:
+				::
+
+					(update-raw <originator> <address> <resource JSON> )
+
+			Args:
+				pcontext: `PContext` object of the running script.
+				symbol: The symbol to execute.
+
+			Return:
+				The updated `PContext` object with the operation result.
+			
+			Raises:
+				`PRuntimeError`: In case an error during the update is encountered.
+		"""
+		assertSymbol(pcontext, symbol, 4)
+		
+		# originator
+		pcontext, _originator = valueFromArgument(pcontext, symbol, 1, SType.tString)
+
+		# address
+		pcontext, _address = valueFromArgument(pcontext, symbol, 2, SType.tString)
+
+		# resource object
+		pcontext, _dict = valueFromArgument(pcontext, symbol, 3, SType.tJson)
+
+		try:
+			if isStructured(_address):
+				resource = self.dispatcher.retrieveLocalResource(srn=_address, originator=_originator, request=None) 
+			else:
+				resource = self.dispatcher.retrieveLocalResource(ri=_address, originator=_originator, request=None)
+			tpe = resource.typeShortname
+			if tpe in _dict:
+				_dict = _dict[tpe]
+			for key, value in _dict.items():
+				resource.setAttribute(key, value)
+			resource.dbUpdate()
+		except ResponseException as e:
+			raise PRuntimeError(self.setError(PError.runtime, e.dbg))
 		return pcontext.setResult(SJsonSymbol(jsn=resource.asDict()))
 
 
