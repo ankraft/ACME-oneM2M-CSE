@@ -484,7 +484,9 @@ class Storage(metaclass=Singleton):
 
 			Args:
 				dct: A fragment dictionary to use as a filter for the search.
-				filter: An optional callback to provide additional filter functionality.
+				filter: An optional callback to provide additional filter functionality. 
+					The callback shall take a resource dictionary (without the resource type wrapper) as input and return a boolean 
+					indicating whether the resource should be included in the result.
 
 			Return:
 				List of `Resource` objects.
