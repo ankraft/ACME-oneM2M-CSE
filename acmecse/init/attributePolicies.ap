@@ -3121,7 +3121,7 @@
 	],
 	"mei": [
 		{
-			"rtypes": [ "AE", "AEAnnc", "CSR", "REQRESP" ],
+			"rtypes": [ "AE", "CSR", "CSEBase", "REQRESP" ],
 			"lname": "M2M-Ext-ID",
 			"ns": "m2m",
 			"type": "externalID",
@@ -3129,6 +3129,17 @@
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
+			"annc": "NA"
+		},
+		{
+			"rtypes": [ "TGR" ],
+			"lname": "M2M-Ext-ID",
+			"ns": "m2m",
+			"type": "externalID",
+			"car": "1",
+			"oc": "M",
+			"ou": "NP",
+			"od": "NP",
 			"annc": "NA"
 		}
 	],
@@ -5148,6 +5159,60 @@
 			"annc": "NA"
 		}
 	],
+	"tia": [
+		{
+			"rtypes": [ "TGR", "REQRESP" ],
+			"lname": "triggerInfoAddress",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"tiae": [
+		{
+			"rtypes": [ "TGR", "REQRESP" ],
+			"lname": "triggerInfoAE-ID",
+			"ns": "m2m",
+			"type": "ID",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"tio": [
+		{
+			"rtypes": [ "TGR", "REQRESP" ],
+			"lname": "triggerInfoOperation",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:operation",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"tirt": [
+		{
+			"rtypes": [ "TGR", "REQRESP" ],
+			"lname": "targetedResourceType",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:resourceType",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"totSe": [
 		{
 			"rtypes": [ "STOR", "STORAnnc", "REQRESP" ],
@@ -5163,7 +5228,7 @@
 	],
 	"tpe": [
 		{
-			"rtypes": [ "TGR" ],
+			"rtypes": [ "TGR", "REQRESP" ],
 			"lname": "triggerPurpose",
 			"ns": "m2m",
 			"type": "enum",
@@ -5214,10 +5279,21 @@
 	],
 	"tri": [
 		{
-			"rtypes": [ "CSR", "CSRAnnc", "REQRESP" ],
+			"rtypes": [ "AE", "CSR", "CSEBase", "REQRESP" ],
 			"lname": "Trigger-Recipient-ID",
 			"ns": "m2m",
-			"type": "string",
+			"type": "triggerRecipientID",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		},
+		{
+			"rtypes": [ "TGR" ],
+			"lname": "Trigger-Recipient-ID",
+			"ns": "m2m",
+			"type": "triggerRecipientID",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -5249,6 +5325,33 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"tst": [
+		{
+			"rtypes": [ "TGR", "REQRESP" ],
+			"lname": "triggerStatus",
+			"ns": "m2m",
+			"type": "enum",
+			"etype": "m2m:triggerStatus",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		}
+	],
+	"tvt": [
+		{
+			"rtypes": [ "TGR", "REQRESP" ],
+			"lname": "triggerValidityTime",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "NP",
+			"annc": "NA"
 		}
 	],
 	"tws": [

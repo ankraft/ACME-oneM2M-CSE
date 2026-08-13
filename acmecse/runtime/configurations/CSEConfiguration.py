@@ -10,9 +10,10 @@ from __future__ import annotations
 from logging import config
 from typing import Optional, cast
 
-import configparser
+import configparser, re
 from ...etc.Types import CSEType, ContentSerializationType
-from ...etc.Constants import RuntimeConstants as RC
+from ...etc.Constants import RuntimeConstants as RC, Constants as C
+from ...helpers.NetworkTools import getMACAddress
 from ...etc.IDUtils import isValidCSI
 from ...runtime.Configuration import Configuration, ConfigurationError
 from ...runtime.configurations.ModuleConfiguration import ModuleConfiguration
@@ -33,6 +34,7 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_enableResourceExpiration = parser.getboolean('cse', 'enableResourceExpiration', fallback=True)
 		config.cse_enableSubscriptionVerificationRequests = parser.getboolean('cse', 'enableSubscriptionVerificationRequests', fallback=True)
 		config.cse_flexBlockingPreference = parser.get('cse', 'flexBlockingPreference', fallback='blocking')
+		config.cse_m2mExtID = parser.get('cse', 'm2mExtID', fallback=getMACAddress(colons=False) + '@' + C.exampleDomain)
 		config.cse_maxExpirationDelta = parser.getint('cse', 'maxExpirationDelta', fallback=60*60*24*365*5)	# 5 years, in seconds
 		config.cse_originator = parser.get('cse', 'originator', fallback='CAdmin')
 		config.cse_poa = parser.getlist('cse', 'poa', fallback=['http://127.0.0.1:8080'])	 # type: ignore [attr-defined]
@@ -45,6 +47,7 @@ class CSEConfiguration(ModuleConfiguration):
 		config.cse_sortDiscoveredResources = parser.getboolean('cse', 'sortDiscoveredResources', fallback=True)
 		config.cse_supportedReleaseVersions = parser.getlist('cse', 'supportedReleaseVersions', fallback=['2a', '3', '4', '5']) # type: ignore [attr-defined]
 		config.cse_serviceProviderID = parser.get('cse', 'serviceProviderID', fallback='//acme.example.com')
+		config.cse_triggerRecipientID = parser.getint('cse', 'triggerRecipientID', fallback=10275)
 		config.cse_type = parser.get('cse', 'type', fallback='IN')		# IN, MN, ASN
 		config.cse_idLength = parser.getint('cse', 'idLength', fallback=10)
 
@@ -200,10 +203,18 @@ class CSEConfiguration(ModuleConfiguration):
 		
 		# Check startup delays
 		if config.cse_operation_startup_delay <= 0:
-			raise ConfigurationError(r'[i]\[cse.operation.startup]:delay[/i] must be > 0')
+			raise ConfigurationError(rf'Invalid \[cse.operation.startup]:delay: {config.cse_operation_startup_delay}.'+'\nMust be > 0')
 		if config.cse_operation_startup_guardDelay <= 0:
-			raise ConfigurationError(r'[i]\[cse.operation.startup]:guardDelay[/i] must be > 0')
+			raise ConfigurationError(rf'Invalid \[cse.operation.startup]:guardDelay: {config.cse_operation_startup_guardDelay}.'+'\nMust be > 0')
 		
 		# Check plugin values
 		if config.cse_operation_plugins_timeout < 0:
-			raise ConfigurationError(r'[i]\[cse.operation.plugins]:timeout[/i] must be >= 0')		
+			raise ConfigurationError(rf'Invalid \[cse.operation.plugins]:timeout: {config.cse_operation_plugins_timeout}.'+'\nMust be >= 0')
+
+		# Check other formats
+		from ...services.Validator import _idDomainRegex
+		config.cse_m2mExtID = config.cse_m2mExtID.strip()
+		if not re.match(_idDomainRegex, config.cse_m2mExtID):
+			raise ConfigurationError(rf'Invalid \[cse]:m2mExtID: {config.cse_m2mExtID}.'+'\nMust be in the format "<ID>@<domain.name>"')
+		if not (0 <= config.cse_triggerRecipientID <= 65535):
+			raise ConfigurationError(rf'Invalid \[cse]:triggerRecipientID: {config.cse_triggerRecipientID}.'+'\nMust be in the range of 0 to 65535')

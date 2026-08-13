@@ -22,68 +22,101 @@
 ; CSE type. Allowed values: IN, MN, ASN. 
 ; Default: IN
 type=${basic.config:cseType}
+
 ; The CSE's service provider ID.
 ; The service provider ID must start with "//" and must not contain a further "/" or white space.
 ; Default: //acme.example.com
 serviceProviderID=${basic.config:serviceProviderID}
+
+; The CSE's external M2M-Ext-ID. This is attribute that is used to identify the CSE 
+; in a Network Service Entity (NSE). The M2M-Ext-ID must be in the format "<id>@<domain>" and must
+; not contain a further "/" or white space.
+; Default: <local machine MAC address>@acme.example.com
+m2mExtID=${basic.config:m2mExtID}
+
+; The CSE's trigger recipient ID. This attribute is used to identify the CSE as an
+; endpoint for trigger requests in a Network Service Entity (NSE). The trigger recipient ID
+; is a number in the range of 0 to 65535.
+; Default: 10275
+triggerRecipientID=${basic.config:triggerRecipientID}
+
 ; The CSE ID. Can be overwritten in imported CSE definition. 
 ; The CSE ID must start with a "/" and must not contain a further "/" or white space.
 ; Default: Basic config value "cseID"
 cseID=/${basic.config:cseID}
+
 ; The CSE's resource ID. Can be overwritten in imported CSE definition. 
 ; Default: id-in
 resourceID=${basic.config:cseID}
+
 ; The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition. 
 ; Default: cse-in
 resourceName=${basic.config:cseName}
+
 ; Directory of default resources to import. 
 ; Default: ${basic.config:initDirectory}
 resourcesPath=${basic.config:initDirectory}
+
 ; Enable resource expiration. If disabled resources will not be expired when the "expirationTimestamp" is reached.
 ; Default: true
 enableResourceExpiration=true
+
 ; Maximum expirationTime allowed for resources in seconds.
 ; Default: 60*60*24*365*5 = 157680000 seconds = 5 years
 maxExpirationDelta=157680000
+
 ; Expiration time for requests sent by the CSE in seconds.
 ; Default: 10.0 seconds
 requestExpirationDelta=10.0
+
 ; Admin originator for the CSE. 
 ; Default: CAdmin
 originator=${basic.config:adminID}
+
 ; Enable remote CSE registration and checking. 
 ; Default: True
 enableRemoteCSE=true
+
 ; Enable alphabetical sorting of discovery results.
 ; Default: True
 sortDiscoveredResources=true
+
 ; Interval to check for expired resources. 0 means "no checking". 
 ; Default: 60 seconds
 checkExpirationsInterval=60
+
 ; Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".
 ; Default: blocking
 flexBlockingPreference=blocking
+
 ; A comma-separated list of supported release versions. This list can contain a single or multiple values.
 ; Default: 2a,3,4,5
 supportedReleaseVersions=2a,3,4,5
+
 ; The release version indicator for requests. Allowed values: 2a,3,4,5.
 ; Default: 5
 releaseVersion=5
+
 ; Indicate the serialization format if none was given in a request and cannot be determined otherwise.
 ; Allowed values: json, cbor. Default: json
 defaultSerialization=json
+
 ; Enable or disable asynchronous notification for normal runtime subscription notifications.
 ; Default: true
 asyncSubscriptionNotifications=true
+
 ; Enable or disable verification requests when creating a new subscription.
 ; Default: true
 enableSubscriptionVerificationRequests=true
+
 ; Indicate whether the optional "to" and "from" parameters shall be sent in responses.
 ; Default: true
 sendToFromInResponses=true
+
 ; Set the CSE's point-of-access. This is a comma-separated list of URLs.
 ; Default: The configured HTTP server's address
 poa=${http:address}
+
 ; Set the length of the CSE's resource IDs. This value can be increased or decreased as needed.
 ; A longer ID increases the uniqueness of the resource ID, but also increases its size. This could be
 ; be relevant for the overall size of requests and responses.
@@ -181,6 +214,7 @@ _/remoteCSEManager_enable\_=${cse.service.remoteCSE:enable}
 _/semanticManager_enable\_=${cse.service.semantic:enable}
 _/timeManager_enable\_=${cse.service.time:enable}
 _/timeSeriesManager_enable\_=${cse.service.timeSeries:enable}
+_/triggerRequestManager_enable\_=${cse.service.triggerRequest:enable}
 
 
 ;
@@ -278,6 +312,16 @@ enable=true
 [cse.service.timeSeries]
 ; Enable the TimeSeries Service. This includes the TimeSeriesManager plugin and 
 ; the related features in the CSE.
+; Default: true
+enable=true
+
+
+;
+;	Settings for the TriggerRequestManager Service
+;
+
+[cse.service.triggerRequest]
+; Enable the TriggerRequestManager Service.
 ; Default: true
 enable=true
 
@@ -879,6 +923,17 @@ expirationTime=60
 [resource.sub]
 ; Default for batchNotify/duration in seconds. Must be >0. Default: 60 
 batchNotifyDuration=60
+
+
+;
+;	Resource defaults: TriggerRequest
+;
+
+[resource.tgr]
+; Maximum validity time for a Trigger request in seconds. 
+; This is the maximum value for the triggerValidityTime attribute of a TriggerRequest resource.
+; Default: 60 seconds
+maxTriggerValidityTime=60
 
 
 ;

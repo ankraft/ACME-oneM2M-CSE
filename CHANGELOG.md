@@ -32,6 +32,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Experimental
 - [CSE] Added support for the [storage] ManagementObject specialization. This implementation is preliminary and may change depending on the final definition of the storage ManagementObject specialization in TS-0001 and TS-0004.
+- [CSE] Added *M2M-Ext-ID* and *Trigger-Recipient-ID* attributes to the &lt;CSEBase> resource. The reason to add these attributes is to have a place for these values because they are needed when creating a &lt;remoteCSE> resource. 
 
 ### Changed
 - [CSE] Fixed wrong file names for TinyDB database files. This was introduced in the last release. THIS IS A BREAKING CHANGE. Old database files must be renamed to the correct format which is `<db>-<SP-ID>-<CSE-ID>.json`. 

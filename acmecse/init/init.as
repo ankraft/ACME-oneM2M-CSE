@@ -20,28 +20,28 @@
 
 (setq cse-originator (get-config "cse.originator"))
 
-
 ;;
 ;;	Create the CSEBase
 ;;
 
-(import-raw 
-	cse-originator
-	;; The input must be a valid JSON object. We can late-execute inline expressions in strings,
-	;; but not in the object itself.
-	;; So we have to use set-json-attribute to set the poa attribute afterwards.
-	(set-json-attribute 
-		{ "m2m:cb": {
-			"ri":   "${get-config \"cse.resourceID\"}",
-			"rn":   "${get-config \"cse.resourceName\"}",
-			"csi":  "${get-config \"cse.cseID\"}",
-			"spi":  "${get-config \"cse.serviceProviderID\"}",
-			"csz":  [ "application/json", "application/cbor" ],
-			"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources"
-				    ]
-		}}
-		"m2m:cb/poa" 
-		(get-config "cse.poa")))
+(let* 	(	csebase 
+			{ "m2m:cb": {
+				"ri":   "${get-config \"cse.resourceID\"}",
+				"rn":   "${get-config \"cse.resourceName\"}",
+				"csi":  "${get-config \"cse.cseID\"}",
+				"spi":  "${get-config \"cse.serviceProviderID\"}",
+				"mei":  "${get-config \"cse.m2mExtID\"}",
+				"csz":  [ "application/json", "application/cbor" ],
+				"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources"
+						]
+			}})
+		;; The input must be a valid JSON object. We can late-execute inline expressions in strings,
+		;; but not in the object itself.
+		;; So we have to use set-json-attribute to set the poa attribute afterwards.
+		(csebase (set-json-attribute csebase "m2m:cb/poa" (get-config "cse.poa")))
+		(csebase (set-json-attribute csebase "m2m:cb/tri" (get-config "cse.triggerRecipientID"))))
+
+(import-raw cse-originator csebase)
 
 ;;,				  "${get-config \"cse.cseID\"}/acpRetrieveCSEBase" s
 

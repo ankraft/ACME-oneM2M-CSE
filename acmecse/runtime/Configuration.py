@@ -26,7 +26,7 @@ from rich.text import Text
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode, CSERegistrar
-from ..helpers.NetworkTools import getIPAddress
+from ..helpers.NetworkTools import getIPAddress, getMACAddress
 from ..helpers.Zookeeper import Zookeeper
 from ..helpers.ACMEConfiguration import ACMEConfiguration
 from ..runtime.EventManager import EventManager, EventData, eventManager
@@ -142,6 +142,10 @@ class Configuration(object):
 	cse_flexBlockingPreference:str = None
 	"""	The flex blocking preference for the CSE. """
 
+	cse_m2mExtID:str = None
+	"""	The external M2M-Ext-ID of the CSE. This is used to identify the CSE in a Network Service Entity (NSE). 
+		The M2M-Ext-ID must be in the format "<id>@<domain>" and must not contain a further "/" or white space. """
+	
 	cse_maxExpirationDelta:int = None
 	"""	The maximum expiration delta for resources. """
 
@@ -177,6 +181,9 @@ class Configuration(object):
 
 	cse_serviceProviderID:str = None
 	"""	The service provider ID of the CSE. """
+
+	cse_triggerRecipientID:int = None
+	"""	The trigger recipient ID of the CSE. This is used to identify the CSE in a Network Service Entity (NSE). """
 
 	cse_type:str|CSEType = None
 	"""	The type of the CSE. """
@@ -931,22 +938,24 @@ class Configuration(object):
 	
 		# Construct the default values that are used for interpolation
 		_defaults = {	'basic.config': {	
-							'baseDirectory' 		: Configuration.baseDirectory,					# points to the currenr working directory
-							'moduleDirectory' 		: Configuration.moduleDirectory,				# points to the acme module's directory
-							'initDirectory' 		: Configuration.initDirectory,					# points to the acme/init directory		
-							'hostIPAddress'			: getIPAddress(),								# provide the IP address of the host
-							'networkInterface'		: '0.0.0.0',									# The network interface to listen on for HTTP, CoAP, MQTT and WebSocket.
+							'baseDirectory' 		: Configuration.baseDirectory,							# points to the current working directory
+							'moduleDirectory' 		: Configuration.moduleDirectory,						# points to the acme module's directory
+							'initDirectory' 		: Configuration.initDirectory,							# points to the acme/init directory		
+							'hostIPAddress'			: getIPAddress(),										# provide the IP address of the host
+							'networkInterface'		: '0.0.0.0',											# The network interface to listen on for HTTP, CoAP, MQTT and WebSocket.
 							
-							'serviceProviderID'		: '//acme.example.com',							# The service provider ID of the CSE.
-							'registrarCseHost'		: getIPAddress(),								# The IP address of the registrar CSE
-							'registrarCsePort'		: 8080,											# The TCP port of the registrar CSE
-							'registrarCseID'		: '',											# The CSE-ID of the registrar CSE
-							'registrarCseName'		: '',											# The resource name of the registrar CSE's CSEBase
+							'serviceProviderID'		: f'//{C.exampleDomain}',								# The service provider ID of the CSE.
+							'm2mExtID'				: getMACAddress(colons=False) + f'@{C.exampleDomain}',	# The CSE's external M2M-Ext-ID
+							'triggerRecipientID'	: 10275,												# The trigger recipient ID of the CSE. This 10000 + 275 (sum of ACME in decimal ASCII values).
+							'registrarCseHost'		: getIPAddress(),										# The IP address of the registrar CSE
+							'registrarCsePort'		: 8080,													# The TCP port of the registrar CSE
+							'registrarCseID'		: '',													# The CSE-ID of the registrar CSE
+							'registrarCseName'		: '',													# The resource name of the registrar CSE's CSEBase
 
-							'logLevel'				: 'debug',										# The main secret key for the CSE. 
-							'consoleTheme'			: 'dark',										# The theme for the console.
-							'consoleType'			: 'rich',										# The type of the console. Allowed values: "rich", "simple".
-							'secret'				: os.getenv('ACME_SECURITY_SECRET', 'acme'),	# The main secret key for the CSE. 
+							'logLevel'				: 'debug',												# The main secret key for the CSE. 
+							'consoleTheme'			: 'dark',												# The theme for the console.
+							'consoleType'			: 'rich',												# The type of the console. Allowed values: "rich", "simple".
+							'secret'				: os.getenv('ACME_SECURITY_SECRET', 'acme'),			# The main secret key for the CSE. 
 						}
 					}
 		# Load environment variables from .env file from the base directory, if it exists

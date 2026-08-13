@@ -490,6 +490,12 @@
 		"3": "executeCRUD",
 		"4": "enrolmentRequest"
 	},
+	"m2m:triggerStatus" : {
+		"1": "establishConnection",
+		"2": "registrationRequest",
+		"3": "executeCRUD",
+		"4": "enrolmentRequest"
+	},
 	"dcfg:wifiConnectionStatus" : {
 		"0": "Disconnected",
 		"1": "Connected",

@@ -192,7 +192,8 @@
 			"scp",
 			"tren",
 			"ape",
-			"or"
+			"or",
+			"tri"
 		],
 		"childResourceTypes": [
 			"ACP",
@@ -208,6 +209,7 @@
 			"PRP",
 			"SMD",
 			"SUB",
+			"TGR",
 			"TS",
 			"TSB" 
 		]
@@ -599,7 +601,9 @@
 			"nl",
 			"poa",
 			"srt",
-			"srv"
+			"srv",
+			"mei",		// this is experimental, not in the standard, but we need this attribute to fill the <csr> resources
+			"tri"		// this is experimental, not in the standard, but we need this attribute to fill the <csr> resources
 		],
 		"childResourceTypes": [
 			"ACP",
@@ -724,7 +728,8 @@
 			"egid",
 			"tren",
 			"ape",
-			"srv"
+			"srv",
+			"tri"
 		],
 
 		// 	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
@@ -1973,7 +1978,13 @@
 			// Resource attributes
 			"mei",
 			"tri",
-			"tpe"
+			"tpe",
+			"tst",
+			"tvt",
+			"tiae",
+			"tia",
+			"tio",
+			"tirt"
 			// TODO continue with the rest of the attributes
 		],
 

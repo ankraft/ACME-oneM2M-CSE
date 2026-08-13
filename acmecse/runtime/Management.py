@@ -767,6 +767,8 @@ skinparam BoxPadding 60
 					'CSE-RN': RC.cseRn,
 					'SP-ID': csebase.spid if csebase and csebase.spid else RC.cseSPid,
 					'IN-CSE-ID': csebase.ici if csebase and csebase.ici else '',
+					'M2M-Ext-ID': csebase.mei if csebase and csebase.mei else '',
+					'Trigger-Recipient-ID': csebase.tri if csebase and csebase.tri else '',
 				},
 				'network': {
 					'hostname': socket.gethostname(),
