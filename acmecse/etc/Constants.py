@@ -35,6 +35,9 @@ class Constants(object):
 	copyright = '(c) 2026 by Andreas Kraft'
 	"""	ACME's copyright """
 
+	exampleDomain = 'acme.example.com'
+	"""	The example domain used in the default configuration """
+
 	#
 	#	Configuration files
 	#
