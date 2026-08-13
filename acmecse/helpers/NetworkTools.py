@@ -11,7 +11,7 @@
 """
 
 from typing import Optional
-import ipaddress, re, socket, contextlib
+import ipaddress, re, socket, contextlib, uuid
 from urllib.parse import urlparse
 
 def isValidateIpAddress(ip:str) -> bool:
@@ -127,6 +127,20 @@ def getIPAddress(hostname:Optional[str] = None) -> str:
 				except:
 					pass
 		return ip
+	except Exception:
+		return ''
+
+
+def getMACAddress(colons: bool = True) -> str:
+	"""	Get the MAC address of the first network interface.
+	
+		Return:
+			MAC address, or None in case of an error.
+
+	"""
+	try:
+		_col = ':' if colons else ''
+		return _col.join(re.findall('..', '%012x' % uuid.getnode()))
 	except Exception:
 		return ''
 
