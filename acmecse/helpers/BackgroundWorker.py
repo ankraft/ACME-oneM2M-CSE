@@ -19,6 +19,12 @@ from threading import Thread, Timer, Event, RLock, Lock, enumerate as threadsEnu
 import logging
 
 
+_sleepTimeResolution = 0.0001
+""" Sleep time resolution for high latency in the background worker. """
+
+_sleepTimeResolution10 = _sleepTimeResolution * 10.0
+""" Sleep time resolution for less high latency in the background worker. """
+
 def _utcTime() -> float:
 	"""	Return the current time's timestamp, but relative to UTC.
 
@@ -204,8 +210,7 @@ class BackgroundWorker(object):
 		if not self.running:
 			return self
 		while self.executing:	# Wait until the worker is finished executing its current turn
-			time.sleep(0.001)
-		BackgroundWorkerPool._unqueueWorker(self)
+			time.sleep(_sleepTimeResolution10)
 		return self
 
 
@@ -222,6 +227,28 @@ class BackgroundWorker(object):
 		self.nextRunTime = _utcTime() if immediately else _utcTime() + self.interval		# timestamp for next interval (interval + time from end of processing)
 		BackgroundWorkerPool._queueWorker(self.nextRunTime, self)
 		return self
+
+
+	def sleep(self, seconds:float) -> None:
+		""" Sleep the worker for a given number of seconds. 
+		
+			This is a blocking call, but the worker can be stopped during the sleep. In that case an InterruptedError is raised.
+
+			Args:
+				seconds: Number of seconds to sleep.
+
+			Raises:
+				InterruptedError: If the worker is stopped during the sleep.
+		"""
+		if not self.running:
+			return
+		while seconds > 0:
+			time.sleep(_sleepTimeResolution10)
+			seconds -= _sleepTimeResolution10
+			if not self.running:
+				if BackgroundWorker._logger:
+					BackgroundWorker._logger(logging.DEBUG, f'Worker "{self.name}" stopped during sleep')
+				raise InterruptedError("Worker stopped during sleep")
 
 
 	def workNow(self) -> BackgroundWorker:
@@ -268,6 +295,11 @@ class BackgroundWorker(object):
 					# call the callback
 					result = self.callback(**self.args)
 					break
+				except InterruptedError as e:
+					if BackgroundWorker._logger:
+						BackgroundWorker._logger(logging.DEBUG, f'Worker "{self.name}" interrupted during sleep in callback {self.callback.__name__}')
+					break
+
 				except Exception as e:
 					if BackgroundWorker._logger:
 						# FIXME remove when really supporting 3.10
@@ -824,7 +856,7 @@ class BackgroundWorkerPool(object):
 		while Job.pausedJobs:
 			Job.pausedJobs[0].stop()	# will remove itself
 		while any( [ isinstance(each, Job) for each in threadsEnumerate() ] ):
-			time.sleep(0.00001)
+			time.sleep(_sleepTimeResolution)
 
 
 	#
