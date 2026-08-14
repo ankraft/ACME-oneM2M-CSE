@@ -12,69 +12,48 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from ..etc.Types import CSEType, JSON
-from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, NOT_IMPLEMENTED
+
+from ..etc.Types import CSEType, JSON, TriggerStatus, TriggerPurpose, CSERequest, ResourceTypes
+from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
+from ..etc.Constants import Constants, RuntimeConstants as RC
+from ..etc.DateUtils import fromDuration, toDuration
 from ..runtime.Logging import Logging as L
+from ..runtime.Configuration import Configuration
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..etc.Constants import RuntimeConstants as RC
+from ..resources.Resource import addToInternalAttributes
 from ..runtime.PluginSupport import requires
 
 if TYPE_CHECKING:
 	from ..resources.Resource import Resource
 	from ..plugins.services.TriggerRequestManager import TriggerRequestManager
 	from ..services.Dispatcher import Dispatcher
+	from ..runtime.Storage import Storage
 
-@requires(triggerRequestManager='acmecse.plugins.services.TriggerRequestManager')
+# Add to internal attributes 
+addToInternalAttributes(Constants.attrTriggerRequestValidityTime)	
+
+
+@requires(triggerRequestManager='acmecse.plugins.services.TriggerRequestManager', required=False)
 @requires(dispatcher='acmecse.services.Dispatcher')
+@requires(storage='acmecse.runtime.Storage')
 class TGR(AnnounceableResource):
 	""" TriggerRequest (TGR) resource type. """
 
 	triggerRequestManager: Optional[TriggerRequestManager] = None
 	""" Injected TriggerRequestManager plugin instance. """
 
+	storage: Storage = None
+	""" Injected Storage instance. """
+
 	dispatcher: Dispatcher = None
 	""" Injected Dispatcher instance. """
 
-	# resourceType = ResourceTypes.TGR
-	# """ The resource type """
-
-	# typeShortname = resourceType.typeShortname()
-	# """	The resource's domain and type name. """
-
-	# # Specify the allowed child-resource types
-	# _allowedChildResourceTypes:list[ResourceTypes] = [ ResourceTypes.SUB
-	# 												 ]
-	# """ The allowed child-resource types. """
-
-	# # Attributes and Attribute policies for this Resource Class
-	# # Assigned during startup in the Importer
-	# _attributes:AttributePolicyDict = {		
-	# 	# Common and universal attributes
-	# 	'rn': None,
-	# 	'ty': None,
-	# 	'ri': None,
-	# 	'pi': None,
-	# 	'ct': None,
-	# 	'lt': None,
-	# 	'lbl': None,
-	# 	'acpi':None,
-	# 	'et': None,
-	# 	'daci': None,
-	# 	'cstn': None,
-
-	# 	# Resource attributes
-	# 	'mei': None,
-	# 	'tri': None,
-	# 	'tpe': None,
-	# }
-	# """	Attributes and `AttributePolicy` for this resource type. """
-
-
-	def activate(self, parentResource: Resource, originator: str) -> None:
+	def activate(self, parentResource: Resource, originator: str, request: Optional[CSERequest] = None) -> None:
+		super().activate(parentResource, originator, request)
 
 		# Check whether the TriggerRequestManager plugin is available
 		if not self.triggerRequestManager:
-			raise NOT_IMPLEMENTED(L.logWarn('TriggerRequestManager plugin not available'))
+			raise NOT_IMPLEMENTED(L.logWarn('TriggerRequestManager plugin not enabled'))
 
 		# Check whether the CSE is an IN-CSE, otherwise send an error
 		if not RC.cseType == CSEType.IN:
@@ -82,58 +61,100 @@ class TGR(AnnounceableResource):
 		
 		# Check whether the target is an AE or a remoteCSE, and the triggerEnable attribute is set to true
 		# Otherwise, reject the request with TRIGGERING_DISABLED_FOR_RECIPIENT
+
 		if (tri := self.tri):
-			try:
-				targetResource = self.dispatcher.retrieveResource(tri, originator)
-				if (tren := targetResource.tren) is not None and tren == False:
-					raise BAD_REQUEST(L.logWarn(f'Triggering is disabled for the target resource: {tri}'))
-			except NOT_FOUND:
-				targetResource = None
+			# Search for AE or remoteCSE resources with the given triggerRecipientID (tri) in the CSE's database. 
+			resources = self.storage.searchByFragment({ 'tri': tri, 'mei': self.mei },
+											 		  lambda r: r.get('ty') in (ResourceTypes.AE, ResourceTypes.CSR))
+			L.inspect(resources, immediate=True)
 
+			# Check whether there is only one target resource and it is an AE or a remoteCSE, 
+			# otherwise reject the request with BAD REQUEST
+			match len(resources):
+				case 0:
+					raise BAD_REQUEST(L.logWarn(f'Target resource for TriggerRequest not found: {tri}'))
+				case 1:
+					targetResource = resources[0]
+					if (tren := targetResource.tren) is not None and tren == False:
+						raise BAD_REQUEST(L.logWarn(f'Triggering is disabled for the target resource: {tri}'))
+				case _:
+					raise BAD_REQUEST(L.logWarn(f'Multiple resources found for TriggerRequest tri: {tri}'))
+			
 
+		# Check triggerValidityTime duration and set an internal attribute for it in seconds.
+		L.consoleBanner(f'Checking triggerValidityTime for TriggerRequest: {self.tvt} type: {type(self.tvt)}')
+		_tvt:float = fromDuration(self.tvt)
+		if _tvt <= 0 or _tvt > Configuration.resource_tgr_maxTriggerValidityTime:
+			L.isDebug and L.logDebug(f'Invalid triggerValidityTime: {_tvt} seconds. Correcting to maximum allowed value: {Configuration.resource_tgr_maxTriggerValidityTime} seconds.')
+			_tvt = Configuration.resource_tgr_maxTriggerValidityTime
+			self.setAttribute('tvt', toDuration(_tvt))	# Fix the excessive tvt value in the resource itself, so that it is visible to the client.
+		self.setAttribute(Constants.attrTriggerRequestValidityTime, _tvt)
 
-		# TODO If the Originator specifies a Trigger-Recipient-ID value in the Create primitive for a 
-		# Registree AE or CSE, and the triggerEnable attribute of the Registree's <AE> or <remoteCSE>
-		# resource has a value of false, the Receiver shall generate a Response Status Code indicating "TRIGGERING_DISABLED_FOR_RECIPIENT".
-
-		# TODO Rest of activation process
-
-		# TODO While processing the <triggerRequest> Create primitive the Receiver shall determine which NSE to forward the
-		# trigger request to based on locally provisioned information or based on a DNS lookup of the M2M-Ext-ID attribute
-		# of the <triggerRequest>. If an NSE cannot be determined, the Receiver shall set the triggerStatus attribute 
-		# to ERROR_NSE_NOT_FOUND. Otherwise, the Receiver shall continue to process the trigger request and set the triggerStatus attribute to PROCESSING.
-
-
-
-		# TODO scripts to handle the trigger requests. Need to define new script meta tags here.
-		# - Determine the NSE to forward the trigger request to
-		# - Submit the trigger request to the NSE
-
+		# Get TriggerPurpose 
+		_tpe = self.tpe if self.tpe else TriggerPurpose.establishConnection	# default: establishConnection
+		
 		# Determine the NSE to forward the trigger request to. If found, then set the tst attribute to PROCESSING.
-		
-		# TODO run the script to determine the NSE. Interprete the result to either raise ERROR_NSE_NOT_FOUND or set PROCESSING.
-		
-		# self.setAttribute('tst', TriggerStatus.PROCESSING)
+		# Otherwise, set the tst attribute to ERROR_NSE_NOT_FOUND and return normally.
+		if (nse := self.triggerRequestManager.determineNSE(self)) is None:
+			self.setTriggerStatus(TriggerStatus.ERROR_NSE_NOT_FOUND, False)
+			return
+		self.setTriggerStatus(TriggerStatus.PROCESSING, False)
+		L.isDebug and L.logDebug(f'Determined NSE plugin for TriggerRequest: {nse}')
+
+		# Initiate the more complex triggering process by calling the TriggerRequestManager.
+		# This will handle the rest of the activation process in the background, because it may take 
+		# some time to complete, depending on the underlying network and the NSE.
+		self.triggerRequestManager.handleTriggerRequestSending(self, nse)
 
 
 
-		super().activate(parentResource, originator)
 
 
-
+	# TBC
 
 	def update(self, dct: JSON = None,
 					 originator: Optional[str] = None, 
-					 doValidateAttributes: Optional[bool] = True) -> None:
-		super().update(dct, originator, doValidateAttributes)
-	
+					 doValidateAttributes: Optional[bool] = True,
+					 request: Optional[CSERequest] = None) -> None:
+		super().update(dct, originator, doValidateAttributes, request)
+
+		# Prevent deletions of attributes that are mandatory for the TriggerRequest resource type (is this done in validation?)
+		# tvt
+
+
+	def validate(self, originator:Optional[str] = None, 
+					   dct:Optional[JSON] = None, 
+					   parentResource:Optional[Resource] = None) -> None:
+
+		super().validate(originator, dct, parentResource)
+
+		# Check presence of various attributes if the triggerPurpose is "crud"		
+		if self.tpe == TriggerPurpose.executeCRUD:
+			for attr in ('tiae', 'tia', 'tio', 'tirt'):
+				if not getattr(self, attr):
+					raise BAD_REQUEST(L.logWarn(f'Missing mandatory attribute for TriggerRequest with triggerPurpose "executeCRUD": {attr}'))
 
 
 	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		# Unschedule the action
+		self.triggerRequestManager.unscheduleTriggerRequest(self)
 		return super().deactivate(originator, parentResource)
 
+
+	def setTriggerStatus(self, status: TriggerStatus, doUpdate: bool = True) -> None:
+		""" Set the triggerStatus attribute of the TriggerRequest resource.
+
+			Args:
+				status: The new triggerStatus value to set.
+				doUpdate: Whether to update the resource in the database after setting the attribute. Default is True.
+		"""
+		self.setAttribute('tst', status)
+		if doUpdate:
+			self.dbUpdate()
 
 # TODO tests
 # - Test TriggerEnabled on target resource
 # - Implement test for IN & NON-IN CSE
+
+
+# TODO when DELETEing a TGR stop the actor
