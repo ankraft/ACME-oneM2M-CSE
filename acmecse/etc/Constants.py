@@ -169,6 +169,9 @@ class Constants(object):
 	attrSubscriptionCounter = '__subCtr__'
 	""" Constant: Name of the `Resource` internal *__subCtr__* attribute. This attribute holds the subscription counter for a resource. """
 
+	attrTriggerRequestValidityTime = '__tgrTvt__'
+	""" Constant: Name of the `Resource` internal *__tgrTvt__* attribute. This attribute holds the TriggerRequest validity time converted to seconds. """
+
 
 	#
 	#	Contants for fixed resource names

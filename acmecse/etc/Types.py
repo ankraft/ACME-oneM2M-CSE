@@ -2044,6 +2044,18 @@ class TriggerStatus(ACMEIntEnum):
 	"""	Terminated. """
 
 
+class TriggerPurpose(ACMEIntEnum):
+	"""	Trigger Purpose.
+	"""
+	establishConnection = 1
+	""" Establish connection. """
+	registrationRequest = 2
+	""" Registration request. """
+	executeCRUD = 3
+	""" Execute CRUD operation. """
+	enrolmentRequest = 4
+	""" Enrolment request. """
+
 ##############################################################################
 #
 #	Result and Argument and Header Data Classes
