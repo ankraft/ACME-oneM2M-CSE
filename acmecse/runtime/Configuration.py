@@ -288,6 +288,9 @@ class Configuration(object):
 	cse_service_timeSeries_enable:bool = False
 	"""	Enable or disable the time series service. This includes the TimeSeriesManager plugin and the related features in the CSE. """
 
+	cse_service_triggerRequest_enable: bool = False
+	"""	Enable or disable the trigger request service. This includes the TriggerRequestManager plugin and the related features in the CSE. """
+
 
 	database_type:str = None
 	"""	The type of the database. """
@@ -549,6 +552,9 @@ class Configuration(object):
 	resource_sub_batchNotifyDuration:int = None
 	"""	The batch notify duration for SUB. """
 
+	resource_tgr_maxTriggerValidityTime: float = None
+	"""	The maximum trigger validity time for trigger requests. 
+		This is the maximum time in seconds that the CSE will wait for a trigger request to be validated before rejecting it. """
 
 	resource_ts_enableLimits:bool = None
 	"""	Enable or disable limits for TS. """
@@ -1201,6 +1207,8 @@ class ConfigurationError(Exception):
 #
 #	This happens at the end of the module, because the Configuration class must be
 #	initialized before the modules can be initialized.
+#
+#	TODO : Is there a better to import the modules without having to import them all here? Maybe using __init__.py and __all__?
 
 # Import all configuration modules
 
@@ -1219,6 +1227,7 @@ from ..runtime.configurations.ScriptingConfiguration import ScriptingConfigurati
 from ..runtime.configurations.SecurityServiceConfiguration import SecurityServiceConfiguration
 from ..runtime.configurations.StorageConfiguration import StorageConfiguration
 from ..runtime.configurations.SUBResourceConfiguration import SUBResourceConfiguration
+from ..runtime.configurations.TGRResourceConfiguration import TGRResourceConfiguration
 from ..runtime.configurations.TSBResourceConfiguration import TSBResourceConfiguration
 from ..runtime.configurations.TSResourceConfiguration import TSResourceConfiguration
 
@@ -1251,7 +1260,7 @@ _moduleConfigs = [
 	LCPResourceConfiguration(),
 	REQResourceConfiguration(),
 	SUBResourceConfiguration(),
-	TSResourceConfiguration(),
+	TGRResourceConfiguration(),
 	TSBResourceConfiguration(),
-
+	TSResourceConfiguration(),
 ]

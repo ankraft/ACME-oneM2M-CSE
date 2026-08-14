@@ -5,7 +5,27 @@
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
 #	Plugin manager to manage plugins.
-"""	Plugin manager to manage plugins. """
+"""	Plugin manager to manage plugins. 
+
+
+	**Instructions to add a new service or runtime plugin**
+
+	Currently, there is a bit of a manual process to add a new service or runtime plugin. The
+	following steps are required to add a new plugin:
+
+	- Add the plugin to the ``acmecse/plugins/runtime`` or ``acmecse/plugins/services`` directory.
+	- Add the plugin to the ``acmecse/runtime/PluginManager.py`` file in the ``_pluginChecks`` dictionary with a lambda function 
+	  that checks whether the plugin should be enabled or not.
+	- Add the plugin to the ``acmecse/init/acme.ini.default`` file with a configuration entry for the plugin, e.g. 
+	  ``[cse.service.myPlugin]`` and a setting ``enable=true``.
+	- Also add the plugin enable setting reference to the special configuration under the [cse.operation.plugins]
+	  section in the ``acmecse/init/acme.ini.default`` file.
+	- If the plugin has any configuration settings, add a configuration module in ``acmecse/runtime/configurations`` for the plugin.
+		- Add entries for the settings in the `Configuration` class in ``acmecse/runtime/Configuration.py`` to store the 
+		  settings from the configuration file, e.g. ``Configuration.cse_service_myPlugin_enable``.
+		- At the end of the ``Configuration`` class, add the import of the configuration module to the list of configuration
+		  modules to be imported and, further down, initialized.
+"""
 
 from __future__ import annotations
 import sys
@@ -27,30 +47,33 @@ class PluginManager(PM):
 	"""
 
 	_pluginChecks:dict[str, Callable] = {
-		'acmecse.plugins.bindings.CoAPServer':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),
-		'acmecse.plugins.bindings.HttpServer':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enable', False),
-		'acmecse.plugins.bindings.MQTTClient':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('mqtt_enable', False),
-		'acmecse.plugins.bindings.WebSocketServer':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('websocket_enable', False),
-		'acmecse.plugins.bindings.http.HttpManagement':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableManagementEndpoint', False),
-		'acmecse.plugins.bindings.http.HttpStructure':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableStructureEndpoint', False),
-		'acmecse.plugins.bindings.http.HttpUpperTester':lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableUpperTesterEndpoint', False),
-		'acmecse.plugins.bindings.http.HttpWebUI':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('webui_enable', False),
-		'acmecse.plugins.database.PostgreSQLBinding':	lambda : Configuration.database_type == 'postgresql',
-		'acmecse.plugins.database.TinyDBBinding':		lambda : Configuration.database_type in ('tinydb', 'memory'),
-		'acmecse.plugins.runtime.Console':				lambda : Configuration.console_type == 'rich',
-		'acmecse.plugins.runtime.MinimalConsole':		lambda : Configuration.console_type == 'simple',
-		'acmecse.plugins.runtime.Statistics':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('statistics_enable', False),
-		'acmecse.plugins.runtime.TextUI':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('textui_enable', False),	
-		'acmecse.plugins.services.ActionManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('actionManager_enable', True),	
-		'acmecse.plugins.services.AnnouncementManager':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('announcementManager_enable', True),	
-		'acmecse.plugins.services.GroupManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('groupManager_enable', True),	
-		'acmecse.plugins.services.LocationManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('locationManager_enable', True),	
-		'acmecse.plugins.services.RemoteCSEManager':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('remoteCSEManager_enable', True),	
-		'acmecse.plugins.services.SemanticManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('semanticManager_enable', True),	
-		'acmecse.plugins.services.TimeManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeManager_enable', True),	
-		'acmecse.plugins.services.TimeSeriesManager':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeSeriesManager_enable', True),	
+		'acmecse.plugins.bindings.CoAPServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),
+		'acmecse.plugins.bindings.HttpServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enable', False),
+		'acmecse.plugins.bindings.MQTTClient':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('mqtt_enable', False),
+		'acmecse.plugins.bindings.WebSocketServer':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('websocket_enable', False),
+		'acmecse.plugins.bindings.http.HttpManagement':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableManagementEndpoint', False),
+		'acmecse.plugins.bindings.http.HttpStructure':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableStructureEndpoint', False),
+		'acmecse.plugins.bindings.http.HttpUpperTester':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableUpperTesterEndpoint', False),
+		'acmecse.plugins.bindings.http.HttpWebUI':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('webui_enable', False),
+		'acmecse.plugins.database.PostgreSQLBinding':		lambda : Configuration.database_type == 'postgresql',
+		'acmecse.plugins.database.TinyDBBinding':			lambda : Configuration.database_type in ('tinydb', 'memory'),
+		'acmecse.plugins.runtime.Console':					lambda : Configuration.console_type == 'rich',
+		'acmecse.plugins.runtime.MinimalConsole':			lambda : Configuration.console_type == 'simple',
+		'acmecse.plugins.runtime.Statistics':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('statistics_enable', False),
+		'acmecse.plugins.runtime.TextUI':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('textui_enable', False),	
+		'acmecse.plugins.services.ActionManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('actionManager_enable', True),	
+		'acmecse.plugins.services.AnnouncementManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('announcementManager_enable', True),	
+		'acmecse.plugins.services.GroupManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('groupManager_enable', True),	
+		'acmecse.plugins.services.LocationManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('locationManager_enable', True),	
+		'acmecse.plugins.services.RemoteCSEManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('remoteCSEManager_enable', True),	
+		'acmecse.plugins.services.SemanticManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('semanticManager_enable', True),	
+		'acmecse.plugins.services.TimeManager':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeManager_enable', True),	
+		'acmecse.plugins.services.TimeSeriesManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeSeriesManager_enable', True),	
+		'acmecse.plugins.services.TriggerRequestManager':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('triggerRequestManager_enable', True),
 	}
-	"""	Dictionary of plugin checks. The keys are the plugin names, the values are callables that take the plugin name as an argument and return a boolean indicating whether the plugin should be loaded. This is used to determine which plugins to load based on the configuration. """
+	"""	Dictionary of plugin checks. The keys are the plugin names, the values are callables that take the 
+		plugin name as an argument and return a boolean indicating whether the plugin should be loaded. 
+		This is used to determine which plugins to load based on the configuration. """
 
 	def startup(self) -> None:
 		"""	Runtime instance of the `PluginManager`. """
@@ -109,6 +132,7 @@ class PluginManager(PM):
 
 		# Load system plugins
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/database', 'acmecse.plugins.database')
+		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/defaults', 'acmecse.plugins.defaults')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/runtime', 'acmecse.plugins.runtime')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/services', 'acmecse.plugins.services')
 		_loadPluginsFromDirectory(f'{Configuration.moduleDirectory}/plugins/bindings', 'acmecse.plugins.bindings')
