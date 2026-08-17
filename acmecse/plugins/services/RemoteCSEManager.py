@@ -667,7 +667,7 @@ class RemoteCSEManager(object):
 
 		# add authentication information to the CSR's POA if necessary and available
 		# TODO is this really only the registrar CSE?
-		if registrarConfig.cseID == self.registrarConfig.cseID:
+		if self.registrarConfig and registrarConfig.cseID == self.registrarConfig.cseID:
 			self._updateLocalCSRAuthInfo(csrResource)
 
 		# add local CSR and ACP's
@@ -940,17 +940,20 @@ class RemoteCSEManager(object):
 		if localRegistrarCSR.spi != csebase.spi:
 			L.isDebug and L.logDebug(f'Updating CSEBase.spi to {localRegistrarCSR.spi}, was: {csebase.spi}')
 			csebase.setAttribute('spi', localRegistrarCSR.spi)
-			self.registrarConfig.spID = localRegistrarCSR.spi	# also update the registrarConfig spID
+			if self.registrarConfig:
+				self.registrarConfig.spID = localRegistrarCSR.spi	# also update the registrarConfig spID
 			updatedAttributes['spi'] = localRegistrarCSR.spi
 	
 		if localRegistrarCSR.ici != csebase.ici:
 			L.isDebug and L.logDebug(f'Updating CSEBase.ici to {localRegistrarCSR.ici}, was: {csebase.ici}')
 			csebase.setAttribute('ici', localRegistrarCSR.ici)
-			self.registrarConfig.INCSEcseID = localRegistrarCSR.ici	# also update the registrarConfig INCSEcseID
+			if self.registrarConfig:
+				self.registrarConfig.INCSEcseID = localRegistrarCSR.ici	# also update the registrarConfig INCSEcseID
 			updatedAttributes['ici'] = localRegistrarCSR.ici
 	
 		if updatedAttributes:
-			self.registrarConfig.reInit()	# re-initialize the registrarConfig with the new values
+			if self.registrarConfig:
+				self.registrarConfig.reInit()	# re-initialize the registrarConfig with the new values
 			csebase.dbUpdate()
 
 		return updatedAttributes
@@ -1167,13 +1170,30 @@ class RemoteCSEManager(object):
 			if registrarConfig.spID == RC.cseSPid:
 				target['csi'] = source['csi']
 			else:
-				target['csi'] = f'{RC.cseSPid}{source.csi}' if forOwnCSR else f'{registrarConfig.spID}{source.csi}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
+				if forOwnCSR:
+					target['csi'] = f'{RC.cseSPid}{source.csi}'
+				else:
+					if isAbsolute(source.csi):
+						target['csi'] = source.csi	# already absolute, don't prepend SP-ID
+					else:
+						target['csi'] = f'{registrarConfig.spID}{source.csi}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
+
+
+				# target['csi'] = f'{RC.cseSPid}{source.csi}' if forOwnCSR else f'{registrarConfig.spID}{source.csi}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
 
 		if 'cb' not in registrarConfig.excludeCSRAttributes:
 			if registrarConfig.spID == RC.cseSPid:
 				target['cb'] = f'{source.csi}/{source.rn}'
 			else:
-				target['cb'] = f'{RC.cseSPid}{source.csi}/{source.rn}' if forOwnCSR else f'{registrarConfig.spID}{source.csi}/{source.rn}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
+				if forOwnCSR:
+					target['cb'] = f'{RC.cseSPid}{source.csi}/{source.rn}'
+				else:
+					if isAbsolute(source.csi):
+						target['cb'] = f'{source.csi}/{source.rn}'	# already absolute, don't prepend SP-ID
+					else:
+						target['cb'] = f'{registrarConfig.spID}{source.csi}/{source.rn}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID	
+				# target['cb'] = f'{RC.cseSPid}{source.csi}/{source.rn}' if forOwnCSR else f'{registrarConfig.spID}{source.csi}/{source.rn}'	# prepend the SP-ID if it is not the same as the CSE's SP-ID
+
 
 		if 'dcse' not in registrarConfig.excludeCSRAttributes:
 			target['dcse'] = list(self.descendantCSR.keys())		# Always do this bc it might be different, even empty for an update
