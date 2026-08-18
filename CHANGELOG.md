@@ -19,6 +19,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for the &lt;container> *maxByteSizePerInstance* (mbis) attribute.
 - [CSE] Added support for the JSON-path content filter query in discovery requests. This allows to filter &lt;CIN> resources based on their content attribute.
 - [CSE] Added initial support for validating attributes based on the release version indicator (rvi) in requests. This allows to validate whether an attribute is allowed for a specific release version of the oneM2M standard.
+- [CSE] Added support for Trigger Requests and a TriggerManager that handles requests through plugins. A default TriggerRequestHandler plugin is provided that supports testing the trigger request functionality. This is an ESTIMED project contribution.
 - [CSE] Added validation of *m2m:externalID* types, e.g. for M2M-EXT-ID attributes.
 - [CSE] Added support for the *m2m:triggerRecipientID* types, e.g. for triggerRecipientID attributes.
 - [MGMT] Added reloading of HTTP and WebSocket authentication credentials to the management API.

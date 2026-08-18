@@ -14,7 +14,7 @@ from typing import Optional, TYPE_CHECKING
 
 
 from ..etc.Types import CSEType, JSON, TriggerStatus, TriggerPurpose, CSERequest, ResourceTypes
-from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED
+from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_IMPLEMENTED, TRIGGERING_DISABLED_FOR_RECIPIENT, UNABLE_TO_REPLACE_REQUEST
 from ..etc.Constants import Constants, RuntimeConstants as RC
 from ..etc.DateUtils import fromDuration, toDuration
 from ..runtime.Logging import Logging as L
@@ -30,7 +30,8 @@ if TYPE_CHECKING:
 	from ..runtime.Storage import Storage
 
 # Add to internal attributes 
-addToInternalAttributes(Constants.attrTriggerRequestValidityTime)	
+addToInternalAttributes((Constants.attrTriggerRequestValidityTime, 
+						 Constants.attrTriggerRequestAssignedNSE))
 
 
 @requires(triggerRequestManager='acmecse.plugins.services.TriggerRequestManager', required=False)
@@ -55,41 +56,10 @@ class TGR(AnnounceableResource):
 		if not self.triggerRequestManager:
 			raise NOT_IMPLEMENTED(L.logWarn('TriggerRequestManager plugin not enabled'))
 
-		# Check whether the CSE is an IN-CSE, otherwise send an error
+		# Check whether the CSE is an IN-CSE, otherwise return an error
 		if not RC.cseType == CSEType.IN:
 			raise BAD_REQUEST(L.logWarn('TriggerRequests can only be created on an IN-CSE'))
 		
-		# Check whether the target is an AE or a remoteCSE, and the triggerEnable attribute is set to true
-		# Otherwise, reject the request with TRIGGERING_DISABLED_FOR_RECIPIENT
-
-		if (tri := self.tri):
-			# Search for AE or remoteCSE resources with the given triggerRecipientID (tri) in the CSE's database. 
-			resources = self.storage.searchByFragment({ 'tri': tri, 'mei': self.mei },
-											 		  lambda r: r.get('ty') in (ResourceTypes.AE, ResourceTypes.CSR))
-			L.inspect(resources, immediate=True)
-
-			# Check whether there is only one target resource and it is an AE or a remoteCSE, 
-			# otherwise reject the request with BAD REQUEST
-			match len(resources):
-				case 0:
-					raise BAD_REQUEST(L.logWarn(f'Target resource for TriggerRequest not found: {tri}'))
-				case 1:
-					targetResource = resources[0]
-					if (tren := targetResource.tren) is not None and tren == False:
-						raise BAD_REQUEST(L.logWarn(f'Triggering is disabled for the target resource: {tri}'))
-				case _:
-					raise BAD_REQUEST(L.logWarn(f'Multiple resources found for TriggerRequest tri: {tri}'))
-			
-
-		# Check triggerValidityTime duration and set an internal attribute for it in seconds.
-		L.consoleBanner(f'Checking triggerValidityTime for TriggerRequest: {self.tvt} type: {type(self.tvt)}')
-		_tvt:float = fromDuration(self.tvt)
-		if _tvt <= 0 or _tvt > Configuration.resource_tgr_maxTriggerValidityTime:
-			L.isDebug and L.logDebug(f'Invalid triggerValidityTime: {_tvt} seconds. Correcting to maximum allowed value: {Configuration.resource_tgr_maxTriggerValidityTime} seconds.')
-			_tvt = Configuration.resource_tgr_maxTriggerValidityTime
-			self.setAttribute('tvt', toDuration(_tvt))	# Fix the excessive tvt value in the resource itself, so that it is visible to the client.
-		self.setAttribute(Constants.attrTriggerRequestValidityTime, _tvt)
-
 		# Get TriggerPurpose 
 		_tpe = self.tpe if self.tpe else TriggerPurpose.establishConnection	# default: establishConnection
 		
@@ -99,6 +69,7 @@ class TGR(AnnounceableResource):
 			self.setTriggerStatus(TriggerStatus.ERROR_NSE_NOT_FOUND, False)
 			return
 		self.setTriggerStatus(TriggerStatus.PROCESSING, False)
+		self.setAttribute(Constants.attrTriggerRequestAssignedNSE, nse)
 		L.isDebug and L.logDebug(f'Determined NSE plugin for TriggerRequest: {nse}')
 
 		# Initiate the more complex triggering process by calling the TriggerRequestManager.
@@ -107,19 +78,25 @@ class TGR(AnnounceableResource):
 		self.triggerRequestManager.handleTriggerRequestSending(self, nse)
 
 
-
-
-
-	# TBC
-
 	def update(self, dct: JSON = None,
 					 originator: Optional[str] = None, 
 					 doValidateAttributes: Optional[bool] = True,
 					 request: Optional[CSERequest] = None) -> None:
 		super().update(dct, originator, doValidateAttributes, request)
 
-		# Prevent deletions of attributes that are mandatory for the TriggerRequest resource type (is this done in validation?)
-		# tvt
+		# Check whether the triggerStatus is in PROCESSING state. If so, then reject the update request with UNABLE_TO_REPLACE_REQUEST.
+		if self.tst == TriggerStatus.PROCESSING:
+			raise UNABLE_TO_REPLACE_REQUEST(L.logWarn('Cannot update a TriggerRequest resource while it is in PROCESSING state.'))
+
+		# Check whether the NSE is still available
+		_nse = self.attribute(Constants.attrTriggerRequestAssignedNSE)
+		if not _nse or not self.triggerRequestManager.hasNSE(_nse):
+			self.setTriggerStatus(TriggerStatus.ERROR_NSE_NOT_FOUND, False)
+			return
+
+		# Execute the trigger request to the same NSE as determined in the CREATE request
+		self.setTriggerStatus(TriggerStatus.PROCESSING, False)
+		self.triggerRequestManager.handleTriggerRequestSending(self, _nse)
 
 
 	def validate(self, originator:Optional[str] = None, 
@@ -128,6 +105,33 @@ class TGR(AnnounceableResource):
 
 		super().validate(originator, dct, parentResource)
 
+		# Check triggerValidityTime duration and set an internal attribute for it in seconds.
+		_tvt:float = fromDuration(self.tvt)
+		if _tvt <= 0 or _tvt > Configuration.resource_tgr_maxTriggerValidityTime:
+			L.isDebug and L.logDebug(f'Invalid triggerValidityTime: {_tvt} seconds. Correcting to maximum allowed value: {Configuration.resource_tgr_maxTriggerValidityTime} seconds.')
+			_tvt = Configuration.resource_tgr_maxTriggerValidityTime
+			self.setAttribute('tvt', toDuration(_tvt))	# Fix the excessive tvt value in the resource itself, so that it is visible to the client.
+		self.setAttribute(Constants.attrTriggerRequestValidityTime, _tvt)
+
+		# Check whether the target is an AE or a remoteCSE, and the triggerEnable attribute is set to true
+		# Otherwise, reject the request with TRIGGERING_DISABLED_FOR_RECIPIENT
+		if (tri := self.tri):
+			# Search for AE or remoteCSE resources with the given triggerRecipientID (tri) in the CSE's database. 
+			resources = self.storage.searchByFragment({ 'tri': tri, 'mei': self.mei },
+											 		  lambda r: r.get('ty') in (ResourceTypes.AE, ResourceTypes.CSR))
+
+			# Check whether there is only one target resource and it is an AE or a remoteCSE, 
+			# otherwise reject the request with BAD REQUEST
+			match len(resources):
+				case 0:
+					raise BAD_REQUEST(L.logWarn(f'Target resource for TriggerRequest not found: {tri}'))
+				case 1:
+					targetResource = resources[0]
+					if (tren := targetResource.tren) is not None and tren == False:
+						raise TRIGGERING_DISABLED_FOR_RECIPIENT(L.logWarn(f'Triggering is disabled for the target resource: {tri}'))
+				case _:
+					raise BAD_REQUEST(L.logWarn(f'Multiple resources found for TriggerRequest tri: {tri}'))
+			
 		# Check presence of various attributes if the triggerPurpose is "crud"		
 		if self.tpe == TriggerPurpose.executeCRUD:
 			for attr in ('tiae', 'tia', 'tio', 'tirt'):
@@ -137,12 +141,13 @@ class TGR(AnnounceableResource):
 
 	def deactivate(self, originator: str, parentResource: Resource) -> None:
 		# Unschedule the action
-		self.triggerRequestManager.unscheduleTriggerRequest(self)
+		self.triggerRequestManager.terminateTriggerRequest(self)
 		return super().deactivate(originator, parentResource)
 
 
 	def setTriggerStatus(self, status: TriggerStatus, doUpdate: bool = True) -> None:
-		""" Set the triggerStatus attribute of the TriggerRequest resource.
+		""" Set the triggerStatus attribute of the TriggerRequest resource. It might also
+			update the resource in the database.
 
 			Args:
 				status: The new triggerStatus value to set.
@@ -151,10 +156,3 @@ class TGR(AnnounceableResource):
 		self.setAttribute('tst', status)
 		if doUpdate:
 			self.dbUpdate()
-
-# TODO tests
-# - Test TriggerEnabled on target resource
-# - Implement test for IN & NON-IN CSE
-
-
-# TODO when DELETEing a TGR stop the actor

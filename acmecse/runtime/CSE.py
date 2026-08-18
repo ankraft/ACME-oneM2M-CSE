@@ -259,6 +259,10 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		RC.cseStatus = CSEStatus.STOPPED
 		forceShutdown()	
 	except Exception as e:
+		L.logErr(f'Error during startup: {e}')
+		RC.cseStatus = CSEStatus.STOPPED
+		return False
+	except Exception as e:
 		L.logErr(f'Error during startup: {e}', exc=e)
 		RC.cseStatus = CSEStatus.STOPPED
 		return False

@@ -172,6 +172,10 @@ class Constants(object):
 	attrTriggerRequestValidityTime = '__tgrTvt__'
 	""" Constant: Name of the `Resource` internal *__tgrTvt__* attribute. This attribute holds the TriggerRequest validity time converted to seconds. """
 
+	attrTriggerRequestAssignedNSE = '__tgrNse__'
+	""" Constant: Name of the `Resource` internal *__tgrNse__* attribute. This attribute holds the name of the NSE service 
+		handler plugin that has been assigned to handle the TriggerRequest. """
+
 
 	#
 	#	Contants for fixed resource names

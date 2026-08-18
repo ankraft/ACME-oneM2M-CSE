@@ -47,29 +47,34 @@ class PluginManager(PM):
 	"""
 
 	_pluginChecks:dict[str, Callable] = {
-		'acmecse.plugins.bindings.CoAPServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),
-		'acmecse.plugins.bindings.HttpServer':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enable', False),
-		'acmecse.plugins.bindings.MQTTClient':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('mqtt_enable', False),
-		'acmecse.plugins.bindings.WebSocketServer':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('websocket_enable', False),
-		'acmecse.plugins.bindings.http.HttpManagement':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableManagementEndpoint', False),
-		'acmecse.plugins.bindings.http.HttpStructure':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableStructureEndpoint', False),
-		'acmecse.plugins.bindings.http.HttpUpperTester':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableUpperTesterEndpoint', False),
-		'acmecse.plugins.bindings.http.HttpWebUI':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('webui_enable', False),
-		'acmecse.plugins.database.PostgreSQLBinding':		lambda : Configuration.database_type == 'postgresql',
-		'acmecse.plugins.database.TinyDBBinding':			lambda : Configuration.database_type in ('tinydb', 'memory'),
-		'acmecse.plugins.runtime.Console':					lambda : Configuration.console_type == 'rich',
-		'acmecse.plugins.runtime.MinimalConsole':			lambda : Configuration.console_type == 'simple',
-		'acmecse.plugins.runtime.Statistics':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('statistics_enable', False),
-		'acmecse.plugins.runtime.TextUI':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('textui_enable', False),	
-		'acmecse.plugins.services.ActionManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('actionManager_enable', True),	
-		'acmecse.plugins.services.AnnouncementManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('announcementManager_enable', True),	
-		'acmecse.plugins.services.GroupManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('groupManager_enable', True),	
-		'acmecse.plugins.services.LocationManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('locationManager_enable', True),	
-		'acmecse.plugins.services.RemoteCSEManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('remoteCSEManager_enable', True),	
-		'acmecse.plugins.services.SemanticManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('semanticManager_enable', True),	
-		'acmecse.plugins.services.TimeManager':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeManager_enable', True),	
-		'acmecse.plugins.services.TimeSeriesManager':		lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeSeriesManager_enable', True),	
-		'acmecse.plugins.services.TriggerRequestManager':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('triggerRequestManager_enable', True),
+		'acmecse.plugins.bindings.CoAPServer':						lambda : Configuration._cse_operation_plugins_enabledComponents.get('coap_enable', False),
+		'acmecse.plugins.bindings.HttpServer':						lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enable', False),
+		'acmecse.plugins.bindings.MQTTClient':						lambda : Configuration._cse_operation_plugins_enabledComponents.get('mqtt_enable', False),
+		'acmecse.plugins.bindings.WebSocketServer':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('websocket_enable', False),
+		'acmecse.plugins.bindings.http.HttpManagement':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableManagementEndpoint', False),
+		'acmecse.plugins.bindings.http.HttpStructure':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableStructureEndpoint', False),
+		'acmecse.plugins.bindings.http.HttpUpperTester':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('http_enableUpperTesterEndpoint', False),
+		'acmecse.plugins.bindings.http.HttpWebUI':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('webui_enable', False),
+		'acmecse.plugins.database.PostgreSQLBinding':				lambda : Configuration.database_type == 'postgresql',
+		'acmecse.plugins.database.TinyDBBinding':					lambda : Configuration.database_type in ('tinydb', 'memory'),
+		'acmecse.plugins.runtime.Console':							lambda : Configuration.console_type == 'rich',
+		'acmecse.plugins.runtime.MinimalConsole':					lambda : Configuration.console_type == 'simple',
+		'acmecse.plugins.runtime.Statistics':						lambda : Configuration._cse_operation_plugins_enabledComponents.get('statistics_enable', False),
+		'acmecse.plugins.runtime.TextUI':							lambda : Configuration._cse_operation_plugins_enabledComponents.get('textui_enable', False),	
+		'acmecse.plugins.services.ActionManager':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('actionManager_enable', True),	
+		'acmecse.plugins.services.AnnouncementManager':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('announcementManager_enable', True),	
+		'acmecse.plugins.services.GroupManager':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('groupManager_enable', True),	
+		'acmecse.plugins.services.LocationManager':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('locationManager_enable', True),	
+		'acmecse.plugins.services.RemoteCSEManager':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('remoteCSEManager_enable', True),	
+		'acmecse.plugins.services.SemanticManager':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('semanticManager_enable', True),	
+		'acmecse.plugins.services.TimeManager':						lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeManager_enable', True),	
+		'acmecse.plugins.services.TimeSeriesManager':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeSeriesManager_enable', True),	
+		'acmecse.plugins.services.TriggerRequestManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('triggerRequestManager_enable', True),
+
+		# Default handlers may depend on other plugins
+		
+		# Depend on: TriggerRequestManager.
+		'acmecse.plugins.defaults.DefaultTriggerRequestHandler':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('triggerRequestManager_enable', False),	
 	}
 	"""	Dictionary of plugin checks. The keys are the plugin names, the values are callables that take the 
 		plugin name as an argument and return a boolean indicating whether the plugin should be loaded. 

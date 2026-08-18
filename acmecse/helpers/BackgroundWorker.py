@@ -912,7 +912,7 @@ class BackgroundWorkerPool(object):
 		"""
 		if not sys.is_finalizing() and cls.workerQueue:
 			with cls.timerLock:
-				# Always cancel an existing timer first — never leak one
+				# Always cancel an existing timer first - never leak one
 				if cls.workerTimer is not None:
 					cls.workerTimer.cancel()
 					# cls.workerTimer = None

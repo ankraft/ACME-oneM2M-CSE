@@ -210,7 +210,7 @@ class Validator(metaclass=Singleton):
 			Return:
 				None
 		"""
-		L.isDebug and L.logDebug('validating attributes')
+		L.isDebug and L.logDebug('Validating attributes')
 
 		# Just return in case we are in the importing phase
 		if self.importer.isImporting:

@@ -96,6 +96,8 @@ class ResponseStatusCode(ACMEIntEnum):
 	"""	NOT ACCEPTABLE """
 	TRIGGERING_DISABLED_FOR_RECIPIENT			= 5218
 	"""	TRIGGERING DISABLED FOR RECIPIENT """
+	UNABLE_TO_REPLACE_REQUEST					= 5219
+	"""	UNABLE TO REPLACE REQUEST """
 	UNABLE_TO_RECALL_REQUEST					= 5220
 	"""	UNABLE TO RECALL REQUEST """
 	CROSS_RESOURCE_OPERATION_FAILURE 			= 5221
@@ -171,7 +173,8 @@ _ResponseStatusCodeHttpStatusCodes = {
 	ResponseStatusCode.REMOTE_ENTITY_NOT_REACHABLE					: (HTTPStatus.NOT_FOUND, CoAPCodes.NOT_FOUND),									# REMOTE_ENTITY_NOT_REACHABLE
 	ResponseStatusCode.OPERATION_NOT_ALLOWED						: (HTTPStatus.METHOD_NOT_ALLOWED, CoAPCodes.METHOD_NOT_ALLOWED),				# OPERATION NOT ALLOWED
 	ResponseStatusCode.NOT_ACCEPTABLE 								: (HTTPStatus.NOT_ACCEPTABLE, CoAPCodes.NOT_ACCEPTABLE),						# NOT ACCEPTABLE
-	ResponseStatusCode.TRIGGERING_DISABLED_FOR_RECIPIENT			: (HTTPStatus.FORBIDDEN, CoAPCodes.SERVICE_UNAVAILABLE),									# TRIGGERING DISABLED FOR RECIPIENT
+	ResponseStatusCode.TRIGGERING_DISABLED_FOR_RECIPIENT			: (HTTPStatus.FORBIDDEN, CoAPCodes.SERVICE_UNAVAILABLE),						# TRIGGERING DISABLED FOR RECIPIENT
+	ResponseStatusCode.UNABLE_TO_REPLACE_REQUEST					: (HTTPStatus.CONFLICT, CoAPCodes.SERVICE_UNAVAILABLE),							# UNABLE TO REPLACE REQUEST
 	ResponseStatusCode.UNABLE_TO_RECALL_REQUEST 					: (HTTPStatus.CONFLICT, CoAPCodes.SERVICE_UNAVAILABLE),							# UNABLE TO RECALL REQUEST
 	ResponseStatusCode.CROSS_RESOURCE_OPERATION_FAILURE				: (HTTPStatus.INTERNAL_SERVER_ERROR, CoAPCodes.INTERNAL_SERVER_ERROR),			# CROSS RESOURCE OPERATION FAILURE
 	ResponseStatusCode.CONFLICT										: (HTTPStatus.CONFLICT, CoAPCodes.FORBIDDEN),									# CONFLICT
@@ -672,6 +675,18 @@ class TARGET_NOT_SUBSCRIBABLE(ResponseException):
 		super().__init__(ResponseStatusCode.TARGET_NOT_SUBSCRIBABLE, dbg, data)
 
 
+class TRIGGERING_DISABLED_FOR_RECIPIENT(ResponseException):
+	"""	TRIGGERING DISABLED FOR RECIPIENT Response Status Code.
+	"""
+	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
+		super().__init__(ResponseStatusCode.TRIGGERING_DISABLED_FOR_RECIPIENT, dbg, data)
+
 class UNABLE_TO_RECALL_REQUEST(ResponseException):
 	"""	UNABLE TO RECALL REQUEST Response Status Code.
 	"""
@@ -684,6 +699,18 @@ class UNABLE_TO_RECALL_REQUEST(ResponseException):
 		"""
 		super().__init__(ResponseStatusCode.UNABLE_TO_RECALL_REQUEST, dbg, data)
 
+
+class UNABLE_TO_REPLACE_REQUEST(ResponseException):
+	"""	UNABLE TO REPLACE REQUEST Response Status Code.
+	"""
+	def __init__(self, dbg: Optional[str] = None, data:Optional[Any] = None) -> None:
+		"""	Constructor.
+		
+			Args:
+				dbg: An optional debug message.
+				data: Optional data.
+		"""
+		super().__init__(ResponseStatusCode.UNABLE_TO_REPLACE_REQUEST, dbg, data)
 
 class UNSUPPORTED_MEDIA_TYPE(ResponseException):
 	"""	UNSUPPORTED MEDIA TYPE Response Status Code.
@@ -730,6 +757,9 @@ _mapping = {
 	ResponseStatusCode.SUBSCRIPTION_VERIFICATION_INITIATION_FAILED: SUBSCRIPTION_VERIFICATION_INITIATION_FAILED,
 	ResponseStatusCode.TARGET_NOT_REACHABLE: TARGET_NOT_REACHABLE,
 	ResponseStatusCode.TARGET_NOT_SUBSCRIBABLE: TARGET_NOT_SUBSCRIBABLE, 
+	ResponseStatusCode.TRIGGERING_DISABLED_FOR_RECIPIENT: TRIGGERING_DISABLED_FOR_RECIPIENT,
+	ResponseStatusCode.UNABLE_TO_RECALL_REQUEST: UNABLE_TO_RECALL_REQUEST,
+	ResponseStatusCode.UNABLE_TO_REPLACE_REQUEST: UNABLE_TO_REPLACE_REQUEST,
 	ResponseStatusCode.UNSUPPORTED_MEDIA_TYPE: UNSUPPORTED_MEDIA_TYPE,
 }
 """	Mapping between Response Status Codes and exceptions. """

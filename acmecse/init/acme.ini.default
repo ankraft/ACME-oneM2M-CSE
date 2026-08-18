@@ -322,6 +322,7 @@ enable=true
 
 [cse.service.triggerRequest]
 ; Enable the TriggerRequestManager Service.
+; This setting also enables or disables the default TriggerRequestHandler plugin.
 ; Default: true
 enable=true
 

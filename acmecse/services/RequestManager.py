@@ -1186,6 +1186,9 @@ class RequestManager(metaclass=Singleton):
 			res = self.requestHandlers[request.op].sendRequest(request)
 		except ResponseException as e:
 			res = [ RequestResponse(request, Result(rsc=e.rsc, dbg=e.dbg, request=e.data)) ]
+		except Exception as e:
+			L.logErr(f'Error while sending request: {str(e)}', exc=e)
+			res = [ RequestResponse(request, Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg=str(e), request=request)) ]
 
 		# Add to requests database
 		for r in res:
@@ -1397,8 +1400,6 @@ class RequestManager(metaclass=Singleton):
 		if isinstance(cseRequest, dict):
 			cseRequest = CSERequest(originalRequest=cseRequest, pc=cseRequest.get('pc'))
 
-		# L.inspect(cseRequest, immediate=True)
-
 		try:
 
 			earlyError:str = None
@@ -1448,7 +1449,6 @@ class RequestManager(metaclass=Singleton):
 						# convert the ID to SP-relative format
 						if cseRequest.spid == RC.cseSPIDSlashLess:
 							cseRequest.id = toSPRelative(cseRequest.id)
-						# L.inspect(cseRequest)
 
 			if earlyError:
 				raise BAD_REQUEST(earlyError, data=cseRequest)

@@ -10,7 +10,7 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Callable, cast, Optional, List, Tuple, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Iterable, Tuple, Callable, Any, cast
 
 from copy import deepcopy
 
@@ -269,7 +269,7 @@ class Resource(object):
 				originator: The requests originator that let to the deletion of the resource.
 				parentResource: The resource's parent resource.
 		"""
-		L.isDebug and L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
+		L.isDebug and L.logDebug(f'Deactivating and removing child-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
 		self.notificationManager.checkSubscriptions(self, 
@@ -277,7 +277,7 @@ class Resource(object):
 													originator)
 		self.notificationManager.checkOperationSubscription(self, Operation.DELETE, originator)
 		
-		# Remove directChildResources. Don't do checks (e.g. subscriptions) for the sub-resources
+		# Remove directChildResources. Don't do checks (e.g. subscriptions) for the child-resources
 		self.dispatcher.deleteChildResources(self, originator, doDeleteCheck=False)
 		
 		# Removal of a deleted resource from group(s) is done 
@@ -931,7 +931,7 @@ class Resource(object):
 				self[attributeName] = normalizeURL(uris)
 
 
-	def _checkAndFixACPIreferences(self, acpi:list[str]) -> List[str]:
+	def _checkAndFixACPIreferences(self, acpi:list[str]) -> list[str]:
 		""" Check whether a referenced `ACP` resoure exists, and if yes, change the ID in the list to CSE relative unstructured format.
 
 			Args:
@@ -941,7 +941,7 @@ class Resource(object):
 				If fully successful (ie. all `ACP` resources exist), then a new list with all IDs converted is returned.
 		"""
 
-		newACPIList:List[str] = []
+		newACPIList:list[str] = []
 		for ri in acpi:
 			if not self.importer.isImporting:
 				try:
@@ -1334,16 +1334,19 @@ class Resource(object):
 #	Internal helper functions
 #
 
-def addToInternalAttributes(name:str) -> None:
+def addToInternalAttributes(name:str|Iterable[str]) -> None:
 	"""	Add a *name* to the names of internal attributes. 
 	
 		*name* is only added if	it is not already present.
 
 		Args:
-			name: Attribute name to add.
+			name: Attribute name to add. If an iterable of names is provided, then all names are added.
 	"""
-	if name not in internalAttributes:
-		internalAttributes.append(name)
+	if isinstance(name, str):
+		name = (name,)
+	for n in name:
+		if n not in internalAttributes:
+			internalAttributes.append(n)
 
 
 def isInternalAttribute(name:str) -> bool:

@@ -76,7 +76,7 @@ class EventData():
 #
 
 _F = TypeVar("_F", bound=Callable)
-""" The F TypeVar on the decorator overload is important — it tells the type
+""" The F TypeVar on the decorator overload is important - it tells the type
 	checker that whatever callable goes in comes back out unchanged, so the handler's own
 	signature is preserved after decoration.
 """
@@ -368,7 +368,7 @@ def eventHandler(cls: type) -> type:
 
 
 def onEvent(event: Event) -> Callable[[_F], _F]:
-	"""Marks a method for event registration — deferred until instantiation.
+	"""Marks a method for event registration - deferred until instantiation.
 	"""
 	def decorator(func: _F) -> _F:
 		if not hasattr(func, '_onEvents'):
