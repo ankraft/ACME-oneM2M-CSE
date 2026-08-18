@@ -27,7 +27,6 @@ from rich.text import Text
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, LogLevel, TreeMode, CSERegistrar
 from ..helpers.NetworkTools import getIPAddress, getMACAddress
-from ..helpers.Zookeeper import Zookeeper
 from ..helpers.ACMEConfiguration import ACMEConfiguration
 from ..runtime.EventManager import EventManager, EventData, eventManager
 
@@ -917,6 +916,9 @@ class Configuration(object):
 
 		# Read the configuration from a Zookeeper server
 		else:
+			# Optimization: Only import the Zookeeper helper if necessary, because it is not needed for the normal file-based configuration
+			from ..helpers.Zookeeper import Zookeeper
+
 			try:
 				zk = Zookeeper(host=Configuration._args_zkHost, 
 				   			   port=Configuration._args_zkPort, 
