@@ -165,7 +165,10 @@ class TriggerRequestManager:
 				L.isDebug and L.logDebug(f'TriggerRequest {tgr.ri} sent to NSE {nse}')
 			except Exception as e:
 				L.isWarn and L.logWarn(f'Failed to send TriggerRequest {tgr.ri} to NSE {nse}: {e}')
-				tgr.setTriggerStatus(TriggerStatus.TRIGGER_FAILED)
+				try:
+					tgr.setTriggerStatus(TriggerStatus.TRIGGER_FAILED)	# Also update the status in the database
+				except Exception as e:
+					L.isWarn and L.logWarn(f'Failed to set TriggerRequest {tgr.ri} status to TRIGGER_FAILED: {e}')
 				return
 
 		# Wait for the trigger request to be processed by the NSE, checking its status periodically until it is no longer in PROCESSING state or until the validity time expires.
@@ -190,7 +193,10 @@ class TriggerRequestManager:
 		# Check if the trigger request has expired
 		if actor.running and tgr.tst == TriggerStatus.PROCESSING and _endTime <= utcTime():
 			L.isWarn and L.logWarn(f'TriggerRequest {tgr.ri} has expired without receiving a response from NSE {nse}. Setting status to TRIGGER_EXPIRED.')
-			tgr.setTriggerStatus(TriggerStatus.TRIGGER_EXPIRED)	# Also update the status in the database
+			try:
+				tgr.setTriggerStatus(TriggerStatus.TRIGGER_EXPIRED)	# Also update the status in the database
+			except Exception as e:
+				L.isWarn and L.logWarn(f'Failed to set TriggerRequest {tgr.ri} status to TRIGGER_EXPIRED: {e}')	
 
 
 	def _triggerHandlerCompleted(self, tgr: TGR, nse: str, actor: BackgroundWorker) -> None:
@@ -230,7 +236,10 @@ class TriggerRequestManager:
 			# Call the *terminateTriggerRequest* endpoint of the assigned NSE service handler plugin to notify it of the termination
 			try:
 				pluginManager.callEndpoint(tgr.attribute(C.attrTriggerRequestAssignedNSE), 'terminateTriggerRequest', tgr)
-				tgr.setTriggerStatus(TriggerStatus.TRIGGER_TERMINATED)
+				try:
+					tgr.setTriggerStatus(TriggerStatus.TRIGGER_TERMINATED)
+				except Exception as e:
+					L.isWarn and L.logWarn(f'Failed to set TriggerRequest {tgr.ri} status to TRIGGER_TERMINATED: {e}')
 			except Exception as e:
 				L.isWarn and L.logWarn(f'Failed to call terminateTriggerRequest on NSE handler {tgr.attribute(C.attrTriggerRequestAssignedNSE)}: {e}')
 
