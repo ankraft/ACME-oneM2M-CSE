@@ -7,10 +7,15 @@
 """ Type definitions and Exceptions for ResponseStatusCodes. """
 
 from __future__ import annotations
-from typing import Optional, Any, Type
+from typing import Optional, Any, Type, TYPE_CHECKING
+
 from http import HTTPStatus
-from coapthon.defines import Codes as CoAPCodes, CodeItem as CoAPCodeItem
+from coapthon.defines import Codes as CoAPCodes
 from ..helpers.ACMEIntEnum import ACMEIntEnum
+
+if TYPE_CHECKING:
+	from coapthon.defines import CodeItem as CoAPCodeItem
+
 
 ##############################################################################
 #
