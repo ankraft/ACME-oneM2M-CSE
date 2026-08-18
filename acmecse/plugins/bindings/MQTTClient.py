@@ -597,7 +597,7 @@ class MQTTClient(object):
 			return Result(rsc = ResponseStatusCode.OK)
 		
 		# Wait for the response
-		response, responseTopic = CSE.request.waitForResponse(preq.request.rqi, Configuration.mqtt_timeout) # type: ignore
+		response, responseTopic = self.requestManager.waitForResponse(preq.request.rqi, Configuration.mqtt_timeout) # type: ignore
 		logRequest(response, None, responseTopic, isResponse = True, isIncoming = True)
 		return response
 
