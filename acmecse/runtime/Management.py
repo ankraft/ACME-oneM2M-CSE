@@ -310,7 +310,7 @@ class ManagementSupport(metaclass=Singleton):
 
 		panelCSE = Panel(tableCSE, 
 							box=box.ROUNDED, 
-							title=_markupText('[b]CSE – Common Services Entities[/b]'), 
+							title=_markupText('[b]CSE - Common Services Entities[/b]'), 
 							title_align='left', 
 							padding = (1, 0, 0, 0),
 							expand=True,
@@ -335,7 +335,7 @@ class ManagementSupport(metaclass=Singleton):
 			
 			panelSPCSE = Panel(tableSPCSE, 
 							box=box.ROUNDED, 
-							title=_markupText("[b]SP CSE – Services Providers via Mcc'[/b]"), 
+							title=_markupText("[b]SP CSE - Services Providers via Mcc'[/b]"), 
 							title_align='left', 
 							padding=(1, 0, 0, 0),
 							expand=True,
@@ -361,7 +361,7 @@ class ManagementSupport(metaclass=Singleton):
 
 		panelAE = Panel(tableAE, 
 						box=box.ROUNDED, 
-						title=_markupText('[b]AE – Application Entities[/b]'), 
+						title=_markupText('[b]AE - Application Entities[/b]'), 
 						title_align='left', 
 						padding=(1, 0, 0, 0),
 						expand=True,
@@ -802,10 +802,11 @@ skinparam BoxPadding 60
 				'SCH': (_cSCH := self.dispatcher.countResources(ResourceTypes.SCH)),
 				'SMD': (_cSMD := self.dispatcher.countResources(ResourceTypes.SMD)),
 				'SUB': (_cSUB := self.dispatcher.countResources(ResourceTypes.SUB)),
+				'TGR': (_cTGR := self.dispatcher.countResources(ResourceTypes.TGR)),
 				'TS': (_cTS := self.dispatcher.countResources(ResourceTypes.TS)),
 				'TSB': (_cTSB := self.dispatcher.countResources(ResourceTypes.TSB)),
 				'TSI': (_cTSI := self.dispatcher.countResources(ResourceTypes.TSI)),
-				'total': _cAE + _cACP + _cACTR + _cALST + _cCB + _cCIN + _cCNT + _cCRS + _cCSR + _cDEPR + _cFCNT + _cFCI + _cGRP + _cLCP + _cMGMTOBJ + _cNOD + _cNTP + _cNTPR + _cPCH + _cPDR + _cREQ + _cSCH + _cSMD + _cSUB + _cTS + _cTSB + _cTSI
+				'total': _cAE + _cACP + _cACTR + _cALST + _cCB + _cCIN + _cCNT + _cCRS + _cCSR + _cDEPR + _cFCNT + _cFCI + _cGRP + _cLCP + _cMGMTOBJ + _cNOD + _cNTP + _cNTPR + _cPCH + _cPDR + _cREQ + _cSCH + _cSMD + _cSUB + _cTGR + _cTS + _cTSB + _cTSI
 			})
 
 			status['runtime'] = {
@@ -1148,37 +1149,10 @@ Native   : {status['runtime']["threads"]["native"]}'''
 			#
 
 			_cts = status["resources"]
-			resourceTypes = Text(style=textStyle) + \
-f'''
-AE      : {_cts['AE']}
-ACP     : {_cts['ACP']}
-ACTR    : {_cts['ACTR']}
-ALST    : {_cts['ALST']}
-CB      : {_cts['CB']}
-CIN     : {_cts['CIN']}
-CNT     : {_cts['CNT']}
-CRS     : {_cts['CRS']}
-CSR     : {_cts['CSR']}
-DEPR    : {_cts['DEPR']}
-FCNT    : {_cts['FCNT']}
-FCI     : {_cts['FCI']}
-GRP     : {_cts['GRP']}
-LCP     : {_cts['LCP']}
-MgmtObj : {_cts['MGMTOBJ']}
-NOD     : {_cts['NOD']}
-NTP     : {_cts['NTP']}
-NTPR    : {_cts['NTPR']}
-PCH     : {_cts['PCH']}
-PDR     : {_cts['PDR']}
-REQ     : {_cts['REQ']}
-SCH     : {_cts['SCH']}
-SMD     : {_cts['SMD']}
-SUB     : {_cts['SUB']}
-TS      : {_cts['TS']}
-TSB     : {_cts['TSB']}
-TSI     : {_cts['TSI']}
-
-'''
+			_lines = '\n'.join(f'{k:<8}: {v}' 
+					  			  for k, v in _cts.items() 
+								  if k not in ('total', 'counts'))
+			resourceTypes = Text(style=textStyle) + f'\n{_lines}\n\n'
 			resourceTypes += _markupText(f'[b]Total   : {_cts["total"]}[/b]')
 
 			# Not sure why rich does not use 1 per line for padding. For some unknown reasons
