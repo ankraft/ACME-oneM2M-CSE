@@ -29,6 +29,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TESTS] Added hurl request files for simple (performance) testing.
 - [TESTS] Added support for wildcards in test case names for the `--run-tests` command line argument. This allows to run all test cases that match a certain pattern.
 - [MISC] Added a startup guard for the CSE to force a shutdown if the CSE does not start within a certain time. 
+- [MISC] Added a helper module to send push notifications via the Pushover service.
 
 ### Experimental
 - [CSE] Added support for the [storage] ManagementObject specialization. This implementation is preliminary and may change depending on the final definition of the storage ManagementObject specialization in TS-0001 and TS-0004.
@@ -616,7 +617,7 @@ Thanks to KyeongHo!
 - [CONSOLE] Added the possibility to toggle through the display modes with "^T" when displaying the resource tree continuously.
 - [CONSOLE] Real-time update for the continuous tree (when creating, deleting, updating resources).
 - [CONSOLE] Added [cse.console].confirmQuit configuration option. It is switched off by default.
-- [DATABASE] Added validation of data base fil∑es during start-up.
+- [DATABASE] Added validation of data base files during start-up.
 - [DATABASE] Added backup of data base files during start-up.
 
 ### Changed
