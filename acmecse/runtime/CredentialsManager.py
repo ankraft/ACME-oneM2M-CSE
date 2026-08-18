@@ -12,8 +12,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from textual import case
-
 from ..etc.Types import BindingType
 from ..helpers.Singleton import Singleton
 from ..helpers.CredentialTools import readCredentialFile, addCredentialEntry, removeCredentialEntry
