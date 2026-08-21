@@ -791,6 +791,7 @@ def buildUserConfigFile(configFile:Optional[str],
 			'timeseries': cseEnvironment != 'Minimal',
 			'remotecse': cseEnvironment != 'Minimal',
 			'announcement': cseEnvironment != 'Minimal',
+			'triggerrequest': cseEnvironment != 'Minimal',
 			'httpmanagement': cseEnvironment in ('Development', 'Introduction', 'Regular', 'ETSI MEC'),
 			'httpstructure': cseEnvironment in ('Development', 'Introduction', 'ETSI MEC'),
 			'httpuppertester': cseEnvironment in ('Development', 'Introduction'),
@@ -815,6 +816,7 @@ def buildUserConfigFile(configFile:Optional[str],
 				Choice('statistics', 'Statistics', enabled=endis['statistics']),
 				Choice('time', 'Time Services', enabled=endis['time']),
 				Choice('timeseries', 'Time Series Support', enabled=endis['timeseries']),
+				Choice('triggerrequest', 'Trigger Request', enabled=endis['triggerrequest']),
 			],
 	        instruction='(select with cursor keys and <space>, confirm with <enter>)' , 
 			long_instruction='Enable or disable certain CSE features',
@@ -1886,6 +1888,7 @@ def buildUserConfigFile(configFile:Optional[str],
 		_setOption(onboardingConfig, 'cse.service.timeSeries', 'enable', str(enDisFeatures.get('timeseries', True)), toLower=True)
 		_setOption(onboardingConfig, 'cse.service.remoteCSE', 'enable', str(enDisFeatures.get('remotecse', True)), toLower=True)
 		_setOption(onboardingConfig, 'cse.service.announcement', 'enable', str(enDisFeatures.get('announcement', True)), toLower=True)
+		_setOption(onboardingConfig, 'cse.service.triggerRequest', 'enable', str(enDisFeatures.get('triggerrequest', True)), toLower=True)
 
 
 		# prompt for advanced settings
