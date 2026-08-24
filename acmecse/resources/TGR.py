@@ -110,7 +110,7 @@ class TGR(AnnounceableResource):
 			return
 
 		# Execute the trigger request to the same NSE as determined in the CREATE request
-		if not self.triggerRequestManager.replaceTrigger(self):
+		if not self.triggerRequestManager.replaceTriggerRequest(self, _nse):
 			raise UNABLE_TO_REPLACE_REQUEST(L.logWarn('Cannot update/replace a TriggerRequest resource while it is being processed by the NSE.'))
 
 

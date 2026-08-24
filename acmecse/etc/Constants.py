@@ -202,6 +202,28 @@ class Constants(object):
 	""" Network coordination supported by the CSE. """
 
 
+	#
+	#	Plugins related constants
+	#
+
+	# TriggerRequestManager plugins
+
+	tagTriggerRequestHandler = 'triggerRequestHandler'
+	""" The tag used to identify TriggerRequestHandler plugins. """
+
+	serviceEndpointAcceptsM2MExtID = 'acceptsM2MExtID'
+	""" The service endpoint used to check whether a TriggerRequest with a given M2M-Ext-ID is accepted by the NSE handler plugin. """
+
+	serviceEndpointSendTriggerRequest = 'sendTriggerRequest'
+	""" The service endpoint used to send a TriggerRequest to the NSE handler plugin. """
+
+	serviceEndpointCheckTriggerRequestStatus = 'checkTriggerRequestStatus'
+	""" The service endpoint used to check the status of a TriggerRequest with the NSE handler plugin. """
+
+	serviceEndpointTerminateTriggerRequest = 'terminateTriggerRequest'
+	""" The service endpoint used to terminate a TriggerRequest with the NSE handler plugin. """
+
+
 class RuntimeConstants(object):
 	""" Various runtime constants, determined during startup of the CSE """
 

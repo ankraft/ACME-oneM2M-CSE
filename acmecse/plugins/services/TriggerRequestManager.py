@@ -15,16 +15,15 @@
 
 from typing import Optional
 
-from acmecse.runtime.PluginSupport import plugin, restart, start, stop, pluginManager
+from acmecse.runtime.PluginSupport import plugin, restart, start, stop, configure, validate, pluginManager
 from acmecse.runtime.Logging import Logging as L
 from acmecse.etc.Types import TriggerStatus
 from acmecse.etc.Constants import Constants as C
+from acmecse.runtime.Configuration import Configuration, ConfigurationError
 from acmecse.helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 from acmecse.etc.DateUtils import utcTime
 
 from acmecse.resources.TGR import TGR
-
-# TODO: add magic strings to constants
 
 @plugin(property='triggerRequestManager', tags=['acme', 'core'])
 class TriggerRequestManager:
@@ -42,7 +41,7 @@ class TriggerRequestManager:
 		""" Start the TriggerRequestManager.
 		"""
 		L.isInfo and L.log('TriggerRequestManager started')
-		for service in pluginManager.services('triggerRequestHandler'):
+		for service in pluginManager.services(C.tagTriggerRequestHandler):
 			L.isDebug and L.logDebug(f'Found TriggerRequestHandler service: {service.pluginName}, tags: {service.tags}, metadata: {service.metadata}, priority: {service.priority}')
 
 
@@ -63,6 +62,32 @@ class TriggerRequestManager:
 		L.isInfo and L.log('TriggerRequestManager restarted')
 
 
+	@configure
+	def configure(self, config: Configuration) -> None:
+		"""	Configure the GroupManager with the provided configuration.
+		
+			Args:
+				config: The configuration to apply.
+		"""
+		parser = config.configParser
+		config.cse_service_triggerRequest_enable = parser.getboolean('cse.service.triggerRequest', 'enable', fallback=True)
+		config.cse_service_triggerRequest_initialTriggerDelay = parser.getfloat('cse.service.triggerRequest', 'initialTriggerDelay', fallback=1.0)
+		config.cse_service_triggerRequest_triggerCheckInterval = parser.getfloat('cse.service.triggerRequest', 'triggerCheckInterval', fallback=1.0)
+
+
+	@validate
+	def validate(self, config: Configuration) -> None:
+		"""	Validate the GroupManager configuration.
+
+			Args:
+				config: The configuration to validate.
+		"""
+		if config.cse_service_triggerRequest_initialTriggerDelay <= 0.0:
+			raise ConfigurationError(fr'\[cse.service.triggerRequest]:initialTriggerDelay must be > 0.0')
+		if config.cse_service_triggerRequest_triggerCheckInterval <= 0.0:
+			raise ConfigurationError(fr'\[cse.service.triggerRequest]:triggerCheckInterval must be > 0.0')
+
+
 	##############################################################################
 	
 
@@ -80,13 +105,13 @@ class TriggerRequestManager:
 				The first NSE service handler plugin's name if found, otherwise None.
 
 		"""
-		for service in pluginManager.services('triggerRequestHandler'):
+		for service in pluginManager.services(C.tagTriggerRequestHandler):
 			try:
-				if pluginManager.callEndpoint(service.pluginName, 'acceptsM2MExtID', tgr.mei):
+				if pluginManager.callEndpoint(service.pluginName, C.serviceEndpointAcceptsM2MExtID, tgr.mei):
 					L.isDebug and L.logDebug(f'TriggerRequest {tgr.ri} accepted by NSE handler: {service.pluginName}')
 					return service.pluginName
 			except Exception as e:
-				L.isWarn and L.logWarn(f'Error while calling service endpoint "acceptsM2MExtID" on NSE handler {service.pluginName}: {e}')
+				L.isWarn and L.logWarn(f'Error while calling service endpoint "{C.serviceEndpointAcceptsM2MExtID}" on NSE handler {service.pluginName}: {e}')
 				continue
 		L.isDebug and L.logDebug(f'No NSE handler found for TriggerRequest {tgr.ri} with M2M-Ext-ID: {tgr.mei}')
 		return None
@@ -102,10 +127,10 @@ class TriggerRequestManager:
 				True if the NSE is available, False otherwise.
 		"""
 		pi = pluginManager.getPluginByName(nse)
-		if pi and 'triggerRequestHandler' in pi.tags:
+		if pi and C.tagTriggerRequestHandler in pi.tags:
 			return True
 
-		L.isDebug and L.logDebug(f'NSE handler {nse} not found or does not have the required tag "triggerRequestHandler"')
+		L.isDebug and L.logDebug(f'NSE handler {nse} not found or does not have the required tag "{C.tagTriggerRequestHandler}"')
 		return False
 
 
@@ -155,7 +180,7 @@ class TriggerRequestManager:
 
 		# Have a short delay to let the CSE finish processing the request and sending the response to the originator.
 		try:
-			actor.sleep(1)	# TODO make this configurable
+			actor.sleep(Configuration.cse_service_triggerRequest_initialTriggerDelay)
 		except InterruptedError:
 			L.isWarn and L.logWarn(f'TriggerRequest {tgr.ri} actor interrupted during initial sleep. Aborting trigger handling.')
 			return
@@ -163,7 +188,7 @@ class TriggerRequestManager:
 		# Send the TriggerRequest to the assigned NSE service handler plugin by calling its *sendTriggerRequest* endpoint
 		if _endTime > utcTime():
 			try:
-				pluginManager.callEndpoint(nse, 'sendTriggerRequest', tgr, replace)
+				pluginManager.callEndpoint(nse, C.serviceEndpointSendTriggerRequest, tgr, replace)
 				L.isDebug and L.logDebug(f'TriggerRequest {tgr.ri} sent to NSE {nse}')
 			except Exception as e:
 				L.isWarn and L.logWarn(f'Failed to send TriggerRequest {tgr.ri} to NSE {nse}: {e}')
@@ -178,19 +203,19 @@ class TriggerRequestManager:
 
 			# Short sleep to avoid busy waiting, but also check the status of the TriggerRequest periodically.
 			try:
-				actor.sleep(1)	# TODO make this configurable
+				actor.sleep(Configuration.cse_service_triggerRequest_triggerCheckInterval)
 			except InterruptedError:
 				L.isWarn and L.logWarn(f'TriggerRequest {tgr.ri} actor interrupted during sleep. Aborting trigger handling.')
 				return
 
 			# Call the *checkTriggerRequestStatus* endpoint of the assigned NSE service handler plugin to check the status of the TriggerRequest
 			try:
-				status = pluginManager.callEndpoint(nse, 'checkTriggerRequestStatus', tgr)
+				status = pluginManager.callEndpoint(nse, C.serviceEndpointCheckTriggerRequestStatus, tgr)
 				if status != tgr.tst:
 					L.isDebug and L.logDebug(f'TriggerRequest {tgr.ri} status updated from {TriggerStatus(tgr.tst)} to {status}')
-					tgr.setTriggerStatus(status)	# Also update the status in the database
+				tgr.setTriggerStatus(status)	# Also update the status in the database
 			except Exception as e:
-				L.isWarn and L.logWarn(f'Failed to call checkTriggerRequestStatus on NSE handler {nse}: {e}')
+				L.isWarn and L.logWarn(f'Failed to call service endpoint "{C.serviceEndpointCheckTriggerRequestStatus}" on NSE handler {nse}: {e}')
 
 		# Check if the trigger request has expired
 		if actor.running and tgr.tst == TriggerStatus.PROCESSING and _endTime <= utcTime():
@@ -235,11 +260,12 @@ class TriggerRequestManager:
 		"""
 		# TODO: Is this just a terminate+new trigger, or should we have a replaceTriggerRequest endpoint in the NSE 
 		#		service handler plugin? 
+		L.isDebug and L.logDebug(f'Attempting to replace TriggerRequest {tgr.ri} with new request to NSE {nse}')
 		if tgr.ri in self.triggerRequestActors:
 			if not self.terminateTriggerRequest(tgr, replace=True):
 				return False
 		self.sendTriggerRequest(tgr, nse, replace=True)
-		return False
+		return True
 
 
 	def terminateTriggerRequest(self, tgr: TGR, replace: bool = False) -> bool:
@@ -267,14 +293,17 @@ class TriggerRequestManager:
 			# Call the *terminateTriggerRequest* endpoint of the assigned NSE service handler plugin to notify it of the termination
 			result = True
 			try:
-				pluginManager.callEndpoint(tgr.attribute(C.attrTriggerRequestAssignedNSE), 'terminateTriggerRequest', tgr, replace=replace)
+				pluginManager.callEndpoint(tgr.attribute(C.attrTriggerRequestAssignedNSE), 
+							   			   C.serviceEndpointTerminateTriggerRequest, 
+										   tgr, 
+										   replace=replace)
 				try:
 					tgr.setTriggerStatus(TriggerStatus.TRIGGER_TERMINATED)
 				except Exception as e:
 					L.isWarn and L.logWarn(f'Failed to set TriggerRequest {tgr.ri} status to TRIGGER_TERMINATED: {e}')
 					result = False
 			except Exception as e:
-				L.isWarn and L.logWarn(f'Failed to call terminateTriggerRequest on NSE handler {tgr.attribute(C.attrTriggerRequestAssignedNSE)}: {e}')
+				L.isWarn and L.logWarn(f'Failed to call service endpoint "{C.serviceEndpointTerminateTriggerRequest}" on NSE handler {tgr.attribute(C.attrTriggerRequestAssignedNSE)}: {e}')
 				result = False
 
 			# Remove the actor from the dictionary to clean up

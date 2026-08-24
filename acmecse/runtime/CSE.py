@@ -26,7 +26,7 @@ from ..etc.Types import CSEStatus, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
 
 from .CredentialsManager import CredentialsManager
-from ..runtime.Configuration import Configuration
+from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime.ConsoleBase import ConsoleBase
 from ..runtime.EventManager import eventManager
 from ..runtime.Factory import Factory
@@ -258,6 +258,10 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		L.logErr(f'Plugin timeout error during startup: {e}')
 		RC.cseStatus = CSEStatus.STOPPED
 		forceShutdown()	
+	except ConfigurationError as e:
+		Configuration._error(str(e))
+		RC.cseStatus = CSEStatus.STOPPED
+		return False
 	except Exception as e:
 		L.logErr(f'Error during startup: {e}')
 		RC.cseStatus = CSEStatus.STOPPED

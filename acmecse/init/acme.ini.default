@@ -325,7 +325,15 @@ enable=true
 ; This setting also enables or disables the default TriggerRequestHandler plugin.
 ; Default: true
 enable=true
-
+; The delay in seconds before the TriggerRequestManager starts handling a trigger request
+; after it has been created. This delay is used to give the assigned NSE service handler
+; plugin time to prepare for the trigger request. Must be greater than 0.0.
+; Default: 1.0 seconds
+initialTriggerDelay=1.0
+; The interval in seconds to check for results of trigger requests that are still in the
+; "processing" state. Must be greater than 0.0.
+; Default: 1.0 seconds
+triggerCheckInterval=1.0
 
 
 ;

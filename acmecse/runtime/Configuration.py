@@ -290,6 +290,14 @@ class Configuration(object):
 	cse_service_triggerRequest_enable: bool = False
 	"""	Enable or disable the trigger request service. This includes the TriggerRequestManager plugin and the related features in the CSE. """
 
+	cse_service_triggerRequest_initialTriggerDelay = 1.0
+	"""	The initial delay in seconds before the TriggerRequestManager starts handling a trigger request after it has been created. 
+		This delay is used to give the assigned NSE service handler plugin time to prepare for the trigger request. """
+
+	cse_service_triggerRequest_triggerCheckInterval = 1.0
+	"""	The interval in seconds to check for results of trigger requests that are still in the "processing" 
+		state. Must be greater than 0.0. """
+
 
 	database_type:str = None
 	"""	The type of the database. """

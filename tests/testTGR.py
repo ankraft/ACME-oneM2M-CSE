@@ -27,6 +27,10 @@ from init import *
 
 triggerSleepTime = 3 # seconds to wait for the trigger to be processed
 
+newUpdateBehavior = False	
+""" If True, the new update behavior is used, where the trigger request can only be updated/replaced 
+	if it is still in the PROCESSING state. The trigger request is processed immediately after the update."""
+
 class TestTGR(unittest.TestCase):
 
 	ae = None
@@ -175,13 +179,13 @@ class TestTGR(unittest.TestCase):
 
 	def _runTriggerTypeCreateTest(self, triggerType: TriggerStatus, 
 							   	  timeout: int = 30,
-								  delete: bool = True) -> None:
+								  updatePrepare: bool = False) -> None:
 		"""	Run a CREATE test for a specific triggerType. This is a helper function to avoid code duplication. 
 
 			Args:
 				triggerType: The triggerType to test. This is used to set the M2M-EXT-ID of the AE and TriggerRequest resources.
 				timeout: Timeout of the trigger request in seconds.
-				delete: Whether to delete the TriggerRequest resource after the test. Set to False if you want to update it later.
+				updatePrepare: Whether to update the TriggerRequest resource after creation. Set to False if you want to check the status immediately.
 		"""
 
 		# Update the AE to have a known M2M-EXT-ID for the default TriggerRequest handler
@@ -203,15 +207,15 @@ class TestTGR(unittest.TestCase):
 		self.assertEqual(rsc, RC.CREATED, r)
 
 		# Wait for the trigger to be processed
-		testSleep(triggerSleepTime)
+		if not updatePrepare:
+			testSleep(triggerSleepTime)  # Wait for the trigger to be processed
 
-		# Check the status of the TriggerRequest
-		r, rsc = RETRIEVE(f'{aeURL}/{tgrRN}', self.originator)
-		self.assertEqual(rsc, RC.OK, r)
-		self.assertEqual(findXPath(r, 'm2m:tgr/tst'), triggerType.value, r)
+			# Check the status of the TriggerRequest
+			r, rsc = RETRIEVE(f'{aeURL}/{tgrRN}', self.originator)
+			self.assertEqual(rsc, RC.OK, r)
+			self.assertEqual(findXPath(r, 'm2m:tgr/tst'), triggerType.value, r)
 
-		# DELETE the TGR to clean up
-		if delete:
+			# DELETE the TGR to clean up
 			r, rsc = DELETE(f'{aeURL}/{tgrRN}', self.originator)
 			self.assertEqual(rsc, RC.DELETED, r)
 
@@ -290,7 +294,7 @@ class TestTGR(unittest.TestCase):
 		"""	UPDATE <TGR> with expected trigger result: TRIGGER_DELIVERED"""
 
 		# First create an initial TriggerRequest 
-		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_DELIVERED, delete=False)
+		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_DELIVERED, updatePrepare=True)
 
 		# ... then update it to trigger a new request and check the result again
 		self._runTriggerTypeUpdateTest(TriggerStatus.TRIGGER_DELIVERED)
@@ -302,7 +306,7 @@ class TestTGR(unittest.TestCase):
 		"""	UPDATE <TGR> with expected trigger result: TRIGGER_FAILED"""
 
 		# First create an initial TriggerRequest 
-		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_FAILED, delete=False)
+		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_FAILED, updatePrepare=True)
 
 		# ... then update it to trigger a new request and check the result again
 		self._runTriggerTypeUpdateTest(TriggerStatus.TRIGGER_FAILED)
@@ -314,7 +318,7 @@ class TestTGR(unittest.TestCase):
 		"""	UPDATE <TGR> with expected trigger result: TRIGGER_REPLACED"""
 
 		# First create an initial TriggerRequest 
-		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_REPLACED, delete=False)
+		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_REPLACED, updatePrepare=True)
 
 		# ... then update it to trigger a new request and check the result again
 		self._runTriggerTypeUpdateTest(TriggerStatus.TRIGGER_REPLACED)
@@ -326,7 +330,7 @@ class TestTGR(unittest.TestCase):
 		"""	UPDATE <TGR> with expected trigger result: TRIGGER_UNCONFIRMED"""
 
 		# First create an initial TriggerRequest 
-		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_UNCONFIRMED, delete=False)
+		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_UNCONFIRMED, updatePrepare=True)
 
 		# ... then update it to trigger a new request and check the result again
 		self._runTriggerTypeUpdateTest(TriggerStatus.TRIGGER_UNCONFIRMED)
@@ -338,7 +342,7 @@ class TestTGR(unittest.TestCase):
 		"""	UPDATE <TGR> with expected trigger result: TRIGGER_EXPIRED"""
 
 		# First create an initial TriggerRequest 
-		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_EXPIRED, timeout=1, delete=False)
+		self._runTriggerTypeCreateTest(TriggerStatus.TRIGGER_EXPIRED, timeout=1, updatePrepare=True)
 
 		# ... then update it to trigger a new request and check the result again
 		self._runTriggerTypeUpdateTest(TriggerStatus.TRIGGER_EXPIRED)
@@ -367,13 +371,27 @@ class TestTGR(unittest.TestCase):
 		r, rsc = CREATE(aeURL, self.originator, T.TGR, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 
-		# DONT Wait for the trigger to be processed but immediately 
-		# UPDATE the TriggerRequest
-		dct = 	{ 'm2m:tgr' : { 
-					'tpe' : TriggerPurpose.establishConnection,
-				}}
-		r, rsc = UPDATE(f'{aeURL}/{tgrRN}', self.originator, dct)
-		self.assertEqual(rsc, RC.UNABLE_TO_REPLACE_REQUEST, r)
+		if newUpdateBehavior:
+
+			# DONT Wait for the trigger to be processed but immediately 
+			# UPDATE the TriggerRequest
+			dct = 	{ 'm2m:tgr' : { 
+						'tpe' : TriggerPurpose.establishConnection,
+					}}
+			r, rsc = UPDATE(f'{aeURL}/{tgrRN}', self.originator, dct)
+			self.assertEqual(rsc, RC.UNABLE_TO_REPLACE_REQUEST, r)
+
+		else:
+			# In this case we change the test behaviour: We are testing to replace it AFTER
+			# it was processed. First, we wait
+			testSleep(triggerSleepTime)
+
+			dct = 	{ 'm2m:tgr' : { 
+						'tpe' : TriggerPurpose.establishConnection,
+					}}
+			r, rsc = UPDATE(f'{aeURL}/{tgrRN}', self.originator, dct)
+			self.assertEqual(rsc, RC.UNABLE_TO_REPLACE_REQUEST, r)
+
 
 		# DELETE the TGR to clean up
 		r, rsc = DELETE(f'{aeURL}/{tgrRN}', self.originator)

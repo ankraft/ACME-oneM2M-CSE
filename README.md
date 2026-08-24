@@ -31,6 +31,10 @@ Please see the [Changelog](CHANGELOG.md) and this [discussion](https://github.co
 
 See the [announcement](https://github.com/ankraft/ACME-oneM2M-CSE/discussions/181) in the [discussions](https://github.com/ankraft/ACME-oneM2M-CSE/discussions).
 
+## Community-Contributed Plugins
+
+A collection of contributed plugins by the community can be found in the [ACME CSE Community Plugins repository](https://github.com/ankraft/ACME-oneM2M-CSE-plugins){target=_new}. Each folder in the repository contains a plugin with its source code and a README file describing the plugin and how to use it.
+
 ## Acknowledgements
 
 Many People have contributed to this project and helped to make it what it is today with their ideas, suggestions, and code. Please see the [Acknowledgements](https://acmecse.net/home/Acknowledgements/) for the list of contributors.
@@ -43,4 +47,3 @@ Join the ACME CSE community on [Discord ](https://discord.gg/6ryMHQC2Uj) to disc
 ## License
 
 BSD 3-Clause License for the CSE and its native components and modules. Please see the individual licenses of the used third-party components.
-

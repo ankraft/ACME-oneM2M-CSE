@@ -28,4 +28,4 @@ class TGRResourceConfiguration(ModuleConfiguration):
 
 	def validateConfiguration(self, config:Configuration, initial:Optional[bool]=False) -> None:
 		if config.resource_tgr_maxTriggerValidityTime <= 0:
-			raise ConfigurationError(f'[i]\[resource.tgr]:maxTriggerValidityTime[/i] must be > 0\n[dim]Configured value: {config.resource_tgr_maxTriggerValidityTime}[/dim]')
+			raise ConfigurationError(rf'[i]\[resource.tgr]:maxTriggerValidityTime[/i] must be > 0\n[dim]Configured value: {config.resource_tgr_maxTriggerValidityTime}[/dim]')
