@@ -77,6 +77,7 @@ class TestTGR(unittest.TestCase):
 # TODO: test missing tvt
 # TODO test missing any of tri, tia, tio, tirt
 # TODO test unknown mei domain
+# TODO differet UPDATE test for inverse update behavior
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipUnless(cseType =='IN', 'TGR resource type is only allowed on an IN-CSE')

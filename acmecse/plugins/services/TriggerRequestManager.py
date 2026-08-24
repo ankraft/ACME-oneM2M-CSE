@@ -109,7 +109,7 @@ class TriggerRequestManager:
 		return False
 
 
-	def handleTriggerRequestSending(self, tgr: TGR, nse: str) -> None:
+	def sendTriggerRequest(self, tgr: TGR, nse: str, replace: bool = False) -> None:
 		""" Handle the sending of a TriggerRequest to the determined NSE.
 		
 			This method is responsible for initiating the process of sending the TriggerRequest to the 
@@ -118,6 +118,7 @@ class TriggerRequestManager:
 			Args:
 				tgr: The TriggerRequest resource to be sent.
 				nse: The name of the NSE service handler plugin to which the TriggerRequest should be sent.
+				replace: A boolean indicating whether this is a replacement of an existing TriggerRequest. If True, the NSE handler may handle the request differently.
 		"""		
 
 		# Create and start an actor for the TriggerRequest to handle the sending and checking process in the background.
@@ -127,11 +128,11 @@ class TriggerRequestManager:
 											  name=f'tgr_{tgr.ri}', 
 											  finished=self._triggerHandlerCompleted)
 		self.triggerRequestActors[tgr.ri] = (actor, tgr) # Store the actor and the TriggerRequest in the dictionary for later reference
-		actor.start(tgr=tgr, nse=nse, actor=actor)
+		actor.start(tgr=tgr, nse=nse, replace=replace, actor=actor)
 		L.isDebug and L.logDebug(f'Started background actor for TriggerRequest: {tgr.ri} to NSE: {nse}')
 
 
-	def _triggerHandler(self, tgr: TGR, nse: str, actor: BackgroundWorker) -> None:
+	def _triggerHandler(self, tgr: TGR, nse: str, replace: bool, actor: BackgroundWorker) -> None:
 		""" Internal method to handle the actual sending of the TriggerRequest to the NSE.
 		
 			This method is executed in a background worker and is responsible for the actual communication
@@ -141,6 +142,7 @@ class TriggerRequestManager:
 			Args:
 				tgr: The TriggerRequest resource to be sent.
 				nse: The name of the NSE service handler plugin to which the TriggerRequest should be sent.
+				replace: A boolean indicating whether this is a replacement of an existing TriggerRequest. If True, the NSE handler may handle the request differently.
 				actor: The background worker actor handling this trigger request.
 		"""
 
@@ -161,7 +163,7 @@ class TriggerRequestManager:
 		# Send the TriggerRequest to the assigned NSE service handler plugin by calling its *sendTriggerRequest* endpoint
 		if _endTime > utcTime():
 			try:
-				pluginManager.callEndpoint(nse, 'sendTriggerRequest', tgr)
+				pluginManager.callEndpoint(nse, 'sendTriggerRequest', tgr, replace)
 				L.isDebug and L.logDebug(f'TriggerRequest {tgr.ri} sent to NSE {nse}')
 			except Exception as e:
 				L.isWarn and L.logWarn(f'Failed to send TriggerRequest {tgr.ri} to NSE {nse}: {e}')
@@ -216,7 +218,31 @@ class TriggerRequestManager:
 			L.isDebug and L.logDebug(f'Background actor for TriggerRequest {tgr.ri} has completed and been removed from tracking.')
 
 
-	def terminateTriggerRequest(self, tgr: TGR) -> None:
+	def replaceTriggerRequest(self, tgr: TGR, nse: str) -> bool:
+		""" Attempt to replace an existing TriggerRequest that is currently being processed.
+		
+			This method checks if the provided TriggerRequest is currently being processed by an actor.
+			If it is, it attempts to terminate the existing processing and allows for a new TriggerRequest
+			to be sent in its place.
+
+			Args:
+				tgr: The TriggerRequest resource that is attempting to replace an existing one.
+				nse: The name of the NSE service handler plugin to which the TriggerRequest should be sent.
+
+			Returns:
+				True if the existing TriggerRequest was successfully terminated and replaced, False otherwise.
+
+		"""
+		# TODO: Is this just a terminate+new trigger, or should we have a replaceTriggerRequest endpoint in the NSE 
+		#		service handler plugin? 
+		if tgr.ri in self.triggerRequestActors:
+			if not self.terminateTriggerRequest(tgr, replace=True):
+				return False
+		self.sendTriggerRequest(tgr, nse, replace=True)
+		return False
+
+
+	def terminateTriggerRequest(self, tgr: TGR, replace: bool = False) -> bool:
 		""" Terminate (or recall) a TriggerRequest that is currently being processed.
 		
 			This method is responsible for stopping any background processing related to the provided 
@@ -227,6 +253,11 @@ class TriggerRequestManager:
 
 			Args:
 				tgr: The TriggerRequest resource to be terminated.
+				replace: A boolean indicating whether this termination is part of a replacement process. If True, the NSE handler may handle the termination differently.
+			
+			Returns:
+				True if the TriggerRequest was successfully terminated, False otherwise. True is also returned if
+				the TriggerRequest was not currently being processed.
 		"""
 		if (actorTgr := self.triggerRequestActors.get(tgr.ri)):
 			actor, tgr = actorTgr
@@ -234,17 +265,24 @@ class TriggerRequestManager:
 			actor.stop()
 
 			# Call the *terminateTriggerRequest* endpoint of the assigned NSE service handler plugin to notify it of the termination
+			result = True
 			try:
-				pluginManager.callEndpoint(tgr.attribute(C.attrTriggerRequestAssignedNSE), 'terminateTriggerRequest', tgr)
+				pluginManager.callEndpoint(tgr.attribute(C.attrTriggerRequestAssignedNSE), 'terminateTriggerRequest', tgr, replace=replace)
 				try:
 					tgr.setTriggerStatus(TriggerStatus.TRIGGER_TERMINATED)
 				except Exception as e:
 					L.isWarn and L.logWarn(f'Failed to set TriggerRequest {tgr.ri} status to TRIGGER_TERMINATED: {e}')
+					result = False
 			except Exception as e:
 				L.isWarn and L.logWarn(f'Failed to call terminateTriggerRequest on NSE handler {tgr.attribute(C.attrTriggerRequestAssignedNSE)}: {e}')
+				result = False
 
 			# Remove the actor from the dictionary to clean up
-			del self.triggerRequestActors[tgr.ri]	
+			del self.triggerRequestActors[tgr.ri]
+			return result
+
+		L.isDebug and L.logDebug(f'TriggerRequest {tgr.ri} is not currently being processed, no action taken.')
+		return True
 
 
 	def _terminateAllTriggerRequests(self) -> None:

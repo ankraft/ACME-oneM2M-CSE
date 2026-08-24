@@ -7,7 +7,14 @@
 #	ResourceType: TriggerRequest
 #
 
-""" TriggerRequest (TGR) resource type. """
+"""	TriggerRequest (TGR) resource type.
+
+	A <triggerRequest> resource lets an IN-CSE ask a Network Service Entity (NSE) plugin
+	(e.g. SMS) to trigger a target &lt;AE> or &lt;remoteCSE> that is currently unreachable, so
+	that it re-establishes a connection to the CSE. Depending on its *triggerPurpose*
+	attribute, the request either just wakes up the target (*establishConnection*) or asks
+	it to perform a CRUD operation once it reconnects (*executeCRUD*).
+"""
 
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
@@ -38,7 +45,14 @@ addToInternalAttributes((Constants.attrTriggerRequestValidityTime,
 @requires(dispatcher='acmecse.services.Dispatcher')
 @requires(storage='acmecse.runtime.Storage')
 class TGR(AnnounceableResource):
-	""" TriggerRequest (TGR) resource type. """
+	"""	TriggerRequest (TGR) resource type.
+
+		A <triggerRequest> resource lets an IN-CSE ask a Network Service Entity (NSE) plugin
+		(e.g. SMS) to trigger a target &lt;AE> or &lt;remoteCSE> that is currently unreachable, so
+		that it re-establishes a connection to the CSE. Depending on its *triggerPurpose*
+		attribute, the request either just wakes up the target (*establishConnection*) or asks
+		it to perform a CRUD operation once it reconnects (*executeCRUD*).
+	"""
 
 	triggerRequestManager: Optional[TriggerRequestManager] = None
 	""" Injected TriggerRequestManager plugin instance. """
@@ -75,7 +89,7 @@ class TGR(AnnounceableResource):
 		# Initiate the more complex triggering process by calling the TriggerRequestManager.
 		# This will handle the rest of the activation process in the background, because it may take 
 		# some time to complete, depending on the underlying network and the NSE.
-		self.triggerRequestManager.handleTriggerRequestSending(self, nse)
+		self.triggerRequestManager.sendTriggerRequest(self, nse)
 
 
 	def update(self, dct: JSON = None,
@@ -84,9 +98,10 @@ class TGR(AnnounceableResource):
 					 request: Optional[CSERequest] = None) -> None:
 		super().update(dct, originator, doValidateAttributes, request)
 
+
 		# Check whether the triggerStatus is in PROCESSING state. If so, then reject the update request with UNABLE_TO_REPLACE_REQUEST.
-		if self.tst == TriggerStatus.PROCESSING:
-			raise UNABLE_TO_REPLACE_REQUEST(L.logWarn('Cannot update a TriggerRequest resource while it is in PROCESSING state.'))
+		if self.tst != TriggerStatus.PROCESSING:
+			raise UNABLE_TO_REPLACE_REQUEST(L.logWarn('Cannot update/replace a TriggerRequest resource while it is not in PROCESSING state.'))
 
 		# Check whether the NSE is still available
 		_nse = self.attribute(Constants.attrTriggerRequestAssignedNSE)
@@ -95,8 +110,28 @@ class TGR(AnnounceableResource):
 			return
 
 		# Execute the trigger request to the same NSE as determined in the CREATE request
-		self.setTriggerStatus(TriggerStatus.PROCESSING, False)
-		self.triggerRequestManager.handleTriggerRequestSending(self, _nse)
+		if not self.triggerRequestManager.replaceTrigger(self):
+			raise UNABLE_TO_REPLACE_REQUEST(L.logWarn('Cannot update/replace a TriggerRequest resource while it is being processed by the NSE.'))
+
+
+		# >>> The following code contains the reverse logic of the above: Only if the triggerStatus is
+		# >>>> not in PROCESSING state, then the update request is accepted. Otherwise, it is rejected.
+		#
+		#
+		#
+		# # Check whether the triggerStatus is in PROCESSING state. If so, then reject the update request with UNABLE_TO_REPLACE_REQUEST.
+		# if self.tst == TriggerStatus.PROCESSING:
+		# 	raise UNABLE_TO_REPLACE_REQUEST(L.logWarn('Cannot update a TriggerRequest resource while it is in PROCESSING state.'))
+
+		# # Check whether the NSE is still available
+		# _nse = self.attribute(Constants.attrTriggerRequestAssignedNSE)
+		# if not _nse or not self.triggerRequestManager.hasNSE(_nse):
+		# 	self.setTriggerStatus(TriggerStatus.ERROR_NSE_NOT_FOUND, False)
+		# 	return
+
+		# # Execute the trigger request to the same NSE as determined in the CREATE request
+		# self.setTriggerStatus(TriggerStatus.PROCESSING, False)
+		# self.triggerRequestManager.sendTriggerRequest(self, _nse)
 
 
 	def validate(self, originator:Optional[str] = None, 

@@ -68,7 +68,7 @@ class DefaultTriggerRequestHandler(Service):
 
 
 	@endpoint('sendTriggerRequest')
-	def sendTriggerRequest(self, tgr: TGR) -> None:
+	def sendTriggerRequest(self, tgr: TGR, replace: bool = False) -> None:
 		""" Send a TriggerRequest to the assigned NSE handler.
 
 			Note:
@@ -76,6 +76,8 @@ class DefaultTriggerRequestHandler(Service):
 
 			Args:
 				tgr: The TriggerRequest resource to be sent.
+				replace: A boolean indicating whether this is a replacement of an existing TriggerRequest. 
+					If True, the NSE handler may handle the request differently.
 
 			Raises:
 				INTERNAL_SERVER_ERROR: If the TriggerRequest resource is not valid for sending.
@@ -130,7 +132,7 @@ class DefaultTriggerRequestHandler(Service):
 	
 
 	@endpoint('terminateTriggerRequest')
-	def terminateTriggerRequest(self, tgr: TGR) -> None:
+	def terminateTriggerRequest(self, tgr: TGR, replace: bool = False) -> None:
 		""" Terminate a TriggerRequest that is currently being processed.
 
 			Note:
@@ -138,6 +140,8 @@ class DefaultTriggerRequestHandler(Service):
 
 			Args:
 				tgr: The TriggerRequest resource to be terminated.
+				replace: A boolean indicating whether this termination is part of a replacement process. 
+					If True, the NSE handler may handle the termination differently.
 		"""
 		# Remove trigger from the internal list of currently processed TriggerRequests
 		if tgr.ri in self._expectedTriggerResult:
