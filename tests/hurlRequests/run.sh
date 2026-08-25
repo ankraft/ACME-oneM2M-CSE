@@ -1,4 +1,4 @@
 #/bin/sh
 
-hurl $@ --variables-file hurl.env.dist --very-verbose --continue-on-error
+hurl $@ --variables-file hurl.env --very-verbose --continue-on-error
 
