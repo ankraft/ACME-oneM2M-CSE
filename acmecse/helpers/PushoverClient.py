@@ -4,7 +4,7 @@
 #	(c) 2026 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-"""	Minimal helper for sending notifications via the Pushover API.
+"""	Minimal helper for sending notifications to mobile devices via the Pushover API.
 
 	Documentation:
 		https://pushover.net/api
@@ -43,6 +43,9 @@ class PushoverError(Exception):
 
 @dataclass
 class PushoverClient:
+	""" A client for sending notifications to mobile devices via the Pushover API.
+	"""
+
 	token: str          
 	"""Application/API token"""
 	user: str
@@ -122,7 +125,7 @@ class PushoverClient:
 		return result
 
 
-def sendNotification(token: str, user: str, message: str, **kwargs) -> dict:
+def sendNotification(token: str, user: str, message: str, **kwargs: Any) -> dict:
 	"""	Convenience one-off call - builds a client and sends immediately.
 
 		Args:

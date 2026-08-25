@@ -71,14 +71,14 @@ class PluginManager(PM):
 		'acmecse.plugins.services.TimeSeriesManager':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('timeSeriesManager_enable', True),	
 		'acmecse.plugins.services.TriggerRequestManager':			lambda : Configuration._cse_operation_plugins_enabledComponents.get('triggerRequestManager_enable', True),
 
-		# Default handlers may depend on other plugins
-		
-		# Depend on: TriggerRequestManager.
-		'acmecse.plugins.defaults.DefaultTriggerRequestHandler':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('triggerRequestManager_enable', False),	
+		'acmecse.plugins.defaults.DefaultTriggerRequestHandler':	lambda : Configuration._cse_operation_plugins_enabledComponents.get('triggerRequestManager_enable', False),	 # Depend on: TriggerRequestManager.
 	}
 	"""	Dictionary of plugin checks. The keys are the plugin names, the values are callables that take the 
 		plugin name as an argument and return a boolean indicating whether the plugin should be loaded. 
-		This is used to determine which plugins to load based on the configuration. """
+		This is used to determine which plugins to load based on the configuration. 
+		
+		Default handlers may depend on other plugins.
+	"""
 
 	def startup(self) -> None:
 		"""	Runtime instance of the `PluginManager`. """

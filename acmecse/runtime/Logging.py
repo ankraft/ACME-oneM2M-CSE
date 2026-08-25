@@ -99,6 +99,8 @@ ACMEStyles = {
 	'INFO'					: Style(color = 'blue'),
 	'logging.console'		: Style(color = 'spring_green2'),
 }
+""" Custom styles for the logging console output. These are added to the default styles of the rich
+	library to create a new theme for the console output. """
 
 class LogFilter(logging.Filter):
 	"""	Filter for the logging system. It removes all log messages that

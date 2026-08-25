@@ -35,6 +35,13 @@ class TriggerRequestManager:
 	"""
 
 	triggerRequestActors: dict[str, tuple[BackgroundWorker, TGR]] = {}
+	""" Dictionary to keep track of active TriggerRequest actors. 
+		The key is the TriggerRequest resource ID (ri), and the value is a tuple containing the
+		BackgroundWorker instance and the corresponding TGR resource.
+
+		Be aware that this Triggerrequest resource may be updated or deleted outside of this manager, 
+		so the manager should always check the current state of the resource before acting on it.
+	"""
 
 	@start
 	def start(self) -> None:
