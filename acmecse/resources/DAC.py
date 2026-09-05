@@ -9,9 +9,19 @@
 """ DynamicAuthorizationConsultation (DAC) resource type. """
 
 from __future__ import annotations
+from typing import Optional
+
 from ..resources.Resource import Resource
+from ..etc.ACMEUtils import replaceDashInID
+from ..etc.Types import JSON
 
 class DAC(Resource):
 	""" DynamicAuthorizationConsultation (DAC) resource type. """
 
-	pass
+	def validate(self, originator: Optional[str]=None, 
+					   dct: Optional[JSON]=None, 
+					   parentResource: Optional[Resource]=None) -> None:
+		super().validate(originator, dct, parentResource)
+
+		# Cleanup identfiers
+		self.setAttribute('dap', [replaceDashInID(a) for a in self.dap], overwrite=True)

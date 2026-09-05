@@ -1499,7 +1499,8 @@
 			"lname": "dynamicAuthorizationPoA",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "anyURI",
+			//"ltype": "anyURI",
+			"ltype": "ID",	// EXPERIMENTAL: using resource ID instead of a URI for PoA (pointing to an AE resource)
 			"car": "1LN",
 			"oc": "M",
 			"ou": "O",
