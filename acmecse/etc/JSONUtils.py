@@ -93,3 +93,31 @@ def resourceModifiedAttributes(old:JSON, new:JSON, requestPC:JSON, modifiers:Opt
 	"""
 	return { k:v for k,v in resourceDiff(old, new, modifiers).items() if k not in requestPC or v != requestPC[k] }
 
+
+def removeNoneAttributes(dct:JSON) -> JSON:
+	"""	Remove all attributes with None values from the given dictionary. This is done recursively.
+		It also removes empty dictionaries and lists. 
+
+		Args:
+			dct: The dictionary to process.
+		Return:
+			The dictionary without any None values.
+	"""
+	if not isinstance(dct, dict):
+		return dct
+
+	result:JSON = {}
+	for k, v in dct.items():
+		if v is None:
+			continue
+		if isinstance(v, list):
+			v = [ c 
+			      for e in v 
+			      if e is not None and (c := removeNoneAttributes(e)) not in ({}, []) ]
+		else:
+			v = removeNoneAttributes(v)
+		if v in ({}, []):	# Skip now-empty dicts and lists
+			continue
+		result[k] = v
+	return result
+
