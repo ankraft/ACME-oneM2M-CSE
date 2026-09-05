@@ -1441,7 +1441,8 @@ class RequestManager(metaclass=Singleton):
 						else:
 							earlyError = L.logWarn(f'invalid CSE-ID or AE-ID for "to" parameter in response: {to}. ')
 					else:
-						cseRequest.id, cseRequest.csi, cseRequest.srn, cseRequest.spid, dbg = getIDFromPath(to)
+						# The following unpacks an IDResult structure!
+						cseRequest.id, cseRequest.csi, cseRequest.srn, cseRequest.spid, dbg, _ = getIDFromPath(to)
 						if dbg:
 							raise BAD_REQUEST(f'"to": {dbg}', data=cseRequest)
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any, Tuple, cast, Optional
 import sys
 
-from .Types import ResourceTypes
+from .Types import ResourceTypes, IDResult, IdentifierScope
 from .IDUtils import isStructured, isAbsolute, toAbsolute
 from ..etc.Constants import RuntimeConstants as RC
 from ..runtime.Storage import Storage
@@ -100,36 +100,39 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	return srn, id
 
 
-def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
-	""" Split a full path e.g. from a http request into its component and return a CSE local ri .
+def getIDFromPath(id:str) -> IDResult:
+	""" Split a full path e.g. from a http request into its component and return a CSE local resource ID .
 		Also handle retargeting paths.
 
 		Args:
-			id: A resource ID to process. This could be a structured or unstructured, and in CSE-relative, SP-relative or Absolute format.
+			id: A resource ID to process.
+				This could be a structured or unstructured, and in CSE-relative, SP-relative or Absolute format.
+
 		Return:
-			The return tupple is (RI, CSI of the resource ID, structured path of the ID, SPID if any, debug message or None).
+			The return tuple is (RI if any or None, CSI of the resource ID, structured path of the ID, SPID if any, debug message or None).
 	"""
 
 	if not id:
-		return None, None, None, None, 'ID must not be empty'
+		return IDResult(dbg='ID must not be empty')
 	
 	csi 		= None
 	spi 		= None
 	srn 		= None
 	ri 			= None
 	vrPresent	= None
+	scope 		= None
 
 	lvl = 0
 	_l = len(id)
 	while lvl < _l and id[lvl] == '/':
 		lvl += 1
 	if lvl > 2:						# not more than 2 * / in front
-		return None, None, None, None, 'Too many "/" in front of ID'
+		return IDResult(dbg='Too many "/" in front of ID')
 
 	idsLen = len(ids := id[lvl:].split('/'))
 
 	if not ids[-1]:
-		return None, None, None, None, f'{"CSE-relative" if lvl == 0 else "SP-relative" if lvl == 1 else "Absolute"} ID: "{id}" - last path element must not be empty.'
+		return IDResult(dbg=f'{"CSE-relative" if lvl == 0 else "SP-relative" if lvl == 1 else "Absolute"} ID: "{id}" - last path element must not be empty.')
 
 	# # split path
 	# idsLen = len(ids := id.split('/'))
@@ -165,18 +168,20 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 					ids[0] = RC.cseRn
 				srn = '/'.join(ids)
 			csi = RC.cseCsi
+			scope = IdentifierScope.CSERelative
 
 		# SP-Relative (first element is /)
 		case 1:
 			# L.logDebug("SP-Relative")
 			if idsLen < 2:
-				return None, None, None, None, f'SP-relative ID is too short: "{id}". Must be /<cseid>/<structured path | unstructured ID>.'
+				return IDResult(dbg=f'SP-relative ID is too short: "{id}". Must be /<cseid>/<structured path | unstructured ID>.')
 
+			scope = IdentifierScope.SPRelative
 			csi = ids[0]					# extract the csi
 			if csi != RC.cseCsiSlashLess:	# Not for this CSE? retargeting
 				if vrPresent:				# append last path element again
 					ids.append(vrPresent)
-				return id, csi, srn, None, None	# Early return. ri is the (un)structured path
+				return IDResult(ri=ri, csi=csi, srn=srn, scope=scope)	# Early return. ri is the (un)structured path
 			# replace placeholder "-", convert in CSE-relative when the target is this CSE
 			# if ids[1] == '-' and ids[0] == RC.cseCsiSlashLess:	
 			if ids[1] == '-':	
@@ -186,23 +191,24 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 			elif idsLen == 2:				# unstructured
 				ri = ids[1]
 			else:
-				return None, None, None, None, f'Too many "/" level ({idsLen}) for SP-Relative ID: "{id}". Perhaps resource name mismatch?'
+				return IDResult(dbg=f'Too many "/" level ({idsLen}) for SP-Relative ID: "{id}". Perhaps resource name mismatch?')
 
 
 		# Absolute (2 first elements are /)
 		case 2:
 			# L.logDebug("Absolute")
 			if idsLen < 3:
-				return None, None, None, None, 'Absolute ID is too short. Must be //<spid>/<cseid>/<structured path | unstructured ID>.'
+				return IDResult(dbg='Absolute ID is too short. Must be //<spid>/<cseid>/<structured path | unstructured ID>.')
 
 			spi = ids[0]
 			csi = ids[1]
+			scope = IdentifierScope.Absolute
 			# if spi != RC.cseSpid:			# Check for SP-ID
 			# 	return None, None, None, f'SP-ID: {RC.cseSpid} does not match the request\'s target ID SP-ID: {spi}'
 			if spi != RC.cseSPIDSlashLess or csi != RC.cseCsiSlashLess:	# Check for SP-ID and CSE-ID
 				if vrPresent:				# append virtual last path element again
 					ids.append(vrPresent)
-				return id, csi, srn, spi, None	# Not for this CSE or SP? retargeting
+				return IDResult(ri=ri, csi=csi, srn=srn, spid=spi, scope=scope)	# Not for this CSE or SP? retargeting
 
 			# replace placeholder "-", convert in absolute when the target is this CSE
 			# if ids[2] == '-' and ids[1] == RC.cseCsiSlashLess:	
@@ -213,20 +219,39 @@ def getIDFromPath(id:str) -> Tuple[str, str, str, str, str]:
 			elif idsLen == 3:				# unstructured
 				ri = ids[2]
 			else:
-				return None, None, None, None, f'Too many "/" level ({idsLen}) for Absolute ID: "{id}". Perhaps resource name mismatch?'
+				return IDResult(dbg=f'Too many "/" level ({idsLen}) for Absolute ID: "{id}". Perhaps resource name mismatch?')
 
 	# Now either csi, ri or structured srn is set
 	if ri:
 		if vrPresent:
 			ri = f'{ri}/{vrPresent}'
-		return ri, csi, srn, spi, None
+		return IDResult(ri=ri, csi=csi, srn=srn, spid=spi, scope=scope)
 	if srn:
 		if vrPresent:
 			srn = f'{srn}/{vrPresent}'
-		return riFromStructuredPath(srn), csi, srn, spi, None
+		return IDResult(ri=riFromStructuredPath(srn), csi=csi, srn=srn, spid=spi, scope=scope)
 	if csi:
-		return riFromCSI(f'/{csi}'), csi, srn, spi, None
-	return None, None, None, None, f'Unsupported ID: {id}'
+		return IDResult(ri=ri, csi=csi, srn=srn, spid=spi, scope=scope)
+	return IDResult(dbg=f'Unsupported ID: {id}')
+
+
+def replaceDashInID(id:str) -> str:
+	""" Replace the placeholder "-" in a resource ID with the CSE's resource name.
+		This is used to convert a structured path to a CSE-relative path.
+
+		Only done for structured paths, not for unstructured resource IDs, and
+		when the ID is CSE-relative.
+
+		Args:
+			id: A resource ID to process.
+		Return:
+			The resource ID with the placeholder replaced by the CSE's resource name.
+	"""
+	if not id:
+		return id
+	if isStructured(id):
+		return id.replace('-/', f'{RC.cseRn}/', 1)
+	return id
 
 
 def riFromCSI(csi:str) -> Optional[str]:

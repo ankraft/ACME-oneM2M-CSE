@@ -3195,6 +3195,29 @@ class IdentifierScope(ACMEIntEnum):
 	""" Identifier is absolute. """
 
 
+class IDResult(NamedTuple):
+	""" Structure to hold the result of an identifier resolution.
+	"""
+
+	ri:str|None = None
+	""" Resource ID . """
+
+	csi:str = None
+	""" CSE-ID of the target CSE. """
+
+	srn:str = None
+	""" Structured resource name of the target resource. """
+
+	spid:str|None = None
+	""" Service provider ID of the target CSE. """
+
+	dbg:str|None = None
+	""" Debug message in case of an error. """
+
+	scope:IdentifierScope = None
+	""" Scope of the identifier. """
+
+
 Parameters:TypeAlias = Dict[str, str]
 """	Type definition for a dictionary of parameters. """
 JSON:TypeAlias = Dict[str, Any]
