@@ -1370,7 +1370,8 @@ class ContentSerializationType(ACMEIntEnum):
 			return cls.UNKNOWN if not default else default
 		if isinstance(t, cls):
 			return t
-		match cast(str, t).lower():
+		# Strip any parameters (e.g. ";charset=utf-8" or ";ty=2") from the media type before matching
+		match cast(str, t).partition(';')[0].strip().lower():
 			case 'json' | 'application/json' | 'application/vnd.onem2m-res+json':
 				return cls.JSON
 			case 'cbor' | 'application/cbor' | 'application/vnd.onem2m-res+cbor':
