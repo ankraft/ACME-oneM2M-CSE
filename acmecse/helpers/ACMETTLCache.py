@@ -49,6 +49,5 @@ class ACMETTLCache(TTLCache):
 		"""
 		for e in (expired := super().expire(time)):
 			if self._evict:
-				print(e)
 				self._evict(e[0], e[1])
 		return expired
