@@ -2070,8 +2070,15 @@
 			"ns": "m2m",
 			"type": "string",	// m2m:releaseVersion
 			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:requestPrimitive",
+			"lname": "ReleaseVersionIndicator",
+			"ns": "m2m",
+			"type": "string",	// m2m:releaseVersion
+			"car": "1"
 		}
-
 	],
 	"vsi": [
 		{

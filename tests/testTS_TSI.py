@@ -582,16 +582,16 @@ class TestTS_TSI(unittest.TestCase):
 			'rn' : subRN,
 			'enc': {
 				'net': [ 8 ],
-				'nct': 5,
 				'md' : {
 					'dur': f'PT{pei*maxMdn/1000}S',
 					'num': maxMdn - 2,
 				}
 			},
+			'nct': 5,
 			'nu': [ NOTIFICATIONSERVER ]
 		}}
 		TestTS_TSI.sub, rsc = CREATE(tsURL, TestTS_TSI.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(rsc, RC.CREATED, TestTS_TSI.sub)
 
 		lastNotification = getLastNotification(wait = notificationDelay)
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))

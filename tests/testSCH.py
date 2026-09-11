@@ -509,7 +509,7 @@ class TestSCH(unittest.TestCase):
 			        'enc': {
 						'om': [ {
 							'ops' : Operation.RETRIEVE, 
-							'org' : TestSCH.originator 
+							'or' : TestSCH.originator 
 						} ]
 		   			},
         			'nu': [ NOTIFICATIONSERVER ]
@@ -548,7 +548,7 @@ class TestSCH(unittest.TestCase):
 			        'enc': {
 						'om': [ {
 							'ops' : Operation.RETRIEVE, 
-							'org' : TestSCH.originator 
+							'or' : TestSCH.originator 
 						} ]
         			},
         			'nu': [ NOTIFICATIONSERVER ]
@@ -588,7 +588,7 @@ class TestSCH(unittest.TestCase):
 			        'enc': {
 						'om': [ {
 							'ops' : Operation.RETRIEVE, 
-							'org' : TestSCH.originator 
+							'or' : TestSCH.originator 
 						} ]
         			},
 					'nec': 2, # immediate notification

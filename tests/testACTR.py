@@ -426,6 +426,7 @@ class TestACTR(unittest.TestCase):
 						'fr': TestACTR.originator,
 						'to': TestACTR.cntRI,
 						'rqi': '1234',
+						'rvi': RELEASEVERSION,
 					} 
 				}}
 		r, rsc = CREATE(aeURL, TestACTR.originator, T.ACTR, dct)
@@ -459,6 +460,7 @@ class TestACTR(unittest.TestCase):
 						'fr': TestACTR.originator,
 						'to': TestACTR.cntRI,
 						'rqi': '1234',
+						'rvi': RELEASEVERSION,
 					},
 					'sri': TestACTR.cntRI,
 
@@ -495,6 +497,7 @@ class TestACTR(unittest.TestCase):
 						'fr': TestACTR.originator,
 						'to': TestACTR.cntRI,
 						'rqi': '1234',
+						'rvi': RELEASEVERSION,
 					},
 					'sri': TestACTR.cntRI,
 
@@ -532,6 +535,7 @@ class TestACTR(unittest.TestCase):
 						'fr': TestACTR.originator,
 						'to': TestACTR.cntRI,
 						'rqi': '1234',
+						'rvi': RELEASEVERSION,
 					},
 					'sri': TestACTR.cntRI,
 
@@ -570,6 +574,7 @@ class TestACTR(unittest.TestCase):
 						'fr': TestACTR.originator,
 						'to': TestACTR.cntRI,
 						'rqi': '1234',
+						'rvi': RELEASEVERSION,
 					},
 					'sri': TestACTR.cntRI,
 
