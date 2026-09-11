@@ -1094,7 +1094,7 @@ class Validator(metaclass=Singleton):
 					typeName = policy.lTypeName if policy.type == BasicType.list else policy.typeName;
 					choiceAttributes:list[str] = []
 					for k, v in value.items():
-						if not (p := self.getAttributePolicy(typeName, k)):
+						if not (p := self.getAttributePolicy(typeName, k, True)):
 							raise BAD_REQUEST(f'unknown or undefined attribute:{k} in complex type: {typeName}')
 						if policy.choice:
 							choiceAttributes.append(k)
