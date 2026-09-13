@@ -450,15 +450,19 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	@classmethod
-	def resourceTypeNameByMgd(cls, mgd: int) -> str:
-		"""	Return the resource type name for a mgmtObj specialization.		
+	def resourceTypeNameByMgd(cls, mgd: int) -> Tuple[str, Optional[str]]:
+		"""	Return the resource type name for a mgmtObj specialization, and the
+			name of its announced resource type, if any.
 
 			Args:
 				mgd: Management DefinitionType to test.
 			Return:
-				The resource type name for the mgmtObj specialization.
+				A tuple with the resource type name for the mgmtObj specialization, and,
+				if available, the name of its announced resource type, or *None* otherwise.
 		"""
-		return resourceTypeDetails.get(mgd).typeName	# type: ignore [call-overload]
+		desc = resourceTypeDetails.get(mgd)	# type: ignore [call-overload]
+		return (desc.typeName,
+				resourceTypeDetails[desc.announcedType].typeName if desc.announcedType is not None else None)
 	
 
 	@classmethod

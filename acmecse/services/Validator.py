@@ -147,7 +147,7 @@ class Validator(metaclass=Singleton):
 					raise BAD_REQUEST(L.logDebug(f'Unknown MgmtObj resource type: {_topElement} in primitive content'))
 				if (_mgd := findXPath(cseRequest.pc, f'{_topElement}/mgd')) is None:
 					raise BAD_REQUEST(L.logDebug(f'Missing mgd for MgmtObj resource type: {_topElement} in primitive content'))
-				if ResourceTypes.resourceTypeNameByMgd(_mgd) != _topElement:
+				if _topElement not in ResourceTypes.resourceTypeNameByMgd(_mgd):
 					raise BAD_REQUEST(L.logDebug(f'mgd: {_mgd} doesn\'t match resource type: {_topElement} in primitive content'))
 			
 			case _:
