@@ -650,16 +650,23 @@ class Validator(metaclass=Singleton):
 		return typeShortname in flexContainerSpecializations
 
 	
-	def hasFlexContainerContainerDefinition(self, cnd:str) -> bool:
-		"""	Test whether a flexContainer specialization with a containerDefinition exists.
+	def hasFlexContainerContainerDefinition(self, cnd: str, type: str|None=None) -> bool:
+		"""	Test whether a flexContainer specialization with a containerDefinition exists. 
+			If `type` is provided, it, and its 'Annc' and 'Inst' variants, will be excluded from the search.
 				
 			Args:
-				cnd: String, containerDefinition
+				cnd: String, containerDefinition of the flexContainer specialization.
+				type: Optional string, the type of the flexContainer specialization to exclude from the search.
+				
 			Return:
 				Boolean, indicating existens.
 
 		"""
-		return any(( each for each in flexContainerSpecializations.values() if each[0] == cnd ))
+		type = type if not type.endswith(('Annc', 'Inst')) else type[:-4]
+		return any(( _t 
+		             for _t, _v in flexContainerSpecializations.items() 
+					 if _v[0] == cnd and (type is None or _t not in (type, f'{type}Annc', f'{type}Inst')) 
+				  ))
 	
 
 	def clearFlexContainerSpecializations(self) -> None:

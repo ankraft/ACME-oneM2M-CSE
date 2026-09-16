@@ -513,7 +513,7 @@ class Importer(metaclass=Singleton):
 				# Check whether the containerDefinition is already defined.
 				# If it is, then the specialization is already defined and we cannot add it again.
 				if cnd:
-					if self.validator.hasFlexContainerContainerDefinition(cnd):
+					if self.validator.hasFlexContainerContainerDefinition(cnd, typeShortname):
 						L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
 						return False
 
