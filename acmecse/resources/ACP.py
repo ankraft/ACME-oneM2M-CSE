@@ -53,13 +53,14 @@ class ACP(AnnounceableResource):
 					   parentResource:Optional[Resource] = None) -> None:
 		# Inherited
 		super().validate(originator, dct, parentResource)
-		
-		if dct and (pvs := findXPath(dct, f'{ResourceTypes.ACPAnnc.typeShortname()}/pvs')):
+
+		# Test that the pvs attribute is and will be present and not empty
+		if (pvs := self.getFinalResourceAttribute('pvs', dct)) is not None:
 			if len(pvs) == 0:
 				raise BAD_REQUEST('pvs must not be empty')
-		if not self.pvs:
-			raise BAD_REQUEST('pvs must not be empty')
-
+		else:
+			raise BAD_REQUEST('pvs must not be None')
+		
 		# Get types for the acor members. Ignore if not found
 		# This is an optimization used later in case there is a group in acor
 		# The dictionary is stored in the ACP resource itself and contains

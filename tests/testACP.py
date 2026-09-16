@@ -277,8 +277,8 @@ class TestACP(unittest.TestCase):
 		dct = 	{ 'm2m:acp' : {	# type: ignore
 					'pvs' : {}
 				}}
-		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST)
+		r, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -287,8 +287,8 @@ class TestACP(unittest.TestCase):
 		dct = 	{ 'm2m:acp' : {
 					'pvs' : None
 				}}
-		_, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
-		self.assertEqual(rsc, RC.BAD_REQUEST)
+		r, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1761,8 +1761,6 @@ def run(testFailFast:bool) -> TestResult:
 		'test_attributesACP',
 		'test_updateACP',
 		'test_updateACPwrongOriginator',
-		'test_updateACPEmptyPVSFail',
-		'test_updateACPNoPVSFail',
 		'test_addACPtoAE',
 		'test_updateAEACPIWrong',
 		'test_updateAEACPIWrong2',
@@ -1776,6 +1774,8 @@ def run(testFailFast:bool) -> TestResult:
 
 		'test_createACPNoPVSFail',
 		'test_createACPEmptyPVSFail',
+		'test_updateACPEmptyPVSFail',
+		'test_updateACPNoPVSFail',
 
 		'test_createCNTwithNoACPI',
 		'test_retrieveCNTwithNoACPI',
