@@ -1487,10 +1487,6 @@ class RequestManager(metaclass=Singleton):
 			if not cseRequest.originator and not isResponse and not (cseRequest.ty == ResourceTypes.AE and cseRequest.op == Operation.CREATE):
 				raise BAD_REQUEST(L.logDebug('from/originator parameter is mandatory in request'), data=cseRequest)
 
-			# Check identifiers
-			if not isResponse and not cseRequest.id and not cseRequest.srn:
-				raise NOT_FOUND(L.logDebug('missing identifier (no id nor srn)'), data=cseRequest)
-
 			# OT - originating timestamp
 			if ot := gget(cseRequest.originalRequest, 'ot', greedy=False):
 				if (_ts := fromAbsRelTimestamp(ot)) == 0.0:
