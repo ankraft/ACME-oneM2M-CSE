@@ -1341,7 +1341,7 @@
 			"ast",
 			"daci",
 
-		// Resource attributes
+			// Resource attributes
 			"ni",
 			"hcl",
 			"hael",
@@ -1353,7 +1353,9 @@
 		],
 		"childResourceTypes": [
 			"ACTR",
+			"CNT",		// EXPERIMENTAL FOR ESTIMED
 			"FCNT",
+			"LCP",		// EXPERIMENTAL FOR ESTIMED
 			"MGMTOBJ", 
 			"SCH",
 			"SMD", 

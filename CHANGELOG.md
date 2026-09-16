@@ -35,6 +35,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Experimental
 - [CSE] Added support for the [storage] ManagementObject specialization. This implementation is preliminary and may change depending on the final definition of the storage ManagementObject specialization in TS-0001 and TS-0004.
 - [CSE] Added *M2M-Ext-ID* and *Trigger-Recipient-ID* attributes to the &lt;CSEBase> resource. The reason to add these attributes is to have a place for these values because they are needed when creating a &lt;remoteCSE> resource. 
+- [CSE] Added experimental support to allow the &lt;CNT> and &lt;LCP> resource types under &lt;NOD> resources. This is an ESTIMED project contribution.
 
 ### Changed
 - [CSE] Fixed wrong file names for TinyDB database files. This was introduced in the last release. THIS IS A BREAKING CHANGE. Old database files must be renamed to the correct format which is `<db>-<SP-ID>-<CSE-ID>.json`. 
@@ -69,7 +70,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Increased performance when registering a large number of &lt;AE> resources by adding a database table for registered originators.
 - [CSE] Added validation of received response, e.g. in transfer rerequests. 
 - [CSE] Added a minimal console with only a few basic commands. This can be used when the CSE is running in headless mode or where access to the console is not possible.
-- [CSE] Added support for new *spi* and *ici* attributes in &lt;CSEBsae> and &lt;remoteCSE> resources. Both attributes are updated automatically in registree CSEs throughout a oneM2M deployment tree. This is an ESTIMED project contribution.
+- [CSE] Added support for new *spi* and *ici* attributes in &lt;CSEBase> and &lt;remoteCSE> resources. Both attributes are updated automatically in registree CSEs throughout a oneM2M deployment tree. This is an ESTIMED project contribution.
 - [CSE] Added support for decorating event handlers.
 - [CSE] Added support for Python code plugins to extend the CSE's functionality. This is an ESTIMED project contribution.
 - [WEB] Added support for external root path for the web UI. This allows to run the web UI behind a reverse proxy under a specific path or a Kubernetes ingress path. Thanks to Mudassar Khan (xFlow) for the idea. This is an ESTIMED project contribution.
