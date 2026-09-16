@@ -29,7 +29,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Any
 from dataclasses import dataclass
 import requests
 
@@ -86,7 +86,7 @@ class PushoverClient:
 		"""
 
 		# Build the payload for the Pushover API request
-		payload = {
+		payload: dict[str, str | int] = {
 			'token': self.token,
 			'user': self.user,
 			'message': message,
