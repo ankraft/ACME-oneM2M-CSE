@@ -20,7 +20,7 @@ from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, INTERNAL_S
 from ..etc.RequestUtils import removeNoneValuesFromDict
 from ..etc.IDUtils import isValidID, uniqueRI, uniqueRN
 from ..etc.DateUtils import getResourceDate
-from ..etc.ACMEUtils import isUniqueRI
+from ..etc.ACMEUtils import isUniqueRI, replaceDashInID
 from ..etc.JSONUtils import resourceDiff
 from ..etc.Utils import normalizeURL
 from ..helpers.TextTools import findXPath, setXPath
@@ -216,6 +216,12 @@ class Resource(object):
 											  createdInternally=self.isCreatedInternally(), 
 											  isAnnounced=self.isAnnounced(),
 											  rvi=request.rvi if request else None)	# type:ignore[arg-type]
+
+		# Cleanup some identfiers
+		if self.acpi:
+			self.setAttribute('acpi', [replaceDashInID(a) for a in self.acpi], overwrite=True)
+		if self.daci:
+			self.setAttribute('daci', [replaceDashInID(a) for a in self.daci], overwrite=True)
 
 		# validate the resource logic
 		self.validate(originator, parentResource=parentResource)
