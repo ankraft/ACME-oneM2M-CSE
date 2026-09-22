@@ -1066,7 +1066,13 @@ class Validator(metaclass=Singleton):
 			case BasicType.string | BasicType.anyURI if isinstance(value, str):
 				return (dataType, value)
 
-			case BasicType.ID | BasicType.IDCSR if isinstance(value, str):	# TODO check for valid resourceID
+			case BasicType.ID if isinstance(value, str):	# TODO check for valid resourceID
+				return (dataType, value)
+
+			case BasicType.IDCSR if isinstance(value, str):
+				# TS-0004, Table 6.3.3-1 (m2m:resourceName): (ALPHA / DIGIT) *(ALPHA / DIGIT / "-" / "." / "_")
+				if not _idcsrRegex.fullmatch(value):
+					raise BAD_REQUEST(f'invalid resource identifier: "{value}" - must start with a letter or digit, followed by letters, digits, "-", ".", or "_"')
 				return (dataType, value)
 
 			case BasicType.originatorPattern if isinstance(value, str):

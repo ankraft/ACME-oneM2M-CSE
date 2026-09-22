@@ -43,6 +43,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 
 ### Fixed
 - [CSE] Fixed &lt;ACP> *accessControlOriginators* wildcard matching to follow TS-0003's rules: a "*" no longer matches across a "/", and matching is now aware of absolute, SP-relative, and CSE-relative addressing. Added validation to reject a "*" that is not the last character of a segment. Added test cases for this.
+- [CSE] Fixed validation of the *resourceName*, *resourceID*, and *parentID* attributes to reject invalid characters.
 - [CSE] Fixed AE-ID recognition to allow "/Sabc" as a valid AE-ID, but not "/Cabc". 
 - [CSE] Fixed missing RETRIEVE permission check when creating a &lt;subscription> resource. Added a test case for this.   
 - [CSE] Improved validation of MgmtObj resources (missing or wrong mgd, or wrong resource type).

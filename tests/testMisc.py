@@ -169,8 +169,18 @@ class TestMisc(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createWithWrongResourceType(self) -> None:
 		"""	Create resource with not matching name and type -> Fail """
-		dct = 	{ 'm2m:ae' : { 
+		dct = 	{ 'm2m:ae' : {
 					'rn' : 'foo',
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createResourceInvalidRNFail(self) -> None:
+		"""	Create resource with an rn containing an invalid character -> Fail """
+		dct = 	{ 'm2m:cnt' : {
+					'rn' : 'invalid*rn',
 				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
 		self.assertEqual(rsc, RC.BAD_REQUEST)
@@ -727,6 +737,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_updateEmpty',
 		'test_createAlphaResourceType',
 		'test_createWithWrongResourceType',
+		'test_createResourceInvalidRNFail',
 		'test_checkHTTPmissingOriginator',
 		'test_checkResponseOT',
 		'test_checkTargetRVI',
