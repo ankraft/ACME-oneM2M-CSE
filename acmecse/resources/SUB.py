@@ -175,8 +175,8 @@ class SUB(Resource):
 		# Test whether operationMonitor is specified and is a valid value
 		if newOm is not None:
 			for om in newOm:
-				if om.get('ops') is None and om.get('org') is None:
-					raise BAD_REQUEST(L.logDebug('Entries in enc/om must contain at least one of "ops" or "org"'))
+				if om.get('ops') is None and om.get('or') is None:
+					raise BAD_REQUEST(L.logDebug('Entries in enc/om must contain at least one of "ops" or "or"'))
 				
 		# ensure that enc isalways present
 		if self['enc'] is None:

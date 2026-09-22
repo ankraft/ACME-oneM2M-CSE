@@ -305,11 +305,11 @@ class NotificationManager(object):
 			if operation is not None:
 				if (om := sub.get('om')) is not None:
 					for o in om:
-						_org = o.get('org')
+						_or = o.get('or')
 						_op = o.get('ops')
 
 						# Test whether a originator is set and if it is NOT the same as the originator of the request
-						if _org is not None and _org != originator:
+						if _or is not None and _or != originator:
 							continue
 						if _op is not None and _op != operation:
 							continue

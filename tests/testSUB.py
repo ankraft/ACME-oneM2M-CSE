@@ -1730,7 +1730,7 @@ class TestSUB(unittest.TestCase):
 			        'enc': {
 			            'om': [ {
 							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						} ]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
@@ -1741,8 +1741,8 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc'))
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/om'))
 		self.assertEqual(findXPath(r, 'm2m:sub/enc/om'), [ {
-							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'ops' : Operation.UPDATE.value, 
+							'or' : TestSUB.originator 
 						} ])
 
 		# delete resource
@@ -1771,7 +1771,7 @@ class TestSUB(unittest.TestCase):
 			        'enc': {
 			            'om': [ {
 							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						} ]
 					},
 				}}
@@ -1781,8 +1781,8 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc'))
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/om'))
 		self.assertEqual(findXPath(r, 'm2m:sub/enc/om'), [ {
-							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'ops' : Operation.UPDATE.value, 
+							'or' : TestSUB.originator 
 						} ])
 
 		# delete resource
@@ -1799,7 +1799,7 @@ class TestSUB(unittest.TestCase):
 						'net': [ NET.resourceUpdate ],
 			            'om': [ {
 							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						} ]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
@@ -1831,7 +1831,7 @@ class TestSUB(unittest.TestCase):
 						'net': [ NET.resourceUpdate ],
 			            'om': [ {
 							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						} ]
 					},
 				}}
@@ -1850,7 +1850,7 @@ class TestSUB(unittest.TestCase):
 			        'enc': {
 			            'om': [ {
 							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						},
 						{} ]	# empty
 					},
@@ -1869,7 +1869,7 @@ class TestSUB(unittest.TestCase):
 			        'enc': {
 			            'om': [ {
 							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						} ]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
@@ -1891,7 +1891,7 @@ class TestSUB(unittest.TestCase):
 		# self.assertEqual(findXPath(n, 'm2m:sgn/nev/rep/m2m:ae/lbl'), [ 'test' ], n)
 		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 3, n)
-		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/or'), TestSUB.originator, n)
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# delete resource
@@ -1907,11 +1907,11 @@ class TestSUB(unittest.TestCase):
 			        'enc': {
 			            'om': [ {
 							'ops' : Operation.CREATE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						},
 						{							
 							'ops' : Operation.UPDATE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						}]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
@@ -1937,7 +1937,7 @@ class TestSUB(unittest.TestCase):
 		# self.assertEqual(findXPath(n, 'm2m:sgn/nev/rep/m2m:ae/lbl'), [ 'test' ], n)
 		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 3, n)
-		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/or'), TestSUB.originator, n)
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# delete resource
@@ -1953,7 +1953,7 @@ class TestSUB(unittest.TestCase):
 			        'enc': {
 			            'om': [ {
 							'ops' : Operation.RETRIEVE, 
-							'org' : TestSUB.originator 
+							'or' : TestSUB.originator 
 						} ]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
@@ -1970,7 +1970,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(n)
 		self.assertIsNotNone(findXPath(n, 'm2m:sgn/nev/om'), n)
 		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/ops'), 2, n)
-		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/org'), TestSUB.originator, n)
+		self.assertEqual(findXPath(n, 'm2m:sgn/nev/om/or'), TestSUB.originator, n)
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/sut'), lastNotification)
 
 		# delete resource
@@ -1986,7 +1986,7 @@ class TestSUB(unittest.TestCase):
 			        'enc': {
 			            'om': [ {
 							'ops' : Operation.UPDATE, 
-							'org' : 'CWrong' 
+							'or' : 'CWrong' 
 						} ]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
