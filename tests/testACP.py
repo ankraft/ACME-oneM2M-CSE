@@ -27,12 +27,11 @@ class TestACP(unittest.TestCase):
 	acpORIGINATOR2 			= 'CtestOriginator2'
 	acpORIGINATOR3 			= 'CtestOriginator3'
 	acpORIGINATORWC 		= 'Canother*'
-	acpORIGINATORWC2		= 'Cyet*Originator'
-	
+	acpORIGINATORWCInvalid	= 'Cyet*Originator'	# Invalid: wildcard is not at the end of a segment
+
 	# Originators for wildcard tests
 	acpORIGINATORWCTest 	= 'CanotherOriginator'
-	acpORIGINATORWC2Test 	= 'CyetAnotherOriginator'
-	acpORIGINATORWC3Test 	= 'CyetAnother'	
+	acpORIGINATORWC3Test 	= 'CyetAnother'
 
 	ae 				= None
 	originator 		= None
@@ -83,7 +82,7 @@ class TestACP(unittest.TestCase):
 		dct = 	{ "m2m:acp": {
 					"rn": acpRN,
 					"pv": {
-						"acr": [ { 	"acor": [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3, self.acpORIGINATORWC, self.acpORIGINATORWC2 ],
+						"acr": [ { 	"acor": [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3, self.acpORIGINATORWC ],
 									"acop": Permission.ALL
 								} ]
 					},
@@ -133,7 +132,7 @@ class TestACP(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), list)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acor/{0}'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acor/{0}'), str)
-		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3, self.acpORIGINATORWC, self.acpORIGINATORWC2 ])
+		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3, self.acpORIGINATORWC ])
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), int)
 		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), Permission.ALL)
@@ -249,19 +248,6 @@ class TestACP(unittest.TestCase):
 
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateAElblWithWildCardOriginator2(self) -> None:
-		"""	Update <AE> LBL with wildcard Originator 2"""
-		dct =	{ 'm2m:ae': {
-					'lbl': [ '2Label' ]
-				}}
-		r, rsc = UPDATE(aeURL, self.acpORIGINATORWC2Test, dct)
-		self.assertEqual(rsc, RC.UPDATED)
-		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:ae/lbl')), 1, r)
-		self.assertIn('2Label', findXPath(r, 'm2m:ae/lbl'), 4)
-
-	
-	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAElblWithWildCardOriginator3WrongFail(self) -> None:
 		"""	Update <AE> LBL with wrong wildcard Originator 3 -> Fail"""
 		dct =	{ 'm2m:ae': {
@@ -269,6 +255,184 @@ class TestACP(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATORWC3Test, dct)
 		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPInvalidWildcardOriginatorFail(self) -> None:
+		"""	Create <ACP> with a wildcard not at the end of a segment -> Fail"""
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}3',
+					"pv": {
+						"acr": [ { 	"acor": [ self.acpORIGINATORWCInvalid ],
+									"acop": Permission.ALL
+								} ]
+					},
+					"pvs": {
+						"acr": [ {
+							"acor": [ ORIGINATOR ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	#
+	#	originatorPattern validation: positive cases spanning all ID forms
+	#
+
+	def _createAndDeleteACPWithAcor(self, rn:str, acor:str) -> RC:
+		"""	Helper: create an <ACP> with a single acor entry, assert success, then delete it again.
+
+			Args:
+				rn: The resource name to use for the throwaway <ACP>.
+				acor: The single accessControlOriginators entry to test.
+			Return:
+				The response status code of the CREATE request.
+		"""
+		dct = 	{ "m2m:acp": {
+					"rn": rn,
+					"pv": {
+						"acr": [ { 	"acor": [ acor ],
+									"acop": Permission.ALL
+								} ]
+					},
+					"pvs": {
+						"acr": [ {
+							"acor": [ ORIGINATOR ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		DELETE(f'{cseURL}/{rn}', ORIGINATOR)	# Just delete it again. Ignore the result
+		return rsc
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPValidWildcardAllKeyword(self) -> None:
+		"""	Create <ACP> with the "all" keyword in acor """
+		self._createAndDeleteACPWithAcor(f'{acpRN}4', 'all')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPValidWildcardCSERelative(self) -> None:
+		"""	Create <ACP> with a CSE-relative wildcard originator in acor """
+		self._createAndDeleteACPWithAcor(f'{acpRN}5', 'Cmyae*')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPValidWildcardSPRelative(self) -> None:
+		"""	Create <ACP> with an SP-relative wildcard originator in acor """
+		self._createAndDeleteACPWithAcor(f'{acpRN}6', f'{CSEID}/C98*')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPValidWildcardAbsolute(self) -> None:
+		"""	Create <ACP> with an absolute wildcard originator in acor """
+		self._createAndDeleteACPWithAcor(f'{acpRN}7', f'//{SPID}{CSEID}/C98*')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPValidWildcardWholeSegment(self) -> None:
+		"""	Create <ACP> with a wildcard that is an entire segment on its own in acor """
+		self._createAndDeleteACPWithAcor(f'{acpRN}8', f'//*{CSEID}')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPValidWildcardEscaped(self) -> None:
+		"""	Create <ACP> with an escaped "*" (a literal char, not a wildcard) in acor """
+		self._createAndDeleteACPWithAcor(f'{acpRN}12', 'Cmy\\*ae')
+
+
+	#
+	#	originatorPattern validation: negative cases
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPInvalidWildcardMidSegmentFail(self) -> None:
+		"""	Create <ACP> with a wildcard in the middle of a segment -> Fail """
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}9',
+					"pv": {
+						"acr": [ { 	"acor": [ 'my*CSE' ],
+									"acop": Permission.ALL
+								} ]
+					},
+					"pvs": {
+						"acr": [ {
+							"acor": [ ORIGINATOR ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPInvalidWildcardDoubleFail(self) -> None:
+		"""	Create <ACP> with two consecutive wildcards -> Fail """
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}10',
+					"pv": {
+						"acr": [ { 	"acor": [ 'my**' ],
+									"acop": Permission.ALL
+								} ]
+					},
+					"pvs": {
+						"acr": [ {
+							"acor": [ ORIGINATOR ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPInvalidWildcardEmptyOriginatorFail(self) -> None:
+		"""	Create <ACP> with an empty string as an acor entry -> Fail """
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}11',
+					"pv": {
+						"acr": [ { 	"acor": [ '' ],
+									"acop": Permission.ALL
+								} ]
+					},
+					"pvs": {
+						"acr": [ {
+							"acor": [ ORIGINATOR ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPInvalidWildcardInPVSFail(self) -> None:
+		"""	Create <ACP> with an invalid wildcard originator in pvs (not pv) -> Fail """
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}13',
+					"pv": {
+						"acr": [ { 	"acor": [ ORIGINATOR ],
+									"acop": Permission.ALL
+								} ]
+					},
+					"pvs": {
+						"acr": [ {
+							"acor": [ 'my*CSE' ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1769,8 +1933,22 @@ def run(testFailFast:bool) -> TestResult:
 
 		# wildcard tests
 		'test_updateAElblWithWildCardOriginator',
-		'test_updateAElblWithWildCardOriginator2',
 		'test_updateAElblWithWildCardOriginator3WrongFail',
+		'test_createACPInvalidWildcardOriginatorFail',
+
+		# originatorPattern validation: positive cases
+		'test_createACPValidWildcardAllKeyword',
+		'test_createACPValidWildcardCSERelative',
+		'test_createACPValidWildcardSPRelative',
+		'test_createACPValidWildcardAbsolute',
+		'test_createACPValidWildcardWholeSegment',
+		'test_createACPValidWildcardEscaped',
+
+		# originatorPattern validation: negative cases
+		'test_createACPInvalidWildcardMidSegmentFail',
+		'test_createACPInvalidWildcardDoubleFail',
+		'test_createACPInvalidWildcardEmptyOriginatorFail',
+		'test_createACPInvalidWildcardInPVSFail',
 
 		'test_createACPNoPVSFail',
 		'test_createACPEmptyPVSFail',

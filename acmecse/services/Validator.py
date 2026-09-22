@@ -98,6 +98,10 @@ _cnfRegex = re.compile(
 )
 """	Compiled regular expression that matches a valid contentInfo string. """
 
+
+_originatorPatternWildcardRegex = re.compile(r'(?<!\\)\*')
+"""	Compiled regular expression that finds unescaped "*" wildcard characters in an originatorPattern value. """
+
 @requires(importer='acmecse.runtime.Importer')
 class Validator(metaclass=Singleton):
 	"""	Validator class. """
@@ -1063,6 +1067,21 @@ class Validator(metaclass=Singleton):
 				return (dataType, value)
 
 			case BasicType.ID | BasicType.IDCSR if isinstance(value, str):	# TODO check for valid resourceID
+				return (dataType, value)
+
+			case BasicType.originatorPattern if isinstance(value, str):
+				if len(value) == 0:
+					raise BAD_REQUEST('invalid originatorPattern: value must not be empty')
+				# The 'all' keyword is not a pattern and has no wildcard restrictions
+				if value != 'all':
+					# TS-0003, 7.1.3: a "*" wildcard's scope is terminated by a following
+					# "/", so it may only appear as the last character of a segment - i.e.
+					# at the very end of the value, or immediately before a "/". An escaped
+					# "\*" is a literal character, not a wildcard, and is exempt from this.
+					for m in _originatorPatternWildcardRegex.finditer(value):
+						i = m.start()
+						if i != len(value) - 1 and value[i + 1] != '/':
+							raise BAD_REQUEST(f'invalid originatorPattern: "{value}" - a wildcard ("*") must be the last character of a segment (at the end of the value, or immediately before a "/")')
 				return (dataType, value)
 	
 			case BasicType.token if isinstance(value, str):

@@ -1131,7 +1131,7 @@
 			"lname": "accessControlOriginators",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "ID",
+			"ltype": "originatorPattern",
 			"car": "1"
 		}
 	],

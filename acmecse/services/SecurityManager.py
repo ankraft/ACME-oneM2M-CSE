@@ -10,18 +10,19 @@
 
 
 from __future__ import annotations
-from typing import cast, Optional, Any, Tuple, TYPE_CHECKING
+from typing import cast, Optional, Any, Tuple, Generator, TYPE_CHECKING
 
-import ssl
+import ssl, threading
 from dataclasses import dataclass
 
-from ..etc.Types import ResourceTypes, Permission, CSERequest, RequestCredentials, BindingType, CSERegistrar
+from ..etc.Types import JSON, ResourceTypes, Permission, CSERequest, BindingType, CSERegistrar
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
-from ..etc.IDUtils import isSPRelative, toCSERelative, getIdFromOriginator, isAbsolute, isValidAEI
+from ..etc.IDUtils import isSPRelative, isAbsolute, toCSERelative, toSPRelative, toAbsolute, getIdFromOriginator, isValidAEI
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
 from ..etc.Constants import RuntimeConstants as RC
 from ..etc.Utils import hashString
-from ..helpers.TextTools import findXPath, simpleMatch, truncateMiddle
+from ..helpers.TextTools import findXPath, simpleMatch
+from ..helpers.ACMELRUCache import ACMELRUCache
 from ..runtime.Configuration import Configuration
 from ..runtime.EventManager import *
 from ..runtime.Logging import Logging as L
@@ -131,15 +132,6 @@ class SecurityManager(object):
 			Args:
 				eventData: The event data, containing the name of the updated configuration setting and its new value.
 		"""
-		# if key not in (	'http.security.caCertificateFile',
-		# 				'http.security.caPrivateKeyFile',
-		# 				'http.security.basicAuthFile',
-		# 				'http_security_tokenAuthFile',
-		# 				'websocket.security.caCertificateFile',
-		# 				'websocket.security.caPrivateKeyFile',
-		# 			  ):
-		# 	return
-		# TODO further optimization: only reload the changed files
 		key:Optional[str] = eventData[0]
 		value:Any = eventData[1]
 		if key in ('http.security.basicAuthFile', 
@@ -772,41 +764,146 @@ class SecurityManager(object):
 		return False
 
 
-	def _checkAcor(self, acp:ACP|ACPAnnc, acor:list[str], originator:str) -> bool:
+	def _checkAcor(self, acor: list[str], originator: str) -> bool:
 		""" Check whether an originator is in the list of acor entries.
-		
+
+			Per TS-0003 Table 7.1.3-2, a "*" wildcard's scope never extends across
+			a "/": entries are matched form-aware (absolute / SP-relative / CSE-relative)
+			and segment-by-segment, not as a single flat glob over the whole ID.
+
 			Args:
-				acp: The ACP resource to check.
 				acor: The list of acor entries.
 				originator: The originator to check.
-				
+
 			Return:
 				True if the originator is in the list of acor entries, False otherwise.
 		"""
 
-		# Check originator
+		# Fast path: the 'all' keyword, or an exact match. This covers the
+		# overwhelming majority of real checks without any of the form/wildcard
+		# handling below.
 		if 'all' in acor or originator in acor:
 			return True
-		
-		# Iterrate over all acor entries for either a group check or a wildcard check
+
+		# The originator's own ID form, computed once and reused for the
+		# per-entry fast-path check below.
+		originatorIsAbsolute = isAbsolute(originator)
+		originatorIsSPRelative = isSPRelative(originator)
+
+		# The originator's normalized forms, computed lazily and memoized: several
+		# acor entries may need the same conversion, and there's no reason to redo
+		# it more than once per call.
+		absOriginator: Optional[str] = None
+		isSameSP: Optional[bool] = None
+		isSameCSE: Optional[bool] = None
+
 		for a in acor:
 
-			# Check for group. If the originator is a member of a group, then the originator has access
-			if acp.getTypeForRI(a) == ResourceTypes.GRP:
-				try:
-					if originator in self.dispatcher.retrieveResource(a).mid:
-						L.isDebug and L.logDebug(f'Originator found in group member')
-						return True
-				except ResponseException as e:
-					L.logErr(f'GRP resource not found for ACP check: {a}', exc=e)
-					continue # Not much that we can do here
+			# A wildcard rules out this entry being a <group> resource-ID (TS-0003:
+			# wildcards are not permitted there), so skip the group lookup - which
+			# would otherwise attempt a resource retrieval for what is almost
+			# certainly not a resource ID - entirely.
+			if '*' not in a:
 
-			# Otherwise Check for wildcard match
-			if simpleMatch(originator, a):
+				# Check for group. If the originator is a member of a group, then the originator has access
+				if self.getTypeForRi(a) == ResourceTypes.GRP:
+					try:
+						if originator in self.dispatcher.retrieveResource(a).mid:
+							L.isDebug and L.logDebug(f'Originator found in group member')
+							return True
+					except ResponseException as e:
+						L.logErr(f'GRP resource not found for ACP check: {a}', exc=e)
+					continue	# A group entry is never also an ID pattern
+
+				# No wildcard, same ID-form, and same segment count as the originator:
+				# the only possible match is literal equality, already ruled out above.
+				# (The segment-count check matters here: the S-type AE shortcut below
+				# can still make two same-form, wildcard-free entries of *different*
+				# segment counts equivalent, e.g. "//sp/S988" and "//sp/cse/S988".)
+				if (isAbsolute(a) == originatorIsAbsolute
+						and isSPRelative(a) == originatorIsSPRelative
+						and a.count('/') == originator.count('/')):
+					continue
+
+			# Form-aware match: normalize the originator to the pattern's own form
+			# before comparing, so that e.g. an SP-relative pattern can never match
+			# an originator from a different Service Provider just because their
+			# CSE-ID/AE-ID happen to look alike.
+			if isAbsolute(a):
+				if absOriginator is None:
+					absOriginator = toAbsolute(originator)
+				candidate = absOriginator
+			elif isSPRelative(a):
+				if isSameSP is None:
+					if absOriginator is None:
+						absOriginator = toAbsolute(originator)
+					isSameSP = absOriginator.startswith(RC.cseSPidSlash)
+				if not isSameSP:
+					continue
+				candidate = toSPRelative(originator)
+			else:	# CSE-relative: implicitly scoped to this SP *and* this CSE
+				if isSameCSE is None:
+					if absOriginator is None:
+						absOriginator = toAbsolute(originator)
+					# RC.cseAbsolute/cseAbsoluteSlash include the CSEBase's own
+					# resource name (RC.cseSPRelative == f'{cseCsi}/{cseRn}') - that's
+					# for structured resource-tree addressing under the CSEBase, not
+					# for AE-ID/originator addressing, which goes directly SP/CSE-ID/AE-ID
+					# with no CSEBase-rn hop. RC.cseSPCsi (SP-ID + CSE-ID only) is the
+					# right prefix here - it's also what RC.cseIDs uses to recognize
+					# this CSE as an originator.
+					isSameCSE = absOriginator.startswith(RC.cseSPCsiSlash)
+				if not isSameCSE:
+					continue
+				# Not toCSERelative(originator): from an already-absolute originator
+				# it only strips the SP-ID, leaving the CSE-ID in place (it's only
+				# fully correct starting from SP-relative input). We've already
+				# verified the RC.cseSPCsiSlash prefix above, so strip it directly.
+				candidate = absOriginator.removeprefix(RC.cseSPCsiSlash)
+
+			if self._matchIDSegments(candidate, a):
 				return True
-		
+
 		# No match found
 		return False
+
+
+	def _matchIDSegments(self, candidate: str, pattern: str) -> bool:
+		""" Match a normalized candidate originator ID against an acor pattern of the
+			same form (both absolute, both SP-relative, or both CSE-relative), segment
+			by segment, per TS-0003 Table 7.1.3-2: a wildcard's scope never extends
+			across a "/".
+
+			A pattern may omit the CSE-ID segment entirely when addressing an S-type
+			AE-ID, which - unlike a C-type AE-ID - is unique for the whole Service
+			Provider and therefore doesn't require one to disambiguate it.
+
+			Args:
+				candidate: The originator, already normalized to the same ID form as *pattern*.
+				pattern: The acor entry to match against.
+
+			Return:
+				True if *candidate* matches *pattern*.
+		"""
+		candidateSegments = candidate.split('/')
+		patternSegments = pattern.split('/')
+
+		if len(candidateSegments) == len(patternSegments):
+			return all(simpleMatch(c, p) for c, p in zip(candidateSegments, patternSegments))
+
+		# The pattern omits the CSE-ID segment: only valid for an S-type AE-ID
+		if (len(patternSegments) == len(candidateSegments) - 1
+				and candidateSegments[-1].startswith('S')
+				and patternSegments[-1].startswith('S')):
+			return (all(simpleMatch(c, p) for c, p in zip(candidateSegments[:-2], patternSegments[:-1]))
+					and simpleMatch(candidateSegments[-1], patternSegments[-1]))
+
+		return False
+
+
+
+
+
 
 
 	def isAllowedOriginator(self, originator:str, allowedOriginators:list[str]) -> bool:
