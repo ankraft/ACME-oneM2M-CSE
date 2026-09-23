@@ -341,12 +341,6 @@ class TestACP(unittest.TestCase):
 		self._createAndDeleteACPWithAcor(f'{acpRN}8', f'//*{CSEID}')
 
 
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createACPValidWildcardEscaped(self) -> None:
-		"""	Create <ACP> with an escaped "*" (a literal char, not a wildcard) in acor """
-		self._createAndDeleteACPWithAcor(f'{acpRN}12', 'Cmy\\*ae')
-
-
 	#
 	#	originatorPattern validation: negative cases
 	#
@@ -400,6 +394,52 @@ class TestACP(unittest.TestCase):
 					"rn": f'{acpRN}11',
 					"pv": {
 						"acr": [ { 	"acor": [ '' ],
+									"acop": Permission.ALL
+								} ]
+					},
+					"pvs": {
+						"acr": [ {
+							"acor": [ ORIGINATOR ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPInvalidWildcardBackslashFail(self) -> None:
+		"""	Create <ACP> with a backslash before a wildcard, not at the end of a segment -> Fail
+
+			There is no escape handling for "*": a backslash is just an ordinary character,
+			so this is still a mid-segment wildcard.
+		"""
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}12',
+					"pv": {
+						"acr": [ { 	"acor": [ 'Cmy\\*ae' ],
+									"acop": Permission.ALL
+								} ]
+					},
+					"pvs": {
+						"acr": [ {
+							"acor": [ ORIGINATOR ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPInvalidWildcardCharsetFail(self) -> None:
+		"""	Create <ACP> with a disallowed character (not a wildcard placement issue) -> Fail """
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}14',
+					"pv": {
+						"acr": [ { 	"acor": [ 'my name' ],
 									"acop": Permission.ALL
 								} ]
 					},
@@ -1942,12 +1982,13 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createACPValidWildcardSPRelative',
 		'test_createACPValidWildcardAbsolute',
 		'test_createACPValidWildcardWholeSegment',
-		'test_createACPValidWildcardEscaped',
 
 		# originatorPattern validation: negative cases
 		'test_createACPInvalidWildcardMidSegmentFail',
 		'test_createACPInvalidWildcardDoubleFail',
 		'test_createACPInvalidWildcardEmptyOriginatorFail',
+		'test_createACPInvalidWildcardBackslashFail',
+		'test_createACPInvalidWildcardCharsetFail',
 		'test_createACPInvalidWildcardInPVSFail',
 
 		'test_createACPNoPVSFail',
