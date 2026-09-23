@@ -504,8 +504,8 @@ class WebSocketServer(object):
 			# Allow empty wsOriginator for AE registrations
 			if wsOriginator is None:
 				if not (request.op == Operation.CREATE and request.ty == ResourceTypes.AE):
-					raise ResponseException(ResponseStatusCode.ORIGINATOR_HAS_NO_PRIVILEGE, 
-											dbg = L.logWarn(f'Unknown WS connections (no X-M2M-Origin header) are only allowed for AE registrations'))
+					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logWarn(f'Unknown WS connections (no X-M2M-Origin header) are only allowed for AE registrations'))
+				
 				# Else, the request must be an AE registration
 
 			# Compare the originator and the from, only for Mca
