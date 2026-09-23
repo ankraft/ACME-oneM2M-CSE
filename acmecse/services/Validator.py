@@ -19,7 +19,7 @@ from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializati
 from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatteryStatus, IdentifierScope
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.JSONUtils import pureResource
-from ..etc.IDUtils import toCSERelative, toAbsolute, toSPRelative, isValidAEI, isCSERelative, isSPRelative, isAbsolute
+from ..etc.IDUtils import toCSERelative, toAbsolute, toSPRelative, isValidAEI, isValidSPID, isValidCSI, isCSERelative, isSPRelative, isAbsolute
 from ..etc.Utils import strToBool
 from ..helpers.TextTools import findXPath, soundsLike
 from ..helpers import TextTools
@@ -99,8 +99,19 @@ _cnfRegex = re.compile(
 """	Compiled regular expression that matches a valid contentInfo string. """
 
 
-_originatorPatternWildcardRegex = re.compile(r'(?<!\\)\*')
-"""	Compiled regular expression that finds unescaped "*" wildcard characters in an originatorPattern value. """
+_originatorPatternWildcardRegex = re.compile(r'\*')
+"""	Compiled regular expression that finds "*" wildcard characters in an originatorPattern value. """
+
+
+_originatorPatternCharsetRegex = re.compile(r'[a-zA-Z0-9\-._/*]+')
+"""	Compiled regular expression for the allowed characters in an originatorPattern value:
+	the same unreserved character set as IDCSR/AEID/CSEID/SPID, plus "/" (segment separator)
+	and "*" (wildcard). """
+
+
+_idcsrRegex = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]*')
+"""	Compiled regular expression for the m2m:resourceName grammar (TS-0004, Table 6.3.3-1):
+	(ALPHA / DIGIT) *(ALPHA / DIGIT / "-" / "." / "_"). Used for IDCSR (rn, ri). """
 
 @requires(importer='acmecse.runtime.Importer')
 class Validator(metaclass=Singleton):
@@ -1078,12 +1089,13 @@ class Validator(metaclass=Singleton):
 			case BasicType.originatorPattern if isinstance(value, str):
 				if len(value) == 0:
 					raise BAD_REQUEST('invalid originatorPattern: value must not be empty')
-				# The 'all' keyword is not a pattern and has no wildcard restrictions
+				# The 'all' keyword is not a pattern and has no wildcard or charset restrictions
 				if value != 'all':
+					if not _originatorPatternCharsetRegex.fullmatch(value):
+						raise BAD_REQUEST(f'invalid originatorPattern: "{value}" contains characters that are not allowed')
 					# TS-0003, 7.1.3: a "*" wildcard's scope is terminated by a following
 					# "/", so it may only appear as the last character of a segment - i.e.
-					# at the very end of the value, or immediately before a "/". An escaped
-					# "\*" is a literal character, not a wildcard, and is exempt from this.
+					# at the very end of the value, or immediately before a "/".
 					for m in _originatorPatternWildcardRegex.finditer(value):
 						i = m.start()
 						if i != len(value) - 1 and value[i + 1] != '/':
@@ -1157,12 +1169,12 @@ class Validator(metaclass=Singleton):
 				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
 			
 			case BasicType.SPID if isinstance(value, str):
-				if len(value) < 3 or not value.startswith('//') or value[2] == '/':
+				if not isValidSPID(value):
 					raise BAD_REQUEST(f'invalid SPID type: {value} must be in the format "//<SPID>"')
 				return (dataType, value)
-		
+
 			case BasicType.CSEID if isinstance(value, str):
-				if len(value) < 2 or not value.startswith('/') or value.startswith('//'):
+				if not isValidCSI(value):
 					raise BAD_REQUEST(f'invalid CSEID type: {value} must be in the format "/<CSEID>"')
 				return (dataType, value)
 			
