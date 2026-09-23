@@ -17,6 +17,7 @@ from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Filt
 from init import *
 
 csrOriginator = '/Ctest'
+aeOriginator = 'Ctest'
 
 class TestRemote(unittest.TestCase):
 
@@ -108,9 +109,10 @@ class TestRemote(unittest.TestCase):
 			'poa': [ CSEURL ], 
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
+			'cb': f'{CSEID}/{CSERN}'
 		}}
-		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
-		self.assertEqual(rsc, RC.OPERATION_NOT_ALLOWED, r)
+		r, rsc = CREATE(cseURL, aeOriginator, T.CSR, dct)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
 
 
 
@@ -165,7 +167,7 @@ class TestRemote(unittest.TestCase):
 				 	'rr': False,
 				 	'srv': [ RELEASEVERSION ]
 				}}
-		r, rsc = CREATE(cseURL, 'Ctest', T.AE, dct)
+		r, rsc = CREATE(cseURL, aeOriginator, T.AE, dct)
 		self.assertEqual(rsc, RC.CREATED, r)
 
 		dct = { 'm2m:csr' : {
