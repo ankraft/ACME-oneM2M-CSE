@@ -192,7 +192,7 @@ class SecurityManager(object):
 		if not self.hasAccess(originator, resource, requestedPermission, ty, parentResource, request, resultResource):
 			_exceptionType = exceptionType or ORIGINATOR_HAS_NO_PRIVILEGE
 			_message = message or f'originator: {originator} has no {requestedPermission} privileges for resource: {resource.ri}'
-			raise _exceptionType(L.logDebug(_message))
+			raise _exceptionType(L.logDebug(_message))	# type: ignore[arg-type]
 
 
 	def hasAccess(self, originator: str, 
