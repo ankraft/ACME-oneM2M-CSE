@@ -208,6 +208,7 @@ _/textui_enable\_=${textui:enable}
 _/webui_enable\_=${webui:enable}
 _/actionManager_enable\_=${cse.service.action:enable}
 _/announcementManager_enable\_=${cse.service.announcement:enable}
+_/dasManager_enable\_=${cse.service.dynamicAuthorization:enable}
 _/groupManager_enable\_=${cse.service.group:enable}
 _/locationManager_enable\_=${cse.service.location:enable}
 _/remoteCSEManager_enable\_=${cse.service.remoteCSE:enable}
@@ -249,6 +250,17 @@ enable=true
 
 [cse.service.announcement]
 ; Enable the Announcement Manager Service. Th
+; Default: true
+enable=true
+
+
+;
+;	Settings for the DAS Manager Service
+;
+
+[cse.service.dynamicAuthorization]
+; Enable the Dynamic Authorization Service. This includes the DASManager plugin and
+; the related features in the CSE.
 ; Default: true
 enable=true
 

@@ -3205,22 +3205,22 @@ class IDResult(NamedTuple):
 	""" Structure to hold the result of an identifier resolution.
 	"""
 
-	ri:str|None = None
+	ri: str|None = None
 	""" Resource ID . """
 
-	csi:str = None
+	csi: str = None
 	""" CSE-ID of the target CSE. """
 
-	srn:str = None
+	srn: str = None
 	""" Structured resource name of the target resource. """
 
-	spid:str|None = None
+	spid: str|None = None
 	""" Service provider ID of the target CSE. """
 
-	dbg:str|None = None
+	dbg: str|None = None
 	""" Debug message in case of an error. """
 
-	scope:IdentifierScope = None
+	scope: IdentifierScope = None
 	""" Scope of the identifier. """
 
 

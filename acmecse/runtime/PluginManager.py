@@ -63,6 +63,7 @@ class PluginManager(PM):
 		'acmecse.plugins.runtime.TextUI':							lambda : Configuration._cse_operation_plugins_enabledComponents.get('textui_enable', False),	
 		'acmecse.plugins.services.ActionManager':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('actionManager_enable', True),	
 		'acmecse.plugins.services.AnnouncementManager':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('announcementManager_enable', True),	
+		'acmecse.plugins.services.DASManager':						lambda : Configuration._cse_operation_plugins_enabledComponents.get('dasManager_enable', True),
 		'acmecse.plugins.services.GroupManager':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('groupManager_enable', True),	
 		'acmecse.plugins.services.LocationManager':					lambda : Configuration._cse_operation_plugins_enabledComponents.get('locationManager_enable', True),	
 		'acmecse.plugins.services.RemoteCSEManager':				lambda : Configuration._cse_operation_plugins_enabledComponents.get('remoteCSEManager_enable', True),	

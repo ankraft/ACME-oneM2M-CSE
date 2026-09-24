@@ -10,7 +10,7 @@
 
 
 from __future__ import annotations
-from typing import cast, Optional, Any, Tuple, Generator, TYPE_CHECKING
+from typing import Type, cast, Optional, Any, Tuple, Generator, TYPE_CHECKING
 
 import ssl, threading
 from dataclasses import dataclass
@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 	from ..services.Dispatcher import Dispatcher
 	from acmecse.plugins.bindings.HttpServer import HttpServer
 	from acmecse.plugins.bindings.WebSocketServer import WebSocketServer
+	from acmecse.plugins.services.DASManager import DASManager
 
 
 @dataclass
@@ -59,6 +60,7 @@ class ACPResult():
 @requires(httpServer='acmecse.plugins.bindings.HttpServer', 
 		  websocketServer='acmecse.plugins.bindings.WebSocketServer',
 		  required=False)
+@requires(dasManager='acmecse.plugins.services.DASManager', required=False)
 @requires(storage='acmecse.runtime.Storage')
 @requires(dispatcher='acmecse.services.Dispatcher')
 @requires(credentialsManager='acmecse.runtime.CredentialsManager')
@@ -81,10 +83,15 @@ class SecurityManager(object):
 	websocketServer: WebSocketServer = None	# type: ignore
 	"""	The injected WebSocketServer plugin instance."""
 
+	dasManager: DASManager = None	# type: ignore
+	"""	The injected DASManager plugin instance."""
+
 
 	__slots__ = (
 		'requestCredentials',
 		'allowedCSIOriginators',
+		'riTypeCache',
+		'riTypeCacheLock',
 	)
 	""" Slots for SecurityManager class. """
 
@@ -105,6 +112,10 @@ class SecurityManager(object):
 			L.isInfo and L.log('ACP checking ENABLED')
 		else:
 			L.isInfo and L.log('ACP checking DISABLED')
+
+		# Initialize the RI type cache
+		self.riTypeCache: ACMELRUCache = ACMELRUCache(maxsize=1024)	# TODO make the maxsize configurable
+		self.riTypeCacheLock: threading.Lock = threading.Lock()
 
 
 	def shutdown(self) -> bool:
@@ -144,13 +155,53 @@ class SecurityManager(object):
 	###############################################################################################
 
 
-	def hasAccess(self, originator:str, 
-						resource:Resource, 
-						requestedPermission:Permission, 
-						ty:Optional[ResourceTypes]=None, 
-						parentResource:Optional[Resource]=None,
-						request:Optional[CSERequest]=None,
-						resultResource:Optional[Resource]=None) -> bool:
+	def checkAccess(self, originator: str,
+						resource: Resource,
+						requestedPermission: Permission,
+						ty: Optional[ResourceTypes] = None,
+						parentResource: Optional[Resource] = None,
+						request: Optional[CSERequest] = None,
+						resultResource: Optional[Resource] = None,
+						exceptionType: Optional[Type[ResponseException]] = None,
+						message: Optional[str] = None) -> None:
+		""" Like `hasAccess()`, but raise an exception instead of returning *False*
+			when the originator does not have the requested permission.
+
+			This is a convenience wrapper for gating a single operation on one
+			resource. It is *not* suitable for filtering a list of resources (e.g.
+			in discovery), where a denial should skip just that one resource rather
+			than abort the whole request - use `hasAccess()` directly for that.
+
+			Args:
+				originator: The originator to check for.
+				resource: The target resource of a request.
+				requestedPermission: The permission to test.
+				ty: Mandatory for CREATE, else optional. The type of the resource that is about to be created.
+				parentResource: Optional, the parent resource of a target resource.
+				request: The original request, if available.
+				resultResource: Optional, the resulting resource of a request.
+				exceptionType: The `ResponseException` subclass to raise on denial.
+					Defaults to `ORIGINATOR_HAS_NO_PRIVILEGE`.
+				message: Optional custom error message. If not given, a default is
+					constructed from *originator*, *requestedPermission*, and *resource*.
+
+			Raises:
+				The exception given in *exceptionType* (or `ORIGINATOR_HAS_NO_PRIVILEGE`
+				by default) if the originator does not have the requested permission.
+		"""
+		if not self.hasAccess(originator, resource, requestedPermission, ty, parentResource, request, resultResource):
+			_exceptionType = exceptionType or ORIGINATOR_HAS_NO_PRIVILEGE
+			_message = message or f'originator: {originator} has no {requestedPermission} privileges for resource: {resource.ri}'
+			raise _exceptionType(L.logDebug(_message))
+
+
+	def hasAccess(self, originator: str, 
+						resource: Resource, 
+						requestedPermission: Permission, 
+						ty: Optional[ResourceTypes] = None, 
+						parentResource: Optional[Resource] = None,
+						request: Optional[CSERequest] = None,
+						resultResource: Optional[Resource] = None) -> bool:
 		""" Test whether an originator has access to a resource for the requested permission.
 		
 			Args:
@@ -159,40 +210,62 @@ class SecurityManager(object):
 				requestedPermission: The persmission to test.
 				ty: Mandatory for CREATE, else optional. The type of the resoure that is about to be created.
 				parentResource: Optional, the parent resource of a target resource.
+				request: The original request, if available.
+				resultResource: The resulting resource of a request.
 			Return:
 				Boolean indicating access.
 		"""
 
-		def _checkACPI(originator:str, acpRi:str, requestedPermission:Permission, ty:ResourceTypes, request:CSERequest) -> ACPResult:
-			""" Check the access control policy for a single ACP resource.
+
+		def _getACPAccessControlRulesPV(acpRi: str) -> Generator[dict, None, None]:
+			""" Return the access control rules for a single ACP resource. This is a generator function that yields
+				each accessControlRule of the ACP resource, without any filtering.
+				it **does not** include the access control rules from dynamic authorization resources.
 
 				Args:
-					originator: The originator to check for.
-					acpRo: The resourceID of the ACP resource.
-					requestedPermission: The permission to check.
-					ty: The resource type to check for.
-					request: The original request.
+					acpRi: The resourceID of the ACP resource.
 
 				Return:
-					A data structure with the result of the check.
-
+					A generator that yields each accessControlRule of the ACP resource.
 			"""
 			try:
 				if not (acp := self.dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
 					L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}')
-					return ACPResult(False, [])
-				
-				# check general operation permission. This also returns the attributes (if any)
-				result = self.checkSingleACPPermission(cast(ACP, acp), originator, requestedPermission, ty, request=request)
-				if result.allowed:
-					return result
-				if result.attributes:
-					# L.isDebug and L.logDebug(f'Attributes to check further attributes {result.attributes}')
-					return result
+					return
 			except ResponseException as e:
 				L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}: {e.dbg}')
-				return ACPResult(False, [])
-			return ACPResult(False, [])
+				return
+
+			yield from cast(ACP, acp)['pv/acr']
+
+
+
+		def _getAccessControlRulesPV(resource: Resource) -> Generator[dict, None, None]:
+			""" Return the access control rules for a resource's self-privileges. 
+				This is a generator function that yields each accessControlRule of the resource, without
+				any filtering. This includes the accessControlRules from *acpi*'s ACP resources, 
+				*+and** the accessControlRules from *daci*'s dynamic authorization resources.
+
+				Those methods are generator functions themselves, so this function only yields the results 
+				from those methods to minimize DB and network access.
+
+				Args:
+					resource: The resource to get the access control rules from.
+
+				Return:
+					A generator that yields each accessControlRule of the resource.
+			"""
+			# ACPI
+			if (acpi := resource.acpi):
+				for acpRi in acpi:
+					# Call a generator method that returns the access control rules for the ACP resource
+					yield from _getACPAccessControlRulesPV(acpRi)
+
+			# DACI - if enabled and the DASManager is available
+			if self.dasManager is not None and (daci := self.dasManager.getDACIforResource(resource)):
+				for daciRi in daci:
+					# Call a generator method that returns the access control rules for the DACI resource
+					yield from self.dasManager.retrieveACTRfromDAS(daciRi, resource, originator, request)
 
 
 		#  Do or ignore the check
@@ -271,10 +344,6 @@ class SecurityManager(object):
 					L.isWarn and L.logWarn('Originator for Announcement not found.')
 					return False
 		
-		# # Check for resource == None
-		# if not resource:
-		# 	raise INTERNAL_SERVER_ERROR(L.logErr('Resource must not be None'))
-
 		# Allow originator for announced resource
 		if resource.isAnnounced():
 			if self.isAllowedOriginator(originator, Configuration.cse_registration_allowedCSROriginators) and resource.lnk.startswith(f'{originator}/'):
@@ -290,6 +359,7 @@ class SecurityManager(object):
 
 		L.isDebug and L.logDebug(f'Permission check originator: {originator} | ri: {resource.ri} | parent ri: {parentResource.ri if parentResource else None} | permission: {requestedPermission} | resource type: {resource.ty} | type: {ty} ')
 
+		# Check for the type of the target resource
 		match resource.ty:
 
 			# Allow some Originators to RETRIEVE the CSEBase
@@ -309,7 +379,7 @@ class SecurityManager(object):
 					# TODO perhaps have a DB with all originators and their kind?
 
 					# TODO add a "raw" attribute that returns the JSON, but doesn't intantiate the object
-					if self.storage.retrieveResource(aei = originator):
+					if self.storage.retrieveResource(aei=originator):
 						L.isDebug and L.logDebug(f'Grant registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
 						return True
 				except NOT_FOUND:
@@ -329,30 +399,28 @@ class SecurityManager(object):
 				return True
 			
 			# target is a group resource
-			case ResourceTypes.GRP:
+			case ResourceTypes.GRP_FOPT:
+				parentResource = parentResource if parentResource else resource.retrieveParentResource()
 				# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs are to be used
-				if not (macp := resource.macp):
-					L.isDebug and L.logDebug("MembersAccessControlPolicyIDs not provided for GRP, using AccessControlPolicyIDs")
+				if not (macp := parentResource.macp):
+					L.isDebug and L.logDebug('MembersAccessControlPolicyIDs not provided for GRP, using AccessControlPolicyIDs')
 					# fall-through to the permission checks below
 				else:
 					# handle the permission already checks here
-					allAcpAttributes = []
-					allowed = False
 
-					# Check ALL acp
+					# Check ALL acp in grp.macp
 					for acpRi in macp:
-						acpResult = _checkACPI(originator, acpRi, requestedPermission, ty, request)
-						allAcpAttributes.extend(acpResult.attributes)
-						allowed = allowed or acpResult.allowed	# OR all results together
-					if allowed:
-						return True
-					# TODO handle allACPAttributes
+						for acr in _getACPAccessControlRulesPV(acpRi):
+							if self.checkACR(acr, originator, requestedPermission, ty, request).allowed:
+								L.isDebug and L.logDebug(f'Permission granted by ACP: {acpRi} for GRP resource: {parentResource.ri}')
+								return True
+
 					L.isDebug and L.logDebug('Permission NOT granted')
 					return False
 				
 			# target is an ACP or ACPAnnc resource
 			case ResourceTypes.ACP | ResourceTypes.ACPAnnc:
-				if self.checkACPSelfPermission(cast(ACP, resource), originator, requestedPermission):
+				if self.checkSelfPrivileges(cast(ACP, resource), originator, requestedPermission, request=request):
 					L.isDebug and L.logDebug('Self-Permission granted')
 					return True
 
@@ -362,6 +430,7 @@ class SecurityManager(object):
 			case _:
 				pass	# fall-through to the permission checks below
 
+		# Different check, for resource CREATE
 		match ty:
 			# If subscription should be created, then check whether originator has retrieve permissions on the subscribed-to resource (parent)	
 			case ResourceTypes.SUB if parentResource and requestedPermission == Permission.CREATE:
@@ -377,62 +446,9 @@ class SecurityManager(object):
 		# Further permission checks
 		#
 
-		# If we have no acpi we need to check for dynamic authorization
-		if not (acpi := resource.acpi):
-
-
-
-
-
-
-
-			# Get the available daci for the resource. This is done by checking the resource itself, of any of its parents
-
-			# TODO make this configurable. If DAC is disabled we don't need to do all this
-
-			daci:list[str] = []
-
-			# Traverse up to find a daci
-			_r = resource
-			while True:
-				if _r.daci:
-					daci = _r.daci
-					break
-				if _r.ty == ResourceTypes.CSEBase: # don't go beyond CSEBase
-					break
-				_r = _r.retrieveParentResource()
-
-			if daci:
-				L.isDebug and L.logDebug(f'Found daci in resource hierarchy: {_r.ri} : {daci}')
-
-				for daciRi in daci:
-					try:
-						if not (daciResource := self.dispatcher.retrieveResource(daciRi)):
-							L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DACI> resource not found: {daciRi}')
-							continue
-					except ResponseException as e:
-						L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DACI> resource not found: {daciRi}: {e.dbg}')
-						continue
-
-					# Dynamic auth for the resource enabled?
-					if not daciResource.dae:
-						L.isDebug and L.logDebug(f'Dynamic Authorization Check: <DACI> resource dae is False: {daciRi}')
-						continue
-					if dap := daciResource.dap:
-						for poa in dap:
-							L.isDebug and L.logDebug(f'Dynamic Authorization Check: invoking DAS at: {poa} for originator: {originator} on resource: {resource.ri}')
-							# TODO call the DAS
-							# if ok: > return true
-							# else: continue
-
-					
-					# TODO do something with the lifetime
-
-
-
-
-
-
+		# If we have no acpi we need to check for dynamic or other authorization
+		if not resource.acpi and not (self.dasManager.getDACIforResource(resource) if self.dasManager else None):
+			L.isDebug and L.logDebug('Handle with missing acpi and daci in resource')
 
 			# Not authorized by DACI, now check for missing acpi handling, which is the default behavior
 			L.isDebug and L.logDebug('Handle with missing acpi and daci in resource')
@@ -465,29 +481,28 @@ class SecurityManager(object):
 					try:
 						if not parentResource:
 							parentResource = self.dispatcher.retrieveResource(resource.pi)
-						return self.hasAccess(originator, parentResource, requestedPermission, ty)
+						return self.hasAccess(originator, parentResource, requestedPermission, ty)	# recursive check on parent resource
 					except ResponseException as e:
 						L.isWarn and L.logWarn(f'Parent resource not found: {resource.pi}: {e.dbg}')
 						return False
 				# Fall-through to fail
 
-			L.isDebug and L.logDebug('Permission NOT granted for resource w/o acpi')
+			L.isDebug and L.logDebug('Permission NOT granted for resource w/o set acpi or daci')
 			return False
 
 		#
-		# Finally check the acpi
+		# Finally check the acpi and daci attributes
 		#
-
 
 		# Check all ACPs and get also the optional accessControlAttributes
 		allAcpAttributes = []
-		for acpRi in acpi:
-			if (acpResult := _checkACPI(originator, acpRi, requestedPermission, ty, request)).allowed:
-				return True
-			# not general grant, but we may need to check further
+
+		for acr in _getAccessControlRulesPV(resource):
+			if (acpResult := self.checkACR(acr, originator, requestedPermission, ty, request)).allowed:
+					return True
+
+			# not general grant, but we may need to check the attributes further
 			allAcpAttributes.extend(acpResult.attributes)
-		
-		# We reach here when no ACP has general granted direct access, but we may have further attributes to check
 
 		# Check the attributes
 		#
@@ -558,7 +573,9 @@ class SecurityManager(object):
 		return False
 
 
-	def checkAcpiUpdatePermission(self, request:CSERequest, targetResource:Resource, originator:str) -> bool:
+	def checkAcpiUpdatePermission(self, request: CSERequest, 
+	                              		targetResource: Resource, 
+										originator: str) -> bool:
 		"""	Check whether this is actually a correct update of the acpi attribute, and whether this is actually allowed.
 
 			Args:
@@ -594,7 +611,7 @@ class SecurityManager(object):
 						if not (acp := self.dispatcher.retrieveResource(acpRi)):
 							L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {acpRi}')
 							continue
-						if self.checkACPSelfPermission(cast(ACP, acp), _originator, Permission.UPDATE):
+						if self.checkSelfPrivileges(cast(ACP, acp), _originator, Permission.UPDATE, request=request):
 							break	# granted
 					except ResponseException as e:
 						L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {acpRi}: {e.dbg}')
@@ -606,22 +623,19 @@ class SecurityManager(object):
 		return False	# False indicates that this NOT an ACPI update
 
 
-
-	def checkSingleACPPermission(self, acp:ACP, 
-							  		   originator:str, 
-									   requestedPermission:Permission, 
-									   ty:ResourceTypes,
-									   context:Optional[str] = 'pv',
-									   request:Optional[CSERequest] = None
-									   ) -> ACPResult:
+	def checkACR(self, acr: JSON, 
+					   originator: str, 
+					   requestedPermission: Permission, 
+					   ty: Optional[ResourceTypes] = None,
+					   request: Optional[CSERequest] = None
+				) -> ACPResult:
 		"""	Check whether an *originator* has the requested permissions with this ACP.
 
 			Args:
-				acp: The ACP resource to check.
+				acr: The accessControlRule to check.
 				originator: The originator to test the permissions for.
 				requestedPermission: The permissions to test.
 				ty: If the resource type is given then it is checked for CREATE (as an allowed child resource type), otherwise as an allowed resource type.
-				context: The context to check. Default is 'pv'.
 			
 			Return:
 				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise. Additionally, a list of accessControlAttributes combined is returned.
@@ -629,136 +643,130 @@ class SecurityManager(object):
 		allAttributes:list[str] = []
 		requestAuthenticated = request.rq_authn	if request else False # Get the authentication flag from the request
 
-		# Get through all accessControlRules because we need to collect all attributes
+		# Get through all accessControlRules because we need to collect all attributes from all rules
 		# This means we cannot return early
 		# The following loop iterates over the rules of 'pv' or 'pvs'
-		for acr in acp[f'{context}/acr']:
 
-			# Check Permission-to-check first
-			if requestedPermission & acr['acop'] == Permission.NONE:	# permission not fitting at all
-				continue
+		# Check Permission-to-check first
+		if requestedPermission & acr['acop'] == Permission.NONE:	# permission not fitting at all
+			return ACPResult(False, allAttributes)
 
-			# Check accessControlContexts
-			if (acco := acr.get('acco')) is not None:
-				found = False
-				_ts = utcDatetime()
-				for eachAcco in acco:
+		# Check accessControlContexts
+		if (acco := acr.get('acco')) is not None:
+			found = False
+			_ts = utcDatetime()
+			for eachAcco in acco:
 
-					# Check accessControlWindows
-					if (actw := eachAcco.get('actw')) is not None:
-						for eachActw in actw:
-							if cronMatchesTimestamp(eachActw, _ts):
-								found = True
-								break
-						else:
-							continue
-		
-					# Check accessControlLocationRegion
-					if (aclr := eachAcco.get('aclr')) is not None:
-						L.isWarn and L.logWarn('AccessControlLocationRegion is not supported yet. Ignoring.')
-						found = True
-
-					# Check accessControlIpAddresses - acip
-					if (acip := eachAcco.get('acip')) is not None:
-						L.isWarn and L.logWarn('AccessControlIpAddresses is not supported yet. Ignoring.')
-						found = True
-
-					# Check accessControlUserIDs
-					if (acui := eachAcco.get('acui')) is not None:
-						L.isWarn and L.logWarn('AccessControlUserIDs is not supported yet. Ignoring.')
-						found = True
-					
-					# Check accessControlEvalCriteria
-					if (acec := eachAcco.get('acec')) is not None:
-						L.isWarn and L.logWarn('AccessControlEvalCriteria is not supported yet. Ignoring.')
-						found = True
-					
-					# Check accessControlLimit
-					if (acl := eachAcco.get('acl')) is not None:
-						L.isWarn and L.logWarn('AccessControlLimit is not supported yet. Ignoring.')
-						found = True
-
-					if found:
-						break
-				else:
-					continue	# Not in any context, so continue with the next acr. Dont check further in this acr
-
-			# Check accessControlAuthenticationFlag
-			if (acaf := acr.get('acaf')) is not None:
-				# Check whether the request is authenticated
-				if acaf and not requestAuthenticated:
-					continue
-
-			# Check accessControlAttributes
-			if (aca := acr.get('aca')) is not None:
-				allAttributes.extend(aca)
-
-			# Check accessControlObjectDetails
-			if acod := acr.get('acod'):
-				for eachAcod in acod:
-					# Check type of chty
-					if requestedPermission == Permission.CREATE:
-						if ty is None or ty not in eachAcod.get('chty'):	# ty is an int, chty a list of ints
-							continue										# for CREATE: type not in chty
+				# Check accessControlWindows
+				if (actw := eachAcco.get('actw')) is not None:
+					for eachActw in actw:
+						if cronMatchesTimestamp(eachActw, _ts):
+							found = True
+							break
 					else:
-						if ty is not None and ty != eachAcod.get('ty'):		# ty is an int
-							continue								# any other Permission type: ty not in chty
-					break # found one, so apply the next checks further down
+						return ACPResult(False, allAttributes)
+	
+				# Check accessControlLocationRegion
+				if (aclr := eachAcco.get('aclr')) is not None:
+					L.isWarn and L.logWarn('AccessControlLocationRegion is not supported yet. Ignoring.')
+					found = True
+
+				# Check accessControlIpAddresses - acip
+				if (acip := eachAcco.get('acip')) is not None:
+					L.isWarn and L.logWarn('AccessControlIpAddresses is not supported yet. Ignoring.')
+					found = True
+
+				# Check accessControlUserIDs
+				if (acui := eachAcco.get('acui')) is not None:
+					L.isWarn and L.logWarn('AccessControlUserIDs is not supported yet. Ignoring.')
+					found = True
+				
+				# Check accessControlEvalCriteria
+				if (acec := eachAcco.get('acec')) is not None:
+					L.isWarn and L.logWarn('AccessControlEvalCriteria is not supported yet. Ignoring.')
+					found = True
+				
+				# Check accessControlLimit
+				if (acl := eachAcco.get('acl')) is not None:
+					L.isWarn and L.logWarn('AccessControlLimit is not supported yet. Ignoring.')
+					found = True
+
+				if found:
+					break
+			else:
+				return ACPResult(False, allAttributes)	# Not in any context, so continue with the next acr. Dont check further in this acr
+
+		# Check accessControlAuthenticationFlag
+		if (acaf := acr.get('acaf')) is not None:
+			# Check whether the request is authenticated
+			if acaf and not requestAuthenticated:
+				return ACPResult(False, allAttributes)
+
+		# Check accessControlAttributes
+		if (aca := acr.get('aca')) is not None:
+			allAttributes.extend(aca)
+
+		# Check accessControlObjectDetails
+		if (acod := acr.get('acod')) is not None:
+			for eachAcod in acod:
+				# Check type of chty
+				if requestedPermission == Permission.CREATE:
+					if ty is None or ty not in eachAcod.get('chty'):	# ty is an int, chty a list of ints
+						return ACPResult(False, allAttributes)			# for CREATE: type not in chty
 				else:
-					continue	# NOT found, so continue the next acr
+					if ty is not None and ty != eachAcod.get('ty'):		# ty is an int
+						return ACPResult(False, allAttributes)			# any other Permission type: ty not in chty
+				break # found one, so apply the next checks further down
+			else:
+				return ACPResult(False, allAttributes)	# NOT found,
 
-				# TODO support acod/specialization
+		# TODO support acod/specialization
 
-			# Check originator
-			# If we arrive here, then all the checks have passed, and we can check the originator
-			originatorAllowed = self._checkAcor(acp, acr['acor'], originator)
+		# Check originator
+		# If we arrive here, then all the checks have passed, and we can check the originator
+		originatorAllowed = self._checkAcor(acr['acor'], originator)
 
-			# We can return early if the originator is allowed and we don't have attributes for this
-			# rule. This is ageneral permit for the originator and this operation.
-			if originatorAllowed and not aca:
-				return ACPResult(True, [])	# No need to collect attributes when the 
+		# We can return early if the originator is allowed and we don't have attributes for this
+		# rule. This is ageneral permit for the originator and this operation.
+		if originatorAllowed and not aca:
+			return ACPResult(True, [])	# No need to collect attributes when the 
 
 		# Not general grant, but we may have further attributes to check
 
 		return ACPResult(False, allAttributes) 
-	
 
-	def checkACPSelfPermission(self, acp:ACP|ACPAnnc, originator:str, requestedPermission:Permission) -> bool:
+
+	def checkSelfPrivileges(self, acp: ACP|ACPAnnc, 
+	                           	  originator: str, 
+								  requestedPermission: Permission,
+								  request: CSERequest) -> bool:
 		"""	Check whether an *originator* has the requested permissions to the `ACP` resource itself.
+			This includes checks for any supported option in the access control rules.
 
 			Args:
+				acp: The ACP resource to check the permissions for.
 				originator: The originator to test the permissions for.
 				requestedPermission: The permissions to test.
+				request: The CSE request object.
 			Return:
-				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise.
+				If any of the configured *accessControlRules* of the ACP resource matches, then the originator has access, and *True* is returned, or *False* otherwise.
 		"""
-
-		# TODO add attribute and other checks
-		# Perhaps move the attribute and other checks to a separate method
 
 		match acp.ty:
 			case ResourceTypes.ACP:
-				for permission in acp['pvs/acr']:
-					if requestedPermission & permission['acop'] == 0:	# permission not fitting at all
-						continue
-
-					# Check originator
-					if self._checkAcor(acp, permission['acor'], originator):
+				for acr in acp['pvs/acr']:
+					if self.checkACR(acr, originator, requestedPermission, request=request).allowed:
 						return True
 				return False
 
 			case ResourceTypes.ACPAnnc:
 				# Check for self permissions in the ACPAnnc must be done a bit differently because we 
 				# don't have the optimizations that we have in the ACP resource
-				for permission in acp['pvs/acr']:
-					if requestedPermission & permission['acop'] == 0:	# permission not fitting at all
-						continue
+				
+				# TODO verify this approach. Because it seems to be the same as above
 
-					# TODO check acod in pvs
-					if 'all' in permission['acor'] or originator in permission['acor']:
-						return True
-					
-					if any([ simpleMatch(originator, a) for a in permission['acor'] ]):	# check whether there is a wildcard match
+				for acr in acp['pvs/acr']:
+					if self.checkACR(acr, originator, requestedPermission, request=request).allowed:
 						return True
 				return False
 		return False
@@ -1216,3 +1224,45 @@ class SecurityManager(object):
 				return registrarConfig.security.credentials.wsUsername, registrarConfig.security.credentials.wsPassword
 		return None, None
 		
+
+	##########################################################################
+	#
+	#	Resource & type cache handling
+	#
+
+	def getTypeForRi(self, ri:str) -> Optional[ResourceTypes]:
+		"""	Get the resource type for a given resource ID (ri).
+
+			Args:
+				ri: The resource ID to get the resource type for.
+
+			Return:
+				The resource type for the given resource ID, or None if not found.
+		"""
+
+		# Check the cache first
+		with self.riTypeCacheLock:
+			if ri in self.riTypeCache:
+				#print(self.riTypeCache)
+				return self.riTypeCache[ri]
+
+		# If not found in the cache, retrieve the resource and get its type
+		try:
+			resource = self.dispatcher.retrieveResource(ri)
+			with self.riTypeCacheLock:
+				self.riTypeCache[ri] = resource.ty
+			#print(self.riTypeCache)
+			return resource.ty
+		except ResponseException as e:
+			L.isWarn and L.logWarn(f'Could not retrieve resource for ri: {ri}: {e.dbg}')
+		
+		return ResourceTypes.UNKNOWN
+		
+
+	@onEvent(eventManager.deleteResource)
+	def onResourceDeleted(self,  eventData: EventData) -> None:
+		"""	Handle the deletion of a resource by removing it from the type cache.	"""
+		with self.riTypeCacheLock:
+			ri = cast(Resource, eventData.payload).ri
+			if ri in self.riTypeCache:
+				del self.riTypeCache[ri]

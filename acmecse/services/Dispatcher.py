@@ -224,8 +224,10 @@ class Dispatcher(metaclass=Singleton):
 
 
 				res = laOlResource.handleRetrieveRequest(request=request, originator=originator)
-				if not self.security.hasAccess(originator, cast(Resource, res.resource), Permission.RETRIEVE, request=request, resultResource=cast(Resource, res.resource)):
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator has no permission for {Permission.RETRIEVE}')
+				
+				# Check access permissions for the originator on the retrieved resource
+				# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+				self.security.checkAccess(originator, cast(Resource, res.resource), Permission.RETRIEVE, request=request, resultResource=cast(Resource, res.resource))
 				return res
 
 		# Handle notificationTargetSelfReference RETRIEVE
@@ -273,8 +275,9 @@ class Dispatcher(metaclass=Singleton):
 
 					resource = self.retrieveResource(id, originator, request)
 
-					if not self.security.hasAccess(originator, resource, permission, request=request, resultResource=resource):
-						raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no {permission} privileges for resource: {resource.ri}'))
+					# Check access permissions for the originator on the retrieved resource
+					# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+					self.security.checkAccess(originator, resource, permission, request=request, resultResource=resource)
 
 					match rcn:
 						case ResultContentType.attributes:
@@ -787,11 +790,15 @@ class Dispatcher(metaclass=Singleton):
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		parentResource = self.retrieveResource(id, request=request)
 
-		if not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=request.ty, parentResource=parentResource, request=request):
-			if request.ty == ResourceTypes.AE:
-				raise SECURITY_ASSOCIATION_REQUIRED('security association required')
-			else:
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
+
+		# Check access permissions for the originator on the parent resource
+		# Might throw a SECURITY_ASSOCIATION_REQUIRED or ORIGINATOR_HAS_NO_PRIVILEGE exception
+		if request.ty == ResourceTypes.AE:
+			exceptionType, message = SECURITY_ASSOCIATION_REQUIRED, 'security association required'
+		else:
+			exceptionType, message = None, None
+		self.security.checkAccess(originator, parentResource, Permission.CREATE, ty=request.ty, parentResource=parentResource, request=request,
+								  exceptionType=exceptionType, message=message)
 
 		# Check for virtual resource
 		if parentResource.isVirtual():
@@ -942,8 +949,10 @@ class Dispatcher(metaclass=Singleton):
 				self.registrationManager.checkResourceCreation(resource, originator)
 
 			# Check Permission
-			if not trustedSource and not self.security.hasAccess(originator, parentResource, Permission.CREATE, ty=ty, parentResource=parentResource, resultResource=resource):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no CREATE privileges for resource: {parentResource.ri}'))
+			if not trustedSource:
+				# Check access permissions for the originator on the retrieved resource
+				# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+				self.security.checkAccess(originator, parentResource, Permission.CREATE, ty=ty, parentResource=parentResource, resultResource=resource)
 
 			# Create it locally
 			createdResource = self.createLocalResource(resource, parentResource, originator=originator)
@@ -1124,8 +1133,9 @@ class Dispatcher(metaclass=Singleton):
 		#	Permission check
 		#	If this is an 'acpi' update?
 		if not self.security.checkAcpiUpdatePermission(request, resource, originator):	#  == False indicates that this is NOT an ACPI update. In this case we need a normal permission check
-			if not self.security.hasAccess(originator, resource, Permission.UPDATE, request=request, resultResource=resource):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
+			# Check access permissions for the originator on the retrieved resource
+			# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+			self.security.checkAccess(originator, resource, Permission.UPDATE, request=request, resultResource=resource)
 
 
 		# Check for virtual resource
@@ -1231,9 +1241,11 @@ class Dispatcher(metaclass=Singleton):
 			if resource is None:
 				resource = self.retrieveLocalResource(rID, originator = originator)
 			
-			# Check Permission
-			if not self.security.hasAccess(originator, resource, Permission.UPDATE, resultResource = resource):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no UPDATE privileges for resource: {resource.ri}'))
+			
+			# Check access permissions for the originator on the updated resource
+			# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+			self.security.checkAccess(originator, resource, Permission.UPDATE, resultResource=resource)
+
 
 			# Update it locally
 			updatedResource = self.updateLocalResource(resource, dct, originator=originator)
@@ -1316,8 +1328,9 @@ class Dispatcher(metaclass=Singleton):
 		if not ResourceTypes.isRequestDeletable(resource.ty):
 			raise OPERATION_NOT_ALLOWED(f'DELETE not allowed for type: {resource.ty}')
 
-		if not self.security.hasAccess(originator, resource, Permission.DELETE, request=request, resultResource=resource):
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'originator: {originator} has no DELETE privileges for resource: {resource.ri}')
+		# Check access permissions for the originator on the deleted resource
+		# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+		self.security.checkAccess(originator, resource, Permission.DELETE, request=request, resultResource=resource)
 
 		# Check for virtual resource
 		if resource.isVirtual():
@@ -1446,9 +1459,9 @@ class Dispatcher(metaclass=Singleton):
 			if id in [ RC.cseRi, RC.cseRn ]:
 				raise OPERATION_NOT_ALLOWED('DELETE operation is not allowed for CSEBase')
 
-			# Check Permission
-			if not self.security.hasAccess(originator, resource, Permission.DELETE, resultResource=resource):
-				raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no DELETE access to: {resource.ri}'))
+			# Check access permissions for the originator on the deletedresource
+			# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+			self.security.checkAccess(originator, resource, Permission.DELETE, resultResource=resource)
 
 			# delete it locally
 			self.deleteLocalResource(resource, originator = originator)
@@ -1535,8 +1548,11 @@ class Dispatcher(metaclass=Singleton):
 			case _ if ResourceTypes.isNotificationEntity(targetResource.ty):
 				if id in [RC.cseRi, RC.cseRn]:
 					raise BAD_REQUEST('Cannot notify own CSEBase resource')
-				if not self.security.hasAccess(originator, targetResource, Permission.NOTIFY):
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator has no NOTIFY privilege for: {id}'))
+
+				# Check access permissions for the originator on the notified resource
+				# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+				self.security.checkAccess(originator, targetResource, Permission.NOTIFY)
+
 				#  A Notification to one of these resources will always be a Received Notify Request
 				return self.requestManager.handleReceivedNotifyRequest(id, request=request, originator=originator)
 		
@@ -1565,9 +1581,10 @@ class Dispatcher(metaclass=Singleton):
 		L.isDebug and L.logDebug(f'Sending NOTIFY to local resource: {ri}')
 		resource = self.retrieveLocalResource(ri, originator = originator)
 		
-		# Check Permission
-		if not self.security.hasAccess(originator, resource, Permission.NOTIFY):
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'Originator: {originator} has no NOTIFY access to: {resource.ri}'))
+		# Check access permissions for the originator on the notified resource
+		# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+		self.security.checkAccess(originator, resource, Permission.NOTIFY)
+
 		
 		# Send notification
 		try:
@@ -1768,8 +1785,10 @@ class Dispatcher(metaclass=Singleton):
 		"""
 		L.isDebug and L.logDebug(f'Retrieving resource with permissions: {ri} for originator: {originator} permission: {permission}')
 		resource = self.retrieveResource(riFromID(ri), originator)
-		if not self.security.hasAccess(originator, resource, permission, resultResource = resource):
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(L.logDebug(f'originator: {originator} has no access to the resource: {ri}'))
+
+		# Check access permissions for the originator on the retrieved resource
+		# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+		self.security.checkAccess(originator, resource, permission, resultResource=resource)
 		return resource
 	
 

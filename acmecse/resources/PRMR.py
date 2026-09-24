@@ -107,9 +107,10 @@ class PRMR(AnnounceableResource):
 				newInstResource = self.dispatcher.retrieveResource(newInst, originator)
 			except NOT_FOUND:
 				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The referenced state resource does not exist'))
-			# Check if the originator has access to the new state resource
-			if not self.security.hasAccess(originator, newInstResource, Permission.RETRIEVE):	# Check if the originator has RETRIEVE access to the state resource
-				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The originator does not have the necessary privileges to access the referenced state resource'))
+			# Check if the originator has RETRIEVE access to the state resource
+			# Might throw an INVALID_PROCESS_CONFIGURATION exception
+			self.security.checkAccess(originator, newInstResource, Permission.RETRIEVE,
+									   exceptionType=INVALID_PROCESS_CONFIGURATION, message='The originator does not have the necessary privileges to access the referenced state resource')
 			# Check if the new state resource is a child resource of this process resource
 			if newInstResource.pi != self.ri:
 				raise INVALID_PROCESS_CONFIGURATION(L.logDebug('The referenced state resource is not a child resource of this process resource'))

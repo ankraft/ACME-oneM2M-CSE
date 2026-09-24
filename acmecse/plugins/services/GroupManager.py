@@ -199,8 +199,10 @@ class GroupManager():
 
 			# check privileges
 			if isLocalResource:
-				if not self.security.hasAccess(originator, resource, Permission.RETRIEVE, resultResource=resource):
-					raise RECEIVER_HAS_NO_PRIVILEGES(f'insufficient privileges for originator to retrieve local resource: {mid}')
+				# Check access permissions for the originator on the local resource
+				# Might throw a RECEIVER_HAS_NO_PRIVILEGES exception
+				self.security.checkAccess(originator, resource, Permission.RETRIEVE, resultResource=resource,
+										   exceptionType=RECEIVER_HAS_NO_PRIVILEGES, message=f'insufficient privileges for originator to retrieve local resource: {mid}')
 
 			# if it is a group + fopt, then recursively check members
 			if (ty := resource.ty) == ResourceTypes.GRP and hasFopt:
@@ -271,10 +273,9 @@ class GroupManager():
 		# get the permission flags for the request operation
 		permission = operation.permission()
 
-		#check access rights for the originator through memberAccessControlPolicies
-		if not self.security.hasAccess(originator, groupResource, requestedPermission=permission, ty=request.ty):
-			raise ORIGINATOR_HAS_NO_PRIVILEGE('insufficient privileges for originator')
-		
+		# Check access permissions for the originator on the group resource
+		# Might throw an ORIGINATOR_HAS_NO_PRIVILEGE exception
+		self.security.checkAccess(originator, groupResource, permission, ty=request.ty)
 
 		# check whether there is something after the /fopt ...
 		_, _, tail = id.partition('/fopt/')
