@@ -22,6 +22,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for Trigger Requests and a TriggerManager that handles requests through plugins. A default TriggerRequestHandler plugin is provided that supports testing the trigger request functionality. This is an ESTIMED project contribution.
 - [CSE] Added validation of *m2m:externalID* types, e.g. for M2M-EXT-ID attributes.
 - [CSE] Added support for the *m2m:triggerRecipientID* types, e.g. for triggerRecipientID attributes.
+- [CSE] Added first support for Dynamic Authorization and a simple Dynamic Authorization server.
 - [MGMT] Added reloading of HTTP and WebSocket authentication credentials to the management API.
 - [MGMT] Added support for retrieving basic and auth token information via the management API.
 - [MGMT] Added return of attribute, resource type, and flexcontainer policies to the management API.
@@ -40,6 +41,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 ### Changed
 - [CSE] Fixed wrong file names for TinyDB database files. This was introduced in the last release. THIS IS A BREAKING CHANGE. Old database files must be renamed to the correct format which is `<db>-<SP-ID>-<CSE-ID>.json`. 
 - [CSE] The onboarding process now gives every CSE access for registering to a CSE. The value for the [cse.registration].allowedCSROriginators setting is now `/*`.
+- [CSE] Refactored the security access checking mechanism to use the new `checkAccess` method that simplifies checks by using exceptions instead of manual conditionals.
 
 ### Fixed
 - [CSE] Fixed &lt;ACP> *accessControlOriginators* wildcard matching to follow TS-0003's rules: a "*" no longer matches across a "/", and matching is now aware of absolute, SP-relative, and CSE-relative addressing. Added validation to reject a "*" that is not the last character of a segment. Added test cases for this.
