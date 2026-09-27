@@ -111,7 +111,7 @@ _originatorPatternCharsetRegex = re.compile(r'[a-zA-Z0-9\-._/*]+')
 
 _idcsrRegex = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]*')
 """	Compiled regular expression for the m2m:resourceName grammar (TS-0004, Table 6.3.3-1):
-	(ALPHA / DIGIT) *(ALPHA / DIGIT / "-" / "." / "_"). Used for IDCSR (rn, ri). """
+	(ALPHA / DIGIT) \*(ALPHA / DIGIT / "-" / "." / "_"). Used for IDCSR (rn, ri). """
 
 @requires(importer='acmecse.runtime.Importer')
 class Validator(metaclass=Singleton):
@@ -665,22 +665,22 @@ class Validator(metaclass=Singleton):
 		return typeShortname in flexContainerSpecializations
 
 	
-	def hasFlexContainerContainerDefinition(self, cnd: str, type: str|None=None) -> bool:
+	def hasFlexContainerContainerDefinition(self, cnd: str, tpe: str|None=None) -> bool:
 		"""	Test whether a flexContainer specialization with a containerDefinition exists. 
-			If `type` is provided, it, and its 'Annc' and 'Inst' variants, will be excluded from the search.
+			If *tpe* is provided, it, and its 'Annc' and 'Inst' variants, will be excluded from the search.
 				
 			Args:
 				cnd: String, containerDefinition of the flexContainer specialization.
-				type: Optional string, the type of the flexContainer specialization to exclude from the search.
+				tpe: Optional string, the type of the flexContainer specialization to exclude from the search.
 				
 			Return:
 				Boolean, indicating existens.
 
 		"""
-		type = type if not type.endswith(('Annc', 'Inst')) else type[:-4]
+		tpe = tpe if not tpe.endswith(('Annc', 'Inst')) else tpe[:-4]
 		return any(( _t 
 		             for _t, _v in flexContainerSpecializations.items() 
-					 if _v[0] == cnd and (type is None or _t not in (type, f'{type}Annc', f'{type}Inst')) 
+					 if _v[0] == cnd and (tpe is None or _t not in (tpe, f'{tpe}Annc', f'{tpe}Inst')) 
 				  ))
 	
 
