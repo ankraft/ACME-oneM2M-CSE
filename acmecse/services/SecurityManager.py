@@ -115,7 +115,9 @@ class SecurityManager(object):
 
 		# Initialize the RI type cache
 		self.riTypeCache: ACMELRUCache = ACMELRUCache(maxsize=1024)	# TODO make the maxsize configurable
+		""" Cache for resource type lookups. It maps resource IDs to their corresponding resource types. """
 		self.riTypeCacheLock: threading.Lock = threading.Lock()
+		""" Lock for synchronizing access to the RI type cache. """
 
 
 	def shutdown(self) -> bool:
