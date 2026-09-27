@@ -156,7 +156,9 @@ class Importer(metaclass=Singleton):
 
 	
 	def importResourcePolicies(self) -> None:
-		"""	Import the resource type policies from the resource paths.
+		"""	Import the resource type policies from the internal *init* directory of the CSE.
+			In addition, it will also import any resource type policies from the runtime *init*
+			directory if available.
 		"""
 
 		def _importResourcePolicies(path: str) -> None:
@@ -170,7 +172,7 @@ class Importer(metaclass=Singleton):
 			if not os.path.exists(path):
 				raise RuntimeError(L.logWarn(f'Import directory for resource type policies does not exist: {path}'))
 
-			L.isDebug and L.logDebug('Importing resource type policies')
+			L.isDebug and L.logDebug(f'Importing resource type policies from: {path}')
 			countRP = 0
 
 			filenames = fnmatch.filter(os.listdir(path), '*.rtp')
@@ -189,6 +191,11 @@ class Importer(metaclass=Singleton):
 					if not isinstance(rtDef, dict):
 						raise RuntimeError(L.logErr(f'Wrong or empty resource type definition for resource type: {rtName} in file: {fn}'))
 					try:
+						# Remove the existing resource type policy if it exists, as it will be overwritten.
+						if ResourceTypes[rtName] in resourceTypeDetails:
+							L.isDebug and L.logDebug(f'Overwriting existing resource type policy for: {rtName} with a new definition')
+							del resourceTypeDetails[ResourceTypes[rtName]]
+						
 						resourceTypeDetails[ResourceTypes[rtName]] = ResourceDescription(
 							type=ResourceTypes(rtDef['type']),
 							typeName=rtDef['typeName'],
@@ -221,6 +228,10 @@ class Importer(metaclass=Singleton):
 		# Resource type policies are the first thing to import, 
 		# because they are needed for the attribute policies and the resource factory initialization.	
 		_importResourcePolicies(self.resourcePath)
+
+		# Read type policies from the user-specified init directory.
+		# Entries found here will overwrite the default type policies if they exist.
+		_importResourcePolicies(self.rtDir)
 
 		# Initialize the resource factory, e.g. register resource types and their constructors
 		# This can only be done after the importer has imported the resource type definitions, 
@@ -452,7 +463,9 @@ class Importer(metaclass=Singleton):
 
 
 	def importFlexContainerPolicies(self, path:str) -> bool:
-		"""	Import the attribute and hierarchy policies for flexContainer specializations.
+		"""	Import the attribute and hierarchy policies for flexContainer specializations. The policies 
+			are read from JSON files in the specified directory. 
+		
 
 			Args:
 				path: Path to a directory from where to import flexContainer policies. 

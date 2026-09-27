@@ -629,6 +629,7 @@ class Validator(metaclass=Singleton):
 		if not self.hasFlexContainerSpecialization(typeShortname):
 			flexContainerSpecializations[typeShortname] = (cnd, lname, children)
 			return True
+		L.isDebug and L.logDebug(f'FlexContainer specialization for typeShortname {typeShortname} already exists, not adding.')
 		return False
 
 
