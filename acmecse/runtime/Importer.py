@@ -231,7 +231,8 @@ class Importer(metaclass=Singleton):
 
 		# Read type policies from the user-specified init directory.
 		# Entries found here will overwrite the default type policies if they exist.
-		_importResourcePolicies(self.rtDir)
+		if os.path.exists(self.rtDir):
+			_importResourcePolicies(self.rtDir)
 
 		# Initialize the resource factory, e.g. register resource types and their constructors
 		# This can only be done after the importer has imported the resource type definitions, 
