@@ -196,7 +196,92 @@ class TestDAC(unittest.TestCase):
 		r, rsc = DELETE(f'{aeURL}/{dacRN}', self.originator)
 		self.assertEqual(rsc, RC.DELETED, r)
 
-		
+
+	#########################################################################
+	#
+	#	dap / daci attribute behaviour
+	#
+	#	NOTE: dap's and daci's list type ("ID" resp. "anyURI") is not yet validated
+	#	for content or for referencing an actually existing resource. The tests
+	#	below document the current, intentionally permissive behaviour; they are
+	#	not asserting that this is definitely how it *should* work.
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createDACdapEmptyStringEntry(self) -> None:
+		"""	CREATE <DAC> with an empty string as a dap entry """
+		dct = 	{ 'm2m:dac' : {
+					'rn' : f'{dacRN}Dap1',
+					'dae': False,
+					'dap': [ '' ]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.DAC, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:dac/dap'), [ '' ], r)
+		DELETE(f'{cseURL}/{dacRN}Dap1', ORIGINATOR)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createDACdapDuplicateEntries(self) -> None:
+		"""	CREATE <DAC> with duplicate dap entries """
+		dct = 	{ 'm2m:dac' : {
+					'rn' : f'{dacRN}Dap2',
+					'dae': False,
+					'dap': [ 'aURL', 'aURL' ]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.DAC, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:dac/dap'), [ 'aURL', 'aURL' ], r)
+		DELETE(f'{cseURL}/{dacRN}Dap2', ORIGINATOR)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithDaciNonExistentDAC(self) -> None:
+		"""	CREATE <CNT> with a daci referencing a non-existent <DAC> """
+		dct = 	{ 'm2m:cnt' : {
+					'rn' : f'{cntRN}Daci',
+					'daci': [ 'nonExistentDACRi' ]
+				}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		self.assertEqual(findXPath(r, 'm2m:cnt/daci'), [ 'nonExistentDACRi' ], r)
+		DELETE(f'{aeURL}/{cntRN}Daci', self.originator)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveResourceWithDisabledDaciFail(self) -> None:
+		"""	RETRIEVE a <CNT> (no acpi) whose daci points to a disabled <DAC> -> Fail """
+		dct = 	{ 'm2m:dac' : {
+					'rn' : f'{dacRN}Disabled',
+					'dae': False,
+					'dap': [ 'aURL' ]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.DAC, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		dacRi = findXPath(r, 'm2m:dac/ri')
+
+		dct = 	{ 'm2m:cnt' : {
+					'rn' : f'{cntRN}DaciDisabled',
+					'daci': [ dacRi ]
+				}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}/{cntRN}DaciDisabled', 'CsomeOtherOriginator')
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		DELETE(f'{aeURL}/{cntRN}DaciDisabled', self.originator)
+		DELETE(f'{cseURL}/{dacRN}Disabled', ORIGINATOR)
+
+
+	@unittest.skip('Blocked on DASManager.consultDAS() response handling (dynamicACPInfo / grantedPrivileges) not being implemented yet')
+	def test_accessGrantedViaDASConsultation(self) -> None:
+		"""	RETRIEVE a resource (no acpi) whose daci points to an enabled <DAC>; the DAS
+			grants access via a dynamic authorization consultation response, and the CSE
+			applies the granted privileges (creates a dynamic <accessControlPolicy>).
+		"""
+		self.fail('Not implemented: requires a working DAS consultation round-trip')
+
+
 def run(testFailFast:bool) -> TestResult:
 
 	# Assign tests
@@ -216,6 +301,13 @@ def run(testFailFast:bool) -> TestResult:
 		'test_retrieveDACunderAE',
 		'test_updateDACunderAE',
 		'test_deleteDACunderAE',
+
+		# dap / daci attribute behaviour
+		'test_createDACdapEmptyStringEntry',
+		'test_createDACdapDuplicateEntries',
+		'test_createCNTwithDaciNonExistentDAC',
+		'test_retrieveResourceWithDisabledDaciFail',
+		'test_accessGrantedViaDASConsultation',
 
 	])
 

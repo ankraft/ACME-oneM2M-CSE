@@ -282,7 +282,7 @@ class TestACP(unittest.TestCase):
 	#	originatorPattern validation: positive cases spanning all ID forms
 	#
 
-	def _createAndDeleteACPWithAcor(self, rn:str, acor:str) -> RC:
+	def _createAndDeleteACPWithAcor(self, rn:str, acor:str) -> int:
 		"""	Helper: create an <ACP> with a single acor entry, assert success, then delete it again.
 
 			Args:
