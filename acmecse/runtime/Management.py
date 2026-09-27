@@ -714,7 +714,8 @@ skinparam BoxPadding 60
 				'inheritACP': details.inheritACP,
 				'attributes': [ { 'shortName': attr, 
 								  'longName': self.validator.getAttributePoliciesByName(attr)[0].lname } 
-				   				for attr in details.attributes ],
+				   				for attr in details.attributes ]
+								if details.attributes else [],
 				'childResourceTypes': [ { 'resourceType': crt if crt > 0 else f'N/A', 
 							 			   'name': resourceTypeDetails[crt].fullName }
 										 for crt in sorted(details.childResourceTypes) ] 
