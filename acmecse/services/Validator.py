@@ -111,7 +111,8 @@ _originatorPatternCharsetRegex = re.compile(r'[a-zA-Z0-9\-._/*]+')
 
 _idcsrRegex = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]*')
 """	Compiled regular expression for the m2m:resourceName grammar (TS-0004, Table 6.3.3-1):
-	(ALPHA / DIGIT) \*(ALPHA / DIGIT / "-" / "." / "_"). Used for IDCSR (rn, ri). """
+	a letter or digit, followed by zero or more letters, digits, "-", ".", or "_".
+	Used for IDCSR (rn, ri). """
 
 @requires(importer='acmecse.runtime.Importer')
 class Validator(metaclass=Singleton):
