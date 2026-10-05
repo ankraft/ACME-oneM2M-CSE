@@ -148,9 +148,6 @@ class Constants(object):
 	attrRemoteID = '__remoteID__'			# When this is a resource from another CSE
 	""" Constant: Name of the `Resource` internal *__remoteID__* attribute. This attribute holds a list of the resource's announced variants. """
 
-	attrRiTyMapping = '__riTyMapping__'
-	""" Constant: Name of the 'Resource internal *__riTyMapping__* attribute. This attribute holds the mapping of resourceID's to resource types. """
-
 	attrRvi = '__rvi__'					# Request version indicator when created
 	""" Constant: Name of the `Resource` internal *__rvi__* attribute. This attribute holds the Release Version Indicator for which the resource was created. """
 
