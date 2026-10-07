@@ -22,9 +22,6 @@ if TYPE_CHECKING:
 	from ..services.Dispatcher import Dispatcher
 	from ..runtime.Storage import Storage
 
-# # Add to internal attributes
-# addToInternalAttributes(Constants.attrRiTyMapping)
-
 @requires(dispatcher='acmecse.services.Dispatcher')
 @requires(storage='acmecse.runtime.Storage')
 class ACP(AnnounceableResource):
@@ -61,35 +58,6 @@ class ACP(AnnounceableResource):
 		else:
 			raise BAD_REQUEST('pvs must not be None')
 		
-		# # Get types for the acor members. Ignore if not found
-		# # This is an optimization used later in case there is a group in acor
-		# # The dictionary is stored in the ACP resource itself and contains
-		# # a mapping of resourceID's to resource types.
-		# # It is later used by the security manager
-		# riTyDict = {}
-
-		# def _getAcorTypes(pv:JSON) -> None:
-		# 	""" Get the types of the acor members.
-		# 		Args:
-		# 			pv: The pv attribute to get the types for.
-		# 	"""
-		# 	if pv:
-		# 		for acr in pv.get('acr', []):
-		# 			if (acor := acr.get('acor')):
-		# 				for o in acor:
-		# 					try:
-		# 						r = self.dispatcher.retrieveResource(o)
-		# 						riTyDict[o] = r.ty		
-		# 					except Exception as ex:
-		# 						L.isDebug and L.logDebug(f'Unable to retrieve resource for acor entry: {o}. Error: {ex}')	
-		# 						# ignore any errors here. The acor might not be a resource yet
-		# 						continue
-
-		# _getAcorTypes(self.getFinalResourceAttribute('pv', dct))
-		# _getAcorTypes(self.getFinalResourceAttribute('pvs', dct))
-		# self.setAttribute(Constants.attrRiTyMapping, riTyDict)
-
-
 
 	def deactivate(self, originator:str, parentResource:Resource) -> None:
 		# Inherited
@@ -153,13 +121,4 @@ class ACP(AnnounceableResource):
 		if p := self['pvs/acr']:
 			p.append({'acop' : permission, 'acor': list(set(originators))}) 	# list(set()) : Remove duplicates from list of originators
 
-
-	# def getTypeForRI(self, ri:str) -> Optional[str]:
-	# 	""" Get the resource type for a resourceID.
-	# 		Args:
-	# 			ri: The resourceID to get the type for.
-	# 		Return:
-	# 			The resource type if found, or *None* otherwise.
-	# 	"""
-	# 	return self[Constants.attrRiTyMapping].get(ri)
 
