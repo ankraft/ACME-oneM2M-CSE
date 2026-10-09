@@ -11,7 +11,7 @@ from socket import timeout
 import unittest, sys
 
 if '..' not in sys.path:
-	sys.path.append('..')
+	sys.path.insert(0, '..')
 from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, TriggerPurpose, TriggerStatus, Operation
 from acmecse.etc.Constants import Constants as C
 from init import *

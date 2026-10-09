@@ -10,7 +10,7 @@
 from __future__ import annotations
 import unittest, sys, time
 if '..' not in sys.path:
-	sys.path.append('..')
+	sys.path.insert(0, '..')
 from typing import Tuple
 import threading
 from acmecse.etc.Types import ResponseStatusCode as RC, ResourceTypes as T

@@ -11,7 +11,7 @@
 
 import unittest, sys
 if '..' not in sys.path:
-	sys.path.append('..')
+	sys.path.insert(0, '..')
 from acmecse.etc.Types import ResultContentType as RCN
 from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from acmecse.etc.Types import DesiredIdentifierResultType, FilterOperation

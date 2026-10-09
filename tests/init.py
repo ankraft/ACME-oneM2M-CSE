@@ -31,7 +31,7 @@ from websockets.exceptions import ConnectionClosed
 
 # sys.path.append('../acme')
 if '..' not in sys.path:
-	sys.path.append('..')
+	sys.path.insert(0, '..')
 
 # CoAP Libraries
 from coapthon import defines	# actually this is the import from ACME

@@ -10,7 +10,7 @@
 import unittest, sys
 import isodate
 if '..' not in sys.path:
-	sys.path.append('..')
+	sys.path.insert(0, '..')
 from acmecse.etc.Types import ResponseStatusCode as RC
 from acmecse.etc.Types import ResourceTypes as T
 from init import *

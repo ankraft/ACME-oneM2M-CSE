@@ -9,7 +9,7 @@
 
 import unittest, sys, base64, urllib.parse
 if '..' not in sys.path:
-	sys.path.append('..')
+	sys.path.insert(0, '..')
 from acmecse.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC
 from acmecse.etc.Types import ResultContentType as RCN, Permission
 from init import *

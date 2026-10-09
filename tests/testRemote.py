@@ -12,7 +12,7 @@ import unittest, sys
 
 from testDiscovery import TestDiscovery
 if '..' not in sys.path:
-	sys.path.append('..')
+	sys.path.insert(0, '..')
 from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, FilterUsage, DesiredIdentifierResultType
 from init import *
 

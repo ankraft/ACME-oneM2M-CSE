@@ -9,7 +9,7 @@
 
 import unittest, sys
 if '..' not in sys.path:
-	sys.path.append('..')
+	sys.path.insert(0, '..')
 import isodate
 from acmecse.etc.Types import NotificationEventType, ResponseStatusCode as RC, ResourceTypes as T, ResponseType
 from acmecse.etc.DateUtils import getResourceDate
