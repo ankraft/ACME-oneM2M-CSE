@@ -940,6 +940,10 @@ class Resource(object):
 	def _checkAndFixACPIreferences(self, acpi:list[str]) -> list[str]:
 		""" Check whether a referenced `ACP` resoure exists, and if yes, change the ID in the list to CSE relative unstructured format.
 
+			If the referenced `ACP` resource is hosted on another, remote CSE, then the ID is instead
+			kept in its cross-CSE-addressable (SP-relative or absolute) form, since the bare, unstructured
+			ri is only meaningful on the CSE that actually hosts the resource.
+
 			Args:
 				acpi: List if resource IDs to `ACP` resources.
 
@@ -957,7 +961,10 @@ class Resource(object):
 
 					# TODO CHECK TYPE + TEST
 
-				newACPIList.append(acp.ri)
+				if remoteID := acp[Constants.attrRemoteID]:
+					newACPIList.append(remoteID)
+				else:
+					newACPIList.append(acp.ri)
 			else:
 				newACPIList.append(ri)
 		return newACPIList

@@ -19,7 +19,7 @@ from ..etc.Types import JSON, ResourceTypes, Permission, CSERequest, BindingType
 from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, ORIGINATOR_HAS_NO_PRIVILEGE, NOT_FOUND
 from ..etc.IDUtils import isSPRelative, isAbsolute, toCSERelative, toSPRelative, toAbsolute, getIdFromOriginator, isValidAEI
 from ..etc.DateUtils import utcDatetime, cronMatchesTimestamp
-from ..etc.Constants import RuntimeConstants as RC
+from ..etc.Constants import RuntimeConstants as RC, Constants
 from ..etc.Utils import hashString
 from ..helpers.TextTools import findXPath, simpleMatch
 from ..helpers.ACMELRUCache import ACMELRUCache
@@ -219,16 +219,21 @@ class SecurityManager(object):
 		"""
 
 
-		def _getACPAccessControlRulesPV(acpRi: str) -> Generator[dict, None, None]:
-			""" Return the access control rules for a single ACP resource. This is a generator function that yields
-				each accessControlRule of the ACP resource, without any filtering.
-				it **does not** include the access control rules from dynamic authorization resources.
+		def _getACPAccessControlRulesPV(acpRi: str) -> Generator[Tuple[dict, str], None, None]:
+			""" Return the access control rules for a single ACP resource, each paired with the
+				SP-ID+CSE-ID prefix of the CSE that actually hosts that ACP (see `_acpHostCSEPrefix()`).
+				This is a generator function that yields each accessControlRule of the ACP resource,
+				without any filtering. It **does not** include the access control rules from dynamic
+				authorization resources.
 
 				Args:
 					acpRi: The resourceID of the ACP resource.
 
 				Return:
-					A generator that yields each accessControlRule of the ACP resource.
+					A generator that yields (accessControlRule, hostCSEPrefix) tuples.
+
+				See also:
+					`_getAccessControlRulesPV` for the main generator that yields all access control rules for a resource.
 			"""
 			try:
 				if not (acp := self.dispatcher.retrieveResource(acpRi)):	# resource could be on another CSE
@@ -238,24 +243,27 @@ class SecurityManager(object):
 				L.isDebug and L.logDebug(f'ACP resource not found: {acpRi}: {e.dbg}')
 				return
 
-			yield from cast(ACP, acp)['pv/acr']
+			hostCSEPrefix = self._acpHostCSEPrefix(acp)	# Compute the host CSE prefix for the ACP resource.
+			for acr in cast(ACP, acp)['pv/acr']:
+				yield acr, hostCSEPrefix
 
 
 
-		def _getAccessControlRulesPV(resource: Resource) -> Generator[dict, None, None]:
-			""" Return the access control rules for a resource's self-privileges. 
-				This is a generator function that yields each accessControlRule of the resource, without
-				any filtering. This includes the accessControlRules from *acpi*'s ACP resources, 
-				*+and** the accessControlRules from *daci*'s dynamic authorization resources.
+		def _getAccessControlRulesPV(resource: Resource) -> Generator[Tuple[dict, str], None, None]:
+			""" Return the access control rules for a resource's self-privileges.
+				This is a generator function that yields each (accessControlRule, hostCSEPrefix)
+				tuple of the resource, without any filtering. This includes the accessControlRules
+				from *acpi*'s ACP resources, *+and** the accessControlRules from *daci*'s dynamic
+				authorization resources.
 
-				Those methods are generator functions themselves, so this function only yields the results 
+				Those methods are generator functions themselves, so this function only yields the results
 				from those methods to minimize DB and network access.
 
 				Args:
 					resource: The resource to get the access control rules from.
 
 				Return:
-					A generator that yields each accessControlRule of the resource.
+					A generator that yields (accessControlRule, hostCSEPrefix) tuples.
 			"""
 			# ACPI
 			if (acpi := resource.acpi):
@@ -266,8 +274,10 @@ class SecurityManager(object):
 			# DACI - if enabled and the DASManager is available
 			if self.dasManager is not None and (daci := self.dasManager.getDACIforResource(resource)):
 				for daciRi in daci:
-					# Call a generator method that returns the access control rules for the DACI resource
-					yield from self.dasManager.retrieveACTRfromDAS(daciRi, resource, originator, request)
+					# Call a generator method that returns the access control rules for the DACI resource.
+					# DAS-granted rules are always evaluated as local to this CSE.
+					for acr in self.dasManager.retrieveACTRfromDAS(daciRi, resource, originator, request):
+						yield acr, RC.cseSPCsiSlash
 
 
 		#  Do or ignore the check
@@ -412,8 +422,8 @@ class SecurityManager(object):
 
 					# Check ALL acp in grp.macp
 					for acpRi in macp:
-						for acr in _getACPAccessControlRulesPV(acpRi):
-							if self.checkACR(acr, originator, requestedPermission, ty, request).allowed:
+						for acr, hostCSEPrefix in _getACPAccessControlRulesPV(acpRi):
+							if self.checkACR(acr, originator, requestedPermission, ty, request, hostCSEPrefix).allowed:
 								L.isDebug and L.logDebug(f'Permission granted by ACP: {acpRi} for GRP resource: {parentResource.ri}')
 								return True
 
@@ -499,8 +509,8 @@ class SecurityManager(object):
 		# Check all ACPs and get also the optional accessControlAttributes
 		allAcpAttributes = []
 
-		for acr in _getAccessControlRulesPV(resource):
-			if (acpResult := self.checkACR(acr, originator, requestedPermission, ty, request)).allowed:
+		for acr, hostCSEPrefix in _getAccessControlRulesPV(resource):
+			if (acpResult := self.checkACR(acr, originator, requestedPermission, ty, request, hostCSEPrefix)).allowed:
 					return True
 
 			# not general grant, but we may need to check the attributes further
@@ -625,11 +635,12 @@ class SecurityManager(object):
 		return False	# False indicates that this NOT an ACPI update
 
 
-	def checkACR(self, acr: JSON, 
-					   originator: str, 
-					   requestedPermission: Permission, 
+	def checkACR(self, acr: JSON,
+					   originator: str,
+					   requestedPermission: Permission,
 					   ty: Optional[ResourceTypes] = None,
-					   request: Optional[CSERequest] = None
+					   request: Optional[CSERequest] = None,
+					   hostCSEPrefix: Optional[str] = None
 				) -> ACPResult:
 		"""	Check whether an *originator* has the requested permissions with this ACP.
 
@@ -638,7 +649,10 @@ class SecurityManager(object):
 				originator: The originator to test the permissions for.
 				requestedPermission: The permissions to test.
 				ty: If the resource type is given then it is checked for CREATE (as an allowed child resource type), otherwise as an allowed resource type.
-			
+				hostCSEPrefix: The SP-ID+CSE-ID prefix of the CSE hosting the ACP that provides
+					*acr* (as returned by `_acpHostCSEPrefix()`), for scoping a CSE-relative *acor*
+					wildcard entry. Defaults to this (local) CSE when not given.
+
 			Return:
 				If any of the configured *accessControlRules* of the ACP resource matches, then the originatorhas access, and *True* is returned, or *False* otherwise. Additionally, a list of accessControlAttributes combined is returned.
 		"""
@@ -726,7 +740,7 @@ class SecurityManager(object):
 
 		# Check originator
 		# If we arrive here, then all the checks have passed, and we can check the originator
-		originatorAllowed = self._checkAcor(acr['acor'], originator)
+		originatorAllowed = self._checkAcor(acr['acor'], originator, hostCSEPrefix)
 
 		# We can return early if the originator is allowed and we don't have attributes for this
 		# rule. This is ageneral permit for the originator and this operation.
@@ -754,27 +768,50 @@ class SecurityManager(object):
 				If any of the configured *accessControlRules* of the ACP resource matches, then the originator has access, and *True* is returned, or *False* otherwise.
 		"""
 
+		# Compute the host CSE prefix for the ACP resource. This is used to correctly 
+		# evaluate CSE-relative acor entries.
+		hostCSEPrefix = self._acpHostCSEPrefix(acp)
+
 		match acp.ty:
 			case ResourceTypes.ACP:
 				for acr in acp['pvs/acr']:
-					if self.checkACR(acr, originator, requestedPermission, request=request).allowed:
+					if self.checkACR(acr, originator, requestedPermission, request=request, hostCSEPrefix=hostCSEPrefix).allowed:
 						return True
 				return False
 
 			case ResourceTypes.ACPAnnc:
-				# Check for self permissions in the ACPAnnc must be done a bit differently because we 
+				# Check for self permissions in the ACPAnnc must be done a bit differently because we
 				# don't have the optimizations that we have in the ACP resource
-				
+
 				# TODO verify this approach. Because it seems to be the same as above
 
 				for acr in acp['pvs/acr']:
-					if self.checkACR(acr, originator, requestedPermission, request=request).allowed:
+					if self.checkACR(acr, originator, requestedPermission, request=request, hostCSEPrefix=hostCSEPrefix).allowed:
 						return True
 				return False
 		return False
 
 
-	def _checkAcor(self, acor: list[str], originator: str) -> bool:
+	def _acpHostCSEPrefix(self, acp: Resource) -> str:
+		""" Return the SP-ID+CSE-ID prefix (same shape as RC.cseSPCsiSlash) of the CSE that
+			actually hosts *acp* - this (local) CSE normally, or a remote CSE when *acp*
+			was retrieved from one via a cross-CSE "acpi" reference.
+
+			Per TS-0003, a CSE-relative acor wildcard entry on an ACP is implicitly scoped
+			to the CSE hosting that ACP, which is not necessarily the CSE evaluating the
+			access check.
+
+			Args:
+				acp: The ACP (or ACPAnnc) resource providing the accessControlRule.
+			Return:
+				An absolute-form "//spid/csi/" prefix.
+		"""
+		if remoteID := acp[Constants.attrRemoteID]:
+			return toAbsolute(remoteID).rsplit('/', 1)[0] + '/'
+		return RC.cseSPCsiSlash
+
+
+	def _checkAcor(self, acor: list[str], originator: str, hostCSEPrefix: Optional[str] = None) -> bool:
 		""" Check whether an originator is in the list of acor entries.
 
 			Per TS-0003 Table 7.1.3-2, a "*" wildcard's scope never extends across
@@ -784,10 +821,19 @@ class SecurityManager(object):
 			Args:
 				acor: The list of acor entries.
 				originator: The originator to check.
+				hostCSEPrefix: The SP-ID+CSE-ID prefix (as returned by `_acpHostCSEPrefix()`)
+					of the CSE that hosts the ACP providing *acor* - the CSE-relative scope
+					for a CSE-relative wildcard entry. Defaults to this (local) CSE when not given.
 
 			Return:
 				True if the originator is in the list of acor entries, False otherwise.
 		"""
+
+		# The CSE-relative scope to match against. Resolved here (not as a default
+		# argument value) because RC.cseSPCsiSlash is only populated once the CSE
+		# has started - a default argument would freeze whatever it was at module
+		# load time.
+		_hostCSEPrefix = hostCSEPrefix or RC.cseSPCsiSlash
 
 		# Fast path: the 'all' keyword, or an exact match. This covers the
 		# overwhelming majority of real checks without any of the form/wildcard
@@ -851,7 +897,7 @@ class SecurityManager(object):
 				if not isSameSP:
 					continue
 				candidate = toSPRelative(originator)
-			else:	# CSE-relative: implicitly scoped to this SP *and* this CSE
+			else:	# CSE-relative: implicitly scoped to the SP *and* CSE hosting this acor entry's ACP
 				if isSameCSE is None:
 					if absOriginator is None:
 						absOriginator = toAbsolute(originator)
@@ -861,15 +907,16 @@ class SecurityManager(object):
 					# for AE-ID/originator addressing, which goes directly SP/CSE-ID/AE-ID
 					# with no CSEBase-rn hop. RC.cseSPCsi (SP-ID + CSE-ID only) is the
 					# right prefix here - it's also what RC.cseIDs uses to recognize
-					# this CSE as an originator.
-					isSameCSE = absOriginator.startswith(RC.cseSPCsiSlash)
+					# this CSE as an originator. _hostCSEPrefix is the same shape, but
+					# for whichever CSE actually hosts the ACP providing this acor entry.
+					isSameCSE = absOriginator.startswith(_hostCSEPrefix)
 				if not isSameCSE:
 					continue
 				# Not toCSERelative(originator): from an already-absolute originator
 				# it only strips the SP-ID, leaving the CSE-ID in place (it's only
 				# fully correct starting from SP-relative input). We've already
-				# verified the RC.cseSPCsiSlash prefix above, so strip it directly.
-				candidate = absOriginator.removeprefix(RC.cseSPCsiSlash)
+				# verified the _hostCSEPrefix prefix above, so strip it directly.
+				candidate = absOriginator.removeprefix(_hostCSEPrefix)
 
 			if self._matchIDSegments(candidate, a):
 				return True
