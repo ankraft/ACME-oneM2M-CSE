@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
+
+## [2026.05.3] - 2026-10-12
+
+### Fixed
+- [MISC] Added missing changes.
+
+
 ## [2026.05.2] - 2026-10-12
 
 ### Fixed
