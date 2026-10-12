@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Calendar Versioning](https://calver.org).
 
+## [2026.05.2] - 2026-10-12
+
+### Fixed
+- [CSE] Fixed potential crash when sending requests over MQTT.
+- [CSE] Fixed problem with argument parsing of HTTP content-type headers.
+
+
 ## [2026.05.1] - 2026-05-26
 
 ### Fixed
@@ -860,4 +867,4 @@ Thanks to KyeongHo!
 ## [0.1.0] - 2020-02-09
 - First release
 
-[← README](README.md) 
+[← README](README.md)

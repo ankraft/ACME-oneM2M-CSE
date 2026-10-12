@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 2026.05.1
+Version 2026.05.2
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-52C82D.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-52C82D)](LICENSE) ![MyPy](https://img.shields.io/badge/MyPy-covered-52C82D)  
 [![](https://img.shields.io/pypi/v/acmecse)](https://pypi.org/project/acmecse/) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ankraft/ACME-oneM2M-CSE/main.yml?label=docs)](https://acmecse.net)   
@@ -51,4 +51,3 @@ Join the ACME CSE community on [Discord ](https://discord.gg/6ryMHQC2Uj) to disc
 ## License
 
 BSD 3-Clause License for the CSE and its native components and modules. Please see the individual licenses of the used third-party components.
-
