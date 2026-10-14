@@ -331,7 +331,7 @@ class HttpServer(object):
 			Args:
 				path: The path of the request.
 		"""
-		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
+		if (authResult := self.authenticate()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_R')
 		eventManager.httpRetrieve()
@@ -344,7 +344,7 @@ class HttpServer(object):
 			Args:
 				path: The path of the request.
 		"""
-		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
+		if (authResult := self.authenticate()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
 		if self._hasContentType():
 			L.enableScreenLogging and renameThread('HT_C')
@@ -362,7 +362,7 @@ class HttpServer(object):
 			Args:
 				path: The path of the request.
 		"""
-		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
+		if (authResult := self.authenticate()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_U')
 		eventManager.httpUpdate()
@@ -375,7 +375,7 @@ class HttpServer(object):
 			Args:
 				path: The path of the request.
 		"""
-		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
+		if (authResult := self.authenticate()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
 		L.enableScreenLogging and renameThread('HT_D')
 		eventManager.httpDelete()
@@ -388,7 +388,7 @@ class HttpServer(object):
 			Args:
 				path: The path of the request.
 		"""
-		if (authResult := self.handleAuthentication()) == AuthorizationResult.UNAUTHORIZED:
+		if (authResult := self.authenticate()) == AuthorizationResult.UNAUTHORIZED:
 			return Response(status=401)
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status=405)
@@ -585,9 +585,12 @@ class HttpServer(object):
 	#	Handle authentication
 	#
 
-	def handleAuthentication(self) -> AuthorizationResult:
+	def authenticate(self, id: Optional[str] = None) -> AuthorizationResult:
 		"""	Handle the authentication for the current request.
 
+			Args:
+				id: The authentication identifier (token or username), if available.
+		
 			Return:
 				Enum value for the authentication result.
 
@@ -611,6 +614,9 @@ class HttpServer(object):
 			if not self.security.validateHttpBasicAuth(parameters['username'], parameters['password']):
 				L.isWarn and L.logWarn(f'Invalid username or password for basic authentication: {parameters["username"]}')
 				return False
+			if id and parameters['username'] != id:
+				L.isWarn and L.logWarn(f'Username does not match the expected id')
+				return False
 			return True
 		
 
@@ -631,6 +637,9 @@ class HttpServer(object):
 				return True
 			if not self.security.validateHttpTokenAuth(token):
 				L.isWarn and L.logWarn(f'Invalid token for token authentication: {token}')
+				return False
+			if id and token != id:
+				L.isWarn and L.logWarn(f'Token does not match the expected id')
 				return False
 			return True
 

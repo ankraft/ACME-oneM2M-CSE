@@ -22,11 +22,13 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for Trigger Requests and a TriggerManager that handles requests through plugins. A default TriggerRequestHandler plugin is provided that supports testing the trigger request functionality. This is an ESTIMED project contribution.
 - [CSE] Added validation of *m2m:externalID* types, e.g. for M2M-EXT-ID attributes.
 - [CSE] Added support for the *m2m:triggerRecipientID* types, e.g. for triggerRecipientID attributes.
-- [CSE] Added first support for Dynamic Authorization and a simple Dynamic Authorization server.
+- [CSE] Added first support for Dynamic Authorization and the &lt;DAC> resource. This is not yet fully implemented.
+- [CSE] Added support for importing resource type policies from the user-provided *init* directory. If a resource type definition in the user-provided *init* directory uses the same resource type name as one already defined in the primary *init* directory, the user-provided definition replaces the existing one.
 - [MGMT] Added reloading of HTTP and WebSocket authentication credentials to the management API.
 - [MGMT] Added support for retrieving basic and auth token information via the management API.
 - [MGMT] Added return of attribute, resource type, and flexcontainer policies to the management API.
 - [MGMT] Added support for setting HTTP and WS credentials (basic and auth token) via the management API.
+- [MGMT] Added specific support for username / token authentication for management and structure endpoints.
 - [TESTS] Added printing of the current resource tree to verbose output of requests.
 - [TESTS] Added hurl request files for simple (performance) testing.
 - [TESTS] Added support for wildcards in test case names for the `--run-tests` command line argument. This allows to run all test cases that match a certain pattern.
@@ -654,6 +656,7 @@ Thanks to KyeongHo!
 
 ### Fixed
 - [CSE] When the CSE is reset then the statistics are now reset as well.
+- [CSE] Fixed access control for resources referencing an &lt;ACP> hosted on a remote CSE: the `acpi` reference was being collapsed to a bare, locally-meaningless resource ID on creation, and *accessControlOriginators* wildcard entries in CSE-relative form were evaluated against the wrong CSE's identity. Added test cases for this.
 - [WEB] Error/debug messages are now always shown.
 
 

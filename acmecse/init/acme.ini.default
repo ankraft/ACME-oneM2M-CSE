@@ -436,6 +436,19 @@ basicAuthFile=${basic.config:baseDirectory}/certs/http_basic_auth.txt
 ; Comments are lines starting with a #.
 ; Default: ${basic.config:baseDirectory}/certs/http_token_auth.txt
 tokenAuthFile=${basic.config:baseDirectory}/certs/http_token_auth.txt
+; Username or token for the management endpoint.
+; This user or token will be used for authenticating requests to the management endpoint.
+; Default: empty (no user or token specified meaning user or token specific authentication is not required)
+managementEndpointUser=
+; Username or token for the upper tester endpoint.
+; This user or token will be used for authenticating requests to the upper tester endpoint.
+; Default: Same as managementEndpointUser (no user or token specified meaning user or token specific authentication is not required)
+upperTesterEndpointUser=${managementEndpointUser}
+; Username or token for the structure endpoint.
+; This user or token will be used for authenticating requests to the structure endpoint.
+; Default: Same as managementEndpointUser (no user or token specified meaning user or token specific authentication is not required)
+structureEndpointUser=${managementEndpointUser}
+
 
 
 [http.cors]

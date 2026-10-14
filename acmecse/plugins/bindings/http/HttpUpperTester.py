@@ -65,6 +65,7 @@ class HttpUpperTester:
 		"""
 		parser = config.configParser
 		config.http_enableUpperTesterEndpoint = parser.getboolean('http', 'enableUpperTesterEndpoint', fallback=False)
+		config.http_security_upperTesterEndpointUser = parser.get('http.security', 'upperTesterEndpointUser', fallback='')
 
 
 	def handleUpperTester(self, path:Optional[str]=None) -> Response: # type: ignore
@@ -79,13 +80,12 @@ class HttpUpperTester:
 		with self.httpServer.flaskApp.app_context():
 			from flask import Response, request
 
-			if self.httpServer.isStopped:
-				return Response('Service not available', status=503)
-
 			# Check, when authentication is enabled, the user is authorized, else return status 401
-			if self.httpServer.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			if self.httpServer.authenticate(Configuration.http_security_upperTesterEndpointUser) == AuthorizationResult.UNAUTHORIZED:
 				return Response(status=401)
 
+			if self.httpServer.isStopped:
+				return Response('Service not available', status=503)
 
 			def prepareUTResponse(rcs: ResponseStatusCode, result: Optional[str] = None, body: Optional[str|bytes] = None) -> Response:
 				"""	Prepare the Upper Tester Response.

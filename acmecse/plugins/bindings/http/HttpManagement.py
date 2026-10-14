@@ -83,6 +83,7 @@ class HttpManagement:
 		"""
 		parser = config.configParser
 		config.http_enableManagementEndpoint = parser.getboolean('http', 'enableManagementEndpoint', fallback=False)
+		config.http_security_managementEndpointUser = parser.get('http.security', 'managementEndpointUser', fallback='')
 
 
 	def _response(self, response: Any, status: int = 200, mimetype: str = 'application/json') -> Response:
@@ -119,7 +120,7 @@ class HttpManagement:
 				return self._response('{ "error" : "Service not available" }', status=503)
 
 			# Check, when authentication is enabled, the user is authorized, else return status 401
-			if self.httpServer.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			if self.httpServer.authenticate(Configuration.http_security_managementEndpointUser) == AuthorizationResult.UNAUTHORIZED:
 				return Response(status=401)
 			
 			try:
@@ -365,7 +366,7 @@ help            Show this help message
 				return self._response('{ "error": "Service not available" }', status=503)
 
 			# Check, when authentication is enabled, the user is authorized, else return status 401
-			if self.httpServer.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			if self.httpServer.authenticate(Configuration.http_security_managementEndpointUser) == AuthorizationResult.UNAUTHORIZED:
 				return Response(status=401)
 
 			# Get the json with a meanuningful error message if the json is invalid
@@ -435,7 +436,7 @@ help            Show this help message
 				return self._response('{ "error": "Service not available" }', status=503)
 
 			# Check, when authentication is enabled, the user is authorized, else return status 401
-			if self.httpServer.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			if self.httpServer.authenticate(Configuration.http_security_managementEndpointUser) == AuthorizationResult.UNAUTHORIZED:
 				return Response(status=401)
 
 			# Get the json with a meanuningful error message if the json is invalid
@@ -499,13 +500,13 @@ help            Show this help message
 				A response object.
 		"""
 		with self.httpServer.flaskApp.app_context():
-			from flask import Response, request
+			from flask import Response
 
 			if self.httpServer.isStopped:
 				return self._response('{ "error": "Service not available" }', status=503)
 
 			# Check, when authentication is enabled, the user is authorized, else return status 401
-			if self.httpServer.handleAuthentication() == AuthorizationResult.UNAUTHORIZED:
+			if self.httpServer.authenticate(Configuration.http_security_managementEndpointUser) == AuthorizationResult.UNAUTHORIZED:
 				return Response(status=401)
 
 			match command:

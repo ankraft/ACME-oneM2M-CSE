@@ -12,6 +12,7 @@ from typing import Optional, TYPE_CHECKING
 from acmecse.runtime.Logging import Logging as L
 from acmecse.helpers.PluginManager import plugin, start, configure, requires
 from acmecse.runtime.Configuration import Configuration
+from acmecse.etc.Types import AuthorizationResult
 
 if TYPE_CHECKING:
 	from acmecse.runtime.Management import ManagementSupport
@@ -55,6 +56,7 @@ class HttpStructure:
 		"""
 		parser = config.configParser
 		config.http_enableStructureEndpoint = parser.getboolean('http', 'enableStructureEndpoint', fallback=False)
+		config.http_security_structureEndpointUser = parser.get('http.security', 'structureEndpointUser', fallback='')	
 
 
 	def handleStructure(self, path: Optional[str] = 'puml') -> Response: # type: ignore
@@ -62,10 +64,18 @@ class HttpStructure:
 			and registrar / registree deployment.
 			An optional parameter 'lvl=<int>' can limit the generated resource tree's depth.
 		"""
+
 		with self.httpServer.flaskApp.app_context():
 			from flask import Response, request
+
+			# Check, when authentication is enabled, the user is authorized, else return status 401
+			if self.httpServer.authenticate(Configuration.http_security_structureEndpointUser) == AuthorizationResult.UNAUTHORIZED:
+				return Response(status=401)
+
+			# Check if the HTTP server is stopped and return a 503 Service Unavailable response if it is.
 			if self.httpServer.isStopped:
 				return Response('Service not available', status=503)
+			
 			lvl = request.args.get('lvl', default=0, type=int)
 			match path:
 				case 'puml':

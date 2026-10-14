@@ -406,6 +406,15 @@ class Configuration(object):
 	http_security_tokenAuthFile:str = None
 	"""	The file for token authentication for HTTP. """
 
+	http_security_managementEndpointUser:str = None
+	"""	The user or token for the management endpoint. """
+
+	http_security_upperTesterEndpointUser:str = None
+	"""	The user or token for the upper tester endpoint. """
+
+	http_security_structureEndpointUser:str = None
+	"""	The user or token for the structure endpoint. """
+
 
 	http_wsgi_enable:bool = None
 	"""	Enable or disable the WSGI server. """
