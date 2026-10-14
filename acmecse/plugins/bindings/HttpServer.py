@@ -85,6 +85,8 @@ class HttpServer(object):
 		'serverID',
 		'_responseHeaders',
 		'httpActor',
+		'session',
+		'operation2method',
 	)
 	""" The slots for the HttpServer class to optimize memory usage. """
 
@@ -110,15 +112,50 @@ class HttpServer(object):
 		self.httpActor:Optional[BackgroundWorker] = None
 		""" The background worker for the HTTP server. """
 
-		# Disable most logs from requests and urllib3 library 
+		# Disable most logs from requests and urllib3 library
 		logging.getLogger("requests").setLevel(LogLevel.WARNING)
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
+
+
+	def _createSession(self) -> None:
+		"""	Create (or recreate) the persistent session used for outgoing HTTP requests,
+			and the operation-to-method mapping that uses it.
+
+			Closes a previously created session first, as a safeguard in case this is
+			ever called again without an explicit close in between (normally `pause()`
+			already closes the session before this is called again from `unpause()`).
+		"""
+		if getattr(self, 'session', None):
+			self.session.close()	# type:ignore[has-type]
+
+		self.session = requests.Session()
+		""" The persistent session for outgoing HTTP requests. """
+
+		adapter = requests.adapters.HTTPAdapter(pool_connections=Configuration.http_connectionPoolConnections,
+												 pool_maxsize=Configuration.http_connectionPoolMaxSize)
+		self.session.mount('http://', adapter)
+		self.session.mount('https://', adapter)
+
+		self.operation2method = {
+			Operation.CREATE	: self.session.post,
+			Operation.RETRIEVE	: self.session.get,
+			Operation.UPDATE 	: self.session.put,
+			Operation.DELETE 	: self.session.delete,
+			Operation.NOTIFY 	: self.session.post,
+			Operation.DISCOVERY	: self.session.get,
+		}
+		""" A mapping of operations to the corresponding HTTP methods. """
 
 
 	@start
 	def run(self) -> None:
 		"""	Run the http server in a separate thread.
 		"""
+
+		# Create the session for outgoing requests. This must happen here (not in
+		# init()), since init() runs before configure()/validate(), and the pool
+		# size settings it needs aren't populated yet at that point.
+		self._createSession()
 
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
@@ -163,14 +200,22 @@ class HttpServer(object):
 		"""
 		L.isInfo and L.log('HttpServer shut down')
 		self.isStopped = True
+		self.session.close()
 	
 
 	@pause
 	def pause(self) -> None:
 		"""	Stop handling requests.
+
+			This is also called while the CSE's state is being reset (eg. the database
+			purged, remote CSE registrations rebuilt), so the persistent session for
+			outgoing requests is closed here as well - any connections it holds may no
+			longer be valid once the CSE's own state has changed underneath them. It is
+			re-created in `unpause()`.
 		"""
 		L.isInfo and L.log('HttpServer paused')
 		self.isStopped = True
+		self.session.close()
 		
 	
 	@unpause
@@ -179,6 +224,7 @@ class HttpServer(object):
 		"""
 		L.isInfo and L.log('HttpServer unpaused')
 		self.isStopped = False
+		self._createSession()
 
 	
 	def _run(self) -> None:
@@ -401,17 +447,6 @@ class HttpServer(object):
 	#
 	#	Send HTTP requests
 	#
-
-	operation2method = {
-		Operation.CREATE	: requests.post,
-		Operation.RETRIEVE	: requests.get,
-		Operation.UPDATE 	: requests.put,
-		Operation.DELETE 	: requests.delete,
-		Operation.NOTIFY 	: requests.post,
-		Operation.DISCOVERY	: requests.get,
-	}
-	""" A mapping of operations to the corresponding HTTP methods. """
-
 
 	def sendHttpRequest(self, request:CSERequest, url:str, ignoreResponse:bool) -> Result:
 		"""	Send an http request.
@@ -894,6 +929,8 @@ class HttpServer(object):
 		config.http_root = parser.get('http', 'root', fallback='')
 		config.http_externalRoot = parser.get('http', 'externalRoot', fallback=config.http_root)
 		config.http_timeout = parser.getfloat('http', 'timeout', fallback=10.0)
+		config.http_connectionPoolConnections = parser.getint('http', 'connectionPoolConnections', fallback=10)
+		config.http_connectionPoolMaxSize = parser.getint('http', 'connectionPoolMaxSize', fallback=10)
 
 		#	HTTP Server CORS
 		config.http_cors_enable = parser.getboolean('http.cors', 'enable', fallback=False)
@@ -967,6 +1004,10 @@ class HttpServer(object):
 			raise ConfigurationError(fr'Invalid hostname or IP address for [i]\[http]:listenIF[/i]: {config.http_listenIF}')
 		if config.http_timeout < 0.0:
 			raise ConfigurationError(fr'Invalid timeout value for [i]\[http]:timeout[/i]: {config.http_timeout}')
+		if config.http_connectionPoolConnections < 1:
+			raise ConfigurationError(r'[i]\[http]:connectionPoolConnections[/i] must be > 0')
+		if config.http_connectionPoolMaxSize < 1:
+			raise ConfigurationError(r'[i]\[http]:connectionPoolMaxSize[/i] must be > 0')
 		
 		# HTTP TLS & certificates
 		if not config.http_security_useTLS:	# clear certificates configuration if not in use

@@ -371,6 +371,12 @@ class Configuration(object):
 	http_timeout:float = None
 	"""	The timeout for HTTP requests. """
 
+	http_connectionPoolConnections:int = None
+	"""	Number of distinct peer hosts to keep a persistent connection pool for. """
+
+	http_connectionPoolMaxSize:int = None
+	"""	Number of connections kept open and reused per individual peer host. """
+
 
 	http_cors_enable:bool = None
 	"""	Enable or disable CORS. """

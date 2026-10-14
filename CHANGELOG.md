@@ -24,6 +24,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for the *m2m:triggerRecipientID* types, e.g. for triggerRecipientID attributes.
 - [CSE] Added first support for Dynamic Authorization and the &lt;DAC> resource. This is not yet fully implemented.
 - [CSE] Added support for importing resource type policies from the user-provided *init* directory. If a resource type definition in the user-provided *init* directory uses the same resource type name as one already defined in the primary *init* directory, the user-provided definition replaces the existing one.
+- [CSE] Added support for outgoing HTTP connection pooling, including configuration of the number of distinct peer hosts and the maximum number of connections per host. This reduces the overhead of repeatedly establishing connections to the same peers.
 - [MGMT] Added reloading of HTTP and WebSocket authentication credentials to the management API.
 - [MGMT] Added support for retrieving basic and auth token information via the management API.
 - [MGMT] Added return of attribute, resource type, and flexcontainer policies to the management API.

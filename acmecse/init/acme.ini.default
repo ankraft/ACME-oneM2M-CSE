@@ -398,6 +398,20 @@ allowPatchForDelete=false
 ; Timeout when sending http requests and waiting for responses.
 ; Default: see cse.requestExpirationDelta
 timeout=${cse:requestExpirationDelta}
+; Number of distinct peer hosts to keep a persistent connection pool for.
+; Beyond this, the least-recently-used host's pool is evicted to make room.
+; Increase this if the CSE regularly sends requests (eg. notifications, DAS
+; consultations) to more than this many distinct peers, to avoid repeatedly
+; dropping and re-establishing connections to peers that are still active.
+; Default: 10
+connectionPoolConnections=10
+; Number of connections kept open and reused per individual peer host.
+; Increase this if the CSE regularly sends many requests to the very same
+; peer concurrently (eg. a busy DAS server, or an AE with many simultaneous
+; notifications); beyond this, additional connections are still opened as
+; needed, but are not pooled for reuse.
+; Default: 10
+connectionPoolMaxSize=10
 
 ;
 ;	HTTP security settings
