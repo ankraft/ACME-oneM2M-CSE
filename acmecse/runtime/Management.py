@@ -998,7 +998,7 @@ Warnings : {status["logging"]["warnings"]}\
 				# Statistics are disabled
 				resourceOps  = _markupText('[dim]Statistics are disabled[/dim]\n', style=textStyle)
 				protColumns = [ _markupText('', style=textStyle) for _ in range(8)]
-				miscLogs = _markupText('\n[dim]Statistics are disabled[/dim]\n\n\n', style=textStyle)
+				miscLogs = _markupText('\n[dim]Statistics are disabled[/dim]\n\n', style=textStyle)
 				opsHeight = 2
 
 
