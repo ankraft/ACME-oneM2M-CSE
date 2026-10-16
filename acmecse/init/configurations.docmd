@@ -1223,11 +1223,40 @@ This is useful for constraint devices that only support "http/1.0", which doesn'
 The default value is `False`.
 
 
+
+# http.connectionPoolConnections
+
+This setting specifies the number of distinct peer hosts for which the CSE keeps a persistent
+http connection pool. Beyond this number, the least-recently-used peer's pool is evicted to make
+room for a new one.
+
+Increase this if the CSE regularly sends requests (e.g. notifications, DAS consultations) to more
+than this many distinct peers, to avoid repeatedly dropping and re-establishing connections to
+peers that are still active.
+
+The default value is `10`.
+
+
+
+# http.connectionPoolMaxSize
+
+This setting specifies the number of connections that are kept open and reused for a single peer
+host.
+
+Increase this if the CSE regularly sends many requests to the very same peer concurrently (e.g. a
+busy DAS server, or an AE with many simultaneous notifications). Beyond this number, additional
+connections to that peer are still opened as needed, but are not kept open for reuse.
+
+The default value is `10`.
+
+
+
 # http.enable
 
 This setting enables or disables the CSE's HTTP binding.
 
 The default value is `True`.
+
 
 
 # http.enableManagementEndpoint
@@ -1354,6 +1383,16 @@ Settings in this section are listed under the `[http.security]` section.
 
 
 
+# http.security.basicAuthFile
+
+This setting specifies the path to the CSE's HTTP server's basic authentication file.
+The file must contain lines with the format "username:password". 
+Comments are lines starting with a #.
+
+The default value is `${basic.config:baseDirectory}/certs/http_basic_auth.txt`.
+
+
+
 # http.security.caCertificateFile
 
 This setting specifies the path to the CSE's HTTP server's CA certificate file.
@@ -1371,38 +1410,6 @@ This setting specifies the path to the CSE's HTTP server's CA private key file.
 The default value is `${basic.config:baseDirectory}/certs/acme_key.pem`.
 
 It is recommended to store the CSE's CA private key in the file `${basic.config:baseDirectory}/certs/acme_key.pem`.
-
-
-
-# http.security.tlsVersion
-
-This setting specifies the CSE's HTTP server's TLS version.
-
-**Allowed values**: `TLS1.1`, `TLS1.2`, or `auto` (to allow client-server certificate version negotiation).
-
-The default value is `auto`.
-
-
-
-# http.security.useTLS
-
-This setting enables or disables the CSE's HTTP server's TLS support.
-
-See also *oneM2M TS-0003 "Clause 8.2.1 Overview on Security Association Establishment Frameworks"*.
-
-The default value is `False`.
-
-
-
-# http.security.verifyCertificate
-
-This setting enables or disables the CSE's HTTP server's client certificate verification. 
-If enabled, the CSE's HTTP server will only accept incoming connections from clients that provide a valid certificate.
-
-Set to False when using self-signed certificates. 
-
-The default value is `False`.
-
 
 
 # http.security.enableBasicAuth
@@ -1427,13 +1434,46 @@ The default value is `False`.
 
 
 
-# http.security.basicAuthFile
+# http.security.managementEndpointUser
 
-This setting specifies the path to the CSE's HTTP server's basic authentication file.
-The file must contain lines with the format "username:password". 
-Comments are lines starting with a #.
+This setting specifies the username or token for authenticating access to the CSE's HTTP server's management endpoint.
 
-The default value is `${basic.config:baseDirectory}/certs/http_basic_auth.txt`.
+A corresponding username/password or token must be defined.
+If no username or token is specified, it means basic or token authentication is not required for this endpoint.
+
+The default value is an empty string.
+
+
+
+# http.security.structureEndpointUser
+
+This setting specifies the username or token for authenticating access to the CSE's HTTP server's structure endpoint.
+
+A corresponding username/password or token must be defined.
+If no username or token is specified, it means basic or token authentication is not required for this endpoint.
+
+The default value is the value of `http.security.managementEndpointUser`.
+
+
+
+# http.security.upperTesterEndpointUser
+
+This setting specifies the username or token for authenticating access to the CSE's HTTP server's upper tester endpoint.
+
+A corresponding username/password or token must be defined.
+If no username or token is specified, it means basic or token authentication is not required for this endpoint.
+
+The default value is the value of `http.security.managementEndpointUser`.
+
+
+
+# http.security.tlsVersion
+
+This setting specifies the CSE's HTTP server's TLS version.
+
+**Allowed values**: `TLS1.1`, `TLS1.2`, or `auto` (to allow client-server certificate version negotiation).
+
+The default value is `auto`.
 
 
 
@@ -1444,6 +1484,27 @@ The file must contain lines with the format "token".
 Comments are lines starting with a #.
 
 The default value is `${basic.config:baseDirectory}/certs/http_token_auth.txt`.
+
+
+
+# http.security.useTLS
+
+This setting enables or disables the CSE's HTTP server's TLS support.
+
+See also *oneM2M TS-0003 "Clause 8.2.1 Overview on Security Association Establishment Frameworks"*.
+
+The default value is `False`.
+
+
+
+# http.security.verifyCertificate
+
+This setting enables or disables the CSE's HTTP server's client certificate verification. 
+If enabled, the CSE's HTTP server will only accept incoming connections from clients that provide a valid certificate.
+
+Set to False when using self-signed certificates. 
+
+The default value is `False`.
 
 
 
