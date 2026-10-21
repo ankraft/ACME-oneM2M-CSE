@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
-from acmecse.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
+from acmecse.etc.Types import JSON, DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
 from acmecse.etc.Types import ResultContentType as RCN
 from acmecse.etc.DateUtils import getResourceDate
 from init import *
@@ -22,19 +22,19 @@ subRN1 = f'{subRN}1'
 subRN2 = f'{subRN}2'
 
 class TestCRS(unittest.TestCase):
-	ae 				= None
-	cnt1 			= None
-	cnt2 			= None
-	cnt3 			= None
-	cnt1RI 			= None
-	cnt2RI 			= None
-	cnt3RI 			= None
-	sub1 			= None
-	sub2 			= None
-	sub1RI 			= None
-	sub2RI 			= None
-	crs 			= None
-	originator 		= None
+	ae: JSON|None 				= None
+	cnt1: JSON|None 			= None
+	cnt2: JSON|None 			= None
+	cnt3: JSON|None 			= None
+	cnt1RI: str|None 			= None
+	cnt2RI: str|None 			= None
+	cnt3RI: str|None 			= None
+	sub1: JSON|None 			= None
+	sub2: JSON|None 			= None
+	sub1RI: str|None 			= None
+	sub2RI: str|None 			= None
+	crs: JSON|None 				= None
+	originator: str|None 		= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')

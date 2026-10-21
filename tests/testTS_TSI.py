@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
-from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import JSON, ResourceTypes as T, ResponseStatusCode as RC
 from acmecse.etc.DateUtils import toISO8601Date, getResourceDate
 from init import *
 
@@ -23,11 +23,10 @@ mdt 	= int(pei * 0.8) # > peid
 
 class TestTS_TSI(unittest.TestCase):
 
-	ae 			= None
-	originator 	= None
-	sub			= None
-	ts 			= None
-	sub 		= None
+	ae: JSON|None 			= None
+	originator: str|None 	= None
+	sub: JSON|None			= None
+	ts: JSON|None 			= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')

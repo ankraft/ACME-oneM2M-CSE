@@ -140,10 +140,10 @@ class Logging:
 		logfile and to the console.
 	"""
 
-	logger  						= None
+	logger: logging.Logger|None = None
 	""" The main logger for the logging subsystem. """
 
-	loggerConsole					= None
+	loggerConsole: logging.Logger|None = None
 	""" The rich console logger for the logging subsystem. """
 
 	logLevel:LogLevel				= LogLevel.INFO
@@ -212,10 +212,10 @@ class Logging:
 	_basenames:dict[str, str]		= {}
 	""" Dictionary to store the basenames of the source files. This is used to optimize the log output. """
 
-	_eventLogError					= None
+	_eventLogError: Callable
 	""" Event handler for logging errors. This is used to trigger an event when an error is logged. """
 
-	_eventLogWarning				= None
+	_eventLogWarning: Callable
 	""" Event handler for logging warnings. This is used to trigger an event when a warning is logged. """
 
 	terminalStyle:Style				= Style(color = terminalColorDark)

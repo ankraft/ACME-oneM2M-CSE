@@ -12,7 +12,7 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
 from acmecse.etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC
-from acmecse.etc.Types import Operation, Permission
+from acmecse.etc.Types import JSON, Operation, Permission
 from init import *
 
 numberOfBatchNotifications = 5
@@ -21,19 +21,19 @@ durationForBatchNotificationsISO8601 = 'PT2S'
 
 class TestSUB(unittest.TestCase):
 
-	ae 				= None
-	aeNoPoa 		= None
-	aePoa 			= None
-	originator 		= None
-	originatorPoa 	= None
-	cnt 			= None
-	cntRI 			= None
-	ae2URL 			= None
-	aePOAURL		= None
-	ae2Originator	= None
-	excSub 			= None
-	sub 			= None
-	ts 				= None
+	ae: JSON|None 				= None
+	aeNoPoa: JSON|None 			= None
+	aePoa: JSON|None 			= None
+	originator: str|None 		= None
+	originatorPoa: str|None 	= None
+	cnt: JSON|None 				= None
+	cntRI: str|None 			= None
+	ae2URL: str|None 			= None
+	aePOAURL: str|None			= None
+	ae2Originator: str|None		= None
+	excSub: JSON|None 			= None
+	sub: JSON|None 				= None
+	ts: JSON|None 				= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')

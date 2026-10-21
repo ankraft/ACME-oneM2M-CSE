@@ -10,22 +10,22 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
-from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import JSON, ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 
 class TestAE(unittest.TestCase):
 
-	cse 		= None
-	ae 			= None
-	originator 	= None
-	originator2	= None
-	aeACPI 		= None
+	cse: JSON|None 			= None
+	ae: JSON|None 			= None
+	originator: str|None 	= None
+	originator2: str|None	= None
+	aeACPI: str|None 		= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		testCaseStart('Setup TestACP')
+		testCaseStart('Setup TestAE')
 		cls.originator 	= None 	# actually the AE.aei
 		cls.aeACPI 		= None
 		cls.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)

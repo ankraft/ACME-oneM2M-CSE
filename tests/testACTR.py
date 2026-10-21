@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
-from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Permission
+from acmecse.etc.Types import JSON, ResourceTypes as T, ResponseStatusCode as RC, Permission
 from acmecse.etc.Types import EvalMode, Operation, EvalCriteriaOperator
 from init import *
 
@@ -24,14 +24,14 @@ from init import *
 
 class TestACTR(unittest.TestCase):
 
-	ae 			= None
-	aeRI		= None
-	ae2 		= None
-	cnt			= None
-	cntRI		= None
-	cntRI2		= None
-	cntRI3		= None
-	originator 	= None
+	ae: JSON|None 			= None
+	aeRI: str|None			= None
+	ae2: JSON|None 			= None
+	cnt: JSON|None			= None
+	cntRI: str|None			= None
+	cntRI2: str|None		= None
+	cntRI3: str|None		= None
+	originator: str|None 	= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -810,7 +810,7 @@ class TestACTR(unittest.TestCase):
 	#	Test parent <actions>
 	#
 
-	cntURL3 = None
+	cntURL3: str|None = None
 
 	# Some utility functions first
 	def _createCIN(self) -> None:

@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
-from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import JSON, ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 nodeID  = 'urn:sn:1234'
@@ -20,11 +20,11 @@ nod2URL = f'{cseURL}/{nod2RN}'
 
 class TestNOD(unittest.TestCase):
 
-	cse  		= None
-	ae 			= None
-	nodeRI 		= None
-	aeRI 		= None
-	originator	= None
+	cse: JSON|None  		= None
+	ae: JSON|None 			= None
+	nodeRI: str|None 		= None
+	aeRI: str|None 			= None
+	originator: str|None	= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')

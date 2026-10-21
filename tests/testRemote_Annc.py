@@ -11,7 +11,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
-from acmecse.etc.Types import AnnounceSyncType, ResultContentType as RCN
+from acmecse.etc.Types import JSON, AnnounceSyncType, ResultContentType as RCN
 from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -20,20 +20,20 @@ CND = 'org.onem2m.common.moduleclass.temperature'
 
 class TestRemote_Annc(unittest.TestCase):
 
-	acpORIGINATOR 	= 'testOriginator'
-	ae				= None
-	node 			= None
-	bat 			= None
-	acp 			= None
-	cnt 			= None
-	remoteCse 		= None
-	remoteCbARI 	= None
-	remoteAeRI		= None
-	remoteCntRI		= None
-	remoteFcntRI	= None
-	remoteNodRI		= None
-	remoteBatRI 	= None
-	remoteAcpRI 	= None
+	acpORIGINATOR 			= 'testOriginator'
+	ae: JSON|None			= None
+	node: JSON|None 		= None
+	bat: JSON|None 			= None
+	acp: JSON|None 			= None
+	cnt: JSON|None 			= None
+	remoteCse: JSON|None 	= None
+	remoteCbARI: str|None 	= None
+	remoteAeRI: str|None	= None
+	remoteCntRI: str|None	= None
+	remoteFcntRI: str|None	= None
+	remoteNodRI: str|None	= None
+	remoteBatRI: str|None 	= None
+	remoteAcpRI: str|None 	= None
 
 
 	@classmethod

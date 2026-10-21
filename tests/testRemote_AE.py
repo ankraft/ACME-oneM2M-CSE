@@ -10,16 +10,16 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
-from acmecse.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import JSON, ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 
 class TestRemote_AE(unittest.TestCase):
 
-	ae				= None
-	Saei			= None
-	aeri			= None
-	remoteCse		= None
+	ae: JSON|None				= None
+	Saei: str|None				= None
+	aeri: str|None				= None
+	remoteCse: JSON|None		= None
 
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')

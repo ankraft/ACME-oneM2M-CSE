@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.insert(0, '..')
-from acmecse.etc.Types import Permission, ResourceTypes as T, ResponseStatusCode as RC
+from acmecse.etc.Types import JSON, Permission, ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 ae1RN  = f'{aeRN}1'
@@ -33,10 +33,10 @@ class TestACP(unittest.TestCase):
 	acpORIGINATORWCTest 	= 'CanotherOriginator'
 	acpORIGINATORWC3Test 	= 'CyetAnother'
 
-	ae 				= None
+	ae: JSON|None 	= None
 	originator 		= None
-	acp 			= None
-	grp 			= None
+	acp: JSON|None	= None
+	grp: JSON|None	= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
