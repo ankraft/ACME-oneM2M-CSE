@@ -5987,6 +5987,14 @@
 	//	PrimitiveContent
 	//
 
+	"m2m:agr": [
+		{
+			"rtypes": [ "RESPONSE" ],
+			"lname": "aggregatedResponse",
+			"ns": "m2m",
+			"type": "m2m:aggregatedResponse"
+		}
+	],
 	"m2m:rsp": [
 			{
 				"rtypes": [ "RESPONSE" ],

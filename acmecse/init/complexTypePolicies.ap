@@ -598,6 +598,16 @@
 			"annc": "OA"
 		}
 	],
+	"ri": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:aggregatedResponse",
+			"lname": "resourceID",
+			"ns": "m2m",
+			"type": "IDCSR",
+			"car": "01"
+		}
+	],
 	"rids": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -647,7 +657,6 @@
 			"annc": "NA"
 		}
 	],
-
 	"rqi": [
 		{
 			"rtypes": [ "COMPLEX" ],
@@ -718,6 +727,17 @@
 			"car": "01"
 		}
 
+	],
+	"m2m:rsp": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:aggregatedResponse",
+			"lname": "responsePrimitive",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:responsePrimitive",
+			"car": "01L"
+		}
 	],
 	"rt": [
 		{
@@ -1013,7 +1033,7 @@
 			"ns": "m2m",
 			"type": "list", 
 			"ltype": "string", 	// TODO m2m:scheduleEntry string format check
-			"car": "01L"
+			"car": "01"
 		}
 	],
 	"acip": [
@@ -1287,6 +1307,10 @@
 		}
 	],
 
+	//
+	//	m2m:aggregatedResponse
+	//
+	//	See "ri" and "m2m:rsp" attributes
 
 	//
 	//	m2m:attribute
