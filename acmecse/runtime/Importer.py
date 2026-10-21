@@ -20,7 +20,7 @@ from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST, ResourceDescription
 from ..etc.Types import resourceTypeDetails
 from ..etc.Constants import RuntimeConstants as RC
-from ..runtime.Logging import Logging as L
+from ..runtime.Logging import Logging as L, LogLevel
 from ..runtime.ScriptManager import _metaInit
 from ..runtime.Configuration import Configuration
 from ..helpers.Singleton import Singleton
@@ -71,7 +71,7 @@ class Importer(metaclass=Singleton):
 	""" Slots for Importer class. """
 
 
-	_enumValues:dict[str, dict[int, str]] = {}
+	_enumValues:dict[str|int, dict[int|str, str]] = {}
 	"""	Imported enumeration values. """
 
 	def initialize(self) -> None:
@@ -287,7 +287,7 @@ class Importer(metaclass=Singleton):
 				# Check that there is only one startup script, then execute it
 				match len(scripts := self.scriptManager.findScripts(meta=_metaInit)):
 					case l if l > 1:
-						L.logErr(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}')
+						L.consoleBanner(f'Only one initialization script allowed. Found: {",".join([ s.scriptName for s in scripts ])}', title='Import Error', type=LogLevel.ERROR)
 						return False
 					case 1:
 						# Check whether there is already a filled DB, then skip the imports
@@ -298,7 +298,7 @@ class Importer(metaclass=Singleton):
 							s = scripts[0]
 							L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
 							if not self.scriptManager.runScript(s):	
-								L.logErr(f'Error during startup: {s.error}')
+								L.consoleBanner(f'Error during startup: {s.error}', title='Import Error', type=LogLevel.ERROR)
 								return False
 			finally:
 				# This is executed no matter whether the code above returned or just succeeded
@@ -308,20 +308,20 @@ class Importer(metaclass=Singleton):
 			if cse := getCSE():
 				# Set some values in the configuration and the CSE instance
 				if RC.cseCsi != cse.csi:
-					L.logWarn(f'Imported CSEBase overwrites configuration. csi: {RC.cseCsi} -> {cse.csi}')
+					L.consoleBanner(f'Imported CSEBase overwrites configuration. csi: {RC.cseCsi} -> {cse.csi}', title='Import Warning', type=LogLevel.WARNING)
 					RC.cseCsi = cse.csi
 					Configuration.update('cse.cseID', cse.csi)
 				if RC.cseRi != cse.ri:
-					L.logWarn(f'Imported CSEBase overwrites configuration. ri: {RC.cseRi} -> {cse.ri}')
+					L.consoleBanner(f'Imported CSEBase overwrites configuration. ri: {RC.cseRi} -> {cse.ri}', title='Import Warning', type=LogLevel.WARNING)
 					RC.cseRi = cse.ri
 					Configuration.update('cse.resourceID',cse.ri)
 				if RC.cseRn != cse.rn:
-					L.logWarn(f'Imported CSEBase overwrites configuration. rn: {RC.cseRn} -> {cse.rn}')
+					L.consoleBanner(f'Imported CSEBase overwrites configuration. rn: {RC.cseRn} -> {cse.rn}', title='Import Warning', type=LogLevel.WARNING)
 					RC.cseRn  = cse.rn
 					Configuration.update('cse.resourceName', cse.rn)
 			else:
 				# We don't have a CSE!
-				L.logErr('CSE missing during startup, or database mismatch due to wrong CSE-ID in configuration settings.')
+				L.consoleBanner('CSE missing during startup, or database mismatch due to wrong CSE-ID in configuration settings.', title='Import Error', type=LogLevel.ERROR)
 				return False
 
 			L.isDebug and L.logDebug(f'Imported {countScripts} scripts')
@@ -354,11 +354,11 @@ class Importer(metaclass=Singleton):
 		"""
 		# Get import path
 		if (path := self.resourcePath) is None:
-			L.logErr('cse.resourcesPath not set')
+			L.consoleBanner('cse.resourcesPath not set', title='Import Error', type=LogLevel.ERROR)
 			raise RuntimeError('cse.resourcesPath not set')
 
 		if not os.path.exists(path):
-			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
+			L.consoleBanner(f'Import directory for attribute policies does not exist: {path}', title='Import Error', type=LogLevel.WARNING)
 			return False
 
 		L.isDebug and L.logDebug(f'Importing configuration documentation')
@@ -384,7 +384,7 @@ class Importer(metaclass=Singleton):
 					Configuration.addDoc(id, ''.join(text))
 
 		except FileNotFoundError as e:
-			L.isWarn and L.logWarn(f'Documentation file not forund: {e}')
+			L.consoleBanner(f'Documentation file not forund: {e}', title='Import Error', type=LogLevel.WARNING)
 			return False
 		return True
 
@@ -407,7 +407,7 @@ class Importer(metaclass=Singleton):
 		countEP = 0
 
 		if not os.path.exists(path):
-			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
+			L.consoleBanner(f'Import directory for attribute policies does not exist: {path}', title='Import Error', type=LogLevel.WARNING)
 			return False
 
 		L.isDebug and L.logDebug('Importing enumerated data types policies')
@@ -426,21 +426,27 @@ class Importer(metaclass=Singleton):
 
 			for enumName, enumDef in enums.items():
 				if not isinstance(enumDef, dict):
-					L.logErr(f'Wrong or empty enumeration definition for enum: {enumName} in file: {fn}')
+					L.consoleBanner(f'Wrong or empty enumeration definition for enum: {enumName} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 					return False
 				
-				enm:dict[int, str] = {}
+				enm:dict[int|str, str] = {}
+				# Enumerate all values and ranges for the current enumeration
+				# This must either be in the format "<int>:<interpretation>" for a single value or "<int>..<int>:<interpretation>" for ranges,
+				# or "<str>:null" for just string values without an interpretation, e.g. to define list of allowed strings.
 				for enumValue, enumInterpretation in enumDef.items():
 					s, found, e = enumValue.partition('..')
 					if not found:
-						# Single value
+						# Single value - int or string value
+						value: int | str
 						try:
 							value = int(enumValue)
 						except ValueError:
-							L.logErr(f'Wrong enumeration value: {enumValue} in enum: {enumName} in file: {fn} (must be an integer)')
-							return False
-						if not isinstance(enumInterpretation, str):
-							L.logErr(f'Wrong interpretation for enum value: {enumValue} in enum: {enumName} in file: {fn}')
+							if enumInterpretation is not None or not isinstance(enumValue, str):
+								L.consoleBanner(f'Wrong enumeration value: {enumValue} in enum: {enumName} in file: {fn} (must be an integer or string)', title='Import Error', type=LogLevel.ERROR)
+								return False
+							value = enumValue	# this is a string instead of a number
+						if enumInterpretation is not None and not isinstance(enumInterpretation, str):
+							L.consoleBanner(f'Wrong interpretation for enum value: {enumValue} in enum: {enumName} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 							return False
 						enm[value] = enumInterpretation
 
@@ -450,8 +456,8 @@ class Importer(metaclass=Singleton):
 							si = int(s)
 							ei = int(e)
 						except ValueError:
-							L.logErr(f'Error in evalue range definition: {enumValue} (range shall consist of integer numbers) for enum attribute: {enumName} in file: {fn}', showStackTrace=False)
-							return None
+							L.consoleBanner(f'Error in evalue range definition: {enumValue} (range shall consist of integer numbers) for enum attribute: {enumName} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
+							return False
 						for i in range(si, ei+1):
 							enm[i] = enumInterpretation
 
@@ -476,7 +482,7 @@ class Importer(metaclass=Singleton):
 		countFCP = 0
 
 		if not os.path.exists(path):
-			L.isWarn and L.logWarn(f'Import directory for flexContainer policies does not exist: {path}')
+			L.consoleBanner(f'Import directory for flexContainer policies does not exist: {path}', title='Import Error', type=LogLevel.WARNING)
 			return False
 
 		L.isDebug and L.logDebug('Importing flexContainer attribute policies')
@@ -489,17 +495,21 @@ class Importer(metaclass=Singleton):
 
 			if (definitions := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
 				return False
-			for eachDefinition in definitions:
-				if not (typeShortname := findXPath(eachDefinition, 'type')):	# type:ignore[arg-type]
-					L.logErr(f'Missing or empty resource type in file: {fn}')
+			
+			eachDefinition:JSON
+			for eachDefinition in definitions: 	# type:ignore[assignment]
+				if not (typeShortname := eachDefinition.pop('type', None)):	# type:ignore[arg-type]
+					L.consoleBanner(f'Missing or empty resource type in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 					return False
-				if (cnd := findXPath(eachDefinition, 'cnd')) is None:		# type:ignore[arg-type]
-					L.logDebug(f'Missing containerDefinition (cnd) for type: {typeShortname} in file: {fn}')
-				if (lname := findXPath(eachDefinition, 'lname')) is None:		# type:ignore[arg-type]
-					L.logDebug(f'Missing long name (lname) for type: {typeShortname} in file: {fn}')
+				if (cnd := eachDefinition.pop('cnd', None)) is None:		# type:ignore[arg-type]
+					L.consoleBanner(f'Missing containerDefinition (cnd) for type: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
+					return False
+				if (lname := eachDefinition.pop('lname', None)) is None:		# type:ignore[arg-type]
+					L.consoleBanner(f'Missing long name (lname) for type: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
+					return False
 				
 				# Attributes are optional. However, add a dummy entry
-				if not (attrs := findXPath(eachDefinition, 'attributes')):		# type:ignore[arg-type]
+				if not (attrs := eachDefinition.pop('attributes', None)):		# type:ignore[arg-type]
 					attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
 					
 				definedAttrs:list[str] = []
@@ -510,43 +520,51 @@ class Importer(metaclass=Singleton):
 					# Test whether an attribute has been defined twice
 					# Prevent copy-paste errors
 					if attributePolicy.sname in definedAttrs:
-						L.logErr(f'Double defined attribute: {attributePolicy.sname} type: {typeShortname}')
+						L.consoleBanner(f'Double defined attribute: {attributePolicy.sname} type: {typeShortname}', title='Import Error', type=LogLevel.ERROR)
 						return False
 					definedAttrs.append(attributePolicy.sname)
 
 					# Add the attribute to the additional policies structure
 					try:
 						if not self.validator.addFlexContainerAttributePolicy(attributePolicy):
-							L.logErr(f'Cannot add attribute policies for attribute: {attributePolicy.sname} type: {typeShortname}')
+							L.consoleBanner(f'Cannot add attribute policies for attribute: {attributePolicy.sname} type: {typeShortname}', title='Import Error', type=LogLevel.ERROR)
 							return False
 						countFCP += 1
 					except Exception as e:
-						L.logErr(str(e))
+						L.consoleBanner(str(e), title='Import Error', type=LogLevel.ERROR)
 						return False
 
 				# Check whether the containerDefinition is already defined.
 				# If it is, then the specialization is already defined and we cannot add it again.
 				if cnd:
 					if self.validator.hasFlexContainerContainerDefinition(cnd, typeShortname):
-						L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
+						L.consoleBanner(f'flexContainer containerDefinition: {cnd} already defined', title='Import Error', type=LogLevel.ERROR)
 						return False
 
 				# Add child specialization information.
 				# !!! They are not used at the moment, just stored
-				if not (children := findXPath(eachDefinition, 'children')):	# type:ignore[arg-type]
+				if not (children := eachDefinition.pop('children', None)):	# type:ignore[arg-type]
 					children = []
 				else:
 					if not isinstance(children, list):
-						L.logErr(f'Wrong type for children definition for type: {typeShortname} in file: {fn}')
+						L.consoleBanner(f'Wrong type for children definition for type: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 						return False
 					for child in children:
 						if not isinstance(child, str):
-							L.logErr(f'Wrong type for child definition for type: {typeShortname} in file: {fn}')
+							L.consoleBanner(f'Wrong type for child definition for type: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 							return False
+
+				# Ignore currently unused attributes in the flexContainer definition
+				eachDefinition.pop('sdttype', None)
+
+				# Check for any remaining unhandled attributes in the flexContainer definition
+				if eachDefinition:
+					L.consoleBanner(f'Unhandled attributes for flexContainer definition: {typeShortname} in file: {fn}: {eachDefinition}', title='Import Error', type=LogLevel.ERROR)
+					return False
 
 				# Add the available specialization information
 				if not self.validator.addFlexContainerSpecialization(typeShortname, cnd, lname, children):
-					L.logErr(f'Cannot add flexContainer specialization for type: {typeShortname}')
+					L.consoleBanner(f'Cannot add flexContainer specialization for type: {typeShortname}', title='Import Error', type=LogLevel.ERROR)
 					return False
 
 		L.isDebug and L.logDebug(f'Imported {countFCP} flexContainer policies')
@@ -684,140 +702,153 @@ class Importer(metaclass=Singleton):
 
 		#	Get the attribute short name
 		if not sname:
-			if not (sname := findXPath(attr, 'sname')) or not isinstance(sname, str) or len(sname) == 0:
-				L.logErr(f'Missing, empty, or wrong short name (sname) for attribute: {typeShortname}:{sname} in file: {fn}', showStackTrace=False)
+			if not (sname := attr.pop('sname', None)) or not isinstance(sname, str) or len(sname) == 0:
+				L.consoleBanner(f'Missing, empty, or wrong short name (sname) for attribute: {typeShortname}:{sname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 				return None
 
 		#	Get the name space and determine the full typeShortname
-		if not (ns := findXPath(attr, 'ns')):
+		if not (ns := attr.pop('ns', None)):
 			ns = 'm2m'	# default
 		if not isinstance(ns, str) or not ns:
-			L.logErr(f'"ns" must be a non-empty string for attribute: {sname} in file: {fn}', showStackTrace=False)
+			L.consoleBanner(f'"ns" must be a non-empty string for attribute: {sname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 		if not typeShortname:
 			typeShortname = f'{ns}:{sname}' if not sname.startswith(f'{ns}:') else sname
 		
 		#	Get the attribute long name
-		if not (lname := findXPath(attr, 'lname')) or not isinstance(lname, str) or len(lname) == 0:
-			L.logErr(f'Missing, empty, or wrong long name (lname) for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+		if not (lname := attr.pop('lname', None)) or not isinstance(lname, str) or len(lname) == 0:
+			L.consoleBanner(f'Missing, empty, or wrong long name (lname) for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 
 		#	Look for complex type first
-		if (ctype := findXPath(attr, 'ctype')) is not None:
+		if (ctype := attr.pop('ctype', None)) is not None:
 			if not isinstance(ctype, str) or len(ctype) == 0:
-				L.logErr(f'Wrong complex type name (ctype) for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				L.consoleBanner(f'Wrong complex type name (ctype) for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 				return None
 		
 		# Get the optional choice attribute
-		if (choice := findXPath(attr, 'choice')) is not None:
+		#		Get the optional choice attribute
+		if (choice := attr.pop('choice', None)) is not None:
 			if not isinstance(choice, bool):
-				L.logErr(f'Wrong type for choice for attribute: {typeShortname} in file: {fn} - must be boolean', showStackTrace=False)
+				L.consoleBanner(f'Wrong type for choice for attribute: {typeShortname} in file: {fn} - must be boolean', title='Import Error', type=LogLevel.ERROR)
 				return None
 
 		#	Determine the type name and assign the internal data type
-		if not (typeName := findXPath(attr, 'type')) or not isinstance(typeName, str) or len(typeName) == 0:
-			L.logErr(f'Missing, empty, or wrong type name (type): {typeName} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+		if not (typeName := attr.pop('type', None)) or not isinstance(typeName, str) or len(typeName) == 0:
+			L.consoleBanner(f'Missing, empty, or wrong type name (type): {typeName} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 		if not (typ := BasicType.to(typeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 			typ = BasicType.complex
 
 		#	Get the optional cardinality
-		if not (tmp := findXPath(attr, 'car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := Cardinality.to(tmp, insensitive=True)):	# default car01
-			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+		if not (tmp := attr.pop('car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := Cardinality.to(tmp, insensitive=True)):	# default car01
+			L.consoleBanner(f'Empty, or wrong cardinality (car): {tmp} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 
 		# 	Get the create optionality
-		if not (tmp := findXPath(attr, 'oc', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (oc := RequestOptionality.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+		if not (tmp := attr.pop('oc', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (oc := RequestOptionality.to(tmp, insensitive=True)):	# default O
+			L.consoleBanner(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 
 		#	Get the update optionality
-		if not (tmp := findXPath(attr, 'ou', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (ou := RequestOptionality.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+		if not (tmp := attr.pop('ou', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (ou := RequestOptionality.to(tmp, insensitive=True)):	# default O
+			L.consoleBanner(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 
 		#	Get the delete optionality
-		if not (tmp := findXPath(attr, 'od', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (od := RequestOptionality.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+		if not (tmp := attr.pop('od', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (od := RequestOptionality.to(tmp, insensitive=True)):	# default O
+			L.consoleBanner(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 
 		#	Get the announcement optionality
-		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := Announced.to(tmp, insensitive=True)):	# default OA
-			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+		if not (tmp := attr.pop('annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := Announced.to(tmp, insensitive=True)):	# default OA
+			L.consoleBanner(f'Empty, or wrong announcement (annc): {tmp} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 
 		#	Get the releases range
-		if (releases := findXPath(attr, 'releases')):
+		if (releases := attr.pop('releases', None)):
 			if not isinstance(releases, list) or 1 < len(releases) > 2 or not all(isinstance(e, str) for e in releases):
-				L.logErr(f'Wrong releases range or format (releases): {releases} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				L.consoleBanner(f'Wrong releases range or format (releases): {releases} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 				return None
-				
+
 		#	Check and determine the list type
 		lTypeName:str = None
 		ltype:BasicType = None
 		etype:str = None
-		evalues:dict[int, str] = None
+		evalues:dict[int|str, str] = None
 		if checkListType:	# TODO remove this when flexContainer definitions support list sub-types
-			if lTypeName := findXPath(attr, 'ltype'):
+			if lTypeName := attr.pop('ltype', None):
 				if not isinstance(lTypeName, str) or len(lTypeName) == 0:
-					L.logErr(f'Empty list type name (ltype): {lTypeName} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+					L.consoleBanner(f'Empty list type name (ltype): {lTypeName} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 					return None
 				if typ not in [ BasicType.list, BasicType.listNE ]:
-					L.logErr(f'List type (ltype) defined for non-list attribute type: {typ} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+					L.consoleBanner(f'List type (ltype) defined for non-list attribute type: {typ} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 					return None
 				if not (ltype := BasicType.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 					ltype = BasicType.complex
-				if ltype == BasicType.enum:	# check sub-type enums
-					if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
-						evalues = self._enumValues.get(etype)
-					else:
-						evalues = findXPath(attr, 'evalues')	# TODO?
-					if not evalues or not isinstance(evalues, dict):
-						L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
-						return None
+				# if ltype == BasicType.enum:	# check sub-type enums
+				# 	if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
+				# 		evalues = self._enumValues.get(etype)
+				# 	else:
+				# 		evalues = findXPath(attr, 'evalues')	# TODO?
+				# 	if not evalues or not isinstance(evalues, dict):
+				# 		L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				# 		return None
 					# evalues = self._expandEnumValues(evalues, typeShortname, fn)	# TODO this is perhaps wrong, bc we changed the evalue handling to a different format
 			if typ == BasicType.list and lTypeName is None:
-					L.isDebug and L.logDebug(f'Missing list type for attribute: {typeShortname} in file: {fn}')
+				L.consoleBanner(f'Missing list type for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
+				return None
 		
 		# Check optional list size
-		if lSize := findXPath(attr, 'lsize'):
+		if lSize := attr.pop('lsize', None):
 			if not lTypeName:
-				L.logErr(f'List size (lsize) defined for non-list attribute type: {typ} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				L.consoleBanner(f'List size (lsize) defined for non-list attribute type: {typ} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 				return None
 			if not isinstance(lSize, int) or lSize < 0:
-				L.logErr(f'Wrong list size (lsize): {lSize} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				L.consoleBanner(f'Wrong list size (lsize): {lSize} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 				return None
 
 		#	Check and get enum definitions
 		evalues = None
 		if typ == BasicType.enum or (typ == BasicType.list and ltype == BasicType.enum):
-			if (etype := findXPath(attr, 'etype')):	# Get the values indirectly from the enums read above
+			if (etype := attr.pop('etype', None)):	# Get the values indirectly from the enums read above
 				evalues = self._enumValues.get(etype)
 			else:
-				evalues = findXPath(attr, 'evalues')	# TODO?
+				evalues = attr.pop('evalues', None)	# TODO?
 			if not evalues or not isinstance(evalues, dict):
-				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {typeShortname} etype: {etype} in file: {fn}', showStackTrace=False)
+				L.consoleBanner(f'Missing, wrong of empty enum values (evalue) list for attribute: {typeShortname} etype: {etype} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 				return None
 			# evalues = self._expandEnumValues(evalues, typeShortname, fn)
 
 		#	Check missing complex type definition
 		if typ == BasicType.dict or ltype == BasicType.dict:
-			L.isDebug and L.logDebug(f'Missing complex type definition for attribute: {typeShortname} in file: {fn}')
+			L.consoleBanner(f'Missing complex type definition for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)	
+			return None
 		# re-type an anonymous dict to a normal dict
 		if typ == BasicType.adict:
 			typ = BasicType.dict
 
 
 		#	CHeck whether the mandatory rtypes field is set
-		if (rtypes := findXPath(attr, 'rtypes')):
+		if (rtypes := attr.pop('rtypes', None)):
 			if not isinstance(rtypes, list):
-				L.logErr(f'Empty, or wrong resourceTypes (rtypes): {rtypes} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+				L.consoleBanner(f'Empty, or wrong resourceTypes (rtypes): {rtypes} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 				return None
 
 		# Test whether the rtypes are known and convert them to the internal representation
 		_rtypes = ResourceTypes.to(tuple(rtypes)) if rtypes else None 	# type:ignore[arg-type]
 		if rtypes and not _rtypes:
-			L.logErr(f'Unknown resource type definition: {rtypes} for attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+			L.consoleBanner(f'Unknown resource type definition: {rtypes} for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
+			return None
+
+		# Check whether there other attributes are present in the definition that are not explicitly handled
+		if attr:
+			L.consoleBanner(f'Unhandled attributes for attribute: {typeShortname} in file: {fn}: {attr}', title='Import Error', type=LogLevel.ERROR)
+			return None
+
+		# Test whether ctype has been provided for complex types
+		if rtypes and ResourceTypes.COMPLEX.value in _rtypes and not ctype:
+			L.consoleBanner(f'Missing complex type (ctype) for attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 		
 		#	Create an AttributePolicy instance and return it
@@ -880,7 +911,7 @@ class Importer(metaclass=Singleton):
 		# remove comments
 		content = removeCommentsFromJSON(content).strip()
 		if len(content) == 0:
-			L.isWarn and L.logWarn(f'Empty file: {filename}')
+			L.consoleBanner(f'Empty file: {filename}', title='Import Error', type=LogLevel.WARNING)
 			return None
 
 		# replace macros
@@ -891,7 +922,7 @@ class Importer(metaclass=Singleton):
 		try:
 			dct:JSON = json.loads(content)
 		except json.decoder.JSONDecodeError as e:
-			L.logErr(f'Error in file: {filename} - {str(e)}', showStackTrace=False)
+			L.consoleBanner(f'Error in file: {filename} - {str(e)}', title='Import Error', type=LogLevel.ERROR)
 			return None
 		return dct
 
@@ -924,20 +955,20 @@ class Importer(metaclass=Singleton):
 			if isinstance(each, str):
 				s, found, e = each.partition('..')
 				if not found:
-					L.logErr(f'Error in evalue range definition: {each} for enum attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+					L.consoleBanner(f'Error in evalue range definition: {each} for enum attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 					return None
 				try:
 					si = int(s)
 					ei = int(e)
 				except ValueError:
-					L.logErr(f'Error in evalue range definition: {each} (range shall consist of integer numbers) for enum attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+					L.consoleBanner(f'Error in evalue range definition: {each} (range shall consist of integer numbers) for enum attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 					return None
 				if not si < ei:
-					L.logErr(f'Error in evalue range definition: {each} (begin >= end) for enum attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+					L.consoleBanner(f'Error in evalue range definition: {each} (begin >= end) for enum attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 					return None
 				_evalues.extend(list(range(si, ei+1)))
 				continue
-			L.logErr(f'Unsupported value: {each} for enum attribute: {typeShortname} in file: {fn}', showStackTrace=False)
+			L.consoleBanner(f'Unsupported value: {each} for enum attribute: {typeShortname} in file: {fn}', title='Import Error', type=LogLevel.ERROR)
 			return None
 
 		return _evalues
