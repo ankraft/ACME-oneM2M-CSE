@@ -1038,11 +1038,17 @@ class Validator(metaclass=Singleton):
 				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: positive integer')
 
 			case BasicType.enum:
-				if isinstance(value, int):
-					if policy is not None and len(policy.evalues) and value not in policy.evalues:
-						raise BAD_REQUEST('undefined enum value')
-					return (dataType, value)
-				raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer')
+				match value:
+					case int():
+						if policy is not None and len(policy.evalues) and value not in policy.evalues:
+							raise BAD_REQUEST(f'undefined enum value "{value}" for enum "{policy.etype}"')
+						return (dataType, value)
+					case str():
+						if policy is not None and len(policy.evalues) and value not in policy.evalues:
+							raise BAD_REQUEST(f'undefined enum value "{value}" for enum "{policy.etype}"')
+						return (dataType, value)
+					case _:
+						raise BAD_REQUEST(f'invalid type: {type(value).__name__}. Expected: integer or string')
 			
 			case BasicType.nonNegInteger:
 				if isinstance(value, int) and value >= 0:
