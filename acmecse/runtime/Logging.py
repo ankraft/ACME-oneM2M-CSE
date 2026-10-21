@@ -252,6 +252,9 @@ class Logging:
 		Logging._configureColors(Configuration.console_theme)
 
 		Logging.logger					= logging.getLogger('logging')			# general logger
+		Logging.logger.propagate		= False									# Don't propagate to the root logger: this logger is for
+																				# file-only output (eg. from consoleBanner()), and must not
+																				# also hit the root logger's console handler.
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
 		Logging._console				= Console()								# Console object
 		Logging._richHandler			= ACMERichLogHandler()
@@ -680,13 +683,13 @@ class Logging:
 
 	@staticmethod
 	def consoleBanner(message: str, title: Optional[str] = None, type: Optional[LogLevel] = None) -> None:
-		"""	Print a banner to the console.
+		"""	Print a banner to the console and log it to the file if a log type is provided.
 
 			Args:
 				message: The message to display in the banner.
 				title: The title of the banner.
-				type: The type of the banner. This can be used to change the style of the banner. 
-					If None, the default *console* style is used.
+				type: The type of the banner. This can be used to change the style of the banner.
+					If None, the default *console* style is used - In this case, the banner with **not** be logged to the file.
 			"""
 		match type:
 			case LogLevel.DEBUG:
@@ -716,6 +719,12 @@ class Logging:
 							   box=_border,
 							   title=_title if title else None))
 		Logging._console.print()
+		# Log to file only - the banner above already covers the console output,
+		# logging it the normal way too would print it a second time (via the
+		# root logger's console handler).
+		# Also, only log if a log type is provided.
+		if Logging.enableFileLogging and type is not None:
+			Logging.logger.log(type, f'{title}: {message}')
 
 
 	
