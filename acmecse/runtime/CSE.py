@@ -25,6 +25,9 @@ from ..etc.Utils import runsInIPython
 from ..etc.Types import CSEStatus, LogLevel
 from ..etc.ResponseStatusCodes import ResponseException
 
+from ..resources.CSEBase import updateCSEBaseAfterStartup
+
+
 from .CredentialsManager import CredentialsManager
 from ..runtime.Configuration import Configuration, ConfigurationError
 from ..runtime.ConsoleBase import ConsoleBase
@@ -199,9 +202,11 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		# Start the database plugins and the storage first
 		pluginManager.start(tags=['acme', 'database'])	
 
-		storage.initialize()					# Initialize the storage manager
+		# Initialize the storage manager
+		storage.initialize()					
 
-		importer.importResourcePolicies()		# Before initializing other components, import the resource policies
+		# Before initializing other components, import the resource policies
+		importer.importResourcePolicies()		
 
 		# Initialize other components
 		credentialsManager.initialize()
@@ -221,7 +226,9 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		pluginManager.start(tags=['acme', 'ui'])
 
 
-		# Check whether all plugin dependencies are resolved. This is done after starting the plugins to give them a chance to resolve their dependencies. If this fails, we cannot continue with the CSE startup.
+		# Check whether all plugin dependencies are resolved. 
+		# This is done after starting the plugins to give them a chance to resolve their dependencies. 
+		# If this fails, we cannot continue with the CSE startup.
 		pluginManager.setupFinished()				
 		
 		# Import attribute, flexContainer and enum policies, and configuration documentation
@@ -233,7 +240,11 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		if not importer.importPolicies() or not importer.importScripts():
 			RC.cseStatus = CSEStatus.STOPPED
 			return False
-
+		
+		# At this point we may have to update the <CSEBase> resource because the configuration of the CSE
+		# may have changed.
+		updateCSEBaseAfterStartup()
+		
 		# Start any non-ACME plugins 
 		pluginManager.start(excludedTags=['acme'])
 
@@ -263,7 +274,7 @@ def startup(args:argparse.Namespace, **kwargs:Dict[str, Any]) -> bool:
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
 	except Exception as e:
-		L.logErr(f'Error during startup: {e}')
+		L.logErr(f'Error during startup: {e}', exc=e)
 		RC.cseStatus = CSEStatus.STOPPED
 		return False
 	except Exception as e:
@@ -436,6 +447,9 @@ def resetCSE() -> None:
 			pluginManager.textUI and pluginManager.textUI.shutdown()
 			L.logErr('Error during import')
 			sys.exit()	# what else can we do?
+
+		# Update the <CSEBase> resource after startup to reflect any configuration changes
+		updateCSEBaseAfterStartup()
 
 		# Unpause all binding plugins to start receiving requests again after reset.
 		pluginManager.unpausePlugins(tags=['acme', 'binding'])	

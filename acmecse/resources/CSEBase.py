@@ -43,10 +43,10 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('csi', '/cse', overwrite=False)
 
 		self.setAttribute('cst', RC.cseType, overwrite=False)
-		self.setAttribute('csz', ContentSerializationType.supportedContentSerializations())
+		self.setAttribute('csz', ContentSerializationType.supportedContentSerializationsSimple())
 		self.setAttribute('poa', RC.csePOA, overwrite=False)	
 		self.setAttribute('srt', ResourceTypes.supportedResourceTypes())			#  type: ignore
-		self.setAttribute('srv', RC.supportedReleaseVersions)			# This must be a list
+		self.setAttribute('srv', RC.supportedReleaseVersions)
 
 		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	
 		self.delAttribute('et', setNone=False)	
@@ -116,3 +116,16 @@ def getCSE() -> CSEBase:	# Actual: CSEBase Resource
 			<CSEBase> resource.
 	"""
 	return resourceFromCSI(RC.cseCsi)
+
+
+def updateCSEBaseAfterStartup() -> None:
+	"""	Update the CSEBase resource after startup or a restart. 
+	"""
+	cse = getCSE()
+	if cse:
+		cse.setAttribute('csz', ContentSerializationType.supportedContentSerializationsSimple())
+		cse.setAttribute('poa', RC.csePOA)	
+		cse.setAttribute('srt', ResourceTypes.supportedResourceTypes())			#  type: ignore
+		cse.setAttribute('srv', RC.supportedReleaseVersions)					# This must be a list
+		cse.dbUpdate()
+
