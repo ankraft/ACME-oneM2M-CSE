@@ -12,6 +12,7 @@
 from __future__ import annotations 
 from typing import cast, Tuple, Optional
 import os, re, io
+import configparser
 from datetime import datetime
 
 from InquirerPy import inquirer
@@ -197,8 +198,21 @@ def _optimizeConfig(config:ACMEConfiguration.ACMEConfiguration) -> None:
 	# Remove default values that are not needed to optimize the configuration
 
 	for section in config.sections():
+		
+		# Skip the basic.config section as it doesn't exist in the acme.ini.default configuration
+		if section == 'basic.config':
+			continue
+
+		# Iterate over all keys in the section
 		for key in config[section]:
-			if configParser.has_option(section, key) and configParser.get(section, key).lower() == config[section][key].lower():
+
+			try:
+				originalValue = configParser.get(section, key)
+			except configparser.InterpolationMissingOptionError:
+				# Sometimes values contain interpolation variables that are not yet defined, so we need to get the raw value
+				originalValue = configParser.get(section, key, raw=True)
+
+			if configParser.has_option(section, key) and originalValue.casefold() == config[section][key].casefold():
 				config.remove_option(section, key)
 				if not config.options(section):
 					config.remove_section(section)
