@@ -579,6 +579,8 @@ skinparam BoxPadding 60
 				'optionalDiscovery': policy.optionalDiscovery.name,
 				'announcement': policy.announcement.name,
 				})
+		if policy.releases is not None:
+			_p['releases'] = policy.releases
 		return _p
 
 
