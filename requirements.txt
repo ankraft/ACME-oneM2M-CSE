@@ -10,7 +10,7 @@ cachetools==6.1.0
     # via acmecse (setup.py)
 cbor2==5.9.0
     # via acmecse (setup.py)
-certifi==2025.8.3
+certifi==2026.10.19
     # via requests
 charset-normalizer==3.4.3
     # via requests
