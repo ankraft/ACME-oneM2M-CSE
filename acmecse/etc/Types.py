@@ -1289,6 +1289,11 @@ _supportedContentSerializations = (	'application/json',
 								  )
 """	A list of supported media types for content serialization for http communication."""
 
+_supportedContentSerializationsSimple = (	'json',
+											'cbor'
+										)
+"""	A list of supported simple content serializations for oneM2M IDs. This ist just the simplified names like 'json' and 'cbor'."""
+
 _supportedContentSerializationsWS = (	'oneM2M.json', 
 										'oneM2M.cbor' 
 									)
@@ -1399,6 +1404,17 @@ class ContentSerializationType(ACMEIntEnum):
 
 
 	@classmethod
+	def supportedContentSerializationsSimple(cls) -> Sequence[str]:
+		"""	Return a simplified (only the names of the serializations)
+			list of supported media types for content serialization.
+
+			Return:
+				A list of supported media types for content serialization.
+		"""
+		return _supportedContentSerializationsSimple
+
+
+	@classmethod
 	def supportedContentSerializationsWS(cls) -> Sequence[str]:
 		"""	Return a list of supported media types for content serialization
 			for WebSocket communication.
@@ -1450,17 +1466,6 @@ class ContentSerializationType(ACMEIntEnum):
 			case _:
 				return cls.UNKNOWN
 			
-
-	@classmethod
-	def supportedContentSerializationsSimple(cls) -> list[str]:
-		"""	Return a simplified (only the names of the serializations)
-			list of supported media types for content serialization.
-
-			Return:
-				A list of supported media types for content serialization.
-		"""
-		return [ cls.JSON.toSimple(), cls.CBOR.toSimple() ]
-
 
 	def __eq__(self, other:object) -> bool:
 		"""	Compare two ContentSerializationType enums for equality.

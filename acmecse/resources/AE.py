@@ -87,8 +87,8 @@ class AE(AnnounceableResource):
 		# check csz attribute
 		if csz := self.csz:
 			for c in csz:
-				if c not in ContentSerializationType.supportedContentSerializations():
-					raise BAD_REQUEST('unsupported content serialization: {c}')
+				if c not in ContentSerializationType.supportedContentSerializationsSimple():
+					raise BAD_REQUEST(f'unsupported content serialization: {c}')
 		
 		# check api attribute
 		if not (api := self['api']) or len(api) < 2:	# at least R|N + another char

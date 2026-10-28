@@ -886,12 +886,12 @@ class TestSUB(unittest.TestCase):
 		""" UPDATE <AE>.csz to 'application/cbor' """
 		clearLastNotification()	# clear the notification first
 		dct = 	{ 'm2m:ae' : { 
-					'csz'  : ['application/cbor']
+					'csz'  : ['cbor']
 				}}
 		r, rsc = UPDATE(TestSUB.ae2URL, TestSUB.ae2Originator, dct)
 		self.assertEqual(rsc, RC.UPDATED)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/csz'))
-		self.assertEqual(findXPath(r, 'm2m:ae/csz'), ['application/cbor'])
+		self.assertEqual(findXPath(r, 'm2m:ae/csz'), ['cbor'])
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

@@ -169,7 +169,7 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentS
 		# if csz is given then build an intersection between the given list and
 		# the list of supported serializations. Then take the first one
 		# as the one to use.
-		common = [x for x in csz if x in ContentSerializationType.supportedContentSerializations()]	# build intersection, keep the old sort order
+		common = [x for x in csz if x in ContentSerializationType.supportedContentSerializationsSimple()]	# build intersection, keep the old sort order
 		if len(common) == 0:
 			return None
 		return ContentSerializationType.getType(common[0]) # take the first

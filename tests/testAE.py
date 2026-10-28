@@ -66,8 +66,8 @@ class TestAE(unittest.TestCase):
 		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
 		self.assertEqual(rsc, RC.CREATED, r)
-		TestAE.originator = findXPath(r, 'm2m:ae/aei')
-		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
+		TestAE.originator = findXPath(r, 'm2m:ae/aei', r)
+		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi', r)
 		self.assertIsNotNone(TestAE.originator, r)
 
 
@@ -107,7 +107,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ RELEASEVERSION ]
 				}}
 		r, rsc = CREATE(cseURL, TestAE.originator, T.AE, dct)
-		self.assertEqual(rsc, RC.ORIGINATOR_HAS_ALREADY_REGISTERED)
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_ALREADY_REGISTERED, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -237,6 +237,21 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEWrongCSZMediaFormat(self) -> None:
+		""" Create <AE> with wrong csz media format content -> Fail """
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': APPID,
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ],
+					'csz': [ 'application/json' ]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
+
+		self.assertEqual(rsc, RC.BAD_REQUEST)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAECSZ(self) -> None:
 		""" Create <AE> with correct csz value"""
 		dct = 	{ 'm2m:ae' : {
@@ -244,11 +259,11 @@ class TestAE(unittest.TestCase):
 					'api': APPID,
 				 	'rr': False,
 				 	'srv': [ RELEASEVERSION ],
-					'csz': [ 'application/cbor', 'application/json' ]
+					'csz': [ 'cbor', 'json' ]
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATORSelfReg, T.AE, dct)
 
-		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(rsc, RC.CREATED, r)
 		TestAE.originator2 = findXPath(r, 'm2m:ae/aei')
 
 
@@ -488,6 +503,7 @@ def run(testFailFast:bool) -> TestResult:
 		'test_deleteAEByUnknownOriginator',
 		'test_deleteAEByAssignedOriginator',
 		'test_createAEWrongCSZ',
+		'test_createAEWrongCSZMediaFormat',
 		'test_createAECSZ',
 		'test_deleteAECSZ',
 		'test_createAENoAPI',

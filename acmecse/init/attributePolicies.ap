@@ -1411,7 +1411,8 @@
 			"lname": "contentSerialization",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",	// m2m:serializations (string enum?)
+			"ltype": "enum",
+			"etype": "m2m:serializations",	
 			"car": "01",
 			"oc": "O",
 			"ou": "O",

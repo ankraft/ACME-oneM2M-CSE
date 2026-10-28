@@ -58,6 +58,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Improved detection of invalid HTTP Content-Type and Accept headers. Now returning an appropriate error response. Thanks to Yann Garcia for reporting this issue.
 - [CSE] Fixed a potential crash of an IN-CSE instance when a child CSE is unregistering.
 - [CSE] Fixed potential crash when using interpolation variables in the configuration file that target undefined or missing options. Thanks to Likhith Kanigolla for reporting this issue.
+- [CSE] Corrected the wrong string enum format for the *contentSerialization* attribute in the &lt;CSEBase> and &lt;remoteCSE> resources. Improved validation and handling of this attribute throughout the CSE. Thanks to Likhith Kanigolla for reporting this issue.
 - [WEB] Fixed wrong handling of the http root path in the web UI and especially in the REST UI. Thanks to Yann Garcia for reporting this issue.
 
 ### Removed

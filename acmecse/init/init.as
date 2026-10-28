@@ -31,7 +31,6 @@
 				"csi":  "${get-config \"cse.cseID\"}",
 				"spi":  "${get-config \"cse.serviceProviderID\"}",
 				"mei":  "${get-config \"cse.m2mExtID\"}",
-				"csz":  [ "application/json", "application/cbor" ],
 				"acpi": [ "${get-config \"cse.cseID\"}/acpCreateRootResources"
 						]
 			}})
@@ -109,7 +108,7 @@
 		"rr":  true,
 		"api": "N${cse-originator}",
 		"aei": "${cse-originator}",
-		"csz": [ "application/json", "application/cbor" ]
+		"csz": [ "json", "cbor" ]
 	}})
 
 

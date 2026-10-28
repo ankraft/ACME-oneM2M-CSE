@@ -434,6 +434,11 @@
 		"6": "Manchester",
 		"7": "JSON-LD"
 	},
+	"m2m:serializations" : {	// String value enum for content serializations
+		"xml": null,
+		"json": null,
+		"cbor": null
+	},
 	"dcfg:simStatus" : {
 		"0": "inactive",
 		"1": "active"
