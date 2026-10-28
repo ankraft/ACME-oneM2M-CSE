@@ -760,8 +760,12 @@ INCSEcseID=/id-in
 ; Specify the serialization type that must be used for the registration to the registrar CSE.
 ; Allowed values: json, cbor. Default: json
 serialization=json
-; List of resources that are excluded when creating a registrar CSR. Default: empty list
+; List of resources that are excluded when creating a registrar CSR. 
+; Default: empty list
 excludeCSRAttributes=
+; The release versions supported by the registrar CSE.
+; Default: same as this CSE's supported release versions.
+supportedReleaseVersions=${cse:supportedReleaseVersions}
 
 
 ;

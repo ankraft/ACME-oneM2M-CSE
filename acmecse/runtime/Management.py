@@ -1656,7 +1656,7 @@ function createResource() {{
 				for r in resdis:
 					typeShortname = r.typeShortname
 					attributes = {}
-					for attr in r.getAttributes():
+					for attr in r.attributeNames():
 						policy = self.validator.getAttributePolicy(r.ty, attr)
 						if policy.optionalCreate != RequestOptionality.NP:
 							attributes[attr] = r[attr]

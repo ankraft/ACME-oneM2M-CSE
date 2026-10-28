@@ -738,7 +738,40 @@ class Validator(metaclass=Singleton):
 
 		# TODO look for other types, requests, filter...
 		return None
-	
+
+
+	def isAttributeValidForAnyRelease(self, attribute: str,
+											rtype: ResourceTypes,
+											releases: list[str]) -> bool:
+		""" Determine whether the attribute policy for *attribute* / *rtype* is valid
+			for at least one of the given release versions.
+
+			Args:
+				attribute: Name of the attribute.
+				rtype: Resource type to look up the attribute policy for.
+				releases: Release version strings to check against, eg. [ "3", "3a", "4" ].
+					Order doesn't matter. Callers with a single release value must wrap
+					it in a list themselves (eg. [ rvi ]).
+			Return:
+				True if the attribute policy has no release restriction (valid for every
+				release), or if at least one of *releases* satisfies its restriction.
+				False if no attribute policy is found for *attribute* / *rtype*, or if
+				none of *releases* satisfy its restriction.
+		"""
+		if not (policy := self.getAttributePolicy(rtype, attribute)):
+			L.isDebug and L.logDebug(f'No attribute policy found for attribute {attribute} of resource type {rtype}')
+			return False
+		
+		if not (_releases := policy.releases):
+			return True		# No restriction: valid for every release
+
+		match len(_releases):
+			case 1:
+				return any(r >= _releases[0] for r in releases)
+			case 2:
+				return any(_releases[0] <= r <= _releases[1] for r in releases)
+		return True
+
 
 	def getAttributePoliciesByName(self, attr:str) -> Optional[list[AttributePolicy]]:
 		"""	Return the attribute policies for an attribute name.

@@ -27,7 +27,7 @@ from acmecse.resources.CSR import CSR
 from acmecse.resources.CSEBase import CSEBase, getCSE
 from acmecse.resources.Resource import Resource
 from acmecse.runtime.Configuration import Configuration, ConfigurationError
-from acmecse.runtime.EventManager import EventManager, eventHandler, onEvent, EventData, eventManager
+from acmecse.runtime.EventManager import eventHandler, onEvent, EventData, eventManager
 from acmecse.runtime.Logging import Logging as L
 from acmecse.runtime.PluginSupport import plugin, start, stop, restart, configure, validate, requires
 
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 	from acmecse.services.Dispatcher import Dispatcher
 	from acmecse.services.RequestManager import RequestManager
 	from acmecse.services.SecurityManager import SecurityManager
+	from acmecse.services.Validator import Validator
 
 
 @eventHandler
@@ -46,6 +47,7 @@ if TYPE_CHECKING:
 @requires(factory='acmecse.runtime.Factory')
 @requires(request='acmecse.services.RequestManager')
 @requires(security='acmecse.services.SecurityManager')
+@requires(validator='acmecse.services.Validator')
 class RemoteCSEManager(object):
 	"""	This class defines functionalities to handle remote CSE/CSR registrations.
 	"""
@@ -64,6 +66,9 @@ class RemoteCSEManager(object):
 
 	security: SecurityManager = None
 	"""	Injected SecurityManager instance. """
+
+	validator: Validator = None
+	"""	Injected Validator instance. """
 
 
 	__slots__ = (
@@ -552,6 +557,8 @@ class RemoteCSEManager(object):
 				L.isDebug and L.logDebug('No local CSR found, trying to delete remote CSR first')
 				self._deleteOwnCSRonRegistrarCSE(registrarConfig)
 				rsc = ResponseStatusCode.DELETED
+			except NOT_FOUND: # expected if the remote CSR does not exist
+				rsc = ResponseStatusCode.NOT_FOUND
 			except ResponseException as e:
 				rsc = e.rsc
 
@@ -600,9 +607,9 @@ class RemoteCSEManager(object):
 
 				L.isDebug and L.logDebug(f'Requesting remote CSEBase: {eachCsr.csi} originator: {originator}')
 				res = self.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
-															   to=to,
-															#    originator=RC.cseCsi)
-															   originator=originator)
+																to=to,
+																originator=originator,
+																rvi=RC.releaseVersion)
 													)[0].result		# there should be at least one result
 				if res.rsc != ResponseStatusCode.OK:
 					L.isWarn and L.logWarn(f'Registree CSE unreachable. Removing CSR: {eachCsr.rn if eachCsr else ""}')
@@ -749,6 +756,7 @@ class RemoteCSEManager(object):
 														_directURL=registrarConfig.csrOnRegistrarSRN,	# Fallback, because there might be no registration yet
 														originator=registrarConfig.originator,
 														ct=cast(ContentSerializationType, registrarConfig.serialization),
+														rvi=registrarConfig.registrarSelectedReleaseVersion,
 						  								credentials=registrarConfig.security.credentials)
 										   )[0].result	# there should be at least one result
 		if not res.rsc == ResponseStatusCode.OK:
@@ -791,6 +799,7 @@ class RemoteCSEManager(object):
 														ty=ResourceTypes.CSR, 
 														pc=csrResource.asDict(),
 														ct=cast(ContentSerializationType, registrarConfig.serialization),
+														rvi=registrarConfig.registrarSelectedReleaseVersion,
 														credentials=registrarConfig.security.credentials)
 										   )[0].result	# there should be at least one result
 		# The result contains the transmitted data in .data, even when it is an error.
@@ -844,6 +853,7 @@ class RemoteCSEManager(object):
 														originator=registrarConfig.originator,
 														pc=csr.asDict(), 
 														ct=cast(ContentSerializationType, registrarConfig.serialization),
+														rvi=registrarConfig.registrarSelectedReleaseVersion,
 														credentials=registrarConfig.security.credentials)
 										   )[0].result	# there should be at least one result
 		if res.rsc not in [ ResponseStatusCode.UPDATED, ResponseStatusCode.OK ]:
@@ -871,6 +881,7 @@ class RemoteCSEManager(object):
 															_directURL=registrarConfig.registrarCSEURL,	# Fallback, because there might be no registration yet
 													  		originator=registrarConfig.originator,
 															ct=cast(ContentSerializationType, registrarConfig.serialization),
+															rvi=registrarConfig.registrarSelectedReleaseVersion,
 															credentials=registrarConfig.security.credentials)
 											)[0].result	# there should be at least one result
 
@@ -908,6 +919,7 @@ class RemoteCSEManager(object):
 														_directURL=registrarConfig.registrarCSEURL,	# Fallback, because there might be no registration yet
 														originator=registrarConfig.originator,
 														ct=cast(ContentSerializationType, registrarConfig.serialization),
+														rvi=registrarConfig.registrarSelectedReleaseVersion,
 														credentials=registrarConfig.security.credentials)
 										   )[0].result	# there should be at least one result
 
@@ -999,8 +1011,9 @@ class RemoteCSEManager(object):
 		for eachCsr in resourceList:
 			if _id.startswith(eachCsr.csi):
 				break	# found a matching CSR
-		else: # Not found, so not registered
-			raise NOT_FOUND(L.logDebug(f'Not registered to remote CSE to send request: {id}'))
+		# else: # Not found, so not registered
+
+		# 	raise NOT_FOUND(L.logDebug(f'Not registered to remote CSE to send request: {id}'))
 			
 		# Assign fallback originator
 		if not originator:
@@ -1010,7 +1023,8 @@ class RemoteCSEManager(object):
 		L.isDebug and L.logDebug(f'Retrieve remote resource id: {id}')
 		res = self.request.handleSendRequest(CSERequest(op=Operation.RETRIEVE,
 														to=id, 
-														originator=originator)
+														originator=originator,
+														rvi=RC.releaseVersion)
 											)[0].result		# there should be at least one result
 		if res.rsc != ResponseStatusCode.OK:
 			raise exceptionFromRSC(res.rsc)
@@ -1069,15 +1083,29 @@ class RemoteCSEManager(object):
 			ri = f'{ids[2]}_{ids[3]}'
 
 		# Search for a <CSR> that either has the csi attribute set, or that has the looked-for
-		# registree CSE as a descendant CSE. This could also bei the registrar CSE.
+		# registree CSE as a descendant CSE. This could also be the registrar CSE.
 
+		# First, try whether the directly registered CSEs (either registrar or registree) are the target
+		# If this is not the case (the exception) then try to find a descendant CSE (from one of the registree CSEs)
 		try:
-			registeredCSR = self.dispatcher.retrieveLocalResource(ri=ri)
+			targetCSE = self.dispatcher.retrieveLocalResource(ri=ri)
 		except ResponseException as e:
-			L.isDebug and L.logDebug(f'getCSRFromPath: {e.dbg}')
-			registeredCSR = getCSRWithDescendant(f'/{ri}')
-		# L.logWarn(registeredCSR)
-		return registeredCSR, ids
+			L.isDebug and L.logDebug(f'getCSRFromPath: {e.dbg}. Trying to find a descendant CSE')
+			targetCSE = getCSRWithDescendant(f'/{ri}')
+
+		# If there is still no target CSE found, try to retrieve the registrar CSE if registered to send the request "upwards"
+		if targetCSE is None:
+			if self.registrarConfig and self.registrarConfig._registrarCSEBaseResource: # If registrar is registered
+				L.isWarn and L.logWarn(f'getCSRFromPath: No registered or descendant CSE found. Trying to retrieve registrar CSE to forward the request.')
+				try:
+					targetCSE = self.dispatcher.retrieveLocalResource(ri=self.registrarConfig.localCSRRN)
+				except ResponseException as e:
+					raise NOT_FOUND(L.logWarn(f'getCSRFromPath: Failed to retrieve registrar CSE. Not registered.'))
+			else:
+				# No path found, no registrar -> cannot forward the request
+				raise NOT_FOUND(L.logWarn(f'getCSRFromPath: Cannot forward request. Not registered to registrar CSE.'))
+		
+		return targetCSE, ids
 
 
 	def getRemoteCSEBaseAddress(self, csi:str) -> Optional[str]:
@@ -1121,6 +1149,7 @@ class RemoteCSEManager(object):
 			res = self.request.handleSendRequest(CSERequest(op=Operation.UPDATE, 
 															to=f'{self.descendantCSR[csrID][0].cb}{RC.cseCsi}', 
 															originator=RC.cseCsi, 
+															rvi=RC.releaseVersion,
 															pc=data))[0].result		# there should be at least one result
 			if res.rsc != ResponseStatusCode.UPDATED:
 				L.isWarn and L.logWarn(f'Error updating descendant CSR: {csrID} RSC: {int(res.rsc)} dbg: {res.data}')
@@ -1224,14 +1253,24 @@ class RemoteCSEManager(object):
 		# Always remove some attributes
 		for attr in [ 'acpi' ]:
 			if attr in target:
-				target.delAttribute(attr, setNone = False)
+				target.delAttribute(attr, setNone=False)
 
 		# Remove attributes in updates
 		if isUpdate:
 			# rm some attributes
 			for attr in [ 'ri', 'rn', 'ct', 'lt', 'ty', 'cst', 'cb', 'csi']:
 				if attr in target:
-					target.delAttribute(attr, setNone = False)
+					target.delAttribute(attr, setNone=False)
+
+		# Remove attributes based on release restrictions
+		try:
+			_releases = [ registrarConfig.registrarSelectedReleaseVersion ]
+			for attr in target.attributeNames():
+				if not self.validator.isAttributeValidForAnyRelease(attr, ResourceTypes.CSR, _releases):
+					L.logWarn(f'Attribute {attr} is not valid for any of the selected target release: {registrarConfig.registrarSelectedReleaseVersion}. Removed.')
+					target.delAttribute(attr, setNone=False)
+		except Exception as e:
+			L.logErr(f'Error while removing attributes based on release restrictions: {e}')
 
 
 	#########################################################################
@@ -1261,6 +1300,7 @@ class RemoteCSEManager(object):
 			registrar.serialization = parser.get(section, 'serialization', fallback='json')
 			registrar.INCSEcseID = parser.get(section, 'INCSEcseID', fallback=None)
 			registrar.originator = parser.get(section, 'originator', fallback=None)
+			registrar.supportedReleaseVersions = parser.getlist(section, 'supportedReleaseVersions', fallback=None)		# type: ignore [attr-defined]
 
 
 		def parseRegistrarSecurity(section:str, registrar:CSERegistrar) -> None:

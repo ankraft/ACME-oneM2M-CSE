@@ -596,7 +596,7 @@ class Resource(object):
 					 update:Optional[bool] = False, 
 					 noACP:Optional[bool] = False,
 					 sort:bool = False) -> JSON:
-		"""	Get the JSON resource representation.
+		"""	Get the JSON resource representation. This is a deep copy of the resource's attributes.
 		
 			Args:
 				embedded: Optional indicator whether the resource should be embedded in another resource structure. In this case it is *not* embedded in its own "domain:name" structure.
@@ -604,7 +604,7 @@ class Resource(object):
 				noACP: Optional indicator whether the *acpi* attribute shall be included in the result.
 			
 			Return:
-				A `JSON` object with the resource representation.
+				A deepcopied `JSON` object with the resource representation.
 		"""
 		# remove (from a copy) all internal attributes before printing
 		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
@@ -830,7 +830,25 @@ class Resource(object):
 				if key in _dct:
 					del _dct[key]
 		return _dct
-	
+
+
+	def attributeNames(self, includingInternal:bool = False) -> list[str]:
+		""" Get the names of all attributes of the resource, without copying their values.
+
+			This is a cheap alternative to `getAttributes().keys()` for callers that only
+			need the attribute names (eg. to iterate and conditionally delete some of them) -
+			it avoids the deep copy of every attribute's value that `getAttributes()` makes.
+
+			Args:
+				includingInternal: Optional indicator whether internal attributes shall be included.
+
+			Return:
+				A list of attribute names.
+		"""
+		if includingInternal:
+			return list(self.dict.keys())
+		return [ key for key in self.dict.keys() if key not in internalAttributes ]
+
 
 	def getFinalResourceAttribute(self, key:str, dct:Optional[JSON]) -> Any:
 		"""	Determine and return the final value of an attribute during an update.

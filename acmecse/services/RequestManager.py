@@ -19,7 +19,7 @@ from threading import Lock
 from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, ResourceTypes, TYPE_CHECKING
 from ..etc.Types import FilterUsage, Operation, RequestCallback, RequestType, IdentifierScope
 from ..etc.Types import ResponseStatusCode, ResultContentType, RequestStatus, CSERequest, RequestHandler
-from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result, EventCategory
+from ..etc.Types import ResourceTypes, ResponseStatusCode, ResponseType, Result, EventCategory, resourceTypeDetails
 from ..etc.Types import CSERequest, ContentSerializationType, RequestResponseList, RequestResponse
 from ..etc.ResponseStatusCodes import ResponseException
 from ..etc.ResponseStatusCodes import BAD_REQUEST, NOT_FOUND, REQUEST_TIMEOUT, RELEASE_VERSION_NOT_SUPPORTED
@@ -341,32 +341,28 @@ class RequestManager(metaclass=Singleton):
 				return Result(rsc = ResponseStatusCode.BAD_REQUEST,
 							  dbg = L.logWarn(f'Partial retrieve is only valid for rcn=1 or rcn=7 (was: {request.rcn})'))
 
+		# Call the appropriate request function
 		try:
-			# Call the appropriate request function
 			res = self.requestHandlers[request.op].ownRequest(request)
-
 		except ResponseException as e:
-
 			res = Result(rsc=e.rsc, dbg=L.logWarn(e.dbg), request=e.data)
 
 			# Call error response interceptors
 			self.interceptorManager.interceptErrorResponse(request, res)	
-
 		except Exception as e:
 			res = Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg=L.logErr(f'Error handling request', exc=e), request=request)
 
+		# Remove attributes depending on the release version indicator from the result
+		self.removeAttributesDependingOnReleaseVersion(res, request.rvi)
+
+		# Call request post-processing interceptors
 		try:
-
-			# Call request post-processing interceptors
 			self.interceptorManager.interceptRequestPostProcessing(request, res)
-
 		except ResponseException as e:
-
 			res = Result(rsc=e.rsc, dbg=L.logWarn(e.dbg), request=e.data)
 
 			# Call error response interceptors
 			self.interceptorManager.interceptErrorResponse(request, res)	
-			
 		except Exception as e:
 			res = Result(rsc=ResponseStatusCode.INTERNAL_SERVER_ERROR, dbg=L.logErr(f'Error handling request', exc=e), request=request)
 
@@ -731,6 +727,8 @@ class RequestManager(metaclass=Singleton):
 			# Check whether the response contains a resource
 			if operationResult.resource:
 				if isinstance(operationResult.resource, Resource):
+					# Remove attributes depending on the release version indicator from the result
+					self.removeAttributesDependingOnReleaseVersion(operationResult, request.rvi)
 					pc = operationResult.resource.asDict()
 				else:
 					# Handle and remove the internal incomplete indicator
@@ -1824,7 +1822,7 @@ class RequestManager(metaclass=Singleton):
 			L.isDebug and L.logDebug(f'Direct URL: {uri}')
 			return [ (uri, 
 					  None, 
-					  RC.releaseVersion, 
+					  request.rvi if request.rvi else RC.releaseVersion,
 					  None, 
 					  originator, 
 					  uri, 
@@ -2186,7 +2184,63 @@ class RequestManager(metaclass=Singleton):
 						   request.originalRequest,
 						   response,
 						   self.requestRingBuffer.append)
-	
+
+
+	def removeAttributesDependingOnReleaseVersion(self, result:Result, rvi:Optional[str]) -> None:
+		""" Remove attributes from the result depending on the release version indicator (rvi)
+			of the original request, recursing into any embedded child resources (eg. from
+			an rcn=4 discovery result).
+
+			Args:
+				result: Result object containing the resource.
+				rvi: Release version indicator of the original request.
+		"""
+		if not rvi:
+			return
+
+		# Does the result contain a resource?
+		if not isinstance(result.resource, Resource):
+			return
+		_res: Resource = result.resource	# type: ignore[assignment]
+
+		_releases = [ rvi ]
+
+		def _removeInvalidAttributesFromDict(dct: JSON, ty: ResourceTypes) -> None:
+			""" Recursively remove attributes that are not valid for any of *_releases* from
+				an embedded child resource's plain dict (eg. one entry of an rcn=4 discovery
+				result's child-resource-type list).
+
+				Args:
+					dct: The embedded child resource's dictionary.
+					ty: The resource type that *dct* represents.
+			"""
+			childTypes = details.childResourceTypes if (details := resourceTypeDetails.get(ty)) else []
+
+			for attr in list(dct.keys()):
+				if self.validator.getAttributePolicy(ty, attr):
+					if not self.validator.isAttributeValidForAnyRelease(attr, ty, _releases):
+						L.isDebug and L.logDebug(f'Removing attribute {attr} from embedded resource (type: {ty}) due to release version {rvi}')
+						del dct[attr]
+				elif (childTy := ResourceTypes.fromTypeShortname(attr)) in childTypes:
+					for child in dct[attr]:
+						_removeInvalidAttributesFromDict(child, childTy)
+				# else: unrecognized key - leave it alone
+
+		childTypes = details.childResourceTypes if (details := resourceTypeDetails.get(_res.ty)) else []
+
+		# remove attributes from the resource depending on the release version indicator
+		for attr in _res.attributeNames():
+			if self.validator.getAttributePolicy(_res.ty, attr):
+				if not self.validator.isAttributeValidForAnyRelease(attr, _res.ty, _releases):
+					L.isDebug and L.logDebug(f'Removing attribute {attr} from resource due to release version {rvi}')
+					_res.delAttribute(attr, setNone=False)
+			elif (childTy := ResourceTypes.fromTypeShortname(attr)) in childTypes:
+				for child in _res[attr]:
+					_removeInvalidAttributesFromDict(child, childTy)
+			# else: unrecognized key - leave it alone
+
+
+		
 class RequestRingBuffer(RingBuffer[JSON]):
 	"""	A ring buffer for requests.
 	

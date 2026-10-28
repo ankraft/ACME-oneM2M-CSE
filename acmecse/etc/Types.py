@@ -2824,6 +2824,9 @@ class CSERegistrar:
 	security:CSERegistrarSecurity = field(default_factory=CSERegistrarSecurity)
 	""" Security information for the registrar. """
 
+	supportedReleaseVersions:Optional[list[str]] = None
+	""" The release versions supported by the registrar CSE. """
+
 	registrarCSEURL:Optional[str] = None
 	""" Internal: The registrar CSE URL. This is set after the registration. """
 
@@ -2838,6 +2841,9 @@ class CSERegistrar:
 
 	registrarCSRRN:Optional[str] = None
 	""" The resource name for the remote CSR. """
+
+	registrarSelectedReleaseVersion:Optional[str] = None
+	""" Internal: The selected release version supported by the registrar CSE. """
 
 	localCSRRN:Optional[str] = None
 	""" The resource name for the local CSR. """
@@ -2879,6 +2885,12 @@ class CSERegistrar:
 		else:
 			# self._csrOnRegistrarSRN = f'{self._registrarCSESRN}{RC.cseCsi}' 
 			self.csrOnRegistrarSRN = f'{self.registrarCSESRN}/{self.registrarCSRRN}' 
+
+		# Determine the maximum release version supported by the registrar CSE
+		if self.supportedReleaseVersions:
+			self.registrarSelectedReleaseVersion = max(self.supportedReleaseVersions)
+
+		
 
 	
 	def restart(self) -> None:
@@ -2988,8 +3000,8 @@ class AttributePolicy:
 	""" Name of the enum type (if the attribute is of type *enum*). """
 	lTypeName:str				= None	# sub-type of a list as writen in the definition
 	""" Sub-type of a list as writen in the definition. """
-	evalues:dict[int, str]		= None 	# Dict of enum values and interpretations
-	""" Dict of enum values and interpretations. """
+	evalues:dict[int|str, str]	= None 	# Dict of enum values and interpretations
+	""" Dict of enum values and interpretations."""
 	ptype:Type					= None	# Implementation type of the enum values
 	""" Implementation type of the enum values. """
 	lSize:int					= None	# mandatory size of the list

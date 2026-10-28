@@ -2300,7 +2300,8 @@
 			"oc": "NP",
 			"ou": "NP",
 			"od": "NP",
-			"annc": "OA"
+			"annc": "OA",
+			"releases": [ "5" ]
 		},
 		{
 			"rtypes": [ "CSR" ],
@@ -2311,7 +2312,8 @@
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
-			"annc": "OA"
+			"annc": "OA",
+			"releases": [ "5" ]
 		}
 	],
 	"icid": [
@@ -4741,7 +4743,8 @@
 			"oc": "M",
 			"ou": "NP",
 			"od": "NP",
-			"annc": "OA"
+			"annc": "OA",
+			"releases": [ "5" ]
 		},
 		{
 			"rtypes": [ "CSR" ],
@@ -4752,7 +4755,8 @@
 			"oc": "O",
 			"ou": "O",
 			"od": "NP",
-			"annc": "OA"
+			"annc": "OA",
+			"releases": [ "5" ]
 		}
 	],
 	"spn": [

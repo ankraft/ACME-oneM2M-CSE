@@ -16,7 +16,6 @@ from typing import cast, Optional, TYPE_CHECKING
 import json, os, fnmatch, re
 from copy import deepcopy
 
-from ..helpers.TextTools import findXPath
 from ..etc.Types import AttributePolicy, ResourceTypes, BasicType, Cardinality, RequestOptionality, Announced, JSON, JSONLIST, ResourceDescription
 from ..etc.Types import resourceTypeDetails
 from ..etc.Constants import RuntimeConstants as RC
