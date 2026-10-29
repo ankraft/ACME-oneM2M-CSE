@@ -1343,7 +1343,7 @@ class Validator(metaclass=Singleton):
 		
 		# L.logWarn(f'Converting attribute {value} - {typ} - {policy} to Absolute ({isRemoteSP}) or SP-relative form.')
 		match typ:
-			case BasicType.ID:
+			case BasicType.ID | BasicType.originatorPattern:
 				# L.inspect(toAbsolute(value, spId=RC.cseSpid) if isRemoteSP else toSPRelative(value))
 				match scope:
 					case IdentifierScope.CSERelative:
