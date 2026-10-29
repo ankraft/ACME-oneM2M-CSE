@@ -993,7 +993,7 @@ class TestACP(unittest.TestCase):
 				}}
 		TestACP.grp, rsc = CREATE(cseURL, ORIGINATOR, T.GRP, dct)
 		grpRi = findXPath(TestACP.grp, 'm2m:grp/ri')
-		self.assertEqual(rsc, RC.CREATED)
+		self.assertEqual(rsc, RC.CREATED, TestACP.grp)
 
 		# ACP with pv/acr/acor to the grp
 		dct = 	{ "m2m:acp": {

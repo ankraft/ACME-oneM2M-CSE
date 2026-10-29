@@ -510,6 +510,7 @@ class SecurityManager(object):
 		allAcpAttributes = []
 
 		for acr, hostCSEPrefix in _getAccessControlRulesPV(resource):
+			# L.logWarn(f'Checking ACR: {acr} for originator: {originator}')
 			if (acpResult := self.checkACR(acr, originator, requestedPermission, ty, request, hostCSEPrefix)).allowed:
 					return True
 

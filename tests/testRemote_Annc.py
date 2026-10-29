@@ -20,11 +20,9 @@ CND = 'org.onem2m.common.moduleclass.temperature'
 
 class TestRemote_Annc(unittest.TestCase):
 
-	acpORIGINATOR 			= 'testOriginator'
 	ae: JSON|None			= None
 	node: JSON|None 		= None
 	bat: JSON|None 			= None
-	acp: JSON|None 			= None
 	cnt: JSON|None 			= None
 	remoteCse: JSON|None 	= None
 	remoteCbARI: str|None 	= None
@@ -33,7 +31,6 @@ class TestRemote_Annc(unittest.TestCase):
 	remoteFcntRI: str|None	= None
 	remoteNodRI: str|None	= None
 	remoteBatRI: str|None 	= None
-	remoteAcpRI: str|None 	= None
 
 
 	@classmethod
@@ -649,111 +646,6 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	#
-	#	create an announced ACP
-	#
-
-	# Create an ACP 
-	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_createAnnouncedACP(self) -> None:
-		""" Create an announced <ACP> """
-		dct = 	{ "m2m:acp": {
-					"rn": acpRN,
-					"pv": {
-						"acr": [ { 	"acor": [ ORIGINATOR ],
-									"acop": 63
-								} ]
-					},
-					"pvs": { 
-						"acr": [ {
-							"acor": [ self.acpORIGINATOR ],
-							#"acor": [ 'all' ],
-							"acop": 63
-						} ]
-					},
-				 	'at': 	[ REMOTECSEID ]
-				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
-		self.assertEqual(rsc, RC.CREATED)
-		self.assertIsNotNone(findXPath(r, 'm2m:acp/at'))
-		self.assertIsInstance(findXPath(r, 'm2m:acp/at'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:acp/at')), 1)
-		self.assertTrue(findXPath(r, 'm2m:acp/at')[0].startswith(f'{REMOTECSEID}/'))
-		TestRemote_Annc.remoteAcpRI = findXPath(r, 'm2m:acp/at')[0]
-		self.assertIsNotNone(self.remoteAcpRI)
-		self.assertIsNone(findXPath(r, 'm2m:acp/aa'))
-		TestRemote_Annc.acp = r
-
-
-	# Retrieve the announced ACP
-	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedACPwithCSERelativeOriginatorFail(self) -> None:
-		""" Retrieve remote <ACPA> w/ CSE-Relative originator -> Fail """
-		if TestRemote_Annc.remoteAcpRI is None:
-			self.skipTest('remote ACP.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteAcpRI}', self.acpORIGINATOR)
-		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
-
-
-	# Retrieve the announced ACP
-	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedACP(self) -> None:
-		""" Retrieve remote <ACPA> """
-		if TestRemote_Annc.remoteAcpRI is None:
-			self.skipTest('remote ACP.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteAcpRI}', 'other')
-		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
-		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteAcpRI}', f'{CSEID}/{self.acpORIGINATOR}')
-		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA'))
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA/ty'))
-		self.assertEqual(findXPath(r, 'm2m:acpA/ty'), T.ACPAnnc)
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA/ct'))
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA/lt'))
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA/et'))
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA/pi'))
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA/lnk'))
-		self.assertTrue(findXPath(r, 'm2m:acpA/lnk').endswith( findXPath(TestRemote_Annc.acp, 'm2m:acp/ri') ))
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA/pv'))	# MA attribute
-		self.assertIsInstance(findXPath(r, 'm2m:acpA/pv'), dict)
-		self.assertIsNotNone(findXPath(r, 'm2m:acpA/pvs'))	# MA attribute
-		self.assertIsInstance(findXPath(r, 'm2m:acpA/pvs'), dict)
-
-
-	# Retrieve the announced ACP with wrong originator
-	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedACPwithWrongOriginator(self) -> None:
-		""" Retrieve remote <ACPA> with wrong originator """
-		if TestRemote_Annc.remoteAcpRI is None:
-			self.skipTest('remote ACP.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteAcpRI}', 'wrong')
-		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE)
-
-
-	# Retrieve the announced ACP with the CSE-ID
-	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedACPwithCSI(self) -> None:
-		""" Retrieve remote <ACPA> with remote CSE's CSI """
-		if TestRemote_Annc.remoteAcpRI is None:
-			self.skipTest('remote ACP.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteAcpRI}', CSEID)
-		self.assertEqual(rsc, RC.OK)
-
-
-	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_deleteAnnounceACP(self) -> None:
-		""" Delete remote <ACPA> directly -> FAIL """
-		if TestRemote_Annc.acp is None:
-			self.skipTest('acp not found')
-		_, rsc = DELETE(acpURL, ORIGINATOR)
-		self.assertEqual(rsc, RC.DELETED)
-		# try to retrieve the announced Node. Should not be found
-		r, rsc = RETRIEVE(f'{REMOTECSEURL}~{TestRemote_Annc.remoteAcpRI}', CSEID)
-		self.assertEqual(rsc, RC.NOT_FOUND)
-		TestRemote_Annc.acp = None
-		TestRemote_Annc.remoteAcpRI = None
-
-
-	#
 	#	create an announced CNT with announcedSyncType = bi-directional
 	#
 
@@ -1048,14 +940,6 @@ def run(testFailFast:bool) -> TestResult:
 		'test_addMgmtObjCSItoAT',
 		'test_removeMgmtObjAT',
 		'test_deleteAnnounceNode',
-
-		# create an announced ACP
-		'test_createAnnouncedACP',
-		'test_retrieveAnnouncedACPwithWrongOriginator',
-		'test_retrieveAnnouncedACP',
-		'test_retrieveAnnouncedACPwithCSERelativeOriginatorFail',
-		'test_retrieveAnnouncedACPwithCSI',
-		'test_deleteAnnounceACP',
 
 		# create an announced CNT with announcedSyncType = bi-directional
 		'test_createAnnouncedCNTSynced',

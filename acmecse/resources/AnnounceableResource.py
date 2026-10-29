@@ -179,7 +179,8 @@ class AnnounceableResource(Resource):
 				if lbl := self.lbl:
 					body['lbl'] = deepcopy(lbl)
 
-				# copy mandatoy and optional attributes
+				# copy mandatoy and optional attributes and also convert identifier
+				# attributes to the appropriate scope
 				ty = self.ty if self.ty != ResourceTypes.MGMTOBJ else self.mgd
 				for attr in announcedAttributes:
 					policy = attributes.get(attr) # The policy must in the "attributes" dict. So use it instead of asking the validator again
