@@ -29,7 +29,7 @@
         "type"      : "hed:dBPMrAnnc",
         "lname"     : "deviceBloodPressureMonitorAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitorAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -50,7 +50,7 @@
         "type"      : "hed:dBPMrInst",
         "lname"     : "deviceBloodPressureMonitorInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitorInst",
+        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -83,7 +83,7 @@
         "type"      : "hed:devGrAnnc",
         "lname"     : "deviceGlucosemeterAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.deviceGlucosemeterAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceGlucosemeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -102,7 +102,7 @@
         "type"      : "hed:devGrInst",
         "lname"     : "deviceGlucosemeterInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.deviceGlucosemeterInst",
+        "cnd"       : "org.onem2m.health.device.deviceGlucosemeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -135,7 +135,7 @@
         "type"      : "hed:dHRMrAnnc",
         "lname"     : "deviceHeartRateMonitorAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitorAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -154,7 +154,7 @@
         "type"      : "hed:dHRMrInst",
         "lname"     : "deviceHeartRateMonitorInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitorInst",
+        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -188,7 +188,7 @@
         "type"      : "hed:dePOrAnnc",
         "lname"     : "devicePulseOximeterAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.devicePulseOximeterAnnc",
+        "cnd"       : "org.onem2m.health.device.devicePulseOximeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -209,7 +209,7 @@
         "type"      : "hed:dePOrInst",
         "lname"     : "devicePulseOximeterInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.devicePulseOximeterInst",
+        "cnd"       : "org.onem2m.health.device.devicePulseOximeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -244,7 +244,7 @@
         "type"      : "hed:dWSABAnnc",
         "lname"     : "deviceWeightScaleAndBodyCompositionAnalyserAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyserAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyser",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -267,7 +267,7 @@
         "type"      : "hed:dWSABInst",
         "lname"     : "deviceWeightScaleAndBodyCompositionAnalyserInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyserInst",
+        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyser",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 

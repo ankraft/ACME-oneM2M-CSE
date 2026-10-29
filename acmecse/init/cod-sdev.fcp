@@ -24,7 +24,7 @@
         "type"      : "cod:sDPOtAnnc",
         "lname"     : "subDevicePowerOutletAnnc",
         "sdttype"   : "subdevice",
-        "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutletAnnc",
+        "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutlet",
         "children"  : [
             "cod:binSh", 
             "cod:binShAnnc", 
@@ -43,7 +43,7 @@
         "type"      : "cod:sDPOtInst",
         "lname"     : "subDevicePowerOutletInst",
         "sdttype"   : "subdevice",
-        "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutletInst"
+        "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutlet"
     }
 
 

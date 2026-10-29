@@ -31,7 +31,7 @@
         "type"      : "ved:dEVCrAnnc",
         "lname"     : "deviceElectricVehicleChargerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.vehicular.device.deviceElectricVehicleChargerAnnc",
+        "cnd"       : "org.onem2m.vehicular.device.deviceElectricVehicleCharger",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -56,7 +56,7 @@
         "type"      : "ved:dEVCrInst",
         "lname"     : "deviceElectricVehicleChargerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.vehicular.device.deviceElectricVehicleChargerInst",
+        "cnd"       : "org.onem2m.vehicular.device.deviceElectricVehicleCharger",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -95,7 +95,7 @@
         "type"      : "ved:deEMeAnnc",
         "lname"     : "deviceElectricMotorcycleAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.vehicular.device.deviceElectricMotorcycleAnnc",
+        "cnd"       : "org.onem2m.vehicular.device.deviceElectricMotorcycle",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -126,7 +126,7 @@
         "type"      : "ved:deEMeInst",
         "lname"     : "deviceElectricMotorcycleInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.vehicular.device.deviceElectricMotorcycleInst",
+        "cnd"       : "org.onem2m.vehicular.device.deviceElectricMotorcycle",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 

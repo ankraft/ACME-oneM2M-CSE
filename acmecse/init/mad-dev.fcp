@@ -37,7 +37,7 @@
         "type"      : "mad:fleNeAnnc",
         "lname"     : "flexNodeAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.management.device.flexNodeAnnc",
+        "cnd"       : "org.onem2m.management.device.flexNode",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -74,7 +74,7 @@
         "type"      : "mad:fleNeInst",
         "lname"     : "flexNodeInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.management.device.flexNodeInst",
+        "cnd"       : "org.onem2m.management.device.flexNode",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 

@@ -27,7 +27,7 @@
         "type"      : "psd:dPWSCAnnc",
         "lname"     : "devicePWSCenterAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.publicsafety.device.devicePWSCenterAnnc",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSCenter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -44,7 +44,7 @@
         "type"      : "psd:dPWSCInst",
         "lname"     : "devicePWSCenterInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.publicsafety.device.devicePWSCenterInst",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSCenter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -77,7 +77,7 @@
         "type"      : "psd:dPWSEAnnc",
         "lname"     : "devicePWSEquipmentAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.publicsafety.device.devicePWSEquipmentAnnc",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSEquipment",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -96,7 +96,7 @@
         "type"      : "psd:dPWSEInst",
         "lname"     : "devicePWSEquipmentInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.publicsafety.device.devicePWSEquipmentInst",
+        "cnd"       : "org.onem2m.publicsafety.device.devicePWSEquipment",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 

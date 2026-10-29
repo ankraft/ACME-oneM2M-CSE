@@ -30,7 +30,7 @@
         "type"      : "agd:dCAMrAnnc",
         "lname"     : "deviceCowActivityMonitorAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.agriculture.device.deviceCowActivityMonitorAnnc",
+        "cnd"       : "org.onem2m.agriculture.device.deviceCowActivityMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -53,7 +53,7 @@
         "type"      : "agd:dCAMrInst",
         "lname"     : "deviceCowActivityMonitorInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.agriculture.device.deviceCowActivityMonitorInst",
+        "cnd"       : "org.onem2m.agriculture.device.deviceCowActivityMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 

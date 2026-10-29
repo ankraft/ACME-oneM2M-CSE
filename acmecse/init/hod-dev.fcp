@@ -39,7 +39,7 @@
         "type"      : "hod:deACrAnnc",
         "lname"     : "deviceAirConditionerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceAirConditionerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceAirConditioner",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -80,7 +80,7 @@
         "type"      : "hod:deACrInst",
         "lname"     : "deviceAirConditionerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceAirConditionerInst",
+        "cnd"       : "org.onem2m.home.device.deviceAirConditioner",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -115,7 +115,7 @@
         "type"      : "hod:deAHrAnnc",
         "lname"     : "deviceAirHeaterAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceAirHeaterAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceAirHeater",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -138,7 +138,7 @@
         "type"      : "hod:deAHrInst",
         "lname"     : "deviceAirHeaterInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceAirHeaterInst",
+        "cnd"       : "org.onem2m.home.device.deviceAirHeater",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -177,7 +177,7 @@
         "type"      : "hod:deAPrAnnc",
         "lname"     : "deviceAirPurifierAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceAirPurifierAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceAirPurifier",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -208,7 +208,7 @@
         "type"      : "hod:deAPrInst",
         "lname"     : "deviceAirPurifierInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceAirPurifierInst",
+        "cnd"       : "org.onem2m.home.device.deviceAirPurifier",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -242,7 +242,7 @@
         "type"      : "hod:deBWrAnnc",
         "lname"     : "deviceBottleWarmerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceBottleWarmerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceBottleWarmer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -263,7 +263,7 @@
         "type"      : "hod:deBWrInst",
         "lname"     : "deviceBottleWarmerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceBottleWarmerInst",
+        "cnd"       : "org.onem2m.home.device.deviceBottleWarmer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -298,7 +298,7 @@
         "type"      : "hod:deCDrAnnc",
         "lname"     : "deviceClothesDryerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceClothesDryerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceClothesDryer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -321,7 +321,7 @@
         "type"      : "hod:deCDrInst",
         "lname"     : "deviceClothesDryerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceClothesDryerInst",
+        "cnd"       : "org.onem2m.home.device.deviceClothesDryer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -359,7 +359,7 @@
         "type"      : "hod:deCWrAnnc",
         "lname"     : "deviceClothesWasherAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceClothesWasherAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceClothesWasher",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -388,7 +388,7 @@
         "type"      : "hod:deCWrInst",
         "lname"     : "deviceClothesWasherInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceClothesWasherInst",
+        "cnd"       : "org.onem2m.home.device.deviceClothesWasher",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -426,7 +426,7 @@
         "type"      : "hod:dCWDrAnnc",
         "lname"     : "deviceClothesWasherDryerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceClothesWasherDryerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceClothesWasherDryer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -455,7 +455,7 @@
         "type"      : "hod:dCWDrInst",
         "lname"     : "deviceClothesWasherDryerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceClothesWasherDryerInst",
+        "cnd"       : "org.onem2m.home.device.deviceClothesWasherDryer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -497,7 +497,7 @@
         "type"      : "hod:deCMeAnnc",
         "lname"     : "deviceCoffeeMachineAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceCoffeeMachineAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceCoffeeMachine",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -534,7 +534,7 @@
         "type"      : "hod:deCMeInst",
         "lname"     : "deviceCoffeeMachineInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceCoffeeMachineInst",
+        "cnd"       : "org.onem2m.home.device.deviceCoffeeMachine",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -569,7 +569,7 @@
         "type"      : "hod:deCHdAnnc",
         "lname"     : "deviceCookerHoodAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceCookerHoodAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceCookerHood",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -592,7 +592,7 @@
         "type"      : "hod:deCHdInst",
         "lname"     : "deviceCookerHoodInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceCookerHoodInst",
+        "cnd"       : "org.onem2m.home.device.deviceCookerHood",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -624,7 +624,7 @@
         "type"      : "hod:devCpAnnc",
         "lname"     : "deviceCooktopAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceCooktopAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceCooktop",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -641,7 +641,7 @@
         "type"      : "hod:devCpInst",
         "lname"     : "deviceCooktopInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceCooktopInst",
+        "cnd"       : "org.onem2m.home.device.deviceCooktop",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -679,7 +679,7 @@
         "type"      : "hod:devDrAnnc",
         "lname"     : "deviceDehumidifierAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceDehumidifierAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceDehumidifier",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -708,7 +708,7 @@
         "type"      : "hod:devDrInst",
         "lname"     : "deviceDehumidifierInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceDehumidifierInst",
+        "cnd"       : "org.onem2m.home.device.deviceDehumidifier",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -743,7 +743,7 @@
         "type"      : "hod:deDGyAnnc",
         "lname"     : "deviceDigitalGalleryAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceDigitalGalleryAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceDigitalGallery",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -766,7 +766,7 @@
         "type"      : "hod:deDGyInst",
         "lname"     : "deviceDigitalGalleryInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceDigitalGalleryInst",
+        "cnd"       : "org.onem2m.home.device.deviceDigitalGallery",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -800,7 +800,7 @@
         "type"      : "hod:deDWrAnnc",
         "lname"     : "deviceDishWasherAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceDishWasherAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceDishWasher",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -821,7 +821,7 @@
         "type"      : "hod:deDWrInst",
         "lname"     : "deviceDishWasherInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceDishWasherInst",
+        "cnd"       : "org.onem2m.home.device.deviceDishWasher",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -853,7 +853,7 @@
         "type"      : "hod:devFnAnnc",
         "lname"     : "deviceFanAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceFanAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceFan",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -870,7 +870,7 @@
         "type"      : "hod:devFnInst",
         "lname"     : "deviceFanInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceFanInst",
+        "cnd"       : "org.onem2m.home.device.deviceFan",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -902,7 +902,7 @@
         "type"      : "hod:deFPeAnnc",
         "lname"     : "deviceFoodProbeAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceFoodProbeAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceFoodProbe",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -919,7 +919,7 @@
         "type"      : "hod:deFPeInst",
         "lname"     : "deviceFoodProbeInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceFoodProbeInst",
+        "cnd"       : "org.onem2m.home.device.deviceFoodProbe",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -951,7 +951,7 @@
         "type"      : "hod:devFrAnnc",
         "lname"     : "deviceFreezerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceFreezerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceFreezer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -968,7 +968,7 @@
         "type"      : "hod:devFrInst",
         "lname"     : "deviceFreezerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceFreezerInst",
+        "cnd"       : "org.onem2m.home.device.deviceFreezer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1002,7 +1002,7 @@
         "type"      : "hod:deGDpAnnc",
         "lname"     : "deviceGarbageDisposalAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceGarbageDisposalAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceGarbageDisposal",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1023,7 +1023,7 @@
         "type"      : "hod:deGDpInst",
         "lname"     : "deviceGarbageDisposalInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceGarbageDisposalInst",
+        "cnd"       : "org.onem2m.home.device.deviceGarbageDisposal",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1066,7 +1066,7 @@
         "type"      : "hod:dHCCTAnnc",
         "lname"     : "deviceHomeCCTVAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceHomeCCTVAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceHomeCCTV",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1105,7 +1105,7 @@
         "type"      : "hod:dHCCTInst",
         "lname"     : "deviceHomeCCTVInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceHomeCCTVInst",
+        "cnd"       : "org.onem2m.home.device.deviceHomeCCTV",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1137,7 +1137,7 @@
         "type"      : "hod:devHrAnnc",
         "lname"     : "deviceHumidifierAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceHumidifierAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceHumidifier",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1154,7 +1154,7 @@
         "type"      : "hod:devHrInst",
         "lname"     : "deviceHumidifierInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceHumidifierInst",
+        "cnd"       : "org.onem2m.home.device.deviceHumidifier",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1188,7 +1188,7 @@
         "type"      : "hod:devJrAnnc",
         "lname"     : "deviceJuicerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceJuicerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceJuicer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1209,7 +1209,7 @@
         "type"      : "hod:devJrInst",
         "lname"     : "deviceJuicerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceJuicerInst",
+        "cnd"       : "org.onem2m.home.device.deviceJuicer",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1246,7 +1246,7 @@
         "type"      : "hod:devKeAnnc",
         "lname"     : "deviceKettleAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceKettleAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceKettle",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1273,7 +1273,7 @@
         "type"      : "hod:devKeInst",
         "lname"     : "deviceKettleInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceKettleInst",
+        "cnd"       : "org.onem2m.home.device.deviceKettle",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1308,7 +1308,7 @@
         "type"      : "hod:devMnAnnc",
         "lname"     : "deviceMicrogenerationAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceMicrogenerationAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceMicrogeneration",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1331,7 +1331,7 @@
         "type"      : "hod:devMnInst",
         "lname"     : "deviceMicrogenerationInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceMicrogenerationInst",
+        "cnd"       : "org.onem2m.home.device.deviceMicrogeneration",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1366,7 +1366,7 @@
         "type"      : "hod:devOnAnnc",
         "lname"     : "deviceOvenAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceOvenAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceOven",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1389,7 +1389,7 @@
         "type"      : "hod:devOnInst",
         "lname"     : "deviceOvenInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceOvenInst",
+        "cnd"       : "org.onem2m.home.device.deviceOven",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1429,7 +1429,7 @@
         "type"      : "hod:devRrAnnc",
         "lname"     : "deviceRefrigeratorAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceRefrigeratorAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceRefrigerator",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1462,7 +1462,7 @@
         "type"      : "hod:devRrInst",
         "lname"     : "deviceRefrigeratorInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceRefrigeratorInst",
+        "cnd"       : "org.onem2m.home.device.deviceRefrigerator",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1498,7 +1498,7 @@
         "type"      : "hod:deRC0Annc",
         "lname"     : "deviceRiceCookerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceRiceCookerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceRiceCooker",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1523,7 +1523,7 @@
         "type"      : "hod:deRC0Inst",
         "lname"     : "deviceRiceCookerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceRiceCookerInst",
+        "cnd"       : "org.onem2m.home.device.deviceRiceCooker",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1560,7 +1560,7 @@
         "type"      : "hod:deRCrAnnc",
         "lname"     : "deviceRobotCleanerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceRobotCleanerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceRobotCleaner",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1587,7 +1587,7 @@
         "type"      : "hod:deRCrInst",
         "lname"     : "deviceRobotCleanerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceRobotCleanerInst",
+        "cnd"       : "org.onem2m.home.device.deviceRobotCleaner",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1619,7 +1619,7 @@
         "type"      : "hod:deSPlAnnc",
         "lname"     : "deviceSecurityPanelAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceSecurityPanelAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceSecurityPanel",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1636,7 +1636,7 @@
         "type"      : "hod:deSPlInst",
         "lname"     : "deviceSecurityPanelInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceSecurityPanelInst",
+        "cnd"       : "org.onem2m.home.device.deviceSecurityPanel",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1672,7 +1672,7 @@
         "type"      : "hod:dSTBxAnnc",
         "lname"     : "deviceSetTopBoxAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceSetTopBoxAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceSetTopBox",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1697,7 +1697,7 @@
         "type"      : "hod:dSTBxInst",
         "lname"     : "deviceSetTopBoxInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceSetTopBoxInst",
+        "cnd"       : "org.onem2m.home.device.deviceSetTopBox",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1732,7 +1732,7 @@
         "type"      : "hod:deSWrAnnc",
         "lname"     : "deviceShoesWasherAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceShoesWasherAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceShoesWasher",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1755,7 +1755,7 @@
         "type"      : "hod:deSWrInst",
         "lname"     : "deviceShoesWasherInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceShoesWasherInst",
+        "cnd"       : "org.onem2m.home.device.deviceShoesWasher",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1790,7 +1790,7 @@
         "type"      : "hod:deSCtAnnc",
         "lname"     : "deviceSteamClosetAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceSteamClosetAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceSteamCloset",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1813,7 +1813,7 @@
         "type"      : "hod:deSCtInst",
         "lname"     : "deviceSteamClosetInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceSteamClosetInst",
+        "cnd"       : "org.onem2m.home.device.deviceSteamCloset",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1848,7 +1848,7 @@
         "type"      : "hod:deSByAnnc",
         "lname"     : "deviceStorageBatteryAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceStorageBatteryAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceStorageBattery",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1871,7 +1871,7 @@
         "type"      : "hod:deSByInst",
         "lname"     : "deviceStorageBatteryInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceStorageBatteryInst",
+        "cnd"       : "org.onem2m.home.device.deviceStorageBattery",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1908,7 +1908,7 @@
         "type"      : "hod:devTnAnnc",
         "lname"     : "deviceTelevisionAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceTelevisionAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceTelevision",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1935,7 +1935,7 @@
         "type"      : "hod:devTnInst",
         "lname"     : "deviceTelevisionInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceTelevisionInst",
+        "cnd"       : "org.onem2m.home.device.deviceTelevision",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1972,7 +1972,7 @@
         "type"      : "hod:deWHrAnnc",
         "lname"     : "deviceWaterHeaterAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceWaterHeaterAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceWaterHeater",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -1999,7 +1999,7 @@
         "type"      : "hod:deWHrInst",
         "lname"     : "deviceWaterHeaterInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceWaterHeaterInst",
+        "cnd"       : "org.onem2m.home.device.deviceWaterHeater",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -2037,7 +2037,7 @@
         "type"      : "hod:deWPrAnnc",
         "lname"     : "deviceWaterPurifierAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceWaterPurifierAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceWaterPurifier",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -2066,7 +2066,7 @@
         "type"      : "hod:deWPrInst",
         "lname"     : "deviceWaterPurifierInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceWaterPurifierInst",
+        "cnd"       : "org.onem2m.home.device.deviceWaterPurifier",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -2100,7 +2100,7 @@
         "type"      : "hod:deWSeAnnc",
         "lname"     : "deviceWindowShadeAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceWindowShadeAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceWindowShade",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -2121,7 +2121,7 @@
         "type"      : "hod:deWSeInst",
         "lname"     : "deviceWindowShadeInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.home.device.deviceWindowShadeInst",
+        "cnd"       : "org.onem2m.home.device.deviceWindowShade",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 

@@ -23,7 +23,7 @@
         "type"      : "hed:suDCfAnnc",
         "lname"     : "subDeviceCuffAnnc",
         "sdttype"   : "subdevice",
-        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuffAnnc",
+        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuff",
         "children"  : [
             "hod:binSh", 
             "hod:binShAnnc", 
@@ -40,7 +40,7 @@
         "type"      : "hed:suDCfInst",
         "lname"     : "subDeviceCuffInst",
         "sdttype"   : "subdevice",
-        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuffInst"
+        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuff"
     }
 
 

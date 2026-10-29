@@ -33,7 +33,7 @@
     {
         "type"      : "mdd:featsAnnc",
         "lname"     : "featuresAnnc",
-        "cnd"       : "org.onem2m.metadata.moduleclass.featuresAnnc",
+        "cnd"       : "org.onem2m.metadata.moduleclass.features",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -55,7 +55,7 @@
     {
         "type"      : "mdd:featsInst",
         "lname"     : "featuresInst",
-        "cnd"       : "org.onem2m.metadata.moduleclass.featuresInst",
+        "cnd"       : "org.onem2m.metadata.moduleclass.features",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -101,7 +101,7 @@
     {
         "type"      : "mdd:locanAnnc",
         "lname"     : "locationAnnc",
-        "cnd"       : "org.onem2m.metadata.moduleclass.locationAnnc",
+        "cnd"       : "org.onem2m.metadata.moduleclass.location",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -121,7 +121,7 @@
     {
         "type"      : "mdd:locanInst",
         "lname"     : "locationInst",
-        "cnd"       : "org.onem2m.metadata.moduleclass.locationInst",
+        "cnd"       : "org.onem2m.metadata.moduleclass.location",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -165,7 +165,7 @@
     {
         "type"      : "mdd:loca0Annc",
         "lname"     : "localizationAnnc",
-        "cnd"       : "org.onem2m.metadata.moduleclass.localizationAnnc",
+        "cnd"       : "org.onem2m.metadata.moduleclass.localization",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -185,7 +185,7 @@
     {
         "type"      : "mdd:loca0Inst",
         "lname"     : "localizationInst",
-        "cnd"       : "org.onem2m.metadata.moduleclass.localizationInst",
+        "cnd"       : "org.onem2m.metadata.moduleclass.localization",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -227,7 +227,7 @@
     {
         "type"      : "mdd:orignAnnc",
         "lname"     : "originAnnc",
-        "cnd"       : "org.onem2m.metadata.moduleclass.originAnnc",
+        "cnd"       : "org.onem2m.metadata.moduleclass.origin",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -245,7 +245,7 @@
     {
         "type"      : "mdd:orignInst",
         "lname"     : "originInst",
-        "cnd"       : "org.onem2m.metadata.moduleclass.originInst",
+        "cnd"       : "org.onem2m.metadata.moduleclass.origin",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime

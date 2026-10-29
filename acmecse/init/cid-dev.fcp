@@ -33,7 +33,7 @@
         "type"      : "cid:deOLpAnnc",
         "lname"     : "deviceOutdoorLampAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceOutdoorLampAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceOutdoorLamp",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -62,7 +62,7 @@
         "type"      : "cid:deOLpInst",
         "lname"     : "deviceOutdoorLampInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceOutdoorLampInst",
+        "cnd"       : "org.onem2m.city.device.deviceOutdoorLamp",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -98,7 +98,7 @@
         "type"      : "cid:dMPMrAnnc",
         "lname"     : "deviceMagneticParkingMonitorAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceMagneticParkingMonitorAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceMagneticParkingMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -123,7 +123,7 @@
         "type"      : "cid:dMPMrInst",
         "lname"     : "deviceMagneticParkingMonitorInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceMagneticParkingMonitorInst",
+        "cnd"       : "org.onem2m.city.device.deviceMagneticParkingMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -161,7 +161,7 @@
         "type"      : "cid:dSEMrAnnc",
         "lname"     : "deviceSmartElectricMeterAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceSmartElectricMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartElectricMeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -190,7 +190,7 @@
         "type"      : "cid:dSEMrInst",
         "lname"     : "deviceSmartElectricMeterInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceSmartElectricMeterInst",
+        "cnd"       : "org.onem2m.city.device.deviceSmartElectricMeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -228,7 +228,7 @@
         "type"      : "cid:dSGMrAnnc",
         "lname"     : "deviceSmartGasMeterAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceSmartGasMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartGasMeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -257,7 +257,7 @@
         "type"      : "cid:dSGMrInst",
         "lname"     : "deviceSmartGasMeterInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceSmartGasMeterInst",
+        "cnd"       : "org.onem2m.city.device.deviceSmartGasMeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -296,7 +296,7 @@
         "type"      : "cid:dSWMrAnnc",
         "lname"     : "deviceSmartWaterMeterAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceSmartWaterMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartWaterMeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -327,7 +327,7 @@
         "type"      : "cid:dSWMrInst",
         "lname"     : "deviceSmartWaterMeterInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceSmartWaterMeterInst",
+        "cnd"       : "org.onem2m.city.device.deviceSmartWaterMeter",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -364,7 +364,7 @@
         "type"      : "cid:dSLCrAnnc",
         "lname"     : "deviceStreetLightControllerAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceStreetLightControllerAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceStreetLightController",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -391,7 +391,7 @@
         "type"      : "cid:dSLCrInst",
         "lname"     : "deviceStreetLightControllerInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceStreetLightControllerInst",
+        "cnd"       : "org.onem2m.city.device.deviceStreetLightController",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -426,7 +426,7 @@
         "type"      : "cid:dWQMrAnnc",
         "lname"     : "deviceWaterQualityMonitorAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceWaterQualityMonitorAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceWaterQualityMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -449,7 +449,7 @@
         "type"      : "cid:dWQMrInst",
         "lname"     : "deviceWaterQualityMonitorInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceWaterQualityMonitorInst",
+        "cnd"       : "org.onem2m.city.device.deviceWaterQualityMonitor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -488,7 +488,7 @@
         "type"      : "cid:deWSnAnnc",
         "lname"     : "deviceWeatherStationAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceWeatherStationAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceWeatherStation",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -519,7 +519,7 @@
         "type"      : "cid:deWSnInst",
         "lname"     : "deviceWeatherStationInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.city.device.deviceWeatherStationInst",
+        "cnd"       : "org.onem2m.city.device.deviceWeatherStation",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 

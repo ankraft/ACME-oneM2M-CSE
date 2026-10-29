@@ -79,7 +79,7 @@
     {
         "type"      : "mad:dmAgtAnnc",
         "lname"     : "dmAgentAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmAgentAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmAgent",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -145,7 +145,7 @@
     {
         "type"      : "mad:dmAgtInst",
         "lname"     : "dmAgentInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmAgentInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmAgent",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -247,7 +247,7 @@
     {
         "type"      : "mad:dmDIoAnnc",
         "lname"     : "dmDeviceInfoAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmDeviceInfoAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmDeviceInfo",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -285,7 +285,7 @@
     {
         "type"      : "mad:dmDIoInst",
         "lname"     : "dmDeviceInfoInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmDeviceInfoInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmDeviceInfo",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -379,7 +379,7 @@
     {
         "type"      : "mad:dDMIOAnnc",
         "lname"     : "dmDataModelIOAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmDataModelIOAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmDataModelIO",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -429,7 +429,7 @@
     {
         "type"      : "mad:dDMIOInst",
         "lname"     : "dmDataModelIOInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmDataModelIOInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmDataModelIO",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -545,7 +545,7 @@
     {
         "type"      : "mad:dmFieAnnc",
         "lname"     : "dmFirmwareAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmFirmwareAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmFirmware",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -611,7 +611,7 @@
     {
         "type"      : "mad:dmFieInst",
         "lname"     : "dmFirmwareInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmFirmwareInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmFirmware",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -725,7 +725,7 @@
     {
         "type"      : "mad:dmSoeAnnc",
         "lname"     : "dmSoftwareAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmSoftwareAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmSoftware",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -773,7 +773,7 @@
     {
         "type"      : "mad:dmSoeInst",
         "lname"     : "dmSoftwareInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmSoftwareInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmSoftware",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -859,7 +859,7 @@
     {
         "type"      : "mad:dmELgAnnc",
         "lname"     : "dmEventLogAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmEventLogAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmEventLog",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -899,7 +899,7 @@
     {
         "type"      : "mad:dmELgInst",
         "lname"     : "dmEventLogInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmEventLogInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmEventLog",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -1015,7 +1015,7 @@
     {
         "type"      : "mad:dmPaeAnnc",
         "lname"     : "dmPackageAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmPackageAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmPackage",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -1087,7 +1087,7 @@
     {
         "type"      : "mad:dmPaeInst",
         "lname"     : "dmPackageInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmPackageInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmPackage",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -1177,7 +1177,7 @@
     {
         "type"      : "mad:dANDoAnnc",
         "lname"     : "dmAreaNwkDeviceInfoAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmAreaNwkDeviceInfoAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmAreaNwkDeviceInfo",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -1199,7 +1199,7 @@
     {
         "type"      : "mad:dANDoInst",
         "lname"     : "dmAreaNwkDeviceInfoInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmAreaNwkDeviceInfoInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmAreaNwkDeviceInfo",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -1275,7 +1275,7 @@
     {
         "type"      : "mad:dmCayAnnc",
         "lname"     : "dmCapabilityAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmCapabilityAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmCapability",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -1323,7 +1323,7 @@
     {
         "type"      : "mad:dmCayInst",
         "lname"     : "dmCapabilityInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmCapabilityInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmCapability",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -1443,7 +1443,7 @@
     {
         "type"      : "mad:dmSteAnnc",
         "lname"     : "dmStorageAnnc",
-        "cnd"       : "org.onem2m.management.moduleclass.dmStorageAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmStorage",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -1515,7 +1515,7 @@
     {
         "type"      : "mad:dmSteInst",
         "lname"     : "dmStorageInst",
-        "cnd"       : "org.onem2m.management.moduleclass.dmStorageInst",
+        "cnd"       : "org.onem2m.management.moduleclass.dmStorage",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime

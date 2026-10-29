@@ -37,7 +37,7 @@
         "type"      : "rad:dHPTTAnnc",
         "lname"     : "deviceHandheldPTTTerminalAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminalAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminal",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -74,7 +74,7 @@
         "type"      : "rad:dHPTTInst",
         "lname"     : "deviceHandheldPTTTerminalInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminalInst",
+        "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminal",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -117,7 +117,7 @@
         "type"      : "rad:deTTlAnnc",
         "lname"     : "deviceTrainborneTerminalAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminalAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminal",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -156,7 +156,7 @@
         "type"      : "rad:deTTlInst",
         "lname"     : "deviceTrainborneTerminalInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminalInst",
+        "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminal",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -202,7 +202,7 @@
         "type"      : "rad:dCRMeAnnc",
         "lname"     : "deviceCardRechargingMachineAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceCardRechargingMachineAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceCardRechargingMachine",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -247,7 +247,7 @@
         "type"      : "rad:dCRMeInst",
         "lname"     : "deviceCardRechargingMachineInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceCardRechargingMachineInst",
+        "cnd"       : "org.onem2m.railway.device.deviceCardRechargingMachine",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -292,7 +292,7 @@
         "type"      : "rad:deSGeAnnc",
         "lname"     : "deviceSmartGateAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceSmartGateAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartGate",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -335,7 +335,7 @@
         "type"      : "rad:deSGeInst",
         "lname"     : "deviceSmartGateInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceSmartGateInst",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartGate",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -378,7 +378,7 @@
         "type"      : "rad:dSSDrAnnc",
         "lname"     : "deviceSmartScreenDoorAnnc",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceSmartScreenDoorAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartScreenDoor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
@@ -417,7 +417,7 @@
         "type"      : "rad:dSSDrInst",
         "lname"     : "deviceSmartScreenDoorInst",
         "sdttype"   : "device",
-        "cnd"       : "org.onem2m.railway.device.deviceSmartScreenDoorInst",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartScreenDoor",
         "attributes": [
             // Property: nodeLink
             { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 

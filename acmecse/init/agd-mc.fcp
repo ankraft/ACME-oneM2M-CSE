@@ -29,7 +29,7 @@
     {
         "type"      : "agd:coAMrAnnc",
         "lname"     : "cowActivityMonitorAnnc",
-        "cnd"       : "org.onem2m.agriculture.moduleclass.cowActivityMonitorAnnc",
+        "cnd"       : "org.onem2m.agriculture.moduleclass.cowActivityMonitor",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -47,7 +47,7 @@
     {
         "type"      : "agd:coAMrInst",
         "lname"     : "cowActivityMonitorInst",
-        "cnd"       : "org.onem2m.agriculture.moduleclass.cowActivityMonitorInst",
+        "cnd"       : "org.onem2m.agriculture.moduleclass.cowActivityMonitor",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime

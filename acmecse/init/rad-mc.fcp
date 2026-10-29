@@ -27,7 +27,7 @@
     {
         "type"      : "rad:baTMeAnnc",
         "lname"     : "baliseTransmissionModuleAnnc",
-        "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModuleAnnc",
+        "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModule",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -43,7 +43,7 @@
     {
         "type"      : "rad:baTMeInst",
         "lname"     : "baliseTransmissionModuleInst",
-        "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModuleInst",
+        "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModule",
         "sdttype"   : "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
