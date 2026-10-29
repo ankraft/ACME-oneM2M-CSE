@@ -4,14 +4,16 @@
 #	(c) 2026 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
+"""	Dynamic Authorization Service (DAS) Manager plugin for handling DACI and DAS interactions.
+"""
 
 from __future__ import annotations
-from typing import Generator, cast, TYPE_CHECKING, Optional
+from typing import Generator, TYPE_CHECKING, Optional
 
 from acmecse.runtime.PluginSupport import plugin, start, stop, restart, requires
 from acmecse.runtime.Logging import Logging as L
 from acmecse.etc.Constants import RuntimeConstants as RC
-from acmecse.etc.Types import ResourceTypes, CSERequest, RequestResponseList, JSON
+from acmecse.etc.Types import ResourceTypes, CSERequest, JSON
 from acmecse.etc.ResponseStatusCodes import ResponseException, ORIGINATOR_HAS_NO_PRIVILEGE, ResponseStatusCode as RSC
 from acmecse.etc.JSONUtils import removeNoneAttributes
 from acmecse.resources.Resource import Resource
@@ -23,6 +25,8 @@ from acmecse.services.Dispatcher import Dispatcher
 @requires(dispatcher='acmecse.services.Dispatcher')
 @requires(notification='acmecse.services.NotificationManager')
 class DASManager(object):
+	"""	Dynamic Authorization Service (DAS) Manager plugin class.
+	"""
 
 	dispatcher:Dispatcher = None
 	""" Injected Dispatcher instance. """
@@ -57,59 +61,69 @@ class DASManager(object):
 
 	#########################################################################
 
-	def checkDACIinResource(self, resource: Resource, originator: str, request: Optional[CSERequest] = None) -> bool:
+	# def checkDACIinResource(self, resource: Resource, originator: str, request: Optional[CSERequest] = None) -> bool:
+	# 	"""	Check if the given originator has the necessary *daci* attribute set in the resource or resource hierarchy.
 
-		daci:list[str] = []
+	# 	Args:
+	# 		resource: The resource to check.
+	# 		originator: The originator of the request.
+	# 		request: Optional CSERequest object.
 
-		# Traverse up to find a daci
-		while True:
-			if resource.daci:
-				daci = resource.daci
-				break
-			if resource.ty == ResourceTypes.CSEBase: # don't go beyond CSEBase
-				break
-			resource = resource.retrieveParentResource()
+	# 	Returns:
+	# 		Boolean indicating whether the originator has the necessary daci .
+	# 	"""
 
-		if daci:
-			L.isDebug and L.logDebug(f'Found daci in resource hierarchy: {resource.ri} : {daci}')
+	# 	daci:list[str] = []
 
-			for daciRi in daci:
-				try:
-					daciResource = self.dispatcher.retrieveResource(daciRi)
-				except ResponseException as e:
-					L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource not found: {daciRi}: {e.dbg}')
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource not found: {daciRi}') from e
+	# 	# Traverse up to find a daci
+	# 	while True:
+	# 		if resource.daci:
+	# 			daci = resource.daci
+	# 			break
+	# 		if resource.ty == ResourceTypes.CSEBase: # don't go beyond CSEBase
+	# 			break
+	# 		resource = resource.retrieveParentResource()
 
-				# Dynamic auth for the resource enabled?
-				if not daciResource.dae:
-					L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> is disabled: {daciRi}')
-					# TODO This needs perhaps to be changed. What if multiple DACs are listed in the daci
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> is disabled: {daciRi}')
+	# 	if daci:
+	# 		L.isDebug and L.logDebug(f'Found daci in resource hierarchy: {resource.ri} : {daci}')
 
-				if dap := daciResource.dap:
+	# 		for daciRi in daci:
+	# 			try:
+	# 				daciResource = self.dispatcher.retrieveResource(daciRi)
+	# 			except ResponseException as e:
+	# 				L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource not found: {daciRi}: {e.dbg}')
+	# 				raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource not found: {daciRi}') from e
 
-					# EXPERIMENTAL: Traverse over the resource IDs (to AEs) and then the PoAs in those AEs to get the DAS URL
-					for id in dap:
-						try:
-							aeResource = self.dispatcher.retrieveResource(id)
-						except ResponseException as e:
-							L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains non-existing resource: {id}: {e.dbg}')
-							raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains non-existing resource: {id}') from e
-						if aeResource.ty != ResourceTypes.AE:
-							L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains non-AE resource: {id}. Ignoring.')
-							raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains non-AE resource: {id}')
-						if not aeResource.poa:
-							L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains AE resource without PoA: {id}. Ignoring.')
-							raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains AE resource without PoA: {id}')
+	# 			# Dynamic auth for the resource enabled?
+	# 			if not daciResource.dae:
+	# 				L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> is disabled: {daciRi}')
+	# 				# TODO This needs perhaps to be changed. What if multiple DACs are listed in the daci
+	# 				raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> is disabled: {daciRi}')
 
-						# Finally after the checks, consult the DAS 
-						if self.consultDAS(aeResource, resource, originator, daciResource.dal, request):
-							return True
+	# 			if dap := daciResource.dap:
+
+	# 				# EXPERIMENTAL: Traverse over the resource IDs (to AEs) and then the PoAs in those AEs to get the DAS URL
+	# 				for id in dap:
+	# 					try:
+	# 						aeResource = self.dispatcher.retrieveResource(id)
+	# 					except ResponseException as e:
+	# 						L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains non-existing resource: {id}: {e.dbg}')
+	# 						raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains non-existing resource: {id}') from e
+	# 					if aeResource.ty != ResourceTypes.AE:
+	# 						L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains non-AE resource: {id}. Ignoring.')
+	# 						raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains non-AE resource: {id}')
+	# 					if not aeResource.poa:
+	# 						L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains AE resource without PoA: {id}. Ignoring.')
+	# 						raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains AE resource without PoA: {id}')
+
+	# 					# Finally after the checks, consult the DAS 
+	# 					if self.consultDAS(aeResource, resource, originator, daciResource.dal, request):
+	# 						return True
 
 				
-				# TODO do something with the lifetime
+	# 			# TODO do something with the lifetime
 
-		return False
+	# 	return False
 
 
 	def getDACIforResource(self, resource: Resource) -> list[str]:
@@ -142,6 +156,20 @@ class DASManager(object):
 	                        	  resource: Resource, 
 								  originator: str, 
 								  request: Optional[CSERequest] = None) -> Generator[dict, None, None]:
+		""" Retrieve the access control policy rules (ACRs) for a given resource and originator by consulting the DAS.
+
+			This is a generator function that yields the access control policy rules (ACRs). ACRs are retrieved from the DAS as needed.
+			Each request to this function call may result in a call to a DAS server.
+
+			Args:
+				daciRi: The resource ID of the DAC instance.
+				resource: The resource to check.
+				originator: The originator to check.
+				request: The original request to check. This is optional, but can be used to provide additional information to the DAS.
+
+			Yields:
+				Each access control policy rule (ACTR) as a dictionary.
+		"""
 
 
 		try:
