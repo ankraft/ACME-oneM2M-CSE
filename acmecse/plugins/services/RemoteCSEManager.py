@@ -1121,9 +1121,13 @@ class RemoteCSEManager(object):
 		"""
 		if csi == RC.cseCsi:
 			return f'{RC.cseCsi}/{RC.cseRi}'
-		if (csr := self.getCSRFromPath(csi))[0] is None:
+		try:
+			if (csr := self.getCSRFromPath(csi))[0] is None:
+				return None
+			return csr[0].cb
+		except ResponseException as e:
+			L.isWarn and L.logWarn(f'getRemoteCSEBaseAddress: Failed to retrieve CSR for CSI: {csi}. {e.dbg}')
 			return None
-		return csr[0].cb
 
 
 	def updateRemoteDescendantCSR(self, data: JSON, target: Optional[list[str] | str]=None) -> None:
