@@ -20,7 +20,7 @@ from ..etc.Types import CSEType, ResourceTypes, Permission, Operation, BatterySt
 from ..etc.ResponseStatusCodes import ResponseStatusCode, BAD_REQUEST, ResponseException, CONTENTS_UNACCEPTABLE
 from ..etc.JSONUtils import pureResource
 from ..etc.IDUtils import toCSERelative, toAbsolute, toSPRelative, isValidAEI, isValidSPID, isValidCSI, isCSERelative, isSPRelative, isAbsolute
-from ..etc.Utils import strToBool
+from ..etc.Utils import strToBool, isValidPOA
 from ..helpers.TextTools import findXPath, soundsLike
 from ..helpers import TextTools
 from ..etc.DateUtils import fromAbsRelTimestamp
@@ -1222,6 +1222,11 @@ class Validator(metaclass=Singleton):
 			case BasicType.AEID if isinstance(value, str):
 				if not isValidAEI(value):
 					raise BAD_REQUEST(f'invalid AEID type: {value} is not a valid AEID.')
+				return (dataType, value)
+
+			case BasicType.pointOfAccess if isinstance(value, str):
+				if not isValidPOA(value):
+					raise BAD_REQUEST(f'invalid pointOfAccess: {value} must be a valid POA URL')
 				return (dataType, value)
 
 			case BasicType.float:

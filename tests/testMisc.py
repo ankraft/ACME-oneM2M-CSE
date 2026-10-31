@@ -13,6 +13,7 @@ if '..' not in sys.path:
 import isodate
 from acmecse.etc.Types import NotificationEventType, ResponseStatusCode as RC, ResourceTypes as T, ResponseType
 from acmecse.etc.DateUtils import getResourceDate
+from acmecse.helpers.TextTools import findXPath
 from init import *
 
 # TODO move a couple of tests to a http or general request test
@@ -704,6 +705,56 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.BAD_REQUEST, r)
 
 
+	#
+	#	Point-of-access URL tests
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEWithValidPOA(self) -> None:
+		""" Create an AE with a valid point-of-access URL """
+		dct = 	{ 'm2m:ae' : { 	# type:ignore [var-annotated]
+					'rn': aeRN,
+					'api': APPID,
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ],
+					'poa': [ 'http://valid.url' ],
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		_originator = findXPath(r, 'm2m:ae/aei')
+
+		# delete the AE again
+		r, rsc = DELETE(f'{cseURL}/{aeRN}', _originator)
+		self.assertEqual(rsc, RC.DELETED, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEWithInvalidPOAFail(self) -> None:
+		""" Create an AE with an invalid point-of-access URL -> Fail """
+
+		# Invalid URL
+		dct = 	{ 'm2m:ae' : { 	# type:ignore [var-annotated]
+					'rn': aeRN,
+					'api': APPID,
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ],
+					'poa': [ 'invalid-url' ],
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+		# Unsupported scheme in the point-of-access URL
+		dct = 	{ 'm2m:ae' : { 	# type:ignore [var-annotated]
+					'rn': aeRN,
+					'api': APPID,
+				 	'rr': False,
+				 	'srv': [ RELEASEVERSION ],
+					'poa': [ 'invalid://url' ],
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
 
 # TODO test for creating a resource with missing type parameter
 # TODO test json with comments
@@ -770,6 +821,10 @@ def run(testFailFast:bool) -> TestResult:
 		# Resource Names and Types
 		'test_resourceNameTypeMismatchFail',
 		'test_fcntResourceNameTypeMismatchFail',
+
+		# Point-of-access URL tests
+		'test_createAEWithValidPOA',
+		'test_createAEWithInvalidPOAFail',
 
 	])
 	

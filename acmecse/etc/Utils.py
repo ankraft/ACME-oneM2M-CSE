@@ -201,6 +201,20 @@ def isAcmeUrl(url:str) -> bool:
 	return isURL(url) and url.startswith('acme:')
 
 
+def isValidPOA(url:str) -> bool:
+	"""	Test whether a URL is a valid oneM2M point-of-access URL. 
+		A point-of-access URL is a URL that is a valid URL and has a scheme indicating a supported protocol 
+		(coap, coaps, http, https, ws, wss, or acme).
+
+		Args:
+			url: URL to check.
+			
+		Returns:
+			True if the argument is a valid point-of-access URL.
+	"""
+	return isURL(url) and (isCoAPUrl(url) or isHttpUrl(url) or isWSUrl(url) or isAcmeUrl(url))
+
+
 def normalizeURL(url:str) -> str:
 	""" Remove trailing / from a url. 
 

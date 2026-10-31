@@ -573,7 +573,7 @@ class TestSUB(unittest.TestCase):
 			_, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 			self.assertEqual(rsc, RC.UPDATED)
 		lastNotification = getLastNotification()	# Notifications should not have arrived yes
-		self.assertIsNone(lastNotification)
+		self.assertIsNone(lastNotification)			# ATTENTION This may fail on slow systems or slow connections because the requests above took too long
 		self.assertIsNone(findXPath(lastNotification, 'm2m:agn'))
 
 		testSleep(durationForBatchNotifications * 2) 	# wait a moment

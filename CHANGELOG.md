@@ -27,6 +27,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [CSE] Added support for outgoing HTTP connection pooling, including configuration of the number of distinct peer hosts and the maximum number of connections per host. This reduces the overhead of repeatedly establishing connections to the same peers.
 - [CSE] Added update of some attributes of the &lt;CSEBase> resource after startup or reset to reflect any configuration changes. Thanks to SeungMyeong Jeong for the idea.
 - [CSE] Added and much improved support for release version indicator (rvi) based attribute validation, including recursive removal of invalid attributes from sent requests and responses. This is an ESTIMED project contribution.
+- [CSE] Added validation for point-of-access (poa) attributes to ensure it contains a valid POA URL.
 - [MGMT] Added reloading of HTTP and WebSocket authentication credentials to the management API.
 - [MGMT] Added support for retrieving basic and auth token information via the management API.
 - [MGMT] Added return of attribute, resource type, and flexcontainer policies to the management API.

@@ -734,6 +734,8 @@ class BasicType(ACMEIntEnum):
 	"""	oneM2M triggerRecipientID. """
 	originatorPattern	= auto()	# m2m:originatorPattern
 	"""	oneM2M originator pattern. This is similar to an originator ID but may include wildcards for matching multiple originators. """
+	pointOfAccess		= auto()	# m2m:pointOfAccess
+	"""	oneM2M point of access. This is a URL."""
 
 
 	# aliases. Always put at the end! Seems cause confusion with python < 3.11
