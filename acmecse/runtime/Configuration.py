@@ -981,7 +981,7 @@ class Configuration(object):
 							'registrarCseHost'		: getIPAddress(),										# The IP address of the registrar CSE
 							'registrarCsePort'		: 8080,													# The TCP port of the registrar CSE
 							'registrarCseID'		: '',													# The CSE-ID of the registrar CSE
-							'registrarCseName'		: '',													# The resource name of the registrar CSE's CSEBase
+							'registrarCseName'		: '-',													# The resource name of the registrar CSE's CSEBase
 
 							'logLevel'				: 'debug',												# The main secret key for the CSE. 
 							'consoleTheme'			: 'dark',												# The theme for the console.

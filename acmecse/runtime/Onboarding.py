@@ -60,7 +60,7 @@ _iniValues = {
 		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8080,
 		'registrarCseID': 'id-in',
-		'registrarCseName': 'cse-in',
+		'registrarCseName': '-',
 		'INCSEcseID': 'id-in',
 	},
 	'ASN' : { 
@@ -77,7 +77,7 @@ _iniValues = {
 		'registrarCseHost': '${hostIPAddress}',
 		'registrarCsePort': 8081,
 		'registrarCseID': 'id-mn',
-		'registrarCseName': 'cse-mn',
+		'registrarCseName': '-',
 		'INCSEcseID': 'id-in',
 	}		
 }
@@ -453,7 +453,7 @@ def buildUserConfigFile(configFile:Optional[str],
 			'registrarCseName':	inquirer.text(
 									message = 'The Name of the Registrar CSE:',
 									default = _iniValues[cseType]['registrarCseName'],
-									long_instruction = 'The resource name of the remote (Registrar) CSE.',
+									long_instruction = 'The resource name of the remote (Registrar) CSE. Use "-" as a placeholder.',
 									validate = lambda result: isValidID(result) or _containsVariable(result),
 									amark = '✓', 
 									invalid_message = 'Invalid CSE Name. Must not be empty and must only contain letters, digits, and the characters [-, _, .].',
