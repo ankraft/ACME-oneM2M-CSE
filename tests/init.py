@@ -1352,7 +1352,7 @@ if not verifyCertificate:
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		
 	def do_POST(self) -> None:
-		global nextNotificationResult
+		global nextNotificationResult, nextNotificationResponseBody
 
 		# Construct return header
 		# Always acknowledge the verification requests
@@ -1363,6 +1363,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		if C.hfRI in self.headers:
 			self.send_header(C.hfRI, self.headers[C.hfRI])
 		nextNotificationResult = ResponseStatusCode.OK
+
+		# If a response body was armed (eg. to mock a DAS consultation response), encode it
+		# and send it along with this response. Consumed once, like nextNotificationResult.
+		responseBody:Optional[bytes] = None
+		if nextNotificationResponseBody is not None:
+			responseBody = json.dumps(nextNotificationResponseBody).encode('utf-8')
+			self.send_header('Content-Type', 'application/json')
+			self.send_header('Content-Length', str(len(responseBody)))
+			nextNotificationResponseBody = None
 
 		# Get headers and content data
 		length = int(self.headers['Content-Length'])
@@ -1393,6 +1402,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 			console.print('\n[b u]Sent Notification Response')
 			console.print(b''.join(self._headers_buffer).decode('UTF-8'))	# type: ignore[attr-defined]
 		self.end_headers()
+		if responseBody is not None:
+			self.wfile.write(responseBody)
 
 	def log_message(self, format:str, *args:int) -> None:
 		pass
@@ -1475,6 +1486,7 @@ lastNotification:JSON						= None
 lastNotificationHeaders:Parameters 			= {}
 lastNotificationArguments:Parameters 		= {}
 nextNotificationResult:ResponseStatusCode	= ResponseStatusCode.OK
+nextNotificationResponseBody:Optional[JSON]	= None
 
 def setLastNotification(notification:JSON) -> None:
 	global lastNotification
@@ -1490,11 +1502,21 @@ def getLastNotification(clear:bool = False, wait:float = 0.0) -> JSON:
 
 
 def clearLastNotification(nextResult:ResponseStatusCode = ResponseStatusCode.OK) -> None:
-	global lastNotification, lastNotificationHeaders, lastNotificationArguments, nextNotificationResult
+	global lastNotification, lastNotificationHeaders, lastNotificationArguments, nextNotificationResult, nextNotificationResponseBody
 	lastNotification = None
 	lastNotificationHeaders = None
 	lastNotificationArguments = None
 	nextNotificationResult = nextResult
+	nextNotificationResponseBody = None
+
+
+def setNextNotificationResponseBody(body:Optional[JSON] = None) -> None:
+	""" Set the JSON body to be sent back as the response to the next notification request.
+		Used to mock a notification target's (eg. a DAS) response content. Reset to *None*
+		(no body, today's default behaviour) by `clearLastNotification()`.
+	"""
+	global nextNotificationResponseBody
+	nextNotificationResponseBody = body
 
 
 def setLastNotificationHeaders(headers:Parameters) -> None:

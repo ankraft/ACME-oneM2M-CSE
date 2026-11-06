@@ -22,6 +22,7 @@ class TestDAC(unittest.TestCase):
 	ae 			= None
 	aeRI		= None
 	ae2 		= None
+	ae2RI		= None
 	nod 		= None
 	nodRI		= None
 	crs			= None
@@ -33,10 +34,14 @@ class TestDAC(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		# Start notification server - needed for the DAS consultation round-trip test, which
+		# mocks a DAS AE's response to the CSE's notification.
+		startNotificationServer()
+
 		testCaseStart('Setup TestDAC')
 
 		dct = 	{ 'm2m:ae' : {
-					'rn'  : aeRN, 
+					'rn'  : aeRN,
 					'api' : APPID,
 				 	'rr'  : True,
 				 	'srv' : [ RELEASEVERSION ]
@@ -45,7 +50,20 @@ class TestDAC(unittest.TestCase):
 		assert rsc == RC.CREATED, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		cls.aeRI = findXPath(cls.ae, 'm2m:ae/ri')
-	
+
+		# A second AE with a poa, acting as a mocked DAS target for the dap-referenced
+		# multi-DAC consultation test.
+		dct = 	{ 'm2m:ae' : {
+					'rn'  : f'{aeRN}2',
+					'api' : APPID,
+				 	'rr'  : True,
+				 	'srv' : [ RELEASEVERSION ],
+					'poa' : [ NOTIFICATIONSERVER ],
+				}}
+		cls.ae2, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE acting as a DAS target
+		assert rsc == RC.CREATED, 'cannot create second AE'
+		cls.ae2RI = findXPath(cls.ae2, 'm2m:ae/ri')
+
 		testCaseEnd('Setup TestDAC')
 
 
@@ -55,7 +73,9 @@ class TestDAC(unittest.TestCase):
 		testCaseStart('TearDown TestDAC')
 		DELETE(dacURL, ORIGINATOR)	# Just delete the DAC and everything below it. Ignore whether it exists or not
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(f'{aeURL}2', ORIGINATOR)	# Just delete the second AE. Ignore whether it exists or not
 		testCaseEnd('TearDown TestDAC')
+		stopNotificationServer()
 
 
 	def setUp(self) -> None:
@@ -273,13 +293,92 @@ class TestDAC(unittest.TestCase):
 		DELETE(f'{cseURL}/{dacRN}Disabled', ORIGINATOR)
 
 
-	@unittest.skip('Blocked on DASManager.consultDAS() response handling (dynamicACPInfo / grantedPrivileges) not being implemented yet')
+	# Documents explicitly that "no privileges from any <DAC>" still correctly denies the
+	# request, rather than crashing or granting access.
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveResourceWithOnlyNoPoaDaciFail(self) -> None:
+		""" RETRIEVE a <CNT> (no acpi) whose daci points to an enabled <DAC> with a no-poa dap entry -> Fail """
+		dct = 	{ 'm2m:dac' : {
+					'rn' : f'{dacRN}NoPoa',
+					'dae': True,
+					'dap': [ self.aeRI ]	# the AE created in setUpClass has no poa
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.DAC, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		dacRi = findXPath(r, 'm2m:dac/ri')
+
+		dct = 	{ 'm2m:cnt' : {
+					'rn' : f'{cntRN}DaciNoPoa',
+					'daci': [ dacRi ]
+				}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		r, rsc = RETRIEVE(f'{aeURL}/{cntRN}DaciNoPoa', 'CsomeOtherOriginator')
+		self.assertEqual(rsc, RC.ORIGINATOR_HAS_NO_PRIVILEGE, r)
+
+		DELETE(f'{aeURL}/{cntRN}DaciNoPoa', self.originator)
+		DELETE(f'{cseURL}/{dacRN}NoPoa', ORIGINATOR)
+
+
+	# Proves a failing <DAC> no longer aborts the rest of the daci list: the request must
+	# succeed via the second, valid <DAC>, consulted via a real DAS round-trip.
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveResourceWithFirstDacDisabledSecondValid(self) -> None:
+		""" RETRIEVE a <CNT> (no acpi) whose daci lists a disabled <DAC> then a valid one -> OK via the second """
+		requestingOriginator = 'CrequestingOriginator'
+
+		dct = 	{ 'm2m:dac' : {
+					'rn' : f'{dacRN}MultiDisabled',
+					'dae': False,
+					'dap': [ 'aURL' ]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.DAC, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		dac1Ri = findXPath(r, 'm2m:dac/ri')
+
+		dct = 	{ 'm2m:dac' : {
+					'rn' : f'{dacRN}MultiValid',
+					'dae': True,
+					'dap': [ self.ae2RI ]	# the second AE created in setUpClass, with a poa
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.DAC, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+		dac2Ri = findXPath(r, 'm2m:dac/ri')
+
+		dct = 	{ 'm2m:cnt' : {
+					'rn' : f'{cntRN}MultiDaci',
+					'daci': [ dac1Ri, dac2Ri ]
+				}}
+		r, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.CREATED, r)
+
+		# Arm the mocked DAS response for the second (valid) DAC's consultation: grant
+		# RETRIEVE to the requesting originator.
+		setNextNotificationResponseBody({
+			'm2m:seci': {
+				'sit': 2,
+				'dai': {
+					'gp': [ { 'acor': [ requestingOriginator ], 'acop': 2 } ]	# 2 == RETRIEVE
+				}
+			}
+		})
+
+		r, rsc = RETRIEVE(f'{aeURL}/{cntRN}MultiDaci', requestingOriginator)
+		self.assertEqual(rsc, RC.OK, r)
+
+		DELETE(f'{aeURL}/{cntRN}MultiDaci', self.originator)
+		DELETE(f'{cseURL}/{dacRN}MultiDisabled', ORIGINATOR)
+		DELETE(f'{cseURL}/{dacRN}MultiValid', ORIGINATOR)
+
+
+	# Scope: creating a persistent dynamic <ACP> from a DAS grant (TS-0003 dynamicACPInfo) is
+	# out of scope (see DASManager.py). In-memory gp evaluation already works - see
+	# test_retrieveResourceWithFirstDacDisabledSecondValid above.
+	@unittest.skip('Dynamic <ACP> creation from a DAS grant not implemented (out of scope)')
 	def test_accessGrantedViaDASConsultation(self) -> None:
-		"""	RETRIEVE a resource (no acpi) whose daci points to an enabled <DAC>; the DAS
-			grants access via a dynamic authorization consultation response, and the CSE
-			applies the granted privileges (creates a dynamic <accessControlPolicy>).
-		"""
-		self.fail('Not implemented: requires a working DAS consultation round-trip')
+		""" RETRIEVE a resource (no acpi) whose daci points to an enabled <DAC> -> OK via DAS grant """
+		self.fail('Not implemented: requires dynamic <ACP> creation from the DAS grant')
 
 
 def run(testFailFast:bool) -> TestResult:
@@ -307,6 +406,8 @@ def run(testFailFast:bool) -> TestResult:
 		'test_createDACdapDuplicateEntries',
 		'test_createCNTwithDaciNonExistentDAC',
 		'test_retrieveResourceWithDisabledDaciFail',
+		'test_retrieveResourceWithOnlyNoPoaDaciFail',
+		'test_retrieveResourceWithFirstDacDisabledSecondValid',
 		'test_accessGrantedViaDASConsultation',
 
 	])
