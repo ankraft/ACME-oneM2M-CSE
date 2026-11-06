@@ -1,0 +1,21 @@
+# Rules here apply to every CSE. Evaluated in addition to that CSE's own
+# per-CSE file. Every matching rule's "grant" block is collected into the
+# response as-is - matches aren't merged together.
+# Any "match" field that's omitted matches everything ("don't care").
+
+rules:
+  # Safety net: the CSE's own admin originator always gets full access,
+  # even if a per-CSE file is missing or misconfigured.
+  - match:
+      originator: "CAdmin"
+    grant:
+      acor: ["CAdmin"]
+      acop: [C, R, U, D, N, F]
+
+  # Anyone may retrieve resources under a "public" container, on any CSE
+  - match:
+      resourceID: "*/cnt-public/*"
+      operation: [R]
+    grant:
+      acor: ["all"]
+      acop: [R]

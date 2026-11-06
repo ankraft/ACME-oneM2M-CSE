@@ -38,6 +38,7 @@ and this project adheres to [Calendar Versioning](https://calver.org).
 - [TESTS] Added support for wildcards in test case names for the `--run-tests` command line argument. This allows to run all test cases that match a certain pattern.
 - [MISC] Added a startup guard for the CSE to force a shutdown if the CSE does not start within a certain time. 
 - [MISC] Added a helper module to send push notifications via the Pushover service.
+- [MISC] Implemented a first version of a Dynamic Authorization Service (DAS) server, including basic handling of dynamic authorization requests and responses. This needs further development to fully support all required functionality. It lives in the *tools/DAS Server* directory.
 
 ### Experimental
 - [CSE] Added support for the [storage] ManagementObject specialization. This implementation is preliminary and may change depending on the final definition of the storage ManagementObject specialization in TS-0001 and TS-0004.

@@ -1,0 +1,36 @@
+# Rules specific to CSE "id-in", evaluated alongside _common.yaml for
+# requests coming from this CSE.
+
+rules:
+  # Sensor AEs may retrieve and update their own sensor containers
+  - match:
+      originator: "Csensor"
+      resourceID: "id-in/cnt-sensors/*"
+      operation: [R, U]
+    grant:
+      acor: ["Csensor*"]
+      # acop omitted -> defaults to match.operation: [R, U]
+
+  # The dashboard app gets full CRUD (no discovery) on sensor containers
+  - match:
+      originator: "Cdashboard"
+      resourceID: "id-in/cnt-sensors/*"
+    grant:
+      acor: ["Cdashboard"]
+      acop: [C, R, U, D]
+
+  # A reporting AE may retrieve any <cnt> resource by type, wherever it lives
+  - match:
+      originator: "Creporting"
+      resourceType: [cnt]
+      operation: [R]
+    grant:
+      acor: ["Creporting"]
+  - match:
+      originator: "C123"
+      resourceID: "cse-in/testDACContainer"
+      operation: 2 
+    grant:
+      acor: ["C123"]
+      # acop: [C, R, U, D]
+      
