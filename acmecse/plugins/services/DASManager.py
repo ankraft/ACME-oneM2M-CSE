@@ -14,7 +14,7 @@ from acmecse.runtime.PluginSupport import plugin, start, stop, restart, requires
 from acmecse.runtime.Logging import Logging as L
 from acmecse.etc.Constants import RuntimeConstants as RC
 from acmecse.etc.Types import ResourceTypes, CSERequest, JSON
-from acmecse.etc.ResponseStatusCodes import ResponseException, ORIGINATOR_HAS_NO_PRIVILEGE, ResponseStatusCode as RSC
+from acmecse.etc.ResponseStatusCodes import ResponseException, ResponseStatusCode as RSC
 from acmecse.etc.JSONUtils import removeNoneAttributes
 from acmecse.resources.Resource import Resource
 from acmecse.services.NotificationManager import NotificationManager
@@ -176,13 +176,12 @@ class DASManager(object):
 			daciResource = self.dispatcher.retrieveResource(daciRi)
 		except ResponseException as e:
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource not found: {daciRi}: {e.dbg}')
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource not found: {daciRi}') from e
+			return
 
 		# Dynamic auth for the resource enabled?
 		if not daciResource.dae:
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> is disabled: {daciRi}')
-			# TODO This needs perhaps to be changed. What if multiple DACs are listed in the daci
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> is disabled: {daciRi}')
+			return
 
 		if dap := daciResource.dap:
 
@@ -192,17 +191,17 @@ class DASManager(object):
 					aeResource = self.dispatcher.retrieveResource(id)
 				except ResponseException as e:
 					L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains non-existing resource: {id}: {e.dbg}')
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains non-existing resource: {id}') from e
+					continue
 				if aeResource.ty != ResourceTypes.AE:
 					L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains non-AE resource: {id}. Ignoring.')
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains non-AE resource: {id}')
+					continue
 				if not aeResource.poa:
 					L.isWarn and L.logWarn(f'Dynamic Authorization Check: referenced <DAC> resource\'s dap contains AE resource without PoA: {id}. Ignoring.')
-					raise ORIGINATOR_HAS_NO_PRIVILEGE(f'Referenced <DAC> resource\'s dap contains AE resource without PoA: {id}')
+					continue
 
-				# Finally after the checks, consult the DAS 
+				# Finally after the checks, consult the DAS
 				yield from self.getACTRfromDAS(aeResource, resource, originator, daciResource.dal, request)
-				
+
 				# TODO do something with the lifetime
 
 		return
@@ -265,31 +264,31 @@ class DASManager(object):
 		# TODO continue with 6.3.5.46-1
 		response = self.notification.sendNotificationWithDict(removeNoneAttributes(notification), ae.ri, originator=RC.cseCsi)
 
-		# Some basic checks on the response
+		# Some basic checks on the response. None of these abort the whole daci/dap
+		# consultation - they just mean this one DAS has nothing to contribute, so
+		# other <DAC>/dap entries in the same daci list can still be tried.
 		if len(response) != 1:
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: DAS at {ae.ri} returned unexpected number of responses: {len(response)}')
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'DAS at {ae.ri} returned unexpected number of responses: {len(response)}')
+			return []
 		if (rsc := response[0].result.rsc) != RSC.OK:
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: DAS at {ae.ri} returned unexpected response with rsc={rsc}')
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'DAS at {ae.ri} returned unexpected response with rsc={rsc}')
+			return []
 		if not (seci := response[0].result.data.get('m2m:seci')): # type: ignore[union-attr]
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: DAS at {ae.ri} returned unexpected response without "m2m:seci"')
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'DAS at {ae.ri} returned unexpected response without "m2m:seci"')
+			return []
 		if seci.get('sit') != 2:
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: DAS at {ae.ri} returned unexpected response with sit={seci.get("sit")}, expected sit=2')
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'DAS at {ae.ri} returned unexpected response with sit={seci.get("sit")}, expected sit=2')
+			return []
 		if not (dai := seci.get('dai')):
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: DAS at {ae.ri} returned unexpected response without "dai"')
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'DAS at {ae.ri} returned unexpected response without "dai"')
+			return []
 		if not (gp := dai.get('gp')):
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: DAS at {ae.ri} returned unexpected response without "gp"')
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'DAS at {ae.ri} returned unexpected response without "gp"')
+			return []
 		if not isinstance(gp, list):
 			L.isWarn and L.logWarn(f'Dynamic Authorization Check: DAS at {ae.ri} returned unexpected response with "gp" not being a list')
-			raise ORIGINATOR_HAS_NO_PRIVILEGE(f'DAS at {ae.ri} returned unexpected response with "gp" not being a list')
-		
-		
-		L.inspect(gp)
+			return []
+
 		return gp
 
 
