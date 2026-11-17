@@ -16,7 +16,7 @@ from copy import deepcopy
 
 from ..etc.Types import ResourceTypes, Result, NotificationEventType, CSERequest, JSON, BasicType, Operation
 from ..etc.Constants import Constants
-from ..etc.ResponseStatusCodes import ResponseException, BAD_REQUEST, INTERNAL_SERVER_ERROR
+from ..etc.ResponseStatusCodes import NOT_FOUND, ResponseException, BAD_REQUEST, INTERNAL_SERVER_ERROR
 from ..etc.RequestUtils import removeNoneValuesFromDict
 from ..etc.IDUtils import isValidID, uniqueRI, uniqueRN
 from ..etc.DateUtils import getResourceDate
@@ -1068,6 +1068,16 @@ class Resource(object):
 		resource = self.storage.retrieveResource(ri = self.ri)
 		self.dict = resource.dict
 		return self
+
+
+	def dbExists(self) -> bool:
+		"""	Check if the resource exists in the database.
+
+			Return:
+				True if the resource exists, False otherwise.
+		"""
+		return self.storage.hasResource(ri=self.ri)
+
 
 	#########################################################################
 	#
