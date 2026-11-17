@@ -47,7 +47,7 @@ except ImportError as e:
 
 					# Ask if the user wants to start ACME
 					if input('\nDo you want to start ACME now? [Y/n] ') in ['y', 'Y', '']:
-						os.system(f'{sys.executable} -m acme {" ".join(sys.argv[1:])}')
+						os.system(f'{sys.executable} -m acmecse {" ".join(sys.argv[1:])}')
 
 			except Exception as e2:
 				print(f'\nError during installation: {e2}\n')
