@@ -215,6 +215,11 @@ class TriggerRequestManager:
 				L.isWarn and L.logWarn(f'TriggerRequest {tgr.ri} actor interrupted during sleep. Aborting trigger handling.')
 				return
 
+			# Check if the trigger resource is still valid and does exist. It could have been deleted in the meantime.
+			if not tgr.dbExists():
+				L.isWarn and L.logWarn(f'TriggerRequest {tgr.ri} no longer exists in the database. Aborting trigger handling.')
+				return
+
 			# Call the *checkTriggerRequestStatus* endpoint of the assigned NSE service handler plugin to check the status of the TriggerRequest
 			try:
 				status = pluginManager.callEndpoint(nse, C.serviceEndpointCheckTriggerRequestStatus, tgr)
