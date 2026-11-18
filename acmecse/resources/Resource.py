@@ -1208,7 +1208,7 @@ class Resource(object):
 			Return:
 				The current originator.
 		"""
-		if (cstn := self.custn) is not None:
+		if (cstn := self.cstn) is not None:
 			return cstn
 		return self.getOriginator()
 
