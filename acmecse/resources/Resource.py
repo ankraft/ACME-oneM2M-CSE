@@ -977,7 +977,9 @@ class Resource(object):
 				except ResponseException as e:
 					raise BAD_REQUEST(L.logDebug(f'Referenced <ACP> resource not found: {ri} : {e.dbg}'))
 
-					# TODO CHECK TYPE + TEST
+				# Check that the referenced resource is actually an ACP or ACPAnnc resource
+				if acp.ty not in [ResourceTypes.ACP, ResourceTypes.ACPAnnc]:
+					raise BAD_REQUEST(L.logDebug(f'Referenced resource is not an <ACP> resource: {ri} (ty: {acp.ty})'))
 
 				if remoteID := acp[Constants.attrRemoteID]:
 					newACPIList.append(remoteID)

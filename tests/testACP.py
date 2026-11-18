@@ -215,6 +215,31 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAEACPIReferenceToNonACPFail(self) -> None:
+		"""	Update <AE> ACPI with reference to an existing non-<ACP> resource -> Fail """
+		self.assertIsNotNone(TestACP.ae)
+		dct =	{ 'm2m:ae': {
+					'acpi': [ findXPath(TestACP.ae, 'm2m:ae/ri') ]
+				}}
+		r, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTWithACPIReferenceToNonACPFail(self) -> None:
+		"""	Create <CNT> with ACPI reference to an existing non-<ACP> resource -> Fail """
+		self.assertIsNotNone(TestACP.ae)
+		dct = 	{ 'm2m:cnt' : {
+					'rn' : cntRN,
+					'acpi': [ findXPath(TestACP.ae, 'm2m:ae/ri') ]
+				}}
+		r, rsc = CREATE(aeURL, ORIGINATOR, T.CNT, dct)
+		if rsc == RC.CREATED:	# Clean up so that later tests are not affected
+			DELETE(cntURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.BAD_REQUEST, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEACPIWrongOriginator(self) -> None:
 		"""	Update <AE> ACPI with third not allowed Originator -> Fail """
 		dct =	{ 'm2m:ae': {
@@ -1968,6 +1993,8 @@ def run(testFailFast:bool) -> TestResult:
 		'test_addACPtoAE',
 		'test_updateAEACPIWrong',
 		'test_updateAEACPIWrong2',
+		'test_updateAEACPIReferenceToNonACPFail',
+		'test_createCNTWithACPIReferenceToNonACPFail',
 		'test_updateAEACPIWrongOriginator',
 		'test_updateAEACPIOtherOriginator',
 
