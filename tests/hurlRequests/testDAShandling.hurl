@@ -50,3 +50,23 @@ Authorization: {{authorization}}
 X-M2M-ORIGIN: C123
 X-M2M-RI: {{newUuid}}
 X-M2M-RVI: {{release-version}}
+
+HTTP 200
+
+[Asserts]
+header "X-M2M-RSC" == "2000"
+
+#
+# Retrieve the container resource with an unknown originator to check that access is denied
+#
+GET {{scheme}}://{{host}}:{{port}}/-/testDACContainer
+Authorization: {{authorization}}
+X-M2M-ORIGIN: C456
+X-M2M-RI: {{newUuid}}
+X-M2M-RVI: {{release-version}}
+
+HTTP 403
+
+[Asserts]
+header "X-M2M-RSC" == "4103"
+
