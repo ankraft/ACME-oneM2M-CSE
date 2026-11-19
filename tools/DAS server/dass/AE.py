@@ -8,13 +8,31 @@
 #
 """	AE base class for DAS server. """
 
-import json, uuid, logging
+import asyncio, json, uuid, logging
+from enum import Enum
 import aiohttp
 from .Configuration import Configuration
 
 log = logging.getLogger(__name__)
 
 RSC_CONFLICT = 4105
+
+DEREGISTRATION_TIMEOUT = 10
+"""	Timeout (in seconds) for the deregistration request, so that shutdown does not hang on an unreachable CSE. """
+
+
+class RegistrationResult(Enum):
+	"""	Outcome of an AE registration attempt. """
+
+	OK = 'ok'
+	"""	The AE is registered with the CSE. """
+
+	FAILED = 'failed'
+	"""	The CSE was reached but rejected the registration. """
+
+	UNREACHABLE = 'unreachable'
+	"""	The CSE could not be reached (e.g. it is not running). The registration may be retried later. """
+
 
 class DASAE():
 	"""	AE base class for DAS server. """
@@ -26,8 +44,13 @@ class DASAE():
 		"""	The AE-ID assigned by the CSE after a successful registration. """
 
 
-	async def register(self) -> bool:
-		"""	Register the AE with the CSE. """
+	async def register(self) -> RegistrationResult:
+		"""	Register the AE with the CSE.
+
+			Return:
+				RegistrationResult.OK if the AE is registered, RegistrationResult.FAILED if the CSE
+				rejected the registration, or RegistrationResult.UNREACHABLE if the CSE could not be reached.
+		"""
 
 		rvi = self.config.get('releaseVersion', '4')
 
@@ -47,10 +70,13 @@ class DASAE():
 						j = await retrieveResponse.json()
 						self.originator = j.get('m2m:ae', {}).get('aei')
 						log.info(f'AE "{self.config["aeResourceName"]}" is already registered with AE-ID "{self.originator}".')
-						return True
+						return RegistrationResult.OK
 					case 403:
 						log.error(f'AE "{self.config["aeResourceName"]}" seems to be already registered, but originator "{self.config["aeOriginator"]}" is not allowed to access it.')
-						return False
+						return RegistrationResult.FAILED
+		except (aiohttp.ClientConnectionError, asyncio.TimeoutError) as e:
+			log.warning(f'Cannot connect to CSE at {self.config["httpAddress"]}: {e or type(e).__name__}')
+			return RegistrationResult.UNREACHABLE
 		except aiohttp.ClientError as e:
 			log.warning(f'Error retrieving AE, will attempt to register it: {e}')
 
@@ -78,14 +104,17 @@ class DASAE():
 					rsc = int(response.headers.get('X-M2M-RSC', response.status))
 					text = await response.text()
 					log.error(f'Failed to register AE: {response.status}/{rsc} {text}')
-					return False
+					return RegistrationResult.FAILED
 
 				j = await response.json()
 				self.originator = j.get('m2m:ae', {}).get('aei')
-				return True
+				return RegistrationResult.OK
+		except (aiohttp.ClientConnectionError, asyncio.TimeoutError) as e:
+			log.warning(f'Cannot connect to CSE at {self.config["httpAddress"]}: {e or type(e).__name__}')
+			return RegistrationResult.UNREACHABLE
 		except aiohttp.ClientError as e:
 			log.error(f'Error registering AE: {e}')
-			return False
+			return RegistrationResult.FAILED
 
 
 	async def deregister(self) -> bool:
@@ -104,11 +133,14 @@ class DASAE():
 		}
 
 		try:
-			async with self.session.delete(url, headers=headers) as response:
+			async with self.session.delete(url, headers=headers, timeout=aiohttp.ClientTimeout(total=DEREGISTRATION_TIMEOUT)) as response:
 				if response.status not in (200, 202, 204):
 					text = await response.text()
 					log.error(f'Failed to deregister AE: {response.status} {text}')
 					return False
+		except asyncio.TimeoutError:
+			log.error(f'Error deregistering AE: CSE at {self.config["httpAddress"]} did not respond within {DEREGISTRATION_TIMEOUT} seconds')
+			return False
 		except aiohttp.ClientError as e:
 			log.error(f'Error deregistering AE: {e}')
 			return False

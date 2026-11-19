@@ -22,24 +22,26 @@ By default the server reads `config.ini` from the current directory; use `--conf
 
 ## Command Line Arguments
 
-| Command Line Argument                | Description                                                            |
-|---------------------------------------|--------------------------------------------------------------------------|
+| Command Line Argument                 | Description                                                             |
+|---------------------------------------|-------------------------------------------------------------------------|
 | -h, --help                            | Show a help message and exit.                                           |
 | --config &lt;file>, -c &lt;file>      | Configuration file to use (default: `config.ini`).                      |
-| --no-deregister, -ndr                 | Do not deregister the &lt;AE> from the CSE(s) on shutdown.               |
-| --ignore-registration-error, -ire     | Continue running even if registering with a CSE fails.                  |
+| --no-deregister, -ndr                 | Do not deregister the &lt;AE> from the CSE(s) on shutdown.              |
+| --ignore-registration-error, -ire     | Continue running even if a CSE rejects the registration.                |
 | --log-level &lt;level>, -l &lt;level> | Log level: DEBUG, INFO, WARNING, ERROR, or CRITICAL (default: INFO).    |
 
 ## Configuration
 
 The server is configured through an INI file (see the provided `config.ini` for a full example):
 
-| Section              | Description                                                                                          |
-|-----------------------|-------------------------------------------------------------------------------------------------------|
+| Section               | Description                                                                                          |
+|-----------------------|------------------------------------------------------------------------------------------------------|
 | `[general]`           | General settings, e.g. the `host` name used to build the notification and PoA addresses.             |
 | `[notifications]`     | The server's own listening `interface` and `port`, and the `endpoint` path it receives requests on.  |
 | `[rules]`             | Where to find the access control rule files, and how often to check them for changes (see below).    |
 | `[cse.<name>]`        | One section per CSE to register with: its `cseId`, `httpAddress`, the &lt;AE> to register, etc. Add as many of these sections as needed to register with multiple CSEs. |
+
+If a CSE cannot be reached at startup (e.g. because it is not running yet), the server does not terminate. It starts anyway and retries the registration with that CSE in the background every `registrationRetryInterval` seconds (configured per `[cse.<name>]` section, default: 10) until it succeeds. Only if a CSE actively rejects the registration does the server abort startup (unless `--ignore-registration-error` is given).
 
 ## Access Control Rules
 

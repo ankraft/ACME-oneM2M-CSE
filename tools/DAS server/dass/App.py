@@ -14,7 +14,7 @@ from typing import cast
 import asyncio, logging, signal
 import aiohttp
 from aiohttp import web
-from .AE import DASAE
+from .AE import DASAE, RegistrationResult
 from .Configuration import Configuration
 from .Rules import Rules
 from . import handlers
@@ -36,6 +36,9 @@ class App:
 		self.runner: web.AppRunner = None
 		self.rules: Rules = None
 		self._rulesReloadTask: asyncio.Task = None
+		self._registrationRetryTasks: list[asyncio.Task] = []
+		self._pendingRegistrations: list[str] = []
+		"""	CSEs that could not be reached during startup and whose registration is retried in the background. """
 		self.shutdownEvent = asyncio.Event()
 
 
@@ -53,6 +56,7 @@ class App:
 			await self._startServer()
 			self._installSignalHandlers()
 			self._startRulesReloading()
+			self._startRegistrationRetries()
 
 			log.info('DAS server running. Press Ctrl+C to stop.')
 			await self.shutdownEvent.wait()
@@ -62,20 +66,57 @@ class App:
 
 
 	async def _registerAll(self) -> bool:
-		"""	Register the AE with all configured CSEs concurrently. Return False if any registration failed. """
+		"""	Register the AE with all configured CSEs concurrently.
+
+			CSEs that cannot be reached (e.g. because they are not running yet) are not
+			treated as an error; their registration is retried in the background later.
+
+			Return:
+				False if any CSE rejected the registration, True otherwise.
+		"""
 
 		self.aes = { cse: DASAE(cseConfig, self.session) for cse, cseConfig in self.config.cses.items() }
 		results = await asyncio.gather(*(ae.register() for ae in self.aes.values()))
 
 		allOk = True
-		for cse, ok in zip(self.aes, results):
-			if ok:
-				log.info(f'DAS AE registered successfully with CSE "{cse}"')
-			else:
-				log.error(f'DAS AE registration failed with CSE "{cse}"')
-				allOk = False
+		self._pendingRegistrations = []
+		for cse, result in zip(self.aes, results):
+			match result:
+				case RegistrationResult.OK:
+					log.info(f'DAS AE registered successfully with CSE "{cse}"')
+				case RegistrationResult.UNREACHABLE:
+					log.warning(f'CSE "{cse}" is not reachable, will retry the registration in the background')
+					self._pendingRegistrations.append(cse)
+				case _:
+					log.error(f'DAS AE registration failed with CSE "{cse}"')
+					allOk = False
 
 		return allOk
+
+
+	def _startRegistrationRetries(self) -> None:
+		"""	Start a background task for each CSE that could not be reached during startup.
+			Each task periodically retries the registration until it succeeds or the CSE
+			rejects it.
+		"""
+
+		async def _retryLoop(cse: str, ae: DASAE, interval: int) -> None:
+			while True:
+				await asyncio.sleep(interval)
+				match await ae.register():
+					case RegistrationResult.OK:
+						log.info(f'DAS AE registered successfully with CSE "{cse}"')
+						return
+					case RegistrationResult.FAILED:
+						log.error(f'DAS AE registration failed with CSE "{cse}", giving up')
+						return
+					case RegistrationResult.UNREACHABLE:
+						log.debug(f'CSE "{cse}" still not reachable, retrying in {interval} second(s)')
+
+		for cse in self._pendingRegistrations:
+			interval = max(1, int(self.config.cses[cse].get('registrationRetryInterval', 10)))
+			log.info(f'Retrying registration with CSE "{cse}" every {interval} second(s)')
+			self._registrationRetryTasks.append(asyncio.create_task(_retryLoop(cse, self.aes[cse], interval)))
 
 
 	async def _startServer(self) -> None:
@@ -134,6 +175,8 @@ class App:
 
 		if self._rulesReloadTask:
 			self._rulesReloadTask.cancel()
+		for task in self._registrationRetryTasks:
+			task.cancel()
 
 		if not self.noDeregister and self.aes:
 			results = await asyncio.gather(*[ae.deregister() for ae in self.aes.values()], return_exceptions=True)
@@ -141,7 +184,7 @@ class App:
 				if result is True:
 					log.info(f'DAS AE deregistered successfully from CSE "{cse}"')
 				else:
-					log.error(f'DAS AE deregistration failed from CSE "{cse}": {result if isinstance(result, Exception) else ""}')
+					log.error(f'DAS AE deregistration failed from CSE "{cse}"' + (f': {result}' if isinstance(result, Exception) else ''))
 
 		if self.runner:
 			await self.runner.cleanup()
