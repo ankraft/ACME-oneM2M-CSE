@@ -117,6 +117,8 @@ def localResourceID(ri:str) -> Optional[str]: # type: ignore[return]
 			Return:
 				The resource ID with the special case handled.
 		"""
+		if ri[0] != '-':
+			return ri
 		if ri.startswith('-/'):
 			return f'{RC.cseRn}{ri[1:]}'
 		if ri == '-':
@@ -126,7 +128,7 @@ def localResourceID(ri:str) -> Optional[str]: # type: ignore[return]
 
 	if ri == RC.cseCsi:
 		return RC.cseRn
-	
+
 	match ri:
 		case x if isAbsolute(x):
 			if ri.startswith(RC.cseAbsoluteSlash):
@@ -136,8 +138,10 @@ def localResourceID(ri:str) -> Optional[str]: # type: ignore[return]
 			if ri.startswith(RC.cseCsiSlash):
 				return _checkDash(ri[len(RC.cseCsiSlash):])
 			return None
+		case None:
+			return None
 		case _:
-			return ri
+			return _checkDash(ri)
 
 
 def isStructured(uri:str) -> bool: # type: ignore[return]
