@@ -790,6 +790,7 @@ skinparam BoxPadding 60
 				'CNT': (_cCNT := self.dispatcher.countResources(ResourceTypes.CNT)),
 				'CRS': (_cCRS := self.dispatcher.countResources(ResourceTypes.CRS)),
 				'CSR': (_cCSR := self.dispatcher.countResources(ResourceTypes.CSR)),
+				'DAC': (_cDAC := self.dispatcher.countResources(ResourceTypes.DAC)),
 				'DEPR': (_cDEPR := self.dispatcher.countResources(ResourceTypes.DEPR)),
 				'FCNT': (_cFCNT := self.dispatcher.countResources(ResourceTypes.FCNT)),
 				'FCI': (_cFCI := self.dispatcher.countResources(ResourceTypes.FCI)),
