@@ -80,6 +80,7 @@ if __name__ == '__main__':
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped test cases in summary')
 	parser.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='continue running test cases after a failure')
 	parser.add_argument('--local-notification-server', '-lns', action='store_true', dest='localNotificationServer', default=False, help='use a local notification server address')
+	parser.add_argument('--failfast-suite', action='store_true', dest='failFastSuite', default=False, help='stop running test cases and suites after a failure')
 
 	
 	groupList = parser.add_mutually_exclusive_group()
@@ -216,6 +217,9 @@ if __name__ == '__main__':
 					console.print(f'[spring_green3]Successfully executed tests: {testExecuted}')
 					if errors > 0:
 						console.print(f'[red]Errors: {errors}')
+						# Fail after the first error in a test suite
+						if args.failFastSuite:
+							break
 				else:
 					if args.showSkipped:
 						results[name] = ( 0, 0, 0, 0, 1, init.requestCount - startRequestCount, 0.0 )
